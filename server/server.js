@@ -1,0 +1,44 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+
+import authRoutes from './src/routes/auth.routes.js';
+import debateRoutes from './src/routes/debate.routes.js';
+import argumentRoutes from './src/routes/argument.routes.js';
+import judgmentRoutes from './src/routes/judgment.routes.js';
+import voteRoutes from './src/routes/vote.routes.js';
+import profileRoutes from './src/routes/profile.routes.js';
+import contentRoutes from './src/routes/content.routes.js';
+import { errorHandler } from './src/middleware/errorHandler.js';
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+// 배포 단계에서는 .env 파일 URL 주소 수정필요
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/debates', debateRoutes);
+app.use('/api/arguments', argumentRoutes);
+app.use('/api/judgments', judgmentRoutes);
+app.use('/api/votes', voteRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/content', contentRoutes);
+
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Error handler
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
