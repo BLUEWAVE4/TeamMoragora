@@ -15,60 +15,40 @@ export default function TabBar() {
         <NavLink to="/" className={({ isActive }) => `flex flex-col items-center flex-1 transition-all duration-300 ${isActive ? activeClass : inactiveClass}`}>
           <span className="text-xl mb-1">🏠</span>
           <span className="text-[11px]">홈</span>
-          <div className="active-dot w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 opacity-0 transition-opacity" />
+          <div className={`w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 transition-opacity duration-300`} style={{ opacity: window.location.pathname === '/' ? 1 : 0 }} />
         </NavLink>
 
         {/* 리그 */}
         <NavLink to="/ranking" className={({ isActive }) => `flex flex-col items-center flex-1 transition-all duration-300 ${isActive ? activeClass : inactiveClass}`}>
-          <span className="text-xl mb-1">🏆</span> {/* 🏅 -> 🏆 더 명확한 아이콘 */}
+          <span className="text-xl mb-1">🏆</span>
           <span className="text-[11px]">리그</span>
-          <div className="active-dot w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 opacity-0 transition-opacity" />
+          <div className={`w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 transition-opacity duration-300`} style={{ opacity: window.location.pathname === '/ranking' ? 1 : 0 }} />
         </NavLink>
 
-{/* 작성 버튼 (+) */}
-<div className="flex-1 flex justify-center relative -mt-12">
-  <button 
-    onClick={() => navigate('/debate/create')}
-    className="
-      w-16 h-16 
-      bg-[#2D3350] text-white 
-      rounded-full 
-      text-3xl flex items-center justify-center 
-      border-4 border-white
-      
-      /* 상하좌우 균등한 그림자 (Glow 효과) */
-      shadow-[0_0_15px_rgba(0,0,0,0.1)] 
-      
-      transition-all duration-300 border-white
-      hover:rotate-90 
-      hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] 
-      active:scale-95
-    "
-  >
-    {/* 백슬래시(\)를 제거한 정상적인 코드입니다 */}
-    <span className="mb-1 leading-none inline-block">+</span>
-  </button>
-</div>
+        {/* 작성 버튼 (+) */}
+        <div className="flex-1 flex justify-center relative -mt-12">
+          <button 
+            onClick={() => navigate('/debate/create')}
+            className="w-16 h-16 bg-[#2D3350] text-white rounded-full text-3xl flex items-center justify-center border-4 border-white shadow-[0_0_15px_rgba(0,0,0,0.1)] transition-all duration-300 hover:rotate-90 hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] active:scale-95"
+          >
+            <span className="mb-1 leading-none inline-block">+</span>
+          </button>
+        </div>
 
         {/* 전당 */}
         <NavLink to="/moragora" className={({ isActive }) => `flex flex-col items-center flex-1 transition-all duration-300 ${isActive ? activeClass : inactiveClass}`}>
-          <span className="text-xl mb-1">🗳️</span> {/* 🏛️ -> 🗳️ 투표 느낌 더 강화 */}
+          <span className="text-xl mb-1">🗳️</span>
           <span className="text-[11px]">전당</span>
-          <div className="active-dot w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 opacity-0 transition-opacity" />
+          <div className={`w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 transition-opacity duration-300`} style={{ opacity: window.location.pathname === '/moragora' ? 1 : 0 }} />
         </NavLink>
 
         {/* MY */}
         <NavLink to="/profile" className={({ isActive }) => `flex flex-col items-center flex-1 transition-all duration-300 ${isActive ? activeClass : inactiveClass}`}>
           <span className="text-xl mb-1">👤</span>
           <span className="text-[11px]">MY</span>
-          <div className="active-dot w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 opacity-0 transition-opacity" />
+          <div className={`w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 transition-opacity duration-300`} style={{ opacity: window.location.pathname === '/profile' ? 1 : 0 }} />
         </NavLink>
 
-        {/* 스타일 태그: 활성화된 닷(dot) 표시용 */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          .active.text-[#FF5C5C] .active-dot { opacity: 1; }
-        `}} />
-        
       </nav>
     </div>
   );
