@@ -1,7 +1,5 @@
 import React from "react";
 
-// src/components/ui/IndicatorDots.jsx
-
 function IndicatorDots() {
   return (
     <div className="flex justify-center gap-2 mt-5">

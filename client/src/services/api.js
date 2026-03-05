@@ -24,4 +24,24 @@ api.interceptors.response.use(
   }
 );
 
+// -------------------------------------------------
+// frontA
+
+// ===== 논쟁 (Debates) =====
+// 논쟁 생성
+export const createDebate = (data) => api.post('/debates', data);
+// data: { topic, category, purpose, lens }
+// 논쟁 단건 조회
+export const getDebate = (id) => api.get(`/debates/${id}`);
+
+// ===== 판결 (Judgments) =====
+// 판결 상세 조회
+export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
+// 판결 피드 목록
+export const getVerdictFeed = () => api.get('/judgments/feed');
+
+// -------------------------------------------------
+
+
+
 export default api;

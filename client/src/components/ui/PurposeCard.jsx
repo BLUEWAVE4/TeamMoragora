@@ -1,6 +1,5 @@
 import React from "react";
 
-
 function PurposeCard({ icon, title, description, highlight }) {
   return (
     <div
