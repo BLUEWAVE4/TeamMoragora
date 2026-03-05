@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.png" alt="모라고라 아이콘" width="120" />
+</p>
+
 # 모라고라 (Moragora)
 
 AI 기반 논쟁 판결 플랫폼 — 3개 AI 모델의 병렬 판결 + 시민 배심원 투표로 공정한 결론을 도출합니다.
