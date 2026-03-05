@@ -4,7 +4,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import DebateCreatePage from './pages/debate/DebateCreatePage';
-import DebateDetailPage from './pages/debate/DebateDetailPage';
+import DebateDetailPage from './pages/debate/DebateDetailPage'; // 상세 페이지
 import InvitePage from './pages/debate/InvitePage';
 import ArgumentPage from './pages/debate/ArgumentPage';
 import MoragoraDetailPage from './pages/moragora/MoragoraDetailPage';
@@ -18,7 +18,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Public */}
+        {/* Public - 누구나 접근 가능 */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -26,11 +26,13 @@ export default function App() {
         <Route path="/moragora" element={<MoragoraFeedPage />} />
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
         <Route path="/ranking" element={<RankingPage />} />
+        
+        {/* 🔥 테스트를 위해 상세 페이지를 Public으로 이동함 */}
+        <Route path="/debate/:debateId" element={<DebateDetailPage />} />
 
-        {/* Protected */}
+        {/* Protected - 로그인 필요 */}
         <Route element={<ProtectedRoute />}>
           <Route path="/debate/create" element={<DebateCreatePage />} />
-          <Route path="/debate/:debateId" element={<DebateDetailPage />} />
           <Route path="/debate/:debateId/argument" element={<ArgumentPage />} />
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
