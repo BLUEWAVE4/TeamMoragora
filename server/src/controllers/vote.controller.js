@@ -1,10 +1,30 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { finalizeVerdict } from '../services/verdict.service.js';
 
 export async function castVote(req, res, next) {
   try {
     const { debateId } = req.params;
     const { voted_side } = req.body;
 
+    // 1. 투표 가능 상태인지 확인
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('status, vote_deadline')
+      .eq('id', debateId)
+      .single();
+
+    if (!debate || debate.status !== 'voting') {
+      return res.status(400).json({ error: '투표 기간이 아닙니다.' });
+    }
+
+    // 2. 마감 시간 초과 체크
+    if (debate.vote_deadline && new Date(debate.vote_deadline) < new Date()) {
+      // 마감됨 → 자동으로 최종 판결 확정
+      const result = await finalizeVerdict(debateId);
+      return res.status(400).json({ error: '투표가 마감되었습니다.', result });
+    }
+
+    // 3. 투표 저장
     const { data, error } = await supabaseAdmin
       .from('votes')
       .upsert(
@@ -25,6 +45,12 @@ export async function getVoteTally(req, res, next) {
   try {
     const { debateId } = req.params;
 
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('status, vote_deadline')
+      .eq('id', debateId)
+      .single();
+
     const { data, error } = await supabaseAdmin
       .from('votes')
       .select('voted_side')
@@ -35,7 +61,32 @@ export async function getVoteTally(req, res, next) {
     const tally = { A: 0, B: 0, total: data.length };
     data.forEach((v) => { tally[v.voted_side]++; });
 
-    res.json(tally);
+    res.json({
+      ...tally,
+      status: debate?.status,
+      vote_deadline: debate?.vote_deadline,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// 마감된 투표 일괄 확정 (cron 또는 수동 호출용)
+export async function finalizeExpiredVotes(_req, res, next) {
+  try {
+    const { data: expired } = await supabaseAdmin
+      .from('debates')
+      .select('id')
+      .eq('status', 'voting')
+      .lt('vote_deadline', new Date().toISOString());
+
+    const results = [];
+    for (const debate of (expired || [])) {
+      const result = await finalizeVerdict(debate.id);
+      results.push({ debateId: debate.id, ...result });
+    }
+
+    res.json({ finalized: results.length, results });
   } catch (err) {
     next(err);
   }
