@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function CategoryFilter({ activeCategory, setActiveCategory, sortBy, setSortBy }) {
   const CATEGORIES = [
-    { icon: '🌐', label: '전체' },
+    { icon: '👨‍👨‍👧‍👦', label: '전체' },
     { icon: '🏠', label: '일상' },
     { icon: '💕', label: '연애' },
     { icon: '🍱', label: '음식' },
