@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
 import DebateCreatePage from './pages/debate/DebateCreatePage';
 import DebateDetailPage from './pages/debate/DebateDetailPage';
 import InvitePage from './pages/debate/InvitePage';
@@ -13,6 +12,7 @@ import VotePage from './pages/vote/VotePage';
 import ProfilePage from './pages/profile/ProfilePage';
 import RankingPage from './pages/ranking/RankingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import NicknamePage from './pages/auth/NicknamePage';
 
 export default function App() {
   return (
@@ -21,7 +21,6 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
         <Route path="/invite/:inviteCode" element={<InvitePage />} />
         <Route path="/moragora" element={<MoragoraFeedPage />} />
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
@@ -29,6 +28,7 @@ export default function App() {
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/auth/nickname" element={<NicknamePage />} />
           <Route path="/debate/create" element={<DebateCreatePage />} />
           <Route path="/debate/:debateId" element={<DebateDetailPage />} />
           <Route path="/debate/:debateId/argument" element={<ArgumentPage />} />
