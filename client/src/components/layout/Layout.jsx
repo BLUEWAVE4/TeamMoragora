@@ -3,9 +3,9 @@ import Header from './Header';
 
 export default function Layout() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="max-w-[var(--max-w)] mx-auto min-h-dvh bg-bg relative">
       <Header />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
+      <main className="pb-[calc(var(--tab-h)+24px)]">
         <Outlet />
       </main>
     </div>

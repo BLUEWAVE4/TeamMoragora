@@ -1,11 +1,37 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../tailwind.config.js";
+@import "tailwindcss";
+/* @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css'); */
 
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@theme {
+  --color-primary: #1B2A4A;
+  --color-gold: #D4AF37;
+  --color-gold-light: #F5E6B8;
+  --color-accent: #E63946;
+  --color-bg: #FAFAF5;
+  --color-surface: #F5F0E8;
+  --color-surface-alt: #FFFFFF;
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-error: #DC2626;
+  --color-judge-g: #10A37F;
+  --color-judge-m: #4285F4;
+  --color-judge-c: #D97706;
+  --color-side-a: #059669;
+  --color-side-b: #E63946;
+
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+}
+
+:root {
+  --max-w: 440px;
+  --gnb-h: 56px;
+  --tab-h: 60px;
+}
 
 body {
-  font-family: 'Pretendard', system-ui, sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: #1A1A2E;
+  line-height: 1.6;
+  overflow-x: hidden;
 }

@@ -1,4 +1,6 @@
-/** @type {import('tailwindcss').Config} */
+// 어떤 CSS를 만들지 정의하는 파일
+// content의 파일들 안을 뒤져서 class이름을 찾아서 스타일 적용
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
@@ -6,25 +8,31 @@ export default {
       colors: {
         primary: {
           50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
           500: '#6366F1',
           600: '#4F46E5',
           700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81',
         },
-        side: {
-          a: '#3B82F6',
-          b: '#EF4444',
-        },
+        side: { a: '#3B82F6', b: '#EF4444' },
       },
       fontFamily: {
         sans: ['Pretendard', 'system-ui', 'sans-serif'],
       },
+
+      keyframes: {
+        slowZoom: {
+          "0%": { transform: "scale(1)" },
+          "100%": { transform: "scale(1.15)" },
+        },
+      },
+      animation: {
+        slowZoom: "slowZoom 8s ease-out forwards",
+      },
+
+      boxShadow: {
+        gold: "0 0 20px rgba(212,175,55,0.6)",
+        goldSoft: "0 0 40px rgba(212,175,55,0.4)",
+      },
     },
   },
   plugins: [],
-};
+}
