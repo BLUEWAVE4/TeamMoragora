@@ -62,11 +62,17 @@ export async function finalizeVerdict(debateId) {
 
   const { data: verdict } = await supabaseAdmin
     .from('verdicts')
-    .select('ai_score_a, ai_score_b')
+    .select('id, ai_score_a, ai_score_b')
     .eq('debate_id', debateId)
     .single();
 
   if (!verdict) throw new Error('판결 데이터가 없습니다.');
+
+  // AI 개별 점수 조회 (3사 각 25%)
+  const { data: aiJudgments } = await supabaseAdmin
+    .from('ai_judgments')
+    .select('score_a, score_b')
+    .eq('verdict_id', verdict.id);
 
   let finalA = verdict.ai_score_a;
   let finalB = verdict.ai_score_b;
@@ -83,9 +89,16 @@ export async function finalizeVerdict(debateId) {
     citizenScoreA = Math.round((countA / total) * 100);
     citizenScoreB = Math.round((countB / total) * 100);
 
-    // AI 60% + 시민 40%
-    finalA = Math.round(verdict.ai_score_a * 0.6 + citizenScoreA * 0.4);
-    finalB = Math.round(verdict.ai_score_b * 0.6 + citizenScoreB * 0.4);
+    // AI 각 25% (3사 75%) + 시민 25%
+    if (aiJudgments && aiJudgments.length > 0) {
+      const aiSumA = aiJudgments.reduce((sum, j) => sum + j.score_a, 0);
+      const aiSumB = aiJudgments.reduce((sum, j) => sum + j.score_b, 0);
+      finalA = Math.round(aiSumA * 0.25 + citizenScoreA * 0.25);
+      finalB = Math.round(aiSumB * 0.25 + citizenScoreB * 0.25);
+    } else {
+      finalA = Math.round(verdict.ai_score_a * 0.75 + citizenScoreA * 0.25);
+      finalB = Math.round(verdict.ai_score_b * 0.75 + citizenScoreB * 0.25);
+    }
     citizenApplied = true;
   }
 
