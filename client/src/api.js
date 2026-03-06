@@ -2,7 +2,9 @@ import axios from 'axios';
 
 // 팀원의 서버 주소 (localhost:5000) 설정
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', 
+  baseURL: import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : 'https://teammoragora.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
