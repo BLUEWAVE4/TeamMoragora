@@ -6,6 +6,8 @@
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nickname TEXT NOT NULL DEFAULT '',
+  gender TEXT CHECK (gender IN ('male', 'female', 'other')),
+  age INTEGER CHECK (age BETWEEN 1 AND 150),
   avatar_url TEXT,
   wins INTEGER NOT NULL DEFAULT 0,
   losses INTEGER NOT NULL DEFAULT 0,
@@ -18,11 +20,11 @@ CREATE TABLE profiles (
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO profiles (id, nickname)
+  INSERT INTO public.profiles (id, nickname)
   VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'name', '유저' || LEFT(NEW.id::text, 4)));
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -39,7 +41,8 @@ CREATE TABLE debates (
   lens TEXT NOT NULL DEFAULT 'general',
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
-    CHECK (status IN ('waiting', 'arguing', 'judging', 'completed')),
+    CHECK (status IN ('waiting', 'arguing', 'judging', 'voting', 'completed')),
+  vote_deadline TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

@@ -40,16 +40,19 @@ export async function requestJudgment(req, res, next) {
       argumentB: sideB.content,
     });
 
-    // Save individual AI judgments + composite verdict
+    // Save individual AI judgments + composite verdict (AI only)
     const verdict = await calculateCompositeVerdict(debateId, judgments);
 
-    // Update status to completed
+    // Update status to voting + set vote deadline
+    const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);
+    const voteDeadline = new Date(Date.now() + voteDurationHours * 60 * 60 * 1000);
+
     await supabaseAdmin
       .from('debates')
-      .update({ status: 'completed' })
+      .update({ status: 'voting', vote_deadline: voteDeadline.toISOString() })
       .eq('id', debateId);
 
-    res.json(verdict);
+    res.json({ ...verdict, vote_deadline: voteDeadline });
   } catch (err) {
     next(err);
   }
