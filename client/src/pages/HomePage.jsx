@@ -106,13 +106,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-
-      {/* ➕ 글쓰기 플로팅 버튼 */}
-      <button className="fixed bottom-24 right-6 w-16 h-16 bg-[#FF6B6B] text-white rounded-[24px] shadow-2xl shadow-rose-200 flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
     </div>
   );
 }
