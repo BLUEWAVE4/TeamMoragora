@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/smhrd/Desktop/프로젝트/**)",
+      "Bash(xargs grep -l \"Day 1\\\\|1일차\\\\|Day1\")"
+    ]
+  }
+}
