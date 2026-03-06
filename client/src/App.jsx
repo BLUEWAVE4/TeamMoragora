@@ -13,6 +13,7 @@ import ProfilePage from './pages/profile/ProfilePage';
 import RankingPage from './pages/ranking/RankingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import NicknamePage from './pages/auth/NicknamePage';
+import JudgingPage from './pages/debate/JudgingPage';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/debate/create" element={<DebateCreatePage />} />
           <Route path="/debate/:debateId" element={<DebateDetailPage />} />
           <Route path="/debate/:debateId/argument" element={<ArgumentPage />} />
+          <Route path="/debate/:debateId/judging" element={<JudgingPage />} />
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

@@ -38,4 +38,3 @@ export const acceptInvitation = joinByInvite;
 // [주장 관련 API]
 // 주장 제출 (50~2000자)
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
-
