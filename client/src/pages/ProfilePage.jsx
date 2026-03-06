@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../services/supabase';
+import api from '../services/api';
 import VerdictDetailModal from './VerdictDetailModal';
 import TierModal from './TierModal';
 
@@ -24,12 +24,6 @@ const CountUp = ({ end, duration = 1000 }) => {
   }, [end]);
   return <span>{count.toLocaleString()}</span>;
 };
-
-const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -68,13 +62,8 @@ export default function ProfilePage() {
         const { data: stats } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (stats) setProfileData(stats);
 
-        const rawData = localStorage.getItem('sb-gdswoatbmglwdbchdznq-auth-token');
-        const token = rawData ? JSON.parse(rawData)?.access_token : null;
-
-        const verdictRes = await api.get('/profiles/me/verdicts', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        setMyJudgments(verdictRes.data || []);
+        const verdictRes = await api.get('/profiles/me/verdicts');
+        setMyJudgments(verdictRes || []);
         setNewNickname(user.user_metadata?.nickname || '');
       } catch (error) {
         console.error("로드 실패:", error);
