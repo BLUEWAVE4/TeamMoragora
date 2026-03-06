@@ -40,4 +40,13 @@ export const submitArgument = (debateId, data) => api.post(`/arguments/${debateI
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
 export const getVerdictFeed = () => api.get('/judgments/feed');
 
+
+// ===== 투표 (Votes) =====
+export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
+export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
+
+// ===== 프로필 (Profiles) =====
+export const getMyProfile = () => api.get('/auth/me');
+export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
+
 export default api;
