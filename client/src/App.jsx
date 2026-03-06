@@ -9,7 +9,7 @@ import ArgumentPage from './pages/debate/ArgumentPage';
 import MoragoraDetailPage from './pages/moragora/MoragoraDetailPage';
 import MoragoraFeedPage from './pages/moragora/MoragoraFeedPage';
 import VotePage from './pages/vote/VotePage';
-import ProfilePage from './pages/profile/ProfilePage';
+import ProfilePage from './pages/ProfilePage';
 import RankingPage from './pages/ranking/RankingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import NicknamePage from './pages/auth/NicknamePage';
