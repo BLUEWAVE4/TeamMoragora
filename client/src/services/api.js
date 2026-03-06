@@ -24,4 +24,18 @@ api.interceptors.response.use(
   }
 );
 
+// ===== 논쟁 (Debates) =====
+export const createDebate = (data) => api.post('/debates', data);
+export const getDebate = (id) => api.get(`/debates/${id}`);
+export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
+export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
+export const acceptInvitation = joinByInvite;
+
+// ===== 주장 (Arguments) =====
+export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
+
+// ===== 판결 (Judgments) =====
+export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
+export const getVerdictFeed = () => api.get('/judgments/feed');
+
 export default api;

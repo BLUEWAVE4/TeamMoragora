@@ -7,7 +7,6 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 1. 팀원의 로직: 특정 페이지에서 네비게이션 숨기기
   const isAuthPage = location.pathname === '/login';
   const isProtectedRouteArea =
     location.pathname.startsWith('/debate') ||
@@ -16,7 +15,6 @@ export default function Header() {
 
   const shouldHideNav = isAuthPage || isProtectedRouteArea;
 
-  // 2. 준민님의 로직: 검색 모드 상태 관리
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,7 +32,6 @@ export default function Header() {
       <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
         
         {isSearchOpen ? (
-          /* 🔥 검색 모드 (준민님 기능) */
           <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
             <input
               autoFocus
@@ -53,14 +50,12 @@ export default function Header() {
             </button>
           </form>
         ) : (
-          /* 기본 헤더 모드 */
           <>
             <Link to="/" className="text-2xl font-black text-[#2D3350] tracking-tighter">
               모라고라<span className="text-[#FFBD43]">.</span>
             </Link>
 
             <div className="flex items-center gap-2">
-              {/* 💡 검색 버튼 (준민님 기능) */}
               <button 
                 onClick={() => setIsSearchOpen(true)}
                 className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-full text-lg hover:bg-gray-100 transition-colors"
@@ -68,7 +63,6 @@ export default function Header() {
                 🔍
               </button>
               
-              {/* 💡 로그인 상태에 따른 버튼 제어 (팀원 로직 반영) */}
               {!shouldHideNav && (
                 <nav className="flex items-center gap-2">
                   {user ? (
