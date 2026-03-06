@@ -12,7 +12,10 @@ export default function HomePage() {
   const loadRealData = async () => {
     try {
       // 서버 주소 확인
-      const response = await axios.get('http://localhost:5000/api/judgments/feed');
+      const API_BASE = import.meta.env.DEV
+        ? 'http://localhost:5000/api'
+        : 'https://teammoragora.onrender.com/api';
+      const response = await axios.get(`${API_BASE}/judgments/feed`);
       setFeeds(response.data || []); 
     } catch (error) {
       console.error("데이터 로드 실패:", error);
