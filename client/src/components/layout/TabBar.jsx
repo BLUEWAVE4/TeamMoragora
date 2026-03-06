@@ -37,7 +37,7 @@ export default function TabBar() {
 
         {/* 전당 */}
         <NavLink to="/moragora" className={({ isActive }) => `flex flex-col items-center flex-1 transition-all duration-300 ${isActive ? activeClass : inactiveClass}`}>
-          <span className="text-xl mb-1">🗳️</span>
+          <span className="text-xl mb-1">🏛</span>
           <span className="text-[11px]">전당</span>
           <div className={`w-1 h-1 bg-[#FF5C5C] rounded-full mt-1 transition-opacity duration-300`} style={{ opacity: window.location.pathname === '/moragora' ? 1 : 0 }} />
         </NavLink>

@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 
 export default function Header() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  
-  // 검색 모드 상태 관리
+  const location = useLocation();
+
+  // 1. 팀원의 로직: 특정 페이지에서 네비게이션 숨기기
+  const isAuthPage = location.pathname === '/login';
+  const isProtectedRouteArea =
+    location.pathname.startsWith('/debate') ||
+    location.pathname.includes('/auth/nickname') ||
+    location.pathname.startsWith('/profile');
+
+  const shouldHideNav = isAuthPage || isProtectedRouteArea;
+
+  // 2. 준민님의 로직: 검색 모드 상태 관리
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // 검색 결과 페이지로 이동 (나중에 구현 가능)
       navigate(`/search?q=${searchQuery}`);
       setIsSearchOpen(false);
       setSearchQuery('');
@@ -21,11 +30,11 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-50 sticky top-0 z-50">
-      <div className="max-w-md mx-auto px-5 h-16 flex items-center justify-between">
+    <header className="bg-white border-b border-gray-50 sticky top-0 z-[100] h-16 flex items-center shadow-sm backdrop-blur-md bg-white/90">
+      <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
         
         {isSearchOpen ? (
-          /* 🔥 검색 모드 활성화 시 보일 입력창 */
+          /* 🔥 검색 모드 (준민님 기능) */
           <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
             <input
               autoFocus
@@ -50,24 +59,30 @@ export default function Header() {
               모라고라<span className="text-[#FFBD43]">.</span>
             </Link>
 
-            <div className="flex items-center gap-3">
-              {/* 검색 버튼 클릭 시 검색 모드 활성화 */}
+            <div className="flex items-center gap-2">
+              {/* 💡 검색 버튼 (준민님 기능) */}
               <button 
                 onClick={() => setIsSearchOpen(true)}
-                className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-lg hover:bg-gray-100 transition-colors"
+                className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-full text-lg hover:bg-gray-100 transition-colors"
               >
                 🔍
               </button>
               
-              <button className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-lg relative">
-                🔔
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
-
-              {user && (
-                <button onClick={signOut} className="text-[10px] font-bold text-gray-400 ml-1">
-                  LOGOUT
-                </button>
+              {/* 💡 로그인 상태에 따른 버튼 제어 (팀원 로직 반영) */}
+              {!shouldHideNav && (
+                <nav className="flex items-center gap-2">
+                  {user ? (
+                    <>
+                      <Link to="/profile" className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-50 text-gray-500 text-lg hover:bg-[#FFBD43] hover:text-white transition">
+                        👤
+                      </Link>
+                    </>
+                  ) : (
+                    <Link to="/login" className="px-4 py-1.5 rounded-full bg-[#2D3350] text-white text-xs font-bold hover:opacity-90 transition ml-1">
+                      로그인
+                    </Link>
+                  )}
+                </nav>
               )}
             </div>
           </>

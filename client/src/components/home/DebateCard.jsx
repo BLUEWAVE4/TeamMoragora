@@ -1,63 +1,83 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 
-// props를 통해 각기 다른 데이터를 받아 렌더링합니다.
-export default function DebateCard({ category, title, time, winSide, scoreA, scoreB, tags, stats }) {
+export default function DebateCard({ feed, formatTime }) {
+  // 데이터 구조를 안전하게 추출합니다.
+  const topic = feed.debate?.topic || "제목 없는 논쟁";
+  const summary = feed.summary || "요약 내용을 불러올 수 없습니다.";
+  const category = feed.debate?.category || '일상';
+  const creator = feed.debate?.creator?.nickname || "익명";
+  
+  // 점수 계산 (AI 점수 기준)
+  const scoreA = feed.ai_score_a || 0;
+  const scoreB = feed.ai_score_b || 0;
+  const total = scoreA + scoreB;
+  
+  // 0명일 때 50%를 기본값으로 설정
+  const percentA = total === 0 ? 50 : Math.round((scoreA / total) * 100);
+
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-50 mb-1">
-      {/* 상단 카테고리 태그 및 시간 */}
-      <div className="flex justify-between items-start mb-4">
-        <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black ${category.bgColor} ${category.textColor}`}>
-          {category.icon} {category.name}
+    <Link 
+      to={`/debate/${feed.debate_id}`}
+      className="bg-white rounded-[32px] p-8 shadow-[0_8px_40px_rgba(0,0,0,0.03)] border border-gray-100/50 block hover:shadow-[0_12px_50px_rgba(45,51,80,0.1)] transition-all duration-500 active:scale-[0.98]"
+    >
+      {/* 🚀 상단: 카테고리 태그 & 작성자/시간 */}
+      <div className="flex justify-between items-center mb-5">
+        <span className="px-4 py-1.5 bg-[#FFBD43]/10 text-[#FFBD43] text-[10px] font-extrabold rounded-lg uppercase tracking-wider">
+          #{category}
         </span>
-        <span className="text-gray-300 text-[11px]">{time}</span>
+        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
+          <span>By {creator}</span>
+          <span>|</span>
+          <span>{formatTime(feed.created_at)}</span>
+        </div>
       </div>
 
-      {/* 논쟁 제목 */}
-      <h3 className="font-bold text-[17px] text-gray-800 mb-4 leading-tight">
-        "{title}"
+      {/* 📋 제목(Topic) */}
+      <h3 className="text-xl font-extrabold text-[#2D3350] mb-6 leading-tight break-keep hover:text-[#FFBD43] transition-colors">
+        {topic}
       </h3>
 
-      {/* 특성 배지 (AI 비율, 성향 등) */}
-      <div className="flex gap-2 mb-6">
-        {tags.map((tag, index) => (
-          <div key={index} className={`flex items-center gap-1 px-2 py-1 rounded-md ${tag.bgColor}`}>
-            <span className="text-[10px]">{tag.icon}</span>
-            <span className={`text-[10px] font-bold ${tag.textColor}`}>{tag.text}</span>
-          </div>
-        ))}
+      {/* 💡 AI 요약(Summary) 박스 */}
+      <div className="bg-[#F8F9FA] rounded-[24px] p-6 mb-8 border border-gray-50 relative">
+        <div className="absolute -top-3 left-6 px-2 bg-white text-[9px] font-black text-[#FFBD43]">AI SUMMARY</div>
+        <p className="text-[12px] leading-relaxed text-gray-500 font-medium italic">
+          "{summary}"
+        </p>
       </div>
 
-      {/* 판결 결과 영역 */}
-      <div className="flex items-center justify-between border-t border-gray-50 pt-4">
-        <div className="flex items-center gap-2">
-          <span className={`${winSide.includes('A') ? 'text-[#00C193]' : 'text-blue-500'} font-black text-sm`}>
-            {winSide} 승리
-          </span>
-          <span className="text-gray-900 font-bold text-sm">
-            {scoreA} <span className="text-gray-200 font-normal mx-0.5">vs</span> {scoreB}
-          </span>
+      {/* 📊 실시간 스코어/투표 프로그레스 바 */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between items-end px-1">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter opacity-60">SIDE A (AI)</span>
+            <span className="text-xl font-extrabold text-blue-600">{scoreA}점</span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black text-red-400 uppercase tracking-tighter opacity-60">SIDE B (AI)</span>
+            <span className="text-xl font-extrabold text-red-500">{scoreB}점</span>
+          </div>
         </div>
         
-        {/* AI 모델 아이콘들 */}
-        <div className="flex -space-x-2">
-          <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">G</div>
-          <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">M</div>
-          <div className="w-6 h-6 rounded-full bg-orange-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">C</div>
+        {/* 내부 여백을 준 캡슐 형태 프로그레스 바 */}
+        <div className="h-4 w-full bg-gray-100 rounded-full flex overflow-hidden p-1 border border-gray-50">
+          <div 
+            className="bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out" 
+            style={{ width: `${percentA}%` }} 
+          />
+          <div className="bg-transparent flex-1" />
         </div>
       </div>
 
-      {/* 하단 반응 수치 */}
-      <div className="flex gap-4 mt-4 pt-3 border-t border-gray-50 text-gray-400">
-        <div className="flex items-center gap-1">
-          <span className="text-xs">❤️</span> <span className="text-[11px]">{stats.likes}</span>
+      {/* ⬇️ 하단: 참여 유도 */}
+      <div className="mt-8 pt-6 border-t border-gray-50 flex justify-between items-center text-[#FFBD43]">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+          <span className="text-[11px] font-black text-gray-400">실시간 스코어 집계 중</span>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs">👁️</span> <span className="text-[11px]">{stats.views}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs">💬</span> <span className="text-[11px]">{stats.comments}</span>
-        </div>
+        <span className="text-[11px] font-black flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+          판결하러 가기 →
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
