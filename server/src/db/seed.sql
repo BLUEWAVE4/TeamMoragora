@@ -194,3 +194,127 @@ WHERE id = '29206ca2-1f2b-4717-b991-db15e709b85a';
 -- 유저3: 논쟁2 패(B), 논쟁3 무승부 → 0승 1패 1무
 UPDATE profiles SET wins = 0, losses = 1, draws = 1, total_score = 147
 WHERE id = '45c7559c-33b6-4502-8f7a-92755c4c3bbd';
+
+-- ============================================
+-- 7. 유저4 더미 데이터 (9561dcb1-4edf-42cd-bf08-680c0475b27b)
+-- ============================================
+
+-- 유저4 프로필
+UPDATE profiles SET nickname = '논쟁러4호', gender = 'male', age = 23
+WHERE id = '9561dcb1-4edf-42cd-bf08-680c0475b27b';
+
+-- 논쟁4: 유저4 vs 유저1 (completed)
+INSERT INTO debates (id, creator_id, opponent_id, topic, category, purpose, lens, invite_code, status, created_at) VALUES
+('d0000004-0000-0000-0000-000000000004',
+ '9561dcb1-4edf-42cd-bf08-680c0475b27b',
+ '774764d9-dadf-4ff9-b28a-b6a0d7c6044f',
+ '대학교육이 취업에 필수적이다',
+ 'society', 'compete', 'logic', 'INV004', 'completed',
+ now() - interval '4 days');
+
+-- 논쟁5: 유저2 vs 유저4 (completed)
+INSERT INTO debates (id, creator_id, opponent_id, topic, category, purpose, lens, invite_code, status, created_at) VALUES
+('d0000005-0000-0000-0000-000000000005',
+ '29206ca2-1f2b-4717-b991-db15e709b85a',
+ '9561dcb1-4edf-42cd-bf08-680c0475b27b',
+ 'SNS는 인간관계에 해롭다',
+ 'society', 'discuss', 'emotion', 'INV005', 'completed',
+ now() - interval '5 days');
+
+-- 논쟁4 주장: 유저4(A) vs 유저1(B)
+INSERT INTO arguments (debate_id, user_id, side, content, created_at) VALUES
+('d0000004-0000-0000-0000-000000000004',
+ '9561dcb1-4edf-42cd-bf08-680c0475b27b', 'A',
+ '대학교육은 체계적 사고력과 전문 지식을 쌓는 데 필수적입니다. 통계적으로 대졸자의 평균 연봉이 고졸자보다 40% 이상 높으며, 기업 채용에서도 학위를 기본 자격으로 요구합니다. 네트워크와 경험 측면에서도 대학은 대체 불가능합니다.',
+ now() - interval '4 days' + interval '1 hour'),
+
+('d0000004-0000-0000-0000-000000000004',
+ '774764d9-dadf-4ff9-b28a-b6a0d7c6044f', 'B',
+ '대학교육 없이도 성공한 사례는 무수히 많습니다. 스티브 잡스, 마크 저커버그 등 중퇴자들이 세계적 기업을 만들었고, 실무 역량 중심으로 채용 트렌드가 변하고 있습니다. 4년간의 시간과 등록금 대비 실질적 ROI가 낮아지고 있습니다.',
+ now() - interval '4 days' + interval '2 hours');
+
+-- 논쟁5 주장: 유저2(A) vs 유저4(B)
+INSERT INTO arguments (debate_id, user_id, side, content, created_at) VALUES
+('d0000005-0000-0000-0000-000000000005',
+ '29206ca2-1f2b-4717-b991-db15e709b85a', 'A',
+ 'SNS는 피상적 관계를 조장하고 비교 심리를 유발하여 정신건강에 악영향을 줍니다. 연구에 따르면 SNS 사용 시간이 길수록 우울감과 외로움이 증가하며, FOMO 현상이 실제 대면 관계의 질을 떨어뜨립니다.',
+ now() - interval '5 days' + interval '1 hour'),
+
+('d0000005-0000-0000-0000-000000000005',
+ '9561dcb1-4edf-42cd-bf08-680c0475b27b', 'B',
+ 'SNS는 거리와 시간의 제약을 넘어 인간관계를 유지·확장하는 강력한 도구입니다. 관심사 기반 커뮤니티로 오프라인에서 만나기 어려운 사람들과 교류할 수 있고, 소외된 개인에게는 사회적 연결의 통로가 됩니다.',
+ now() - interval '5 days' + interval '2 hours');
+
+-- 논쟁4 판결: A측(유저4) 승
+INSERT INTO verdicts (id, debate_id, winner_side, summary, ai_score_a, ai_score_b, final_score_a, final_score_b, created_at) VALUES
+('v0000004-0000-0000-0000-000000000004',
+ 'd0000004-0000-0000-0000-000000000004',
+ 'A', '대학교육 필수 측이 통계와 현실적 근거로 더 탄탄한 논증을 펼쳤습니다.',
+ 79, 72, 79, 72,
+ now() - interval '4 days' + interval '3 hours');
+
+-- 논쟁5 판결: B측(유저4) 승
+INSERT INTO verdicts (id, debate_id, winner_side, summary, ai_score_a, ai_score_b, final_score_a, final_score_b, created_at) VALUES
+('v0000005-0000-0000-0000-000000000005',
+ 'd0000005-0000-0000-0000-000000000005',
+ 'B', 'SNS 긍정 측이 소외 계층과 글로벌 네트워크 관점에서 설득력 있는 반론을 제시했습니다.',
+ 70, 77, 70, 77,
+ now() - interval '5 days' + interval '3 hours');
+
+-- 논쟁4 AI 판결 (3사)
+INSERT INTO ai_judgments (verdict_id, ai_model, winner_side, verdict_text, score_a, score_b, score_detail_a, score_detail_b, confidence) VALUES
+('v0000004-0000-0000-0000-000000000004', 'gpt-4o', 'A',
+ '대학교육 측이 통계 데이터와 취업 현실을 근거로 더 설득력 있는 주장을 펼쳤습니다.',
+ 80, 71,
+ '{"logic":17,"evidence":16,"persuasion":16,"consistency":16,"expression":15}',
+ '{"logic":15,"evidence":13,"persuasion":14,"consistency":15,"expression":14}',
+ 0.75),
+
+('v0000004-0000-0000-0000-000000000004', 'gemini-2.5-flash', 'A',
+ '학위의 경제적 가치와 네트워크 형성 논거가 반대 측의 예외 사례보다 일반적 설득력이 높습니다.',
+ 78, 73,
+ '{"logic":16,"evidence":15,"persuasion":16,"consistency":16,"expression":15}',
+ '{"logic":15,"evidence":14,"persuasion":15,"consistency":15,"expression":14}',
+ 0.71),
+
+('v0000004-0000-0000-0000-000000000004', 'claude-sonnet', 'A',
+ '대졸 연봉 격차와 채용 기준을 제시한 A측이 구체성에서 앞섰습니다.',
+ 79, 72,
+ '{"logic":16,"evidence":16,"persuasion":16,"consistency":16,"expression":15}',
+ '{"logic":15,"evidence":14,"persuasion":14,"consistency":15,"expression":14}',
+ 0.73);
+
+-- 논쟁5 AI 판결 (3사)
+INSERT INTO ai_judgments (verdict_id, ai_model, winner_side, verdict_text, score_a, score_b, score_detail_a, score_detail_b, confidence) VALUES
+('v0000005-0000-0000-0000-000000000005', 'gpt-4o', 'B',
+ 'SNS 긍정 측이 소외 계층의 사회적 연결이라는 강력한 논거를 제시했습니다.',
+ 69, 78,
+ '{"logic":14,"evidence":13,"persuasion":14,"consistency":14,"expression":14}',
+ '{"logic":16,"evidence":15,"persuasion":16,"consistency":16,"expression":15}',
+ 0.74),
+
+('v0000005-0000-0000-0000-000000000005', 'gemini-2.5-flash', 'B',
+ '해로움 측의 근거가 감정적인 반면, 긍정 측은 실질적 혜택을 잘 설명했습니다.',
+ 71, 76,
+ '{"logic":15,"evidence":14,"persuasion":14,"consistency":14,"expression":14}',
+ '{"logic":16,"evidence":15,"persuasion":15,"consistency":15,"expression":15}',
+ 0.68),
+
+('v0000005-0000-0000-0000-000000000005', 'claude-sonnet', 'B',
+ '양측 모두 연구 근거를 들었으나 B측의 포용적 관점이 더 넓은 시야를 보여줍니다.',
+ 70, 77,
+ '{"logic":14,"evidence":14,"persuasion":14,"consistency":14,"expression":14}',
+ '{"logic":16,"evidence":15,"persuasion":16,"consistency":15,"expression":15}',
+ 0.70);
+
+-- 유저4 전적 업데이트: 논쟁4 승(A), 논쟁5 승(B) → 2승 0패 0무
+UPDATE profiles SET wins = 2, losses = 0, draws = 0, total_score = 156
+WHERE id = '9561dcb1-4edf-42cd-bf08-680c0475b27b';
+
+-- 유저1 전적 재업데이트: 기존 0승1패1무 + 논쟁4 패(B) → 0승 2패 1무
+UPDATE profiles SET wins = 0, losses = 2, draws = 1, total_score = 215
+WHERE id = '774764d9-dadf-4ff9-b28a-b6a0d7c6044f';
+
+-- 유저2 전적 재업데이트: 기존 2승0패0무 + 논쟁5 패(A) → 2승 1패 0무
+UPDATE profiles SET wins = 2, losses = 1, draws = 0, total_score = 222
+WHERE id = '29206ca2-1f2b-4717-b991-db15e709b85a';
