@@ -38,7 +38,7 @@ export default function ArgumentPage() {
       const side = debate.creator_id === user?.id ? 'A' : 'B'
       await submitArgument(debateId, { content, side })
       alert('주장이 제출되었습니다!')
-      navigate(`/debate/${debateId}`)
+      navigate(`/debate/${debateId}/judging`)
     } catch (err) {
       alert(err.message || '제출에 실패했습니다.')
     }

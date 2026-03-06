@@ -113,7 +113,7 @@ const handleAccept = async () => {
   // --- UI 렌더링 (A측) ---
   if (isCreator) {
     return (
-      <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center">
+      <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-10">
         <div className="w-full bg-[#1a2744] text-white pt-14 pb-12 rounded-b-[40px] flex flex-col items-center shadow-lg text-center">
           <div className="text-4xl mb-4">⚔️</div>
           <h1 className="text-[20px] font-bold mb-1">논쟁이 생성되었습니다!</h1>
@@ -126,27 +126,29 @@ const handleAccept = async () => {
             "{debate?.title}"
           </h2>
           <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500/80">
-            <span>🎯 목적: {debate?.goal}</span>
+            <span>🎯 {debate?.goal}</span>
             <span className="text-gray-200">·</span>
-            <span>🔍 렌즈: {debate?.lens}</span>
+            <span>🔍 {debate?.lens}</span>
           </div>
         </div>
 
-        <div className="w-[90%] max-w-md mt-10 px-1">
-          <label className="block text-[15px] font-bold text-[#1a2744] mb-3 ml-1 text-left">초대 링크</label>
+        <div className="w-[90%] max-w-md mt-8 px-1">
+          <label className="block text-[15px] font-bold text-[#1a2744] mb-2 ml-1 text-left">초대 링크</label>
           <div className="flex gap-2 bg-white p-2.5 rounded-[18px] border border-gray-200 shadow-inner">
             <input readOnly value={shareUrl} className="flex-1 bg-transparent px-3 text-[13px] text-gray-400 outline-none truncate" />
             <button onClick={handleCopy} className="bg-[#1a2744] text-white px-5 py-2.5 rounded-[14px] text-[13px] font-bold cursor-pointer hover:bg-[#151f36]">복사</button>
           </div>
 
-          <div className="flex flex-col gap-3 mt-9">
+          <div className="flex flex-col gap-3 mt-5">
             <button onClick={handleKakaoShare} className="w-full h-[62px] bg-[#FEE500] text-[#3c1e1e] rounded-[22px] font-bold text-[16px] cursor-pointer hover:bg-[#F0D900]">카카오 공유</button>
             <button onClick={handleNativeShare} className="w-full h-[62px] bg-[#1a2744] text-white rounded-[22px] font-bold text-[16px] shadow-xl shadow-[#1a2744]/20 cursor-pointer hover:bg-[#151f36]">링크 공유</button>
-          </div>
 
-          <div className="mt-12 text-center pb-12">
-            <p className="text-gray-400 text-[13px]">상대방 수락 시 알림 발송</p>
-            <span className="text-orange-500 font-bold text-[12px] bg-orange-50 px-3 py-1 rounded-full mt-2 inline-block">⏰ 24시간 내 미수락 시 자동 취소</span>
+            <button 
+            onClick={() => navigate(`/debate/${debate?.id || debate?._id}/argument`)}
+            className="w-full h-[62px] bg-white text-[#1a2744] border-2 border-[#1a2744] rounded-[22px] font-bold text-[16px] hover:bg-gray-50 transition-all cursor-pointer"
+            >
+            나도 내 주장 입력하기
+            </button>
           </div>
         </div>
       </div>
