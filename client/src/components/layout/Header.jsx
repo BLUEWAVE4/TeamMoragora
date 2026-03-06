@@ -1,51 +1,87 @@
-import { Link, useLocation } from 'react-router-dom' 
-import { useAuth } from '../../store/AuthContext'
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../store/AuthContext';
 
 export default function Header() {
-  const { user, signOut } = useAuth()
-  const location = useLocation() 
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // 1. 로그인 페이지인가?
-  const isAuthPage = location.pathname === '/login' 
-
-  // 2. ProtectedRoute 영역인가? (App.jsx의 Protected 아래 경로들)
-  // URL이 /debate로 시작하거나 /profile인 경우를 감지합니다.
-  const isProtectedRouteArea = 
-    location.pathname.startsWith('/debate') || 
+  const isAuthPage = location.pathname === '/login';
+  const isProtectedRouteArea =
+    location.pathname.startsWith('/debate') ||
     location.pathname.includes('/auth/nickname') ||
     location.pathname.startsWith('/profile');
 
-  // 위 두 경우 중 하나라도 해당되면 네비게이션 영역을 아예 렌더링하지 않습니다.
-  const shouldHideNav = isAuthPage || isProtectedRouteArea
+  const shouldHideNav = isAuthPage || isProtectedRouteArea;
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${searchQuery}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-100 flex items-center justify-between h-[var(--gnb-h)] px-5 bg-bg/85 backdrop-blur-xl border-b border-primary/6">
-      <Link to="/" className="text-[22px] font-extrabold text-primary tracking-tight">
-        모라<span className="text-gold">고라</span>
-      </Link>
-
-      {/* 💡 Protected 영역에 들어오면 로그인 버튼/유저 메뉴를 숨깁니다. */}
-      {!shouldHideNav && (
-        <nav className="flex items-center gap-2">
-          {user ? (
-            <>
-              <Link to="/debate/create" className="w-9 h-9 rounded-full flex items-center justify-center bg-surface text-primary/60 text-lg hover:bg-primary hover:text-white transition">
-                +
-              </Link>
-              <Link to="/profile" className="w-9 h-9 rounded-full flex items-center justify-center bg-surface text-primary/60 text-lg hover:bg-primary hover:text-white transition">
-                👤
-              </Link>
-              <button onClick={signOut} className="w-9 h-9 rounded-full flex items-center justify-center bg-surface text-primary/60 text-lg hover:bg-primary hover:text-white transition">
-                ⏻
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:opacity-90 transition">
-              로그인
+    <header className="bg-white border-b border-gray-50 sticky top-0 z-[100] h-16 flex items-center shadow-sm backdrop-blur-md bg-white/90">
+      <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
+        
+        {isSearchOpen ? (
+          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+            <input
+              autoFocus
+              type="text"
+              placeholder="궁금한 논쟁을 검색해보세요"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-gray-50 border-none outline-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#FFBD43]/50"
+            />
+            <button 
+              type="button" 
+              onClick={() => setIsSearchOpen(false)}
+              className="text-xs font-bold text-gray-400 px-2"
+            >
+              취소
+            </button>
+          </form>
+        ) : (
+          <>
+            <Link to="/" className="text-2xl font-black text-[#2D3350] tracking-tighter">
+              모라고라<span className="text-[#FFBD43]">.</span>
             </Link>
-          )}
-        </nav>
-      )}
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-full text-lg hover:bg-gray-100 transition-colors"
+              >
+                🔍
+              </button>
+              
+              {!shouldHideNav && (
+                <nav className="flex items-center gap-2">
+                  {user ? (
+                    <>
+                      <Link to="/profile" className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-50 text-gray-500 text-lg hover:bg-[#FFBD43] hover:text-white transition">
+                        👤
+                      </Link>
+                    </>
+                  ) : (
+                    <Link to="/login" className="px-4 py-1.5 rounded-full bg-[#2D3350] text-white text-xs font-bold hover:opacity-90 transition ml-1">
+                      로그인
+                    </Link>
+                  )}
+                </nav>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </header>
-  )
+  );
 }

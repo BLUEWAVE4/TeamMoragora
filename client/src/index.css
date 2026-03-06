@@ -1,7 +1,9 @@
 @import "tailwindcss";
+/* 폰트는 더 최신 버전인 팀원의 다이나믹 서브셋 버전을 사용합니다 */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
 @theme {
+  /* 팀원이 설정한 공통 색상 테마 */
   --color-primary: #1B2A4A;
   --color-gold: #D4AF37;
   --color-gold-light: #F5E6B8;
@@ -18,10 +20,12 @@
   --color-side-a: #059669;
   --color-side-b: #E63946;
 
+  /* 폰트 설정 */
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
 :root {
+  /* 모바일 뷰를 위한 전역 크기 변수 */
   --max-w: 440px;
   --gnb-h: 56px;
   --tab-h: 60px;
@@ -33,4 +37,15 @@ body {
   color: #1A1A2E;
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+/* 스크롤바 숨김 기능 (준민님 코드 유지) */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
