@@ -40,6 +40,7 @@ export const submitArgument = (debateId, data) => api.post(`/arguments/${debateI
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
 export const getVerdictFeed = () => api.get('/judgments/feed');
 
+<<<<<<< HEAD
 
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
@@ -49,4 +50,6 @@ export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
 export const getMyProfile = () => api.get('/auth/me');
 export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
 
+=======
+>>>>>>> 0b23c03b7a08b45ff82e6f4e5892d98e762b605c
 export default api;
