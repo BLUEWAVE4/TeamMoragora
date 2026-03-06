@@ -155,21 +155,21 @@ function ModeSelector({ onStart }) {
       label: "연습 모드",
       
       desc: "AI와 논쟁 연습을 진행하며 자신의 논리를 시험해볼 수 있습니다.",
-      img: "/practice.png"
+      img: "/practice.webp"
     },
     {
       key: "battle",
       label: "1 vs 1",
-      
+
       desc: "상대와 직접 논쟁을 진행하며 논리와 설득력으로 승부합니다.",
-      img: "/fight2.png"
+      img: "/fight2.webp"
     },
     {
       key: "random",
       label: "랜덤 매칭",
-      
+
       desc: "랜덤으로 상대가 매칭되어 예상치 못한 논쟁이 펼쳐집니다.",
-      img: "/random2.png"
+      img: "/random2.webp"
     }
   ];
 
