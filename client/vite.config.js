@@ -1,3 +1,5 @@
+// Vite 개발 서버와 번들러 설정 파일
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
