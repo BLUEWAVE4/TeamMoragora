@@ -24,4 +24,18 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+// [논쟁 관련 API]
+// 논쟁 정보 조회
+export const getDebate = (id) => api.get(`/debates/${id}`);
+
+// 초대 코드로 논쟁 정보 상세 조회 (InvitePage에서 사용)
+export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
+
+// 초대 코드로 논쟁 참여
+export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
+export const acceptInvitation = joinByInvite;
+
+// [주장 관련 API]
+// 주장 제출 (50~2000자)
+export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
+

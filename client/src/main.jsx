@@ -5,6 +5,11 @@ import App from './App';
 import { AuthProvider } from './store/AuthContext';
 import './index.css';
 
+// 카카오 SDK 초기화
+if (window.Kakao && !window.Kakao.isInitialized()) {
+  window.Kakao.init(import.meta.env.VITE_KAKAO_JS_KEY);
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
