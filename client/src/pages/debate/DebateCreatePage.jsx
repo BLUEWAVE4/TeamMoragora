@@ -1,5 +1,5 @@
-// // // 담당: 서우주 (프론트A) - 32h // 
-// // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// 담당: 서우주 (프론트A) - 32h // 
+// 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
 import { createDebate } from "../../services/api";
@@ -29,11 +29,33 @@ export default function CreateDebatePage() {
 
   const nextStep = () => setStep(prev => prev + 1);
 
+  // 🔹 모든 입력값 초기화
+  const resetForm = () => {
+    setTopic("");
+    setDescription("");
+    setCategory("");
+    setPurpose("");
+    setLens("");
+  };
+
   const prevStep = () => {
 
     if (step === 1) {
       setShowBackModal(true);
       return;
+    }
+
+    // Step3 → Step2
+    if (step === 3) {
+      setTopic("");
+      setDescription("");
+      setCategory("");
+      setLens("");
+    }
+
+    // Step2 → Step1
+    if (step === 2) {
+      setPurpose("");
     }
 
     setStep(prev => prev - 1);
@@ -60,6 +82,14 @@ export default function CreateDebatePage() {
       await createDebate(data);
 
       alert("논쟁 생성 완료");
+
+      // 🔹 Step1,2,3 입력 데이터 초기화
+      resetForm();
+
+      // 🔹 위자드 초기 상태로 복귀
+      setStep(1);
+      setGameStarted(false);
+      setMode(null);
 
     } catch (err) {
 
@@ -107,6 +137,9 @@ export default function CreateDebatePage() {
 
             {step === 3 && (
               <Step3Confirm
+                mode={mode}
+                purpose={purpose}
+                lens={lens}
                 topic={topic}
                 setTopic={setTopic}
                 description={description}
@@ -139,10 +172,15 @@ export default function CreateDebatePage() {
 
           <Button
             onClick={() => {
+
+              // 🔹 Step1에서 게임모드로 돌아갈 때 데이터 초기화
+              resetForm();
+
               setGameStarted(false);
               setMode(null);
               setStep(1);
               setShowBackModal(false);
+
             }}
           >
             예
@@ -153,6 +191,5 @@ export default function CreateDebatePage() {
       </Modal>
 
     </div>
-
   );
 }
