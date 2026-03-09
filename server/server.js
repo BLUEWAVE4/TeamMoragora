@@ -17,7 +17,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 // 배포 단계에서는 .env 파일 URL 주소 수정필요
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+  ].filter(Boolean),
   credentials: true,
 }));
 app.use(express.json());
