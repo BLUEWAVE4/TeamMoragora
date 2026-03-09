@@ -63,21 +63,7 @@ export default function Header() {
                 🔍
               </button>
               
-              {!shouldHideNav && (
-                <nav className="flex items-center gap-2">
-                  {user ? (
-                    <>
-                      <Link to="/profile" className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-50 text-gray-500 text-lg hover:bg-[#FFBD43] hover:text-white transition">
-                        👤
-                      </Link>
-                    </>
-                  ) : (
-                    <Link to="/login" className="px-4 py-1.5 rounded-full bg-[#2D3350] text-white text-xs font-bold hover:opacity-90 transition ml-1">
-                      로그인
-                    </Link>
-                  )}
-                </nav>
-              )}
+             
             </div>
           </>
         )}
