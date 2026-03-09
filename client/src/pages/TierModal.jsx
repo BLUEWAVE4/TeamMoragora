@@ -1,103 +1,77 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TierModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  // 💡 팀 기획안(image_e982ca.png)의 5단계 리그 구조를 그대로 반영
   const tiers = [
-    { 
-      level: 'Tier 5', 
-      name: '대법관 (Supreme)', 
-      condition: '상위 1%', 
-      desc: '50명 단위 그룹 • 매월 10명 강등',
-      color: 'text-yellow-400', 
-      bg: 'bg-yellow-400/10', 
-      icon: '🏛️' 
-    },
-    { 
-      level: 'Tier 4', 
-      name: '판사 (Judge)', 
-      condition: '상위 5%', 
-      desc: '매월 상위 10명 승격 / 하위 10명 강등',
-      color: 'text-purple-400', 
-      bg: 'bg-purple-400/10', 
-      icon: '⚖️' 
-    },
-    { 
-      level: 'Tier 3', 
-      name: '변호사 (Attorney)', 
-      condition: '상위 20%', 
-      desc: '매월 상위 10명 승격 / 하위 10명 강등',
-      color: 'text-blue-400', 
-      bg: 'bg-blue-400/10', 
-      icon: '📜' 
-    },
-    { 
-      level: 'Tier 2', 
-      name: '배심원 (Juror)', 
-      condition: '상위 50%', 
-      desc: '매월 상위 10명 승격 / 하위 10명 강등',
-      color: 'text-emerald-400', 
-      bg: 'bg-emerald-400/10', 
-      icon: '📋' 
-    },
-    { 
-      level: 'Tier 1', 
-      name: '시민 (Citizen)', 
-      condition: '신규 사용자 시작점', 
-      desc: '50명 단위 그룹 • 매월 상위 10명 승격',
-      color: 'text-slate-400', 
-      bg: 'bg-slate-400/10', 
-      icon: '👤' 
-    },
+    { name: '대법관', sub: '상위 1%', color: 'text-yellow-600', bg: 'bg-yellow-50', icon: '🏛️' },
+    { name: '판사', sub: '상위 5%', color: 'text-purple-600', bg: 'bg-purple-50', icon: '⚖️' },
+    { name: '변호사', sub: '상위 20%', color: 'text-blue-600', bg: 'bg-blue-50', icon: '📜' },
+    { name: '배심원', sub: '상위 50%', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: '📋' },
+    { name: '시민', sub: '시작점', color: 'text-gray-500', bg: 'bg-gray-50', icon: '👤' },
   ];
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-[#2D3350]/90 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-        
-        {/* 헤더 영역 */}
-        <div className="bg-[#2D3350] p-7 text-center">
-          <p className="text-[#FFBD43] text-[10px] font-black tracking-[0.2em] mb-1 uppercase">Verdict League System</p>
-          <h3 className="text-white text-xl font-black italic">모라고라 리그 시스템</h3>
-        </div>
-        
-        {/* 리스트 영역 */}
-        <div className="p-5 flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
-          <p className="text-[11px] text-gray-400 font-bold px-2 mb-1">
-            * 모든 사용자는 5단계 리그로 분류되어 경쟁합니다.
-          </p>
-          
-          {tiers.map((tier) => (
-            <div key={tier.level} className={`flex flex-col p-4 rounded-3xl ${tier.bg} border border-white/50 relative overflow-hidden`}>
-              {/* 배경에 크게 깔리는 티어 숫자 */}
-              <span className="absolute right-4 top-2 text-4xl font-black opacity-5 italic text-gray-900">{tier.level}</span>
-              
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl">{tier.icon}</span>
-                <div className="flex flex-col">
-                  <span className={`text-[14px] font-black ${tier.color}`}>{tier.name}</span>
-                  <span className="text-[10px] font-bold text-gray-500 opacity-70">{tier.condition}</span>
-                </div>
-              </div>
-              
-              <p className="text-[11px] font-medium text-gray-600 leading-relaxed bg-white/40 p-2 rounded-xl">
-                {tier.desc}
-              </p>
-            </div>
-          ))}
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* 1. 배경 (딤 처리) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm"
+          />
 
-        {/* 푸터 버튼 */}
-        <div className="p-5 pt-2">
-          <button 
-            onClick={onClose} 
-            className="w-full py-4 bg-[#2D3350] text-[#FFBD43] rounded-2xl font-black shadow-lg active:scale-95 transition-all text-sm"
+          {/* 2. 바텀시트 본체 */}
+          <motion.div
+            initial={{ y: "100%" }} // 아래에서 시작
+            animate={{ y: 0 }}      // 위로 올라옴
+            exit={{ y: "100%" }}     // 다시 아래로 내려감
+            transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            drag="y" // 세로 드래그 허용
+            dragConstraints={{ top: 0 }} // 위로는 못 올라가게 제한
+            dragElastic={0.2} // 위로 당길 때 팽팽한 느낌
+            onDragEnd={(e, info) => {
+              // 💡 100px 이상 아래로 내리면 닫기
+              if (info.offset.y > 100) {
+                onClose();
+              }
+            }}
+            className="fixed bottom-0 left-0 right-0 z-[121] w-full max-w-md mx-auto bg-white rounded-t-[32px] p-6 shadow-2xl touch-none"
           >
-            확인했습니다
-          </button>
-        </div>
-      </div>
-    </div>
+            {/* ㅡ 상단 드래그 핸들 (아이폰 스타일) */}
+            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+
+            <div className="text-center mb-5">
+              <h2 className="text-lg font-black text-[#2D3350]">⚖️ 리그 시스템 안내</h2>
+              <p className="text-[11px] text-gray-400 font-bold mt-1">실력에 따라 티어가 결정됩니다.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 mb-6">
+              {tiers.map((t, idx) => (
+                <div key={idx} className={`${t.bg} rounded-[18px] px-4 py-3 flex items-center justify-between border border-white/50 shadow-sm`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{t.icon}</span>
+                    <div className="flex flex-col text-left">
+                      <span className={`text-[13px] font-black ${t.color}`}>{t.name}</span>
+                      <span className="text-[10px] font-bold text-gray-400/80">{t.sub}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black text-gray-300 italic uppercase">Level {5 - idx}</span>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={onClose}
+              className="w-full py-4 bg-[#2D3350] text-white rounded-[20px] font-black text-sm active:scale-95 transition-all"
+            >
+              확인했습니다
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
