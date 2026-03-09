@@ -15,6 +15,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import NicknamePage from './pages/auth/NicknamePage';
 import JudgingPage from './pages/debate/JudgingPage';
 
+
 export default function App() {
   return (
     <Routes>

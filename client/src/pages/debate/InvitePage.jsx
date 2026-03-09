@@ -1,8 +1,7 @@
-// // 담당: 채유진 (프론트B) - 12h
-// // 상대방 초대 - 링크 복사 + 수락 플로우
-// // 기능: 논쟁 생성 후 초대 링크 공유(A측) 및 초대 수락(B측)
-// // 포함 기능: 링크 복사, 카카오톡 공유 SDK 연동, 시스템 공유 시트 연동
- 
+// 담당: 채유진 (프론트B) - 12h
+// 상대방 초대 - 링크 복사 + 수락 플로우
+// 기능: 논쟁 생성 후 초대 링크 공유(A측) 및 초대 수락(B측)
+// 포함 기능: 링크 복사, 카카오톡 공유 SDK 연동, 시스템 공유 시트 연동
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebateByInviteCode, joinByInvite } from '../../services/api'
@@ -13,11 +12,11 @@ export default function InvitePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  //  1. 초기값 null로 변경
   const [debate, setDebate] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isCopied, setIsCopied] = useState(false)
 
-  const shareUrl = `${window.location.origin}/invite/${inviteCode || 'abc12345'}`
+  const shareUrl = `${window.location.origin}/invite/${inviteCode}`
 
   useEffect(() => {
     const fetchInviteInfo = async () => {
@@ -26,10 +25,7 @@ export default function InvitePage() {
         const response = await getDebateByInviteCode(inviteCode)
         if (response) setDebate(response)
       } catch (err) {
-        // //  2. 서버 실패 시 홈으로 이동
-        // console.error(err)
-        // alert('논쟁 정보를 불러올 수 없습니다.')
-        // navigate('/')
+        console.error("초대 정보 로드 실패", err)
       } finally {
         setLoading(false)
       }
@@ -37,31 +33,29 @@ export default function InvitePage() {
     fetchInviteInfo()
   }, [inviteCode])
 
-  //  3. isCreator 실제 로직 사용(주석은 프론트 용)
   // const isCreator = true
   const isCreator = user && debate && String(user.id) === String(debate.creator_id)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl)
-    alert('초대 링크가 복사되었습니다!')
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000) // 2초 후 원래대로
   }
 
   const handleKakaoShare = () => {
     if (!window.Kakao || !window.Kakao.Share) {
-      alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.')
+      alert('카카오 SDK 로딩 중입니다.')
       return
     }
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: '⚔️ 모라고라 논쟁 초대',
-        description: `"${debate?.title}"\n지금 바로 당신의 반박을 보여주세요!`,
+        description: `"${debate?.title || debate?.topic}"\n지금 바로 당신의 반박을 보여주세요!`,
         imageUrl: 'https://moragora.vercel.app/og-image.png',
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
-      buttons: [
-        { title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }
-      ],
+      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
     })
   }
 
@@ -70,7 +64,7 @@ export default function InvitePage() {
       try {
         await navigator.share({
           title: '모라고라 논쟁 초대',
-          text: `"${debate?.title}" 논쟁에 당신을 초대합니다!`,
+          text: `"${debate?.title || debate?.topic}" 논쟁에 당신을 초대합니다!`,
           url: shareUrl,
         })
       } catch (err) { console.log('공유 취소') }
@@ -79,75 +73,81 @@ export default function InvitePage() {
     }
   }
 
-const handleAccept = async () => {
-  // 1. 로그인 여부 확인
-  if (!user) {
-    navigate('/login', { state: { from: `/invite/${inviteCode}` } });
-    return;
-  }
-
-  try {
-    // 2. 서버에 참여 등록 요청 (inviteCode 사용)
-    await joinByInvite(inviteCode);
-    alert('참여가 완료되었습니다!');
-
-    // 3. App.jsx의 경로 /debate/:debateId/argument 에 맞게 수정
-    // 서버 응답 debate 객체에 id가 있는지, 혹은 _id인지 확인이 필요합니다.
-    const targetId = debate.id || debate._id; 
-    
-    if (targetId) {
-      navigate(`/debate/${targetId}/argument`); 
-    } else {
-      console.error("논쟁 ID를 찾을 수 없습니다.");
-      alert("데이터 오류가 발생했습니다.");
+  const handleAccept = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: `/invite/${inviteCode}` } });
+      return;
     }
-    
-  } catch (err) {
-    // 서버가 404이거나 401(권한없음)인 경우 발생
-    alert(err.message || '참여 처리 중 오류가 발생했습니다.');
-  }
-};
+    try {
+      await joinByInvite(inviteCode);
+      const targetId = debate.id || debate._id; 
+      if (targetId) navigate(`/debate/${targetId}/argument`); 
+    } catch (err) {
+      alert(err.message || '참여 처리 중 오류가 발생했습니다.');
+    }
+  };
 
-  if (loading) return <div className="p-10 text-center text-gray-400 font-medium">정보 로딩 중...</div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
+      <div className="animate-pulse text-gray-400 font-bold tracking-widest uppercase">Inviting...</div>
+    </div>
+  )
 
-  // --- UI 렌더링 (A측) ---
+  // --- UI 렌더링 (A측: 생성자) ---
   if (isCreator) {
     return (
-      <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-10">
-        <div className="w-full bg-[#1a2744] text-white pt-14 pb-12 rounded-b-[40px] flex flex-col items-center shadow-lg text-center">
-          <div className="text-4xl mb-4">⚔️</div>
-          <h1 className="text-[20px] font-bold mb-1">논쟁이 생성되었습니다!</h1>
-          <p className="text-blue-300/80 text-[13px]">상대방을 초대하세요</p>
+      <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-12">
+        {/* 상단 헤더 섹션 */}
+        <div className="w-full bg-[#1a2744] text-white pt-20 pb-16 rounded-b-[50px] flex flex-col items-center shadow-2xl text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+             <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-white rounded-full blur-3xl" />
+          </div>
+          <div className="text-5xl mb-5 drop-shadow-lg">⚔️</div>
+          <h1 className="text-[22px] font-black mb-1 tracking-tight">논쟁 준비 완료!</h1>
+          <p className="text-blue-300/70 text-[14px] font-medium tracking-wide">상대방의 반론을 기다려보세요</p>
         </div>
 
-        <div className="w-[90%] max-w-md bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mt-6">
-          <p className="text-gray-400 text-[11px] font-bold mb-2 uppercase">논쟁 주제</p>
-          <h2 className="text-[17px] font-extrabold text-[#1a2744] mb-3 break-keep">
-            "{debate?.title}"
+        {/* 논쟁 정보 카드 */}
+        <div className="w-[90%] max-w-md bg-white rounded-[28px] p-7 shadow-xl shadow-black/[0.03] border border-gray-100 mt-[-40px] z-10">
+          <p className="text-gray-300 text-[11px] font-black mb-3 uppercase tracking-widest">Debate Topic</p>
+          <h2 className="text-[18px] font-black text-[#1a2744] mb-4 leading-relaxed break-keep">
+            "{debate?.title || debate?.topic}"
           </h2>
-          <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500/80">
-            <span>🎯 {debate?.goal}</span>
-            <span className="text-gray-200">·</span>
-            <span>🔍 {debate?.lens}</span>
+          <div className="flex items-center gap-2">
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">
+              🎯 {debate?.purpose || debate?.goal}
+            </span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">
+              🔍 {debate?.lens}
+            </span>
           </div>
         </div>
 
-        <div className="w-[90%] max-w-md mt-8 px-1">
-          <label className="block text-[15px] font-bold text-[#1a2744] mb-2 ml-1 text-left">초대 링크</label>
-          <div className="flex gap-2 bg-white p-2.5 rounded-[18px] border border-gray-200 shadow-inner">
-            <input readOnly value={shareUrl} className="flex-1 bg-transparent px-3 text-[13px] text-gray-400 outline-none truncate" />
-            <button onClick={handleCopy} className="bg-[#1a2744] text-white px-5 py-2.5 rounded-[14px] text-[13px] font-bold cursor-pointer hover:bg-[#151f36]">복사</button>
+        {/* 링크 및 버튼 섹션 */}
+        <div className="w-[90%] max-w-md mt-10 px-1 space-y-8">
+          <div>
+            <label className="block text-[14px] font-black text-[#1a2744] mb-3 ml-1 uppercase tracking-wider opacity-60">Invite Link</label>
+            <div className="flex gap-2 bg-white p-2.5 rounded-[22px] border border-gray-200 shadow-sm focus-within:border-[#1a2744]/30 transition-all">
+              <input readOnly value={shareUrl} className="flex-1 bg-transparent px-4 text-[13px] text-gray-400 font-medium outline-none truncate" />
+              <button 
+                onClick={handleCopy} 
+                className={`px-6 py-3 rounded-[16px] text-[13px] font-black transition-all transform active:scale-95 cursor-pointer ${
+                  isCopied ? 'bg-green-500 text-white' : 'bg-[#1a2744] text-white hover:bg-[#151f36]'
+                }`}
+              >
+                {isCopied ? '완료!' : '복사'}
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 mt-5">
-            <button onClick={handleKakaoShare} className="w-full h-[62px] bg-[#FEE500] text-[#3c1e1e] rounded-[22px] font-bold text-[16px] cursor-pointer hover:bg-[#F0D900]">카카오 공유</button>
-            <button onClick={handleNativeShare} className="w-full h-[62px] bg-[#1a2744] text-white rounded-[22px] font-bold text-[16px] shadow-xl shadow-[#1a2744]/20 cursor-pointer hover:bg-[#151f36]">링크 공유</button>
-
+          <div className="flex flex-col gap-3">
+            <button onClick={handleKakaoShare} className="w-full h-[64px] bg-[#FEE500] text-[#3c1e1e] rounded-[24px] font-black text-[17px] shadow-lg shadow-[#FEE500]/20 cursor-pointer active:scale-[0.98] transition-all">카카오톡 초대하기</button>
+            <button onClick={handleNativeShare} className="w-full h-[64px] bg-[#1a2744] text-white rounded-[24px] font-black text-[17px] shadow-xl shadow-[#1a2744]/20 cursor-pointer active:scale-[0.98] transition-all">링크로 초대하기</button>
             <button 
-            onClick={() => navigate(`/debate/${debate?.id || debate?._id}/argument`)}
-            className="w-full h-[62px] bg-white text-[#1a2744] border-2 border-[#1a2744] rounded-[22px] font-bold text-[16px] hover:bg-gray-50 transition-all cursor-pointer"
+              onClick={() => navigate(`/debate/${debate?.id || debate?._id}/argument`)}
+              className="w-full h-[64px] bg-white text-[#1a2744] border-2 border-[#1a2744] rounded-[24px] font-black text-[17px] mt-2 hover:bg-gray-50 cursor-pointer active:scale-[0.98] transition-all"
             >
-            나도 내 주장 입력하기
+              나도 내 주장 입력하기
             </button>
           </div>
         </div>
@@ -155,21 +155,34 @@ const handleAccept = async () => {
     )
   }
 
-  // --- UI 렌더링 (B측) ---
+  // --- UI 렌더링 (B측: 초대받은 자) ---
   return (
-    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pt-24 p-6 text-center">
-      <div className="w-full max-w-md bg-white rounded-[32px] shadow-xl p-8 border border-gray-100 flex flex-col items-center">
-        <div className="w-16 h-16 bg-[#1a2744]/5 rounded-full flex items-center justify-center mb-6 text-3xl">✉️</div>
-        <h1 className="text-2xl font-extrabold text-[#1a2744] mb-4 break-keep px-4">"{debate?.title}"<br/>논쟁에 초대받았습니다</h1>
-        <div className="flex justify-center gap-2 mb-10">
-          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {debate?.goal}</span>
-          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {debate?.lens}</span>
+    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pt-28 p-7">
+      <div className="w-full max-w-md bg-white rounded-[36px] shadow-2xl p-9 border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
+        {/* 장식용 배경 */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#1a2744]/[0.02] rounded-full translate-x-10 -translate-y-10" />
+        
+        <div className="w-20 h-20 bg-[#1a2744]/5 rounded-[28px] flex items-center justify-center mb-8 text-4xl shadow-inner animate-bounce">✉️</div>
+        
+        <h1 className="text-[23px] font-black text-[#1a2744] mb-5 leading-tight break-keep">
+          "{debate?.title || debate?.topic}"<br/>
+          <span className="text-[#1a2744]/60 text-lg font-bold italic">논쟁에 초대받았습니다</span>
+        </h1>
+
+        <div className="flex justify-center gap-2 mb-12">
+          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {debate?.purpose || debate?.goal}</span>
+          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {debate?.lens}</span>
         </div>
-        <button onClick={handleAccept} className="w-full h-[60px] bg-[#1a2744] text-white rounded-[22px] font-bold text-[17px] shadow-lg cursor-pointer hover:bg-[#151f36]">
-          {user ? '논쟁 참여하기' : '로그인 후 참여하기'}
+
+        <button 
+          onClick={handleAccept} 
+          className="w-full h-[68px] bg-[#1a2744] text-white rounded-[26px] font-black text-[18px] shadow-2xl shadow-[#1a2744]/30 cursor-pointer active:scale-[0.96] transition-all"
+        >
+          {user ? '논쟁 참여하기' : '로그인하고 참여하기'}
         </button>
+        
+        <p className="mt-6 text-gray-300 text-[11px] font-medium uppercase tracking-[0.2em]">Moragora AI Court</p>
       </div>
     </div>
   )
 }
-
