@@ -13,6 +13,9 @@ CREATE TABLE profiles (
   losses INTEGER NOT NULL DEFAULT 0,
   draws INTEGER NOT NULL DEFAULT 0,
   total_score INTEGER NOT NULL DEFAULT 0,
+  xp INTEGER NOT NULL DEFAULT 0,
+  tier TEXT NOT NULL DEFAULT '시민'
+    CHECK (tier IN ('시민', '배심원', '변호사', '판사', '대법관')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -36,9 +39,12 @@ CREATE TABLE debates (
   creator_id UUID NOT NULL REFERENCES profiles(id),
   opponent_id UUID REFERENCES profiles(id),
   topic TEXT NOT NULL,
+  description TEXT,
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
+  mode TEXT NOT NULL DEFAULT 'duo'
+    CHECK (mode IN ('duo', 'solo')),
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
     CHECK (status IN ('waiting', 'arguing', 'judging', 'voting', 'completed')),
@@ -112,7 +118,20 @@ CREATE TABLE content_filter_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 8. comments (TIER 2)
+-- 8. xp_logs (TIER 2 — 리그 시스템)
+CREATE TABLE xp_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  xp_amount INTEGER NOT NULL,
+  reason TEXT NOT NULL CHECK (reason IN ('victory', 'defeat', 'draw', 'daily_debate', 'vote', 'bonus', 'penalty')),
+  reference_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_xp_logs_user ON xp_logs(user_id);
+CREATE INDEX idx_xp_logs_created ON xp_logs(created_at);
+
+-- 9. comments (TIER 2)
 CREATE TABLE comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
@@ -122,7 +141,7 @@ CREATE TABLE comments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 9. comment_likes (TIER 2)
+-- 10. comment_likes (TIER 2)
 CREATE TABLE comment_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
@@ -141,6 +160,7 @@ ALTER TABLE verdicts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_judgments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_filter_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE xp_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
 
@@ -170,6 +190,9 @@ CREATE POLICY "votes_insert" ON votes FOR INSERT WITH CHECK (auth.uid() = user_i
 -- content_filter_logs: 본인만 읽기
 CREATE POLICY "filter_logs_read" ON content_filter_logs
   FOR SELECT USING (auth.uid() = user_id);
+
+-- xp_logs: 본인만 읽기
+CREATE POLICY "xp_logs_read" ON xp_logs FOR SELECT USING (auth.uid() = user_id);
 
 -- comments: 누구나 읽기, 본인만 작성
 CREATE POLICY "comments_read" ON comments FOR SELECT USING (true);

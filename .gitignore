@@ -10,7 +10,7 @@ server/dist/
 # Environment
 .env
 .env.local
-.env.production
+.env.production.local
 .env.*.local
 
 # IDE

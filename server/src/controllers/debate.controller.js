@@ -3,22 +3,33 @@ import { nanoid } from '../utils/nanoid.js';
 
 export async function createDebate(req, res, next) {
   try {
-    const { topic, category, purpose, lens } = req.body;
+    const { topic, description, category, purpose, lens, mode } = req.body;
+
+    if (!topic?.trim()) {
+      return res.status(400).json({ error: '주제를 입력해주세요.' });
+    }
+
     const inviteCode = nanoid(8);
+    const debateMode = ['duo', 'solo'].includes(mode) ? mode : 'duo';
 
     const { data, error } = await supabaseAdmin
       .from('debates')
       .insert({
         creator_id: req.user.id,
         topic,
+        description: description || null,
         category,
         purpose,
         lens,
+        mode: debateMode,
         invite_code: inviteCode,
-        status: 'waiting',
+        status: debateMode === 'solo' ? 'arguing' : 'waiting',
       })
       .select()
       .single();
+      // console.log("createDebate body:", req.body);
+      // console.log("supabase result:", data);
+      // console.log("supabase error:", error);
 
     if (error) throw error;
     res.status(201).json(data);

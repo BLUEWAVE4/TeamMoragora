@@ -1,14 +1,16 @@
 import { gemini } from '../../config/ai.js';
-import { buildJudgmentPrompt } from './prompts.js';
+import { buildSystemPrompt, buildUserPrompt } from './prompts.js';
 
 const TIMEOUT_MS = 30000;
 
 export async function judgeWithGemini(debateContext) {
-  const prompt = buildJudgmentPrompt(debateContext);
+  const systemPrompt = buildSystemPrompt('gemini-2.5-flash');
+  const userPrompt = buildUserPrompt(debateContext);
 
   const result = await Promise.race([
     gemini.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.3,

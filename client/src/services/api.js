@@ -2,7 +2,9 @@ import axios from 'axios';
 import { supabase } from './supabase';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : 'https://teammoragora.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -37,5 +39,14 @@ export const submitArgument = (debateId, data) => api.post(`/arguments/${debateI
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
 export const getVerdictFeed = () => api.get('/judgments/feed');
+
+
+// ===== 투표 (Votes) =====
+export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
+export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
+
+// ===== 프로필 (Profiles) =====
+export const getMyProfile = () => api.get('/auth/me');
+export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
 
 export default api;
