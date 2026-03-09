@@ -4,6 +4,11 @@ import { nanoid } from '../utils/nanoid.js';
 export async function createDebate(req, res, next) {
   try {
     const { topic, description, category, purpose, lens, mode } = req.body;
+
+    if (!topic?.trim()) {
+      return res.status(400).json({ error: '주제를 입력해주세요.' });
+    }
+
     const inviteCode = nanoid(8);
     const debateMode = ['duo', 'solo'].includes(mode) ? mode : 'duo';
 
