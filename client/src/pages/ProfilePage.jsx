@@ -72,7 +72,7 @@ export default function ProfilePage() {
         const response = await api.get('/auth/me');
         const profile = response.data || response;
         setProfileData(profile);
-        setNewNickname(profile.nickname || user.user_metadata?.nickname || '');
+        setNewNickname(profile.nickname || '');
         const vResponse = await api.get('/profiles/me/verdicts');
         setMyJudgments(Array.isArray(vResponse.data) ? vResponse.data : []);
       } catch (error) {
