@@ -22,6 +22,9 @@ export async function createDebate(req, res, next) {
       })
       .select()
       .single();
+      // console.log("createDebate body:", req.body);
+      // console.log("supabase result:", data);
+      // console.log("supabase error:", error);
 
     if (error) throw error;
     res.status(201).json(data);
