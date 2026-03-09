@@ -3,11 +3,15 @@ import { buildContentFilterPrompt, buildGatekeeperPrompt } from './ai/prompts.js
 
 // ===== Stage 1: 비속어 사전 필터 =====
 const PROFANITY_DICT = [
-  '시발', '씨발', 'ㅅㅂ', '병신', 'ㅂㅅ', '지랄', 'ㅈㄹ',
-  '개새끼', '닥쳐', '꺼져', '미친놈', '미친년',
+  '시발', '씨발', '쉬발', '쉬밟', '씨빨', '씨팔', '시ㅂ', 'ㅅㅂ',
+  '병신', 'ㅂㅅ', '병ㅅ', 'ㅂ신',
+  '지랄', 'ㅈㄹ', '지ㄹ', 'ㅈ랄',
+  '개새끼', '개세끼', '개섀끼',
+  '닥쳐', '꺼져', '미친놈', '미친년', '씹', '좆', '엿먹',
 ];
 
-const PERSONAL_INFO_REGEX = /(\d{3}[-\s]?\d{4}[-\s]?\d{4})|(\d{6}[-\s]?\d{7})|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+// /g 플래그 제거 → test() 호출 시 lastIndex 버그 방지
+const PERSONAL_INFO_REGEX = /(\d{3}[-\s]?\d{4}[-\s]?\d{4})|(\d{6}[-\s]?\d{7})|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
 
 export function filterByDictionary(content) {
   const lower = content.toLowerCase();
