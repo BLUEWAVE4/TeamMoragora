@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getVerdictFeed } from '../services/api';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
@@ -13,9 +13,8 @@ export default function HomePage() {
 
   const loadRealData = async () => {
     try {
-      // 💡 준민님 코드 적용: 로컬 서버 주소 사용
-      const response = await axios.get('http://localhost:5000/api/judgments/feed');
-      setFeeds(response.data || []);
+      const data = await getVerdictFeed();
+      setFeeds(Array.isArray(data) ? data : data?.data || []);
     } catch (error) {
       console.error("데이터 로드 실패:", error);
     } finally {
