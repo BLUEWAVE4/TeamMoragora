@@ -39,9 +39,12 @@ CREATE TABLE debates (
   creator_id UUID NOT NULL REFERENCES profiles(id),
   opponent_id UUID REFERENCES profiles(id),
   topic TEXT NOT NULL,
+  description TEXT,
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
+  mode TEXT NOT NULL DEFAULT 'duo'
+    CHECK (mode IN ('duo', 'solo')),
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
     CHECK (status IN ('waiting', 'arguing', 'judging', 'voting', 'completed')),

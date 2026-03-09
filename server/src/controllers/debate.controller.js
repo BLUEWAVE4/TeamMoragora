@@ -3,19 +3,22 @@ import { nanoid } from '../utils/nanoid.js';
 
 export async function createDebate(req, res, next) {
   try {
-    const { topic, category, purpose, lens } = req.body;
+    const { topic, description, category, purpose, lens, mode } = req.body;
     const inviteCode = nanoid(8);
+    const debateMode = ['duo', 'solo'].includes(mode) ? mode : 'duo';
 
     const { data, error } = await supabaseAdmin
       .from('debates')
       .insert({
         creator_id: req.user.id,
         topic,
+        description: description || null,
         category,
         purpose,
         lens,
+        mode: debateMode,
         invite_code: inviteCode,
-        status: 'waiting',
+        status: debateMode === 'solo' ? 'arguing' : 'waiting',
       })
       .select()
       .single();
