@@ -56,6 +56,7 @@ export default function CreateDebatePage() {
     // Step2 → Step1
     if (step === 2) {
       setPurpose("");
+      setLens("");
     }
 
     setStep(prev => prev - 1);

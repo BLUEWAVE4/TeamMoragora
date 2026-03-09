@@ -110,11 +110,12 @@ function ModeSelector({ onStart }) {
         className="
         relative
         w-full
-        max-w-[440px]
+        max-w-[400px]
         h-[220px]
         flex
         justify-center
         items-center
+        touch-none
         "
         onMouseDown={(e) => handleStart(e.clientX)}
         onMouseUp={(e) => handleEnd(e.clientX)}

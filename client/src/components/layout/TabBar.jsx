@@ -1,16 +1,16 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 
 const HomeIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
 );
 const TrophyIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
 );
 const HallIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22h18"/><path d="M5 22V11"/><path d="M19 22V11"/><path d="M9 22V11"/><path d="M15 22V11"/><path d="m12 2-9 4v5h18V6l-9-4Z"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22h18"/><path d="M5 22V11"/><path d="M19 22V11"/><path d="M9 22V11"/><path d="M15 22V11"/><path d="m12 2-9 4v5h18V6l-9-4Z"/></svg>
 );
 const UserIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 );
 
 export default function TabBar() {
@@ -18,9 +18,8 @@ export default function TabBar() {
   const location = useLocation();
 
   return (
-    /* 🍏 수정 포인트: pb-10을 삭제하여 바닥에 밀착시키고, pointer-events 설정을 추가했습니다. */
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex justify-center z-50 pointer-events-none">
-      <nav className="w-full bg-white/75 backdrop-blur-[25px] rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-x border-white/50 h-[80px] flex items-center justify-around px-2 relative pointer-events-auto">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex justify-center z-50 px-6 pb-8">
+      <nav className="w-full bg-white/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/40 h-20 flex items-center justify-around px-4 relative">
         
         {[
           { to: '/', icon: <HomeIcon />, label: '홈' },
@@ -31,12 +30,12 @@ export default function TabBar() {
         ].map((item, idx) => {
           if (item.isButton) {
             return (
-              <div key="center-btn" className="flex items-center justify-center flex-1 h-full">
+              <div key="center-btn" className="relative flex flex-col items-center">
                 <button 
                   onClick={() => navigate('/debate/create')}
-                  className="group flex items-center justify-center w-[56px] h-[56px] bg-[#1c1c1e] text-white rounded-[1.2rem] shadow-lg active:scale-90 transition-all duration-400 border border-white/10"
+                  className="w-14 h-14 bg-[#2D3350] text-white rounded-[1.2rem] flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 border border-white/20"
                 >
-                  <span className="text-3xl font-light translate-y-[-1px]">+</span>
+                  <span className="text-3xl font-light">+</span>
                 </button>
               </div>
             );
@@ -48,27 +47,30 @@ export default function TabBar() {
             <NavLink 
               key={item.to}
               to={item.to} 
-              className="flex items-center justify-center flex-1 h-full relative no-underline outline-none"
+              className="flex flex-col items-center flex-1 relative group"
             >
+              {/* 🍏 Mac 스타일: 활성화 시 위로 이동(-translate-y-2) 및 확대(scale-110) */}
               <div className={`
-                flex flex-col items-center justify-center w-[58px] h-[58px] transition-all duration-500 rounded-[1.2rem]
+                w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 ease-out
                 ${isActive 
-                  ? 'bg-white shadow-sm border-[0.5px] border-black/5 scale-110 text-black pt-1' 
-                  : 'bg-transparent text-gray-400'}
+                  ? 'bg-white shadow-xl border border-gray-100 -translate-y-3 scale-110 text-black' 
+                  : 'bg-transparent text-gray-400 hover:text-gray-600'}
               `}>
-                <div className="flex items-center justify-center">
-                  {item.icon}
-                </div>
+                {item.icon}
                 
-                <div className={`
-                  overflow-hidden transition-all duration-500
-                  ${isActive ? 'max-h-5 opacity-100 mt-0.5' : 'max-h-0 opacity-0 mt-0'}
-                `}>
-                  <span className="text-[10px] font-bold tracking-tight">
-                    {item.label}
-                  </span>
-                </div>
+                {/* 하단 점 표시 */}
+                {isActive && (
+                  <div className="absolute bottom-1 w-1 h-1 bg-black rounded-full" />
+                )}
               </div>
+              
+              {/* 🍏 라벨 애니메이션: 활성화 시에만 슥- 나타남 */}
+              <span className={`
+                absolute -bottom-1 text-[10px] font-black transition-all duration-500 ease-out
+                ${isActive ? 'opacity-100 translate-y-0 text-black' : 'opacity-0 translate-y-2 text-gray-400'}
+              `}>
+                {item.label}
+              </span>
             </NavLink>
           );
         })}
