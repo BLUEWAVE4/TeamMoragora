@@ -70,10 +70,11 @@ export default function ProfilePage() {
       try {
         setLoading(true);
         const response = await api.get('/auth/me');
-        setProfileData(response.data || response);
+        const profile = response.data || response;
+        setProfileData(profile);
+        setNewNickname(profile.nickname || user.user_metadata?.nickname || '');
         const vResponse = await api.get('/profiles/me/verdicts');
         setMyJudgments(Array.isArray(vResponse.data) ? vResponse.data : []);
-        setNewNickname(user.user_metadata?.nickname || '');
       } catch (error) {
         console.error("Fetch Data Error:", error);
       } finally {
