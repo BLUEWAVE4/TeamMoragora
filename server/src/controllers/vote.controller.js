@@ -6,6 +6,11 @@ export async function castVote(req, res, next) {
     const { debateId } = req.params;
     const { voted_side } = req.body;
 
+    // 0. voted_side 유효성 검증
+    if (!['A', 'B'].includes(voted_side)) {
+      return res.status(400).json({ error: 'voted_side는 A 또는 B만 가능합니다.' });
+    }
+
     // 1. 투표 가능 상태인지 확인
     const { data: debate } = await supabaseAdmin
       .from('debates')
