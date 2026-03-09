@@ -2,6 +2,7 @@
 // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createDebate } from "../../services/api";
 
 import ModeSelector from "../../components/ui/ModeSelector";
@@ -28,6 +29,7 @@ export default function CreateDebatePage() {
   const [lens, setLens] = useState("");
 
   const nextStep = () => setStep(prev => prev + 1);
+  const navigate = useNavigate();
 
   // 🔹 모든 입력값 초기화
   const resetForm = () => {
@@ -67,7 +69,7 @@ export default function CreateDebatePage() {
     setGameStarted(true);
   };
 
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
 
     try {
 
@@ -80,14 +82,16 @@ export default function CreateDebatePage() {
         mode
       };
 
-      await createDebate(data);
+      const result = await createDebate(data); // ⭐ 여기 수정
+
+      const debateId = result?.debate_id || result?.id;
 
       alert("논쟁 생성 완료");
 
-      // 🔹 Step1,2,3 입력 데이터 초기화
+      navigate(`/debate/${debateId}/argument`);
+
       resetForm();
 
-      // 🔹 위자드 초기 상태로 복귀
       setStep(1);
       setGameStarted(false);
       setMode(null);
