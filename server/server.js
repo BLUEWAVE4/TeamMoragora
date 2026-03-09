@@ -22,6 +22,7 @@ app.use(cors({
     'http://localhost:5173',
   ].filter(Boolean),
   credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 app.use(express.json());
 
