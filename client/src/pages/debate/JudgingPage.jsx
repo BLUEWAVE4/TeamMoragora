@@ -2,13 +2,23 @@
  * 파일명: JudgingPage.jsx
  * 담당자: 프론트 B 채유진
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictDetailModal from '../VerdictDetailModal';
 
-const ModelStatus = ({ name, color, status }) => {
+// AI 모델 매핑 (서버 ai_model 값 → UI key)
+const MODEL_MAP = {
+  'gpt-4o': 'gpt',
+  'gemini-2.0-flash': 'gemini',
+  'gemini': 'gemini',
+  'claude-3.5-sonnet': 'claude',
+  'claude': 'claude',
+  'grok': 'gpt', // fallback은 gpt 슬롯에 표시
+};
+
+const ModelStatus = ({ name, color, status, score }) => {
   const isDone = status === 'done';
   const isActive = status === 'active';
 
@@ -26,7 +36,7 @@ const ModelStatus = ({ name, color, status }) => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
             </svg>
-            완료
+            {score ? `${score.a} : ${score.b}` : '완료'}
           </span>
         ) : isActive ? (
           <span className="text-blue-400 font-bold">분석 중...</span>
@@ -41,24 +51,25 @@ const ModelStatus = ({ name, color, status }) => {
 export default function JudgingPage() {
   const { debateId } = useParams();
   const navigate = useNavigate();
-  
-  const [judgeStatus, setJudgeStatus] = useState({ gpt: 'active', gemini: 'waiting', claude: 'waiting' });
-  const [voteCount, setVoteCount] = useState(0); 
+
+  const [judgeStatus, setJudgeStatus] = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
+  const [judgeScores, setJudgeScores] = useState({ gpt: null, gemini: null, claude: null });
+  const [voteCount, setVoteCount] = useState(0);
   const [displayCount, setDisplayCount] = useState(0);
   const [isAllDone, setIsAllDone] = useState(false);
   const [debateTitle, setDebateTitle] = useState("데이터를 불러오는 중...");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [verdictData, setVerdictData] = useState(null);
+  const doneModelsRef = useRef(new Set());
 
   useEffect(() => {
     const initFetch = async () => {
       try {
         const data = await getDebate(debateId);
-        // CreateDebatePage에서 topic으로 저장했으므로 topic 우선 참조
         setDebateTitle(data.topic || data.title || "주제 없음");
-      } catch (e) { 
-        console.error(e); 
+      } catch (e) {
+        console.error(e);
         setDebateTitle("논쟁 주제를 찾을 수 없습니다.");
       }
     };
@@ -68,21 +79,44 @@ export default function JudgingPage() {
       try {
         // 투표 현황 업데이트
         const voteResponse = await getVoteTally(debateId);
-        const totalVotes = voteResponse.data?.total_votes || voteResponse.total_votes || 0;
+        const totalVotes = voteResponse.data?.total_votes || voteResponse.total_votes || voteResponse.total || 0;
         setVoteCount(totalVotes);
 
         // 판결 결과 체크
         const verdictResponse = await getVerdict(debateId);
         if (verdictResponse && verdictResponse.winner_side) {
-          setVerdictData(verdictResponse);
-          setJudgeStatus({ gpt: 'done', gemini: 'done', claude: 'done' });
-          setIsAllDone(true);
-          clearInterval(pollInterval);
+          // ai_judgments에서 완료된 모델 확인
+          const aiJudgments = verdictResponse.ai_judgments || [];
+          const newStatus = { gpt: 'active', gemini: 'active', claude: 'active' };
+          const newScores = { gpt: null, gemini: null, claude: null };
+
+          aiJudgments.forEach((j) => {
+            const key = MODEL_MAP[j.ai_model] || MODEL_MAP[j.ai_model?.split('-')[0]];
+            if (key) {
+              newStatus[key] = 'done';
+              newScores[key] = { a: j.score_a, b: j.score_b };
+            }
+          });
+
+          // 아직 완료 안 된 모델은 분석 중 유지
+          setJudgeStatus(newStatus);
+          setJudgeScores(newScores);
+
+          // 모든 모델 완료 확인 (최소 1개 이상 + winner_side 존재)
+          const doneCount = Object.values(newStatus).filter(s => s === 'done').length;
+          if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
+            // 남은 active 모델도 done으로 (fallback 등으로 3개 미만일 수 있음)
+            Object.keys(newStatus).forEach(k => { newStatus[k] = 'done'; });
+            setJudgeStatus({ ...newStatus });
+            setVerdictData(verdictResponse);
+            setIsAllDone(true);
+            clearInterval(pollInterval);
+          }
         }
       } catch (error) {
-        console.log("판결 분석 진행 중...");
+        // 404 = 아직 판결 미완료, 정상
       }
-    }, 5000); 
+    }, 3000);
 
     return () => clearInterval(pollInterval);
   }, [debateId]);
@@ -91,7 +125,7 @@ export default function JudgingPage() {
     if (displayCount < voteCount) {
       const timer = setTimeout(() => {
         setDisplayCount(prev => prev + 1);
-      }, 30); 
+      }, 30);
       return () => clearTimeout(timer);
     }
   }, [displayCount, voteCount]);
@@ -103,16 +137,16 @@ export default function JudgingPage() {
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             <div className="text-5xl mb-2 animate-bounce">⚖️</div>
             <h2 className="text-white text-2xl font-black tracking-tight">AI가 판결 중입니다</h2>
-            <p className="text-white/60 text-[15px] italic font-medium tracking-tight">실시간 데이터를 확인하고 있습니다...</p>
+            <p className="text-white/60 text-[15px] italic font-medium tracking-tight">3개 AI 모델이 동시에 분석하고 있습니다...</p>
             <p className="text-[13px] text-white/60 font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
             </p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md rounded-[24px] p-5 border border-white/5 mt-8 shrink-0">
-            <ModelStatus name="Judge G (GPT-4o)" color="bg-[#10A37F]" status={judgeStatus.gpt} />
-            <ModelStatus name="Judge M (Gemini 2.0)" color="bg-[#4285F4]" status={judgeStatus.gemini} />
-            <ModelStatus name="Judge C (Claude 3.5)" color="bg-[#D97706]" status={judgeStatus.claude} />
+            <ModelStatus name="Judge G (GPT-4o)" color="bg-[#10A37F]" status={judgeStatus.gpt} score={judgeScores.gpt} />
+            <ModelStatus name="Judge M (Gemini 2.0)" color="bg-[#4285F4]" status={judgeStatus.gemini} score={judgeScores.gemini} />
+            <ModelStatus name="Judge C (Claude 3.5)" color="bg-[#D97706]" status={judgeStatus.claude} score={judgeScores.claude} />
           </div>
 
           <div className="mt-10 space-y-6 shrink-0">
@@ -124,7 +158,7 @@ export default function JudgingPage() {
             </div>
 
             <div className="space-y-4">
-              <button 
+              <button
                 onClick={() => { trackEvent('verdict_view', { debateId }); setIsModalOpen(true); }}
                 disabled={!isAllDone}
                 className={`w-full h-[60px] rounded-[18px] font-black text-lg transition-all duration-500 transform active:scale-95 shadow-xl
@@ -137,8 +171,8 @@ export default function JudgingPage() {
         </div>
 
         {isModalOpen && (
-          <VerdictDetailModal 
-            selectedVerdict={verdictData} 
+          <VerdictDetailModal
+            selectedVerdict={verdictData}
             onClose={() => setIsModalOpen(false)}
           />
         )}
