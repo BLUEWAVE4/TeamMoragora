@@ -77,12 +77,21 @@ export default function JudgingPage() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // 투표 현황 업데이트
-        const voteResponse = await getVoteTally(debateId);
-        const totalVotes = voteResponse.data?.total_votes || voteResponse.total_votes || voteResponse.total || 0;
-        setVoteCount(totalVotes);
+        // 투표 현황 업데이트 (404 무시)
+        try {
+          const voteResponse = await getVoteTally(debateId);
+          const totalVotes = voteResponse.data?.total_votes || voteResponse.total_votes || voteResponse.total || 0;
+          setVoteCount(totalVotes);
+        } catch (_) { /* 투표 데이터 없을 수 있음 */ }
 
-        // 판결 결과 체크
+        // debate status 확인 → judging이면 아직 AI 처리 중이므로 verdict 호출 불필요
+        const debateData = await getDebate(debateId);
+        if (debateData.status === 'judging' || debateData.status === 'arguing') {
+          // AI가 아직 처리 중 — verdict 폴링 스킵 (불필요한 404 방지)
+          return;
+        }
+
+        // voting/closed 상태 = 판결 완료 → verdict 조회
         const verdictResponse = await getVerdict(debateId);
         if (verdictResponse && verdictResponse.winner_side) {
           // ai_judgments에서 완료된 모델 확인
@@ -98,14 +107,12 @@ export default function JudgingPage() {
             }
           });
 
-          // 아직 완료 안 된 모델은 분석 중 유지
           setJudgeStatus(newStatus);
           setJudgeScores(newScores);
 
           // 모든 모델 완료 확인 (최소 1개 이상 + winner_side 존재)
           const doneCount = Object.values(newStatus).filter(s => s === 'done').length;
           if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
-            // 남은 active 모델도 done으로 (fallback 등으로 3개 미만일 수 있음)
             Object.keys(newStatus).forEach(k => { newStatus[k] = 'done'; });
             setJudgeStatus({ ...newStatus });
             setVerdictData(verdictResponse);
@@ -114,7 +121,7 @@ export default function JudgingPage() {
           }
         }
       } catch (error) {
-        // 404 = 아직 판결 미완료, 정상
+        // 네트워크 에러 등 — 무시하고 다음 폴링에서 재시도
       }
     }, 3000);
 
