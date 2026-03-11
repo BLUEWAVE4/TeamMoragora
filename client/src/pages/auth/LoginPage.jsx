@@ -122,7 +122,7 @@ export default function LoginPage() {
           </button>
           
           <p className="text-gray-400 text-[11px] text-center mt-4 px-4 leading-tight">
-            로그인 시 서비스 이용약관 및 <br/><Link to="/privacy" className="underline text-gray-500">개인정보 처리방침</Link>에 동의하게 됩니다.
+            로그인 시 <Link to="/terms" className="underline text-gray-500">서비스 이용약관</Link> 및 <br/><Link to="/privacy" className="underline text-gray-500">개인정보 처리방침</Link>에 동의하게 됩니다.
           </p>
         </div>
       </div>

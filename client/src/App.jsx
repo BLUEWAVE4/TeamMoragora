@@ -17,6 +17,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import NicknamePage from './pages/auth/NicknamePage';
 import JudgingPage from './pages/debate/JudgingPage';
 import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         
         {/* 🔥 테스트를 위해 상세 페이지를 Public으로 이동함 */}
         <Route path="/debate/:debateId" element={<DebateDetailPage />} />
