@@ -15,7 +15,7 @@ import Step1BasicInfo from "../../components/debate/Step1BasicInfo";
 import Step2DetailSetting from "../../components/debate/Step2DetailSetting";
 import Step3Confirm from "../../components/debate/Step3Confirm";
 
-export default function CreateDebatePage() {
+export default function DebateCreatePage() {
 
   const [mode, setMode] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);

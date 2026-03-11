@@ -1,7 +1,6 @@
 /**
  * 파일명: JudgingPage.jsx
  * 담당자: 프론트 B 채유진
- * 디자인: 유진 님의 오리지널 스타일 (그라데이션 & 화이트 포인트) 유지
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -101,7 +100,6 @@ export default function JudgingPage() {
     <div className="fixed inset-0 flex justify-center bg-[#FAFAF5] z-50">
       <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#435479] to-[#ffffff] shadow-2xl overflow-hidden">
         <div className="flex-1 flex flex-col justify-between px-6 pt-24 pb-32 overflow-y-auto">
-          
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             <div className="text-5xl mb-2 animate-bounce">⚖️</div>
             <h2 className="text-white text-2xl font-black tracking-tight">AI가 판결 중입니다</h2>
