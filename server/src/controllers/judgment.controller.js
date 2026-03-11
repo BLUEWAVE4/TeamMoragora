@@ -104,9 +104,12 @@ export async function getVerdict(req, res, next) {
       .from('verdicts')
       .select('*, ai_judgments(*)')
       .eq('debate_id', req.params.debateId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!verdict) {
+      return res.status(404).json({ error: '아직 판결이 완료되지 않았습니다.' });
+    }
     res.json(verdict);
   } catch (err) {
     next(err);
