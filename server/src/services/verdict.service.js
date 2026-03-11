@@ -114,6 +114,7 @@ export async function finalizeVerdict(debateId) {
       final_score_b: finalB,
       winner_side: finalWinner,
       is_citizen_applied: citizenApplied,
+      citizen_vote_count: votes?.length || 0,
     })
     .eq('debate_id', debateId);
 

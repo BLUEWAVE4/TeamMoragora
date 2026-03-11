@@ -10,8 +10,8 @@ export async function submitFeedback(req, res, next) {
     // 필수 항목 검증
     const scores = { satisfaction, ai_accuracy, ui_ease, fairness, recommend };
     for (const [key, val] of Object.entries(scores)) {
-      if (!val || val < 1 || val > 5) {
-        return res.status(400).json({ error: `${key}는 1~5 사이 값이어야 합니다.` });
+      if (!val || val < 0.5 || val > 5 || (val * 2) % 1 !== 0) {
+        return res.status(400).json({ error: `${key}는 0.5~5 사이 0.5 단위 값이어야 합니다.` });
       }
     }
 

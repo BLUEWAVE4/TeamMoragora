@@ -18,26 +18,65 @@ const BEST_FEATURES = [
   '판결문 공유 기능',
 ];
 
-const STAR_LABELS = ['매우 불만', '불만', '보통', '만족', '매우 만족'];
+const STAR_LABELS = ['매우 불만', '불만족', '보통', '만족', '매우 만족'];
 
 function StarRating({ value, onChange }) {
   const [hover, setHover] = useState(0);
+  const active = hover || value;
+
+  const handleClick = (star, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const isHalf = x < rect.width / 2;
+    onChange(isHalf ? star - 0.5 : star);
+  };
+
+  const handleTouch = (star, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const isHalf = x < rect.width / 2;
+    onChange(isHalf ? star - 0.5 : star);
+  };
+
+  const getLabel = (val) => {
+    if (val <= 0) return '';
+    if (val <= 1) return STAR_LABELS[0];
+    if (val <= 2) return STAR_LABELS[1];
+    if (val <= 3) return STAR_LABELS[2];
+    if (val <= 4) return STAR_LABELS[3];
+    return STAR_LABELS[4];
+  };
+
   return (
-    <div className="flex gap-1 items-center">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange(star)}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(0)}
-          className="text-2xl transition-transform hover:scale-110"
-        >
-          {star <= (hover || value) ? '★' : '☆'}
-        </button>
-      ))}
+    <div className="flex items-center gap-2">
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const filled = active >= star;
+          const halfFilled = !filled && active >= star - 0.5;
+          return (
+            <button
+              key={star}
+              type="button"
+              onClick={(e) => handleClick(star, e)}
+              onTouchStart={(e) => handleTouch(star, e)}
+              onMouseEnter={() => setHover(star)}
+              onMouseLeave={() => setHover(0)}
+              className="w-10 h-10 flex items-center justify-center relative select-none"
+            >
+              <span className="text-3xl text-gray-200 absolute">&#9733;</span>
+              {filled && <span className="text-3xl text-[#FFBD43] absolute">&#9733;</span>}
+              {halfFilled && (
+                <span className="text-3xl text-[#FFBD43] absolute overflow-hidden w-[50%] text-left" style={{ clipPath: 'inset(0 50% 0 0)' }}>&#9733;</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
       {value > 0 && (
-        <span className="text-xs text-gray-400 ml-2">{STAR_LABELS[value - 1]}</span>
+        <div className="flex items-center gap-1.5 ml-1">
+          <span className="text-sm font-black text-[#FFBD43]">{value}</span>
+          <span className="text-xs text-gray-400 font-medium">{getLabel(value)}</span>
+        </div>
       )}
     </div>
   );
@@ -88,9 +127,9 @@ export default function FeedbackModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={handleClose}>
+    <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center bg-black/50" onClick={handleClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         {submitted ? (
@@ -106,21 +145,29 @@ export default function FeedbackModal({ isOpen, onClose }) {
             </button>
           </div>
         ) : (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-black text-[#2D3350]">서비스 평가</h3>
-              <button onClick={handleClose} className="text-gray-400 text-xl">&times;</button>
+          <div className="p-6 pb-8">
+            {/* 헤더 + 핸들바 */}
+            <div className="flex justify-center mb-3 sm:hidden">
+              <div className="w-10 h-1 bg-gray-200 rounded-full" />
             </div>
-
-            <p className="text-xs text-gray-400 mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-black text-[#2D3350]">서비스 평가</h3>
+              <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 text-lg">&times;</button>
+            </div>
+            <p className="text-xs text-gray-400 mb-5">
               모라고라 서비스 품질 향상을 위해 솔직한 평가를 부탁드립니다.
             </p>
 
             {/* 별점 항목 */}
-            <div className="flex flex-col gap-5 mb-6">
-              {RATING_ITEMS.map((item) => (
-                <div key={item.key}>
-                  <p className="text-sm font-bold text-[#2D3350] mb-1">{item.label}</p>
+            <div className="flex flex-col gap-1 mb-6">
+              {RATING_ITEMS.map((item, idx) => (
+                <div key={item.key} className={`p-3 rounded-2xl ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-black text-[#2D3350]">{item.label}</span>
+                    {ratings[item.key] > 0 && (
+                      <span className="text-[10px] bg-[#FFBD43]/15 text-[#FFBD43] font-bold px-1.5 py-0.5 rounded-full">{ratings[item.key]}</span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-gray-400 mb-2">{item.desc}</p>
                   <StarRating
                     value={ratings[item.key]}
@@ -132,17 +179,17 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 가장 좋았던 기능 */}
             <div className="mb-5">
-              <p className="text-sm font-bold text-[#2D3350] mb-2">가장 좋았던 기능 (선택)</p>
+              <p className="text-sm font-black text-[#2D3350] mb-2">가장 좋았던 기능 <span className="text-gray-300 font-medium">(선택)</span></p>
               <div className="flex flex-wrap gap-2">
                 {BEST_FEATURES.map((feat) => (
                   <button
                     key={feat}
                     type="button"
                     onClick={() => setBestFeature(bestFeature === feat ? '' : feat)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    className={`text-xs px-3 py-2 rounded-xl border transition-colors ${
                       bestFeature === feat
                         ? 'bg-[#2D3350] text-white border-[#2D3350]'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 active:border-gray-400'
                     }`}
                   >
                     {feat}
@@ -153,7 +200,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 개선점 */}
             <div className="mb-5">
-              <p className="text-sm font-bold text-[#2D3350] mb-2">개선이 필요한 부분 (선택)</p>
+              <p className="text-sm font-black text-[#2D3350] mb-2">개선이 필요한 부분 <span className="text-gray-300 font-medium">(선택)</span></p>
               <textarea
                 value={improvement}
                 onChange={(e) => setImprovement(e.target.value)}
@@ -166,7 +213,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 추가 의견 */}
             <div className="mb-6">
-              <p className="text-sm font-bold text-[#2D3350] mb-2">추가 의견 (선택)</p>
+              <p className="text-sm font-black text-[#2D3350] mb-2">추가 의견 <span className="text-gray-300 font-medium">(선택)</span></p>
               <textarea
                 value={additional}
                 onChange={(e) => setAdditional(e.target.value)}
@@ -181,7 +228,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
             <button
               onClick={handleSubmit}
               disabled={!allRated || submitting}
-              className={`w-full py-3.5 rounded-2xl font-black text-sm transition-colors ${
+              className={`w-full py-4 rounded-2xl font-black text-sm transition-colors ${
                 allRated
                   ? 'bg-[#2D3350] text-white active:bg-[#1a1f35]'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
