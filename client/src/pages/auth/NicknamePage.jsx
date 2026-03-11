@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
+import { trackEvent } from '../../services/analytics';
 
 export default function NicknamePage() {
   const { user, updateProfile } = useAuth();
@@ -38,7 +39,8 @@ export default function NicknamePage() {
     try {
       const { error } = await updateProfile({ nickname, gender, age });
       if (error) throw error;
-      
+      trackEvent('signup_complete', { gender, age: parseInt(age) });
+
       // 성공 피드백 후 이동
       navigate('/moragora', { replace: true });
     } catch (error) {

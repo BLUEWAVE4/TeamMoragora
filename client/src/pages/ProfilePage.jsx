@@ -162,8 +162,8 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      <div className="px-2 mt-1 mb-2">
-        <Link to="/privacy" className="text-[11px] text-gray-300 hover:text-gray-500 underline">개인정보처리방침</Link>
+      <div className="px-2 mt-1 mb-2 text-center">
+        <Link to="/privacy" className="text-xs text-gray-400 hover:text-gray-600 underline">개인정보처리방침</Link>
       </div>
 
       <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
