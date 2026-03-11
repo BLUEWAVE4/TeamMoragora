@@ -56,7 +56,7 @@ export default function NicknamePage() {
         
         {/* 상단 헤더 영역 */}
         <div className="text-center mb-10">
-          <div className="text-6xl mb-4 animate-in zoom-in duration-500">👤</div>
+          <div className="text-6xl mb-4 animate-in zoom-in duration-500"></div>
           <h2 className="text-2xl font-black text-[#1a2744] tracking-tight">프로필 설정</h2>
           <p className="text-gray-400 mt-2 text-[13px] font-medium leading-relaxed">
             AI의 정확한 판결 분석을 위해<br/>성별과 나이 정보가 필요합니다.

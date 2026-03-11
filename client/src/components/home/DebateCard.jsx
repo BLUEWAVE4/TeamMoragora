@@ -46,7 +46,8 @@ export default function DebateCard({ feed, formatTime }) {
     : (debate.creator?.nickname || "논쟁마스터");
 
   const categoryMap = {
-    'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'LOVE': '연애', 'ECONOMY': '경제'
+    'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'LOVE': '연애', 'ECONOMY': '경제',
+    'TECHNOLOGY': '기술', 'POLITICS': '정치', 'PHILOSOPHY': '철학', 'CULTURE': '문화',
   };
   const categoryName = categoryMap[debate.category?.toUpperCase()] || debate.category || '일상';
 
