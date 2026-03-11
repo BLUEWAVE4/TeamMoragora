@@ -11,24 +11,28 @@ import VerdictDetailModal from '../VerdictDetailModal';
 // AI 모델 매핑 (서버 ai_model 값 → UI key)
 const MODEL_MAP = {
   'gpt-4o': 'gpt',
+  'gemini-2.5-flash': 'gemini',
   'gemini-2.0-flash': 'gemini',
   'gemini': 'gemini',
+  'claude-sonnet': 'claude',
   'claude-3.5-sonnet': 'claude',
   'claude': 'claude',
-  'grok': 'gpt', // fallback은 gpt 슬롯에 표시
+  'grok-3-mini': 'gpt',
+  'grok': 'gpt',
 };
 
 const ModelStatus = ({ name, color, status, score }) => {
   const isDone = status === 'done';
+  const isFailed = status === 'failed';
   const isActive = status === 'active';
 
   return (
     <div className={`flex items-center justify-between p-4 mb-3 rounded-2xl transition-all duration-500 ${
-      isDone ? 'bg-white/10' : isActive ? 'bg-white/5 animate-pulse' : 'bg-white/5 opacity-50'
+      isDone ? 'bg-white/10' : isFailed ? 'bg-red-900/20' : isActive ? 'bg-white/5 animate-pulse' : 'bg-white/5 opacity-50'
     }`}>
       <div className="flex items-center gap-3">
-        <div className={`w-3 h-3 rounded-full ${color} ${isActive ? 'shadow-[0_0_12px_rgba(255,255,255,0.5)]' : ''}`} />
-        <span className={`font-bold ${isDone ? 'text-white' : 'text-white/70'}`}>{name}</span>
+        <div className={`w-3 h-3 rounded-full ${isFailed ? 'bg-red-400' : color} ${isActive ? 'shadow-[0_0_12px_rgba(255,255,255,0.5)]' : ''}`} />
+        <span className={`font-bold ${isDone ? 'text-white' : isFailed ? 'text-red-300' : 'text-white/70'}`}>{name}</span>
       </div>
       <div className="text-sm font-bold">
         {isDone ? (
@@ -38,6 +42,8 @@ const ModelStatus = ({ name, color, status, score }) => {
             </svg>
             {score ? `${score.a} : ${score.b}` : '완료'}
           </span>
+        ) : isFailed ? (
+          <span className="text-red-400 font-bold">응답 실패</span>
         ) : isActive ? (
           <span className="text-blue-400 font-bold">분석 중...</span>
         ) : (
@@ -107,14 +113,19 @@ export default function JudgingPage() {
             }
           });
 
-          setJudgeStatus(newStatus);
-          setJudgeScores(newScores);
-
-          // 모든 모델 완료 확인 (최소 1개 이상 + winner_side 존재)
+          // 판결 완료 상태: 매칭 안 된 모델은 '실패'로 표시
           const doneCount = Object.values(newStatus).filter(s => s === 'done').length;
           if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
-            Object.keys(newStatus).forEach(k => { newStatus[k] = 'done'; });
-            setJudgeStatus({ ...newStatus });
+            // 결과가 없는 모델은 failed로 표시 (GPT 실패 시 Grok이 대체하지 못한 경우 등)
+            Object.keys(newStatus).forEach(k => {
+              if (newStatus[k] !== 'done') newStatus[k] = 'failed';
+            });
+          }
+
+          setJudgeStatus({ ...newStatus });
+          setJudgeScores(newScores);
+
+          if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
             setVerdictData(verdictResponse);
             setIsAllDone(true);
             clearInterval(pollInterval);
@@ -152,8 +163,8 @@ export default function JudgingPage() {
 
           <div className="bg-white/5 backdrop-blur-md rounded-[24px] p-5 border border-white/5 mt-8 shrink-0">
             <ModelStatus name="Judge G (GPT-4o)" color="bg-[#10A37F]" status={judgeStatus.gpt} score={judgeScores.gpt} />
-            <ModelStatus name="Judge M (Gemini 2.0)" color="bg-[#4285F4]" status={judgeStatus.gemini} score={judgeScores.gemini} />
-            <ModelStatus name="Judge C (Claude 3.5)" color="bg-[#D97706]" status={judgeStatus.claude} score={judgeScores.claude} />
+            <ModelStatus name="Judge M (Gemini 2.5)" color="bg-[#4285F4]" status={judgeStatus.gemini} score={judgeScores.gemini} />
+            <ModelStatus name="Judge C (Claude Sonnet)" color="bg-[#D97706]" status={judgeStatus.claude} score={judgeScores.claude} />
           </div>
 
           <div className="mt-10 space-y-6 shrink-0">
