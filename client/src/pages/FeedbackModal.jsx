@@ -28,6 +28,8 @@ function StarRating({ id: ratingId, value, onChange }) {
   const containerRef = useRef(null);
   const touchActive = useRef(false);
   const touchStartY = useRef(0);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const active = hover || value;
 
   const calcValue = useCallback((clientX) => {
@@ -43,25 +45,37 @@ function StarRating({ id: ratingId, value, onChange }) {
   const handleMouseLeave = () => setHover(0);
   const handleClick = (e) => onChange(calcValue(e.clientX));
 
-  // 모바일: 수평 드래그만 별 변경, 수직은 스크롤 허용
-  const handleTouchStart = (e) => {
-    touchActive.current = true;
-    touchStartY.current = e.touches[0].clientY;
-    onChange(calcValue(e.touches[0].clientX));
-  };
-  const handleTouchMove = (e) => {
-    if (!touchActive.current) return;
-    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-    if (dy > 10) {
-      // 수직 이동 → 스크롤 의도, 별 조작 중단
-      touchActive.current = false;
-      return;
-    }
-    // 수평 이동 → 별 드래그
-    e.preventDefault();
-    onChange(calcValue(e.touches[0].clientX));
-  };
-  const handleTouchEnd = () => { touchActive.current = false; };
+  // 모바일: non-passive 리스너로 등록해야 preventDefault() 가 동작함
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e) => {
+      touchActive.current = true;
+      touchStartY.current = e.touches[0].clientY;
+      onChangeRef.current(calcValue(e.touches[0].clientX));
+    };
+    const onTouchMove = (e) => {
+      if (!touchActive.current) return;
+      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+      if (dy > 10) {
+        touchActive.current = false;
+        return;
+      }
+      e.preventDefault();
+      onChangeRef.current(calcValue(e.touches[0].clientX));
+    };
+    const onTouchEnd = () => { touchActive.current = false; };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [calcValue]);
 
   const getLabel = (val) => {
     if (val <= 0) return '';
@@ -83,9 +97,6 @@ function StarRating({ id: ratingId, value, onChange }) {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* 빈 별 배경 */}
         <svg width={totalW} height={STAR_W} viewBox={`0 0 ${totalW} ${STAR_W}`} className="absolute inset-0">
