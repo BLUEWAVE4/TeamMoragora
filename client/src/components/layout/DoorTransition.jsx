@@ -49,7 +49,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, delay: 0.1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
         className="absolute inset-0"
         style={{ background: 'radial-gradient(ellipse at center, rgba(210,180,120,0.12) 0%, transparent 65%)' }}
       />
@@ -58,7 +58,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ x: '0%', rotateY: 0 }}
         animate={{ x: '-10%', rotateY: -75 }}
-        transition={{ duration: 0.5, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
+        transition={{ duration: 2.0, delay: 0.6, ease: [0.32, 0.72, 0, 1] }}
         style={{ transformOrigin: 'left center', perspective: 1200 }}
         onAnimationComplete={onAnimationComplete}
         className="absolute top-0 left-0 w-1/2 h-full"
@@ -109,7 +109,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ x: '0%', rotateY: 0 }}
         animate={{ x: '10%', rotateY: 75 }}
-        transition={{ duration: 0.5, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
+        transition={{ duration: 2.0, delay: 0.6, ease: [0.32, 0.72, 0, 1] }}
         style={{ transformOrigin: 'right center', perspective: 1200 }}
         className="absolute top-0 right-0 w-1/2 h-full"
       >
@@ -154,7 +154,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ opacity: 0, scaleX: 0 }}
         animate={{ opacity: [0, 0.8, 0.5], scaleX: [0, 1, 4] }}
-        transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+        transition={{ duration: 2.0, delay: 0.8, ease: 'easeOut' }}
         className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-full pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, transparent 3%, rgba(210,180,120,0.12) 20%, rgba(210,180,120,0.22) 50%, rgba(210,180,120,0.12) 80%, transparent 97%)' }}
       />
@@ -163,7 +163,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ opacity: 1, scale: 1 }}
         animate={{ opacity: [1, 1, 0], scale: [1, 0.95, 1.4] }}
-        transition={{ duration: 0.3, times: [0, 0.35, 1] }}
+        transition={{ duration: 1.2, times: [0, 0.35, 1] }}
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         <div className="w-22 h-22 rounded-full flex items-center justify-center"
@@ -212,7 +212,7 @@ export default function DoorTransition({ onAnimationComplete }) {
           key={i}
           initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: [0, 0.6, 0], y: [-20, -60 - i * 15] }}
-          transition={{ duration: 0.6, delay: 0.25 + i * 0.04, ease: 'easeOut' }}
+          transition={{ duration: 2.4, delay: 1.0 + i * 0.15, ease: 'easeOut' }}
           className="absolute rounded-full bg-[#C8A96E]/30"
           style={{
             width: 2 + (i % 3),
@@ -227,7 +227,7 @@ export default function DoorTransition({ onAnimationComplete }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.15, delay: 0.48 }}
+        transition={{ duration: 0.6, delay: 1.9 }}
         className="absolute inset-0 bg-white pointer-events-none"
       />
     </div>
