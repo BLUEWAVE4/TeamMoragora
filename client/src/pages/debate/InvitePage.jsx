@@ -182,7 +182,8 @@ export default function InvitePage() {
   // B측 수동 참여 (비로그인 상태에서 로그인 후 돌아온 경우)
   const handleAccept = async () => {
     if (!user) {
-      navigate('/login', { state: { from: `/invite/${inviteCode}` } })
+      sessionStorage.setItem('redirectAfterLogin', `/invite/${inviteCode}`)
+      navigate('/login')
       return
     }
     try {
