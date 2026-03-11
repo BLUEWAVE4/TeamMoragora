@@ -30,13 +30,10 @@ export default function TabBar() {
 
   return (
     <>
-      {/* ✨ 문 애니메이션 컴포넌트 (nav 바깥 최상단 레이어) */}
+      {/* ✨ 문 애니메이션 컴포넌트 (nav 바깥 최상단 레이어) — 페이지 위 오버레이 */}
       {isDoorOpen && (
-        <DoorTransition 
-          onAnimationComplete={() => {
-            navigate('/debate/create');
-            setIsDoorOpen(false);
-          }} 
+        <DoorTransition
+          onAnimationComplete={() => setIsDoorOpen(false)}
         />
       )}
 
@@ -48,7 +45,7 @@ export default function TabBar() {
               return (
                 <button 
                   key="center-btn"
-                  onClick={() => setIsDoorOpen(true)}
+                  onClick={() => { navigate('/debate/create'); setIsDoorOpen(true); }}
                   className="w-14 h-14 bg-[#1a1a1a] text-white rounded-4xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 hover:bg-black"
                 >
                   <span className="text-3xl font-light">+</span>
