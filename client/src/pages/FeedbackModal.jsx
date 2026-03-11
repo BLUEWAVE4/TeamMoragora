@@ -113,7 +113,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [ratings, setRatings] = useState({
     satisfaction: 0, ai_accuracy: 0, ui_ease: 0, fairness: 0, recommend: 0,
   });
-  const [bestFeature, setBestFeature] = useState('');
+  const [bestFeatures, setBestFeatures] = useState([]);
   const [improvement, setImprovement] = useState('');
   const [additional, setAdditional] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -132,7 +132,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
     try {
       await submitFeedback({
         ...ratings,
-        best_feature: bestFeature || null,
+        best_feature: bestFeatures.length > 0 ? bestFeatures.join(', ') : null,
         improvement: improvement || null,
         additional: additional || null,
       });
@@ -146,7 +146,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
   const handleClose = () => {
     setRatings({ satisfaction: 0, ai_accuracy: 0, ui_ease: 0, fairness: 0, recommend: 0 });
-    setBestFeature('');
+    setBestFeatures([]);
     setImprovement('');
     setAdditional('');
     setSubmitted(false);
@@ -197,6 +197,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                   </div>
                   <p className="text-[11px] text-gray-400 mb-2">{item.desc}</p>
                   <StarRating
+                    id={item.key}
                     value={ratings[item.key]}
                     onChange={(v) => setRatings((prev) => ({ ...prev, [item.key]: v }))}
                   />
@@ -206,22 +207,27 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 가장 좋았던 기능 */}
             <div className="mb-5">
-              <p className="text-sm font-black text-[#2D3350] mb-2">가장 좋았던 기능 <span className="text-gray-300 font-medium">(선택)</span></p>
+              <p className="text-sm font-black text-[#2D3350] mb-2">가장 좋았던 기능 <span className="text-gray-300 font-medium">(복수선택 가능)</span></p>
               <div className="flex flex-wrap gap-2">
-                {BEST_FEATURES.map((feat) => (
-                  <button
-                    key={feat}
-                    type="button"
-                    onClick={() => setBestFeature(bestFeature === feat ? '' : feat)}
-                    className={`text-xs px-3 py-2 rounded-xl border transition-colors ${
-                      bestFeature === feat
-                        ? 'bg-[#2D3350] text-white border-[#2D3350]'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 active:border-gray-400'
-                    }`}
-                  >
-                    {feat}
-                  </button>
-                ))}
+                {BEST_FEATURES.map((feat) => {
+                  const selected = bestFeatures.includes(feat);
+                  return (
+                    <button
+                      key={feat}
+                      type="button"
+                      onClick={() => setBestFeatures((prev) =>
+                        selected ? prev.filter((f) => f !== feat) : [...prev, feat]
+                      )}
+                      className={`text-xs px-3 py-2 rounded-xl border transition-colors ${
+                        selected
+                          ? 'bg-[#2D3350] text-white border-[#2D3350]'
+                          : 'bg-gray-50 text-gray-600 border-gray-200 active:border-gray-400'
+                      }`}
+                    >
+                      {feat}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
