@@ -12,6 +12,26 @@ export default function ArgumentPage() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
 
+const LABELS = {
+  // 1. 목적 (Purpose)
+  battle: '승부',
+  consensus: '합의',
+  analysis: '분석',
+
+  // 2. 렌즈 (Lens) - 관점
+  logic: '논리',
+  emotion: '감정',
+  practical: '현실',
+  ethics: '윤리',
+  general: '일반', 
+
+  // 3. 카테고리 (Category) - 주제 분류
+  social: '사회',
+  technology: '기술',
+  politics: '정치',
+  philosophy: '철학',
+};
+
   const MIN_CHAR = 50
   const MAX_CHAR = 2000
   const isInvalid = content.length < MIN_CHAR || content.length > MAX_CHAR
@@ -49,8 +69,7 @@ export default function ArgumentPage() {
     </div>
   )
 
-  const sideLabel = true;
-  // const sideLabel = debate?.creator_id === user?.id ? 'A측' : 'B측'
+  const sideLabel = debate?.creator_id === user?.id ? 'A측' : 'B측'
 
   return (
     <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-10">
@@ -62,11 +81,15 @@ export default function ArgumentPage() {
         <div className="flex flex-wrap gap-2 mb-4">
           {/* 목적(Purpose) 출력 */}
           <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
-            🎯 {debate?.purpose || ''}
+            🎯 {LABELS[debate?.purpose] || debate?.purpose || ''}
           </span>
           {/* 렌즈(Lens) 출력 */}
           <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
-            🔍 {debate?.lens || ''}
+            🔍 {LABELS[debate?.lens] || debate?.lens || ''}
+          </span>
+          {/* 카테고리(category) 출력 */}
+          <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
+            📁 {LABELS[debate?.category] || debate?.category || ''}
           </span>
         </div>
 
@@ -119,7 +142,7 @@ export default function ArgumentPage() {
         <button
           type="submit"
           disabled={isInvalid}
-          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl transform active:scale-[0.97] ${
+          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl transform active:scale-[0.97] cursor-pointer ${
             isInvalid
               ? 'bg-gray-100 text-gray-300 shadow-none'
               : 'bg-[#1a2744] text-white shadow-[#1a2744]/20 hover:bg-[#151f36]'
