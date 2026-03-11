@@ -7,6 +7,7 @@ const XP_REWARDS = {
   draw: 15,
   daily_debate: 10,
   vote: 3,
+  bonus: 1,
 };
 
 // 티어 승급 기준 (누적 XP 기반)
@@ -77,4 +78,25 @@ export async function grantDebateXP(debateId, creatorId, opponentId, finalWinner
 // 투표 참여 XP 지급
 export async function grantVoteXP(userId, debateId) {
   return grantXP(userId, 'vote', debateId);
+}
+
+// 시민투표 마감 후 적중 보너스 지급 (+1 XP)
+export async function grantVoteAccuracyBonus(debateId, finalWinner) {
+  // 무승부면 보너스 없음
+  if (finalWinner === 'draw') return [];
+
+  // 최종 승자 측에 투표한 유저 조회
+  const { data: correctVotes } = await supabaseAdmin
+    .from('votes')
+    .select('user_id')
+    .eq('debate_id', debateId)
+    .eq('voted_side', finalWinner);
+
+  if (!correctVotes || correctVotes.length === 0) return [];
+
+  const results = await Promise.all(
+    correctVotes.map((v) => grantXP(v.user_id, 'bonus', debateId))
+  );
+
+  return results;
 }
