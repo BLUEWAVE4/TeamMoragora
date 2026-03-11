@@ -169,6 +169,34 @@ CREATE TABLE feedbacks (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 12. page_views (방문자 통계)
+CREATE TABLE page_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  path TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  referrer TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_page_views_created ON page_views(created_at);
+CREATE INDEX idx_page_views_path ON page_views(path);
+
+-- 13. analytics_events (커스텀 이벤트)
+CREATE TABLE analytics_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_name TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  path TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_analytics_events_name ON analytics_events(event_name);
+CREATE INDEX idx_analytics_events_created ON analytics_events(created_at);
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================
@@ -226,3 +254,11 @@ CREATE POLICY "comment_likes_delete" ON comment_likes FOR DELETE USING (auth.uid
 -- feedbacks: 본인만 작성/읽기
 CREATE POLICY "feedbacks_insert" ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "feedbacks_read" ON feedbacks FOR SELECT USING (auth.uid() = user_id);
+
+-- page_views / analytics_events: 누구나 INSERT, 읽기는 service_role만
+ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "page_views_insert" ON page_views FOR INSERT WITH CHECK (true);
+CREATE POLICY "page_views_service" ON page_views FOR SELECT USING (auth.role() = 'service_role');
+CREATE POLICY "analytics_events_insert" ON analytics_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "analytics_events_service" ON analytics_events FOR SELECT USING (auth.role() = 'service_role');

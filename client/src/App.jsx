@@ -1,5 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Layout from './components/layout/Layout';
+import { trackPageView } from './services/analytics';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import DebateCreatePage from './pages/debate/DebateCreatePage';
@@ -14,9 +16,15 @@ import RankingPage from './pages/ranking/RankingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import NicknamePage from './pages/auth/NicknamePage';
 import JudgingPage from './pages/debate/JudgingPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 
 export default function App() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -27,6 +35,7 @@ export default function App() {
         <Route path="/moragora" element={<MoragoraFeedPage />} />
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
         <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         
         {/* 🔥 테스트를 위해 상세 페이지를 Public으로 이동함 */}
         <Route path="/debate/:debateId" element={<DebateDetailPage />} />

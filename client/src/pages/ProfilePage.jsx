@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
+import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import api from '../services/api'; 
+import api from '../services/api';
 import VerdictDetailModal from './VerdictDetailModal';
 import TierModal from './TierModal';
 import LogicChartModal from './LogicChartModal';
@@ -159,6 +160,10 @@ export default function ProfilePage() {
         >
           <span className="text-lg">&#9997;</span> 서비스 평가하기
         </button>
+      </div>
+
+      <div className="px-2 mt-1 mb-2">
+        <Link to="/privacy" className="text-[11px] text-gray-300 hover:text-gray-500 underline">개인정보처리방침</Link>
       </div>
 
       <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
