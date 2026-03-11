@@ -23,18 +23,16 @@ export default function CreateDebatePage() {
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
-  const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [purpose, setPurpose] = useState("");
   const [lens, setLens] = useState("");
 
-  const nextStep = () => setStep(prev => prev + 1);
   const navigate = useNavigate();
 
-  // 🔹 모든 입력값 초기화
+  const nextStep = () => setStep(prev => prev + 1);
+
   const resetForm = () => {
     setTopic("");
-    setDescription("");
     setCategory("");
     setPurpose("");
     setLens("");
@@ -47,15 +45,11 @@ export default function CreateDebatePage() {
       return;
     }
 
-    // Step3 → Step2
     if (step === 3) {
       setTopic("");
-      setDescription("");
       setCategory("");
-      setLens("");
     }
 
-    // Step2 → Step1
     if (step === 2) {
       setPurpose("");
       setLens("");
@@ -69,40 +63,50 @@ export default function CreateDebatePage() {
     setGameStarted(true);
   };
 
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
 
-    try {
+  try {
 
-      const data = {
-        topic,
-        description,
-        category,
-        purpose,
-        lens,
-        mode
-      };
+    const data = {
+      topic,
+      category,
+      purpose,
+      lens,
+      mode
+    };
 
-      const result = await createDebate(data); // ⭐ 여기 수정
+    const result = await createDebate(data);
 
-      const debateId = result?.debate_id || result?.id;
+    console.log("createDebate result:", result);
 
-      alert("논쟁 생성 완료");
+    const debateId = result?.debate_id || result?.id;
+    const inviteCode = result?.invite_code || result?.inviteCode;
 
-      navigate(`/debate/${debateId}/argument`);
-
-      resetForm();
-
-      setStep(1);
-      setGameStarted(false);
-      setMode(null);
-
-    } catch (err) {
-
-      console.error(err);
-      alert("생성 실패");
-
+    if (!inviteCode) {
+      console.error("inviteCode 없음", result);
+      alert("초대 코드 생성 실패");
+      return;
     }
-  };
+
+    // alert("논쟁 생성 완료");
+    console.log("inviteCode:", inviteCode);
+
+    // InvitePage 이동
+    navigate(`/invite/${inviteCode}`);
+
+    resetForm();
+    setStep(1);
+    setGameStarted(false);
+    setMode(null);
+
+  } catch (err) {
+
+    console.error(err);
+    alert("생성 실패");
+
+  }
+
+};
 
   return (
 
@@ -147,8 +151,6 @@ export default function CreateDebatePage() {
                 lens={lens}
                 topic={topic}
                 setTopic={setTopic}
-                description={description}
-                setDescription={setDescription}
                 category={category}
                 setCategory={setCategory}
                 prevStep={prevStep}
@@ -178,7 +180,6 @@ export default function CreateDebatePage() {
           <Button
             onClick={() => {
 
-              // 🔹 Step1에서 게임모드로 돌아갈 때 데이터 초기화
               resetForm();
 
               setGameStarted(false);
