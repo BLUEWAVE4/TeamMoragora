@@ -26,10 +26,6 @@ const STAR_GAP = 6;
 function StarRating({ id: ratingId, value, onChange }) {
   const [hover, setHover] = useState(0);
   const containerRef = useRef(null);
-  const touchActive = useRef(false);
-  const touchStartY = useRef(0);
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
   const active = hover || value;
 
   const calcValue = useCallback((clientX) => {
@@ -44,38 +40,6 @@ function StarRating({ id: ratingId, value, onChange }) {
   const handleMouseMove = (e) => setHover(calcValue(e.clientX));
   const handleMouseLeave = () => setHover(0);
   const handleClick = (e) => onChange(calcValue(e.clientX));
-
-  // 모바일: non-passive 리스너로 등록해야 preventDefault() 가 동작함
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const onTouchStart = (e) => {
-      touchActive.current = true;
-      touchStartY.current = e.touches[0].clientY;
-      onChangeRef.current(calcValue(e.touches[0].clientX));
-    };
-    const onTouchMove = (e) => {
-      if (!touchActive.current) return;
-      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-      if (dy > 10) {
-        touchActive.current = false;
-        return;
-      }
-      e.preventDefault();
-      onChangeRef.current(calcValue(e.touches[0].clientX));
-    };
-    const onTouchEnd = () => { touchActive.current = false; };
-
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [calcValue]);
 
   const getLabel = (val) => {
     if (val <= 0) return '';
