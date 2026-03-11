@@ -9,6 +9,7 @@ import judgmentRoutes from './src/routes/judgment.routes.js';
 import voteRoutes from './src/routes/vote.routes.js';
 import profileRoutes from './src/routes/profile.routes.js';
 import contentRoutes from './src/routes/content.routes.js';
+import feedbackRoutes from './src/routes/feedback.routes.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/judgments', judgmentRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/feedbacks', feedbackRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -4,7 +4,8 @@ import { supabase } from '../services/supabase';
 import api from '../services/api'; 
 import VerdictDetailModal from './VerdictDetailModal';
 import TierModal from './TierModal';
-import LogicChartModal from './LogicChartModal'; 
+import LogicChartModal from './LogicChartModal';
+import FeedbackModal from './FeedbackModal';
 
 const CountUp = ({ end, duration = 1000 }) => {
   const [count, setCount] = useState(0);
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const [isLogicModalOpen, setIsLogicModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -149,7 +151,18 @@ export default function ProfilePage() {
           )}
         </div>
       </section>
+      {/* 서비스 평가 버튼 */}
+      <div className="px-2 mt-2">
+        <button
+          onClick={() => setIsFeedbackOpen(true)}
+          className="w-full py-4 bg-white rounded-[28px] shadow-sm border border-gray-100 text-sm font-bold text-[#2D3350] active:scale-95 transition-transform flex items-center justify-center gap-2"
+        >
+          <span className="text-lg">&#9997;</span> 서비스 평가하기
+        </button>
+      </div>
+
       <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );
 }
