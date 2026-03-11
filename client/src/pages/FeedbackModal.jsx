@@ -20,22 +20,46 @@ const BEST_FEATURES = [
 
 const STAR_LABELS = ['매우 불만', '불만족', '보통', '만족', '매우 만족'];
 
+function Star({ fill }) {
+  const color = '#FFBD43';
+  const empty = '#E5E7EB';
+  const id = `half-${Math.random().toString(36).slice(2)}`;
+
+  if (fill === 'full') {
+    return (
+      <svg width="32" height="32" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={color} />
+      </svg>
+    );
+  }
+  if (fill === 'half') {
+    return (
+      <svg width="32" height="32" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id={id}>
+            <stop offset="50%" stopColor={color} />
+            <stop offset="50%" stopColor={empty} />
+          </linearGradient>
+        </defs>
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={`url(#${id})`} />
+      </svg>
+    );
+  }
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={empty} />
+    </svg>
+  );
+}
+
 function StarRating({ value, onChange }) {
   const [hover, setHover] = useState(0);
   const active = hover || value;
 
-  const handleClick = (star, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const isHalf = x < rect.width / 2;
-    onChange(isHalf ? star - 0.5 : star);
-  };
-
-  const handleTouch = (star, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const isHalf = x < rect.width / 2;
-    onChange(isHalf ? star - 0.5 : star);
+  const getFill = (star) => {
+    if (active >= star) return 'full';
+    if (active >= star - 0.5) return 'half';
+    return 'empty';
   };
 
   const getLabel = (val) => {
@@ -49,31 +73,28 @@ function StarRating({ value, onChange }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => {
-          const filled = active >= star;
-          const halfFilled = !filled && active >= star - 0.5;
-          return (
-            <button
-              key={star}
-              type="button"
-              onClick={(e) => handleClick(star, e)}
-              onTouchStart={(e) => handleTouch(star, e)}
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <div key={star} className="relative w-10 h-10 flex items-center justify-center cursor-pointer select-none">
+            <Star fill={getFill(star)} />
+            {/* 왼쪽 반 = 0.5, 오른쪽 반 = 1.0 */}
+            <div
+              className="absolute left-0 top-0 w-1/2 h-full"
+              onClick={() => onChange(star - 0.5)}
+              onMouseEnter={() => setHover(star - 0.5)}
+              onMouseLeave={() => setHover(0)}
+            />
+            <div
+              className="absolute right-0 top-0 w-1/2 h-full"
+              onClick={() => onChange(star)}
               onMouseEnter={() => setHover(star)}
               onMouseLeave={() => setHover(0)}
-              className="w-10 h-10 flex items-center justify-center relative select-none"
-            >
-              <span className="text-3xl text-gray-200 absolute">&#9733;</span>
-              {filled && <span className="text-3xl text-[#FFBD43] absolute">&#9733;</span>}
-              {halfFilled && (
-                <span className="text-3xl text-[#FFBD43] absolute overflow-hidden w-[50%] text-left" style={{ clipPath: 'inset(0 50% 0 0)' }}>&#9733;</span>
-              )}
-            </button>
-          );
-        })}
+            />
+          </div>
+        ))}
       </div>
       {value > 0 && (
-        <div className="flex items-center gap-1.5 ml-1">
+        <div className="flex items-center gap-1.5">
           <span className="text-sm font-black text-[#FFBD43]">{value}</span>
           <span className="text-xs text-gray-400 font-medium">{getLabel(value)}</span>
         </div>
