@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { finalizeVerdict } from '../services/verdict.service.js';
-import { grantVoteXP } from '../services/xp.service.js';
+// 투표 XP는 마감 후 verdict.service에서 적중/미적중 정산
 
 export async function castVote(req, res, next) {
   try {
@@ -42,8 +42,7 @@ export async function castVote(req, res, next) {
 
     if (error) throw error;
 
-    // 투표 참여 XP 지급 (+3 XP)
-    await grantVoteXP(req.user.id, debateId);
+    // 투표 XP는 마감 후 적중/미적중으로 정산 (참여 즉시 지급 없음)
 
     res.json(data);
   } catch (err) {

@@ -6,8 +6,6 @@ const XP_REWARDS = {
   defeat: 5,
   draw: 15,
   daily_debate: 10,
-  vote: 3,
-  bonus: 1,
 };
 
 // 티어 승급 기준 (누적 XP 기반)
@@ -75,28 +73,55 @@ export async function grantDebateXP(debateId, creatorId, opponentId, finalWinner
   return results;
 }
 
-// 투표 참여 XP 지급
-export async function grantVoteXP(userId, debateId) {
-  return grantXP(userId, 'vote', debateId);
-}
-
-// 시민투표 마감 후 적중 보너스 지급 (+1 XP)
-export async function grantVoteAccuracyBonus(debateId, finalWinner) {
-  // 무승부면 보너스 없음
+// 시민투표 마감 후 적중/미적중 정산 (적중 +3, 미적중 -3)
+export async function settleVoteXP(debateId, finalWinner) {
+  // 무승부면 전원 ±0 (정산 없음)
   if (finalWinner === 'draw') return [];
 
-  // 최종 승자 측에 투표한 유저 조회
-  const { data: correctVotes } = await supabaseAdmin
+  // 해당 논쟁의 모든 투표 조회
+  const { data: allVotes } = await supabaseAdmin
     .from('votes')
-    .select('user_id')
-    .eq('debate_id', debateId)
-    .eq('voted_side', finalWinner);
+    .select('user_id, voted_side')
+    .eq('debate_id', debateId);
 
-  if (!correctVotes || correctVotes.length === 0) return [];
+  if (!allVotes || allVotes.length === 0) return [];
 
   const results = await Promise.all(
-    correctVotes.map((v) => grantXP(v.user_id, 'bonus', debateId))
+    allVotes.map((v) => {
+      const isCorrect = v.voted_side === finalWinner;
+      return applyVoteXP(v.user_id, isCorrect ? 3 : -3, isCorrect ? 'bonus' : 'penalty', debateId);
+    })
   );
 
   return results;
+}
+
+// 투표 정산용 XP 적용 (양수/음수 모두 가능)
+async function applyVoteXP(userId, amount, reason, referenceId) {
+  // 1. xp_logs에 기록
+  await supabaseAdmin.from('xp_logs').insert({
+    user_id: userId,
+    xp_amount: amount,
+    reason,
+    reference_id: referenceId,
+  });
+
+  // 2. profiles.xp 누적 + 티어 재계산 (최소 0)
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('xp')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return null;
+
+  const newXP = Math.max(0, profile.xp + amount);
+  const newTier = getTierByXP(newXP);
+
+  await supabaseAdmin
+    .from('profiles')
+    .update({ xp: newXP, tier: newTier })
+    .eq('id', userId);
+
+  return { userId, xpChange: amount, totalXP: newXP, tier: newTier, reason };
 }
