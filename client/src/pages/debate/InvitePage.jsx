@@ -9,6 +9,16 @@ import { useAuth } from '../../store/AuthContext'
 
 const INVITE_TIMEOUT = 300 // 5분
 
+const labelMap = {
+  // purpose
+  battle: '승부', consensus: '합의', analysis: '분석',
+  // lens
+  logic: '논리', emotion: '감정', practical: '현실', ethics: '윤리', general: '일반',
+  // category
+  society: '사회', technology: '기술', politics: '정치', philosophy: '철학',
+}
+const toKor = (v) => labelMap[v] || v
+
 export default function InvitePage() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
@@ -230,9 +240,9 @@ export default function InvitePage() {
             "{debate?.topic}"
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {debate?.purpose}</span>
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {debate?.lens}</span>
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">📁 {debate?.category}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {toKor(debate?.purpose)}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {toKor(debate?.lens)}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">📁 {toKor(debate?.category)}</span>
           </div>
         </div>
 
@@ -289,8 +299,8 @@ export default function InvitePage() {
 
         {debate && (
           <div className="flex justify-center gap-2 mb-10 flex-wrap">
-            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {debate.purpose}</span>
-            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {debate.lens}</span>
+            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {toKor(debate.purpose)}</span>
+            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {toKor(debate.lens)}</span>
           </div>
         )}
 
