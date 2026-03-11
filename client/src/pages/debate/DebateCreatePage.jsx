@@ -93,6 +93,9 @@ export default function DebateCreatePage() {
     // alert("논쟁 생성 완료");
     console.log("inviteCode:", inviteCode);
 
+    // InvitePage에서 A측(생성자) 판별용 캐시 저장
+    sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+
     // InvitePage 이동
     navigate(`/invite/${inviteCode}`);
 
