@@ -4,7 +4,7 @@
 // // 포함 기능: 링크 복사, 카카오톡 공유 SDK 연동, 시스템 공유 시트 연동, 타이머 기능
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDebate, joinByInvite } from '../../services/api'
+import { getDebate, getDebateByInviteCode, joinByInvite } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 
 const INVITE_TIMEOUT = 300 // 5분
@@ -51,7 +51,8 @@ export default function InvitePage() {
 
         // 캐시 없으면 B측으로 간주하고 joinByInvite 시도
         if (!user) {
-          // 비로그인: 로그인 유도 (데이터 없이 UI만 표시)
+          // 비로그인: 로그인 후 이 페이지로 돌아오도록 경로 저장
+          sessionStorage.setItem('redirectAfterLogin', `/invite/${inviteCode}`)
           setIsCreator(false)
           setLoading(false)
           return
@@ -71,8 +72,14 @@ export default function InvitePage() {
           const msg = joinErr.message || ''
           if (msg.includes('본인') || msg.includes('자신')) {
             // A측 - sessionStorage에 없는 경우 (직접 URL 접근 등)
-            // debate 정보를 가져올 수 없으므로 에러 안내
-            setError('생성자로 접근 중입니다. 논쟁 생성 페이지에서 다시 시도해주세요.')
+            // getDebateByInviteCode API로 debate 정보 조회
+            try {
+              const debateData = await getDebateByInviteCode(inviteCode)
+              setDebate(debateData)
+              sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
+            } catch (fetchErr) {
+              console.error('debate 정보 조회 실패:', fetchErr)
+            }
             setIsCreator(true)
           } else if (msg.includes('이미') || msg.includes('진행')) {
             setError('이미 상대방이 참여한 논쟁입니다.')
