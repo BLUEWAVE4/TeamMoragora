@@ -17,16 +17,49 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const { nickname, avatar_url } = req.body;
+    const { nickname, avatar_url, gender, age } = req.body;
+
+    // 1) profiles 테이블 업데이트
+    const updateFields = {};
+    if (nickname !== undefined) updateFields.nickname = nickname;
+    if (avatar_url !== undefined) updateFields.avatar_url = avatar_url;
+    if (gender !== undefined) updateFields.gender = gender;
+    if (age !== undefined) updateFields.age = age;
+
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .update({ nickname, avatar_url })
+      .update(updateFields)
       .eq('id', req.user.id)
       .select()
       .single();
 
     if (error) throw error;
+
+    // 2) Supabase Auth user_metadata 동기화 (프론트 세션에 반영되도록)
+    const metaUpdate = {};
+    if (nickname !== undefined) metaUpdate.nickname = nickname;
+    if (gender !== undefined) metaUpdate.gender = gender;
+    if (age !== undefined) metaUpdate.age = age;
+
+    if (Object.keys(metaUpdate).length > 0) {
+      await supabaseAdmin.auth.admin.updateUserById(req.user.id, {
+        user_metadata: metaUpdate,
+      });
+    }
+
     res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function logout(req, res, next) {
+  try {
+    // Supabase Admin API로 해당 유저의 모든 세션 무효화
+    const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id, 'global');
+    if (error) throw error;
+
+    res.json({ message: '로그아웃 되었습니다.' });
   } catch (err) {
     next(err);
   }

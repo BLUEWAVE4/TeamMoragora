@@ -6,6 +6,7 @@ import Modal from "../common/Modal";
 export default function Step3Confirm({
 
   mode,
+  purpose,
   lens,
   topic,
   setTopic,
@@ -17,6 +18,27 @@ export default function Step3Confirm({
   handleSubmit
 
 }) {
+
+    const purposeMap = {
+    battle: "승부",
+    consensus: "합의",
+    analysis: "분석"
+  };
+
+  const lensMap = {
+    logic: "논리",
+    emotion: "감정",
+    practical: "현실",
+    ethics: "윤리",
+    general: "일반"
+  };
+
+  const categoryMap = {
+    society: "사회",
+    technology: "기술",
+    politics: "정치",
+    philosophy: "철학"
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -198,15 +220,15 @@ export default function Step3Confirm({
         <div className="space-y-3 text-sm">
 
           <div>
-            <span className="font-bold text-gold">목적</span> : {mode}
+            <span className="font-bold text-gold">목적</span> : {purposeMap[purpose]}
           </div>
 
           <div>
-            <span className="font-bold text-gold">렌즈</span> : {lens}
+            <span className="font-bold text-gold">렌즈</span> : {lensMap[lens]}
           </div>
 
           <div>
-            <span className="font-bold text-gold">카테고리</span> : {category}
+            <span className="font-bold text-gold">카테고리</span> : {categoryMap[category]}
           </div>
 
           <div>

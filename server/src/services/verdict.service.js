@@ -89,12 +89,12 @@ export async function finalizeVerdict(debateId) {
     citizenScoreA = Math.round((countA / total) * 100);
     citizenScoreB = Math.round((countB / total) * 100);
 
-    // AI 각 25% (3사 75%) + 시민 25%
+    // AI 75% (평균) + 시민 25%
     if (aiJudgments && aiJudgments.length > 0) {
-      const aiSumA = aiJudgments.reduce((sum, j) => sum + j.score_a, 0);
-      const aiSumB = aiJudgments.reduce((sum, j) => sum + j.score_b, 0);
-      finalA = Math.round(aiSumA * 0.25 + citizenScoreA * 0.25);
-      finalB = Math.round(aiSumB * 0.25 + citizenScoreB * 0.25);
+      const aiAvgA = aiJudgments.reduce((sum, j) => sum + j.score_a, 0) / aiJudgments.length;
+      const aiAvgB = aiJudgments.reduce((sum, j) => sum + j.score_b, 0) / aiJudgments.length;
+      finalA = Math.round(aiAvgA * 0.75 + citizenScoreA * 0.25);
+      finalB = Math.round(aiAvgB * 0.75 + citizenScoreB * 0.25);
     } else {
       finalA = Math.round(verdict.ai_score_a * 0.75 + citizenScoreA * 0.25);
       finalB = Math.round(verdict.ai_score_b * 0.75 + citizenScoreB * 0.25);
@@ -123,7 +123,58 @@ export async function finalizeVerdict(debateId) {
     .update({ status: 'completed' })
     .eq('id', debateId);
 
+  // 프로필 전적 업데이트 (wins/losses/draws + total_score)
+  await updateProfileStats(debateId, finalWinner, finalA, finalB);
+
   return { finalA, finalB, finalWinner, citizenApplied, voterCount: votes?.length || 0 };
+}
+
+// 프로필 전적 + total_score 업데이트
+async function updateProfileStats(debateId, finalWinner, finalA, finalB) {
+  const { data: debate } = await supabaseAdmin
+    .from('debates')
+    .select('creator_id, opponent_id')
+    .eq('id', debateId)
+    .single();
+
+  if (!debate || !debate.opponent_id) return;
+
+  const creatorSide = 'A';  // creator는 항상 A측
+  const opponentSide = 'B';
+
+  const creatorResult = finalWinner === creatorSide ? 'win'
+    : finalWinner === opponentSide ? 'loss' : 'draw';
+  const opponentResult = finalWinner === opponentSide ? 'win'
+    : finalWinner === creatorSide ? 'loss' : 'draw';
+
+  await Promise.all([
+    applyResult(debate.creator_id, creatorResult, finalA),
+    applyResult(debate.opponent_id, opponentResult, finalB),
+  ]);
+}
+
+async function applyResult(userId, result, score) {
+  // 현재 프로필 조회
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('wins, losses, draws, total_score')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return;
+
+  const update = {};
+  if (result === 'win') update.wins = profile.wins + 1;
+  else if (result === 'loss') update.losses = profile.losses + 1;
+  else update.draws = profile.draws + 1;
+
+  // total_score: 누적 점수 (해당 논쟁에서 받은 최종 점수 합산)
+  update.total_score = profile.total_score + score;
+
+  await supabaseAdmin
+    .from('profiles')
+    .update(update)
+    .eq('id', userId);
 }
 
 function avg(arr) {

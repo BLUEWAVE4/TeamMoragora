@@ -1,16 +1,18 @@
 import { anthropic } from '../../config/ai.js';
-import { buildJudgmentPrompt } from './prompts.js';
+import { buildSystemPrompt, buildUserPrompt } from './prompts.js';
 
 const TIMEOUT_MS = 30000;
 
 export async function judgeWithClaude(debateContext) {
-  const prompt = buildJudgmentPrompt(debateContext);
+  const systemPrompt = buildSystemPrompt('claude-sonnet');
+  const userPrompt = buildUserPrompt(debateContext);
 
   const message = await Promise.race([
     anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
     }),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Claude 응답 타임아웃 (30초)')), TIMEOUT_MS)
