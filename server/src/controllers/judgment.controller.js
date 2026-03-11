@@ -116,16 +116,27 @@ export async function getVerdict(req, res, next) {
   }
 }
 
-export async function getVerdictFeed(_req, res, next) {
+export async function getVerdictFeed(req, res, next) {
   try {
-    const { data, error } = await supabaseAdmin
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(20);
+      .range(from, to);
 
     if (error) throw error;
-    res.json(data);
+    res.json({
+      data,
+      page,
+      limit,
+      total: count,
+      hasNext: to < count - 1,
+    });
   } catch (err) {
     next(err);
   }
