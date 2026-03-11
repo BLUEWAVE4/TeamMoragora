@@ -122,3 +122,24 @@ export async function joinByInvite(req, res, next) {
     next(err);
   }
 }
+
+// ----------------------
+export async function getDebateByInviteCode(req, res, next) {
+  try {
+    const { inviteCode } = req.params;
+
+    const { data, error } = await supabaseAdmin
+      .from('debates')
+      .select('*')
+      .eq('invite_code', inviteCode)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Debate not found' });
+    }
+
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}

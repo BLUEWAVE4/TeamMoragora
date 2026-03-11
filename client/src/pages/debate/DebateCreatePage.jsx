@@ -2,6 +2,7 @@
 // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createDebate } from "../../services/api";
 import { trackEvent } from "../../services/analytics";
 
@@ -23,17 +24,16 @@ export default function CreateDebatePage() {
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
-  const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [purpose, setPurpose] = useState("");
   const [lens, setLens] = useState("");
 
+  const navigate = useNavigate();
+
   const nextStep = () => setStep(prev => prev + 1);
 
-  // 🔹 모든 입력값 초기화
   const resetForm = () => {
     setTopic("");
-    setDescription("");
     setCategory("");
     setPurpose("");
     setLens("");
@@ -46,15 +46,11 @@ export default function CreateDebatePage() {
       return;
     }
 
-    // Step3 → Step2
     if (step === 3) {
       setTopic("");
-      setDescription("");
       setCategory("");
-      setLens("");
     }
 
-    // Step2 → Step1
     if (step === 2) {
       setPurpose("");
       setLens("");
@@ -70,37 +66,49 @@ export default function CreateDebatePage() {
 
   const handleSubmit = async () => {
 
-    try {
+  try {
 
-      const data = {
-        topic,
-        description,
-        category,
-        purpose,
-        lens,
-        mode
-      };
+    const data = {
+      topic,
+      category,
+      purpose,
+      lens,
+      mode
+    };
 
-      await createDebate(data);
-      trackEvent('debate_create', { category, purpose, lens, mode });
+    const result = await createDebate(data);
+    trackEvent('debate_create', { category, purpose, lens, mode });
 
-      alert("논쟁 생성 완료");
+    console.log("createDebate result:", result);
 
-      // 🔹 Step1,2,3 입력 데이터 초기화
-      resetForm();
+    const debateId = result?.debate_id || result?.id;
+    const inviteCode = result?.invite_code || result?.inviteCode;
 
-      // 🔹 위자드 초기 상태로 복귀
-      setStep(1);
-      setGameStarted(false);
-      setMode(null);
-
-    } catch (err) {
-
-      console.error(err);
-      alert("생성 실패");
-
+    if (!inviteCode) {
+      console.error("inviteCode 없음", result);
+      alert("초대 코드 생성 실패");
+      return;
     }
-  };
+
+    // alert("논쟁 생성 완료");
+    console.log("inviteCode:", inviteCode);
+
+    // InvitePage 이동
+    navigate(`/invite/${inviteCode}`);
+
+    resetForm();
+    setStep(1);
+    setGameStarted(false);
+    setMode(null);
+
+  } catch (err) {
+
+    console.error(err);
+    alert("생성 실패");
+
+  }
+
+};
 
   return (
 
@@ -145,8 +153,6 @@ export default function CreateDebatePage() {
                 lens={lens}
                 topic={topic}
                 setTopic={setTopic}
-                description={description}
-                setDescription={setDescription}
                 category={category}
                 setCategory={setCategory}
                 prevStep={prevStep}
@@ -176,7 +182,6 @@ export default function CreateDebatePage() {
           <Button
             onClick={() => {
 
-              // 🔹 Step1에서 게임모드로 돌아갈 때 데이터 초기화
               resetForm();
 
               setGameStarted(false);

@@ -30,6 +30,9 @@ npm-debug.log*
 # Testing
 coverage/
 
+# Docs (산출물 / 내부 문서)
+doc/
+
 # Misc
 *.tgz
 .cache/
