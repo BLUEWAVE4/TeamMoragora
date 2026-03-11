@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { submitFeedback } from '../services/api';
 
 const RATING_ITEMS = [
@@ -19,42 +19,34 @@ const BEST_FEATURES = [
 ];
 
 const STAR_LABELS = ['매우 불만', '불만족', '보통', '만족', '매우 만족'];
+const STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z';
+const STAR_SIZE = 40;
 
-function Star({ fill }) {
-  const color = '#FFBD43';
-  const empty = '#E5E7EB';
-  const id = `half-${Math.random().toString(36).slice(2)}`;
-
-  if (fill === 'full') {
-    return (
-      <svg width="32" height="32" viewBox="0 0 24 24">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={color} />
-      </svg>
-    );
-  }
-  if (fill === 'half') {
-    return (
-      <svg width="32" height="32" viewBox="0 0 24 24">
-        <defs>
-          <linearGradient id={id}>
-            <stop offset="50%" stopColor={color} />
-            <stop offset="50%" stopColor={empty} />
-          </linearGradient>
-        </defs>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={`url(#${id})`} />
-      </svg>
-    );
-  }
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill={empty} />
-    </svg>
-  );
-}
-
-function StarRating({ value, onChange }) {
+function StarRating({ id: ratingId, value, onChange }) {
   const [hover, setHover] = useState(0);
+  const containerRef = useRef(null);
   const active = hover || value;
+
+  const calcValue = useCallback((clientX) => {
+    if (!containerRef.current) return 0;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const raw = (x / rect.width) * 5;
+    return Math.max(0.5, Math.min(5, Math.round(raw * 2) / 2));
+  }, []);
+
+  const handleMouseMove = (e) => setHover(calcValue(e.clientX));
+  const handleMouseLeave = () => setHover(0);
+  const handleClick = (e) => onChange(calcValue(e.clientX));
+
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    onChange(calcValue(e.touches[0].clientX));
+  };
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+    onChange(calcValue(e.touches[0].clientX));
+  };
 
   const getFill = (star) => {
     if (active >= star) return 'full';
@@ -72,31 +64,45 @@ function StarRating({ value, onChange }) {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex">
+    <div className="flex items-center gap-3">
+      <svg
+        ref={containerRef}
+        width={STAR_SIZE * 5 + 16}
+        height={STAR_SIZE + 4}
+        viewBox={`0 0 ${STAR_SIZE * 5 + 16} ${STAR_SIZE + 4}`}
+        className="cursor-pointer select-none touch-none"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
+        <defs>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <linearGradient key={star} id={`star-${ratingId}-${star}`}>
+              {getFill(star) === 'full' ? (
+                <stop offset="100%" stopColor="#FFBD43" />
+              ) : getFill(star) === 'half' ? (
+                <>
+                  <stop offset="50%" stopColor="#FFBD43" />
+                  <stop offset="50%" stopColor="#E5E7EB" />
+                </>
+              ) : (
+                <stop offset="100%" stopColor="#E5E7EB" />
+              )}
+            </linearGradient>
+          ))}
+        </defs>
         {[1, 2, 3, 4, 5].map((star) => (
-          <div key={star} className="relative w-10 h-10 flex items-center justify-center cursor-pointer select-none">
-            <Star fill={getFill(star)} />
-            {/* 왼쪽 반 = 0.5, 오른쪽 반 = 1.0 */}
-            <div
-              className="absolute left-0 top-0 w-1/2 h-full"
-              onClick={() => onChange(star - 0.5)}
-              onMouseEnter={() => setHover(star - 0.5)}
-              onMouseLeave={() => setHover(0)}
-            />
-            <div
-              className="absolute right-0 top-0 w-1/2 h-full"
-              onClick={() => onChange(star)}
-              onMouseEnter={() => setHover(star)}
-              onMouseLeave={() => setHover(0)}
-            />
-          </div>
+          <g key={star} transform={`translate(${(star - 1) * (STAR_SIZE + 4) + 2}, 2) scale(${STAR_SIZE / 24})`}>
+            <path d={STAR_PATH} fill={`url(#star-${ratingId}-${star})`} />
+          </g>
         ))}
-      </div>
+      </svg>
       {value > 0 && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-black text-[#FFBD43]">{value}</span>
-          <span className="text-xs text-gray-400 font-medium">{getLabel(value)}</span>
+        <div className="flex flex-col items-start">
+          <span className="text-base font-black text-[#FFBD43] leading-none">{value}</span>
+          <span className="text-[10px] text-gray-400 font-medium">{getLabel(value)}</span>
         </div>
       )}
     </div>
