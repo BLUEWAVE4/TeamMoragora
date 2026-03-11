@@ -54,16 +54,16 @@ export default function CategoryFilter({ filter, setFilter }) {
   ];
 
   return (
-    <div className="py-4 border-b border-gray-100 bg-[#F8F9FA]">
+    <div className="py-3 border-b border-gray-100 bg-[#F8F9FA]">
       <div className="flex gap-3 px-6 overflow-x-auto no-scrollbar scroll-smooth w-full items-center">
         {categories.map((cat) => (
           <button
             key={cat.key}
             onClick={() => setFilter(cat.key)}
-            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-[14px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[1rem] text-[14px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${
               filter === cat.key
-                ? 'bg-[#2D3350] text-white shadow-lg shadow-[#2D3350]/20 scale-105'
-                : 'bg-white text-gray-400 border border-gray-100 shadow-sm hover:text-gray-600'
+                ? 'bg-[#2D3350] text-white shadow-md shadow-[#2D3350]/20 scale-105'
+                : 'bg-white text-gray-400 border border-gray-300 hover:text-gray-600'
             }`}
           >
             {/* 아이콘 컬러 처리: 선택 시 white, 평소엔 현재 텍스트 컬러 유지 */}
