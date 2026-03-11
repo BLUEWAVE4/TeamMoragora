@@ -1,4 +1,5 @@
 import { filterByDictionary, filterByAI, filterByGatekeeper } from '../services/contentFilter.service.js';
+import { supabaseAdmin } from '../config/supabase.js';
 
 // 3단계 콘텐츠 방어 미들웨어
 // category에 따라 적용 단계가 다름:
@@ -6,9 +7,28 @@ import { filterByDictionary, filterByAI, filterByGatekeeper } from '../services/
 //   직장/교육: Stage 1~2
 //   사회/정치: Stage 1~3
 export async function contentFilterMiddleware(req, res, next) {
-  const { content, category } = req.body;
+  const { content } = req.body;
 
   if (!content) return next();
+
+  // body에 category/topic이 없으면 debate에서 조회 (주장 제출 시)
+  let category = req.body.category;
+  let topic = req.body.topic;
+
+  if (!category || !topic) {
+    const debateId = req.params.debateId || req.body.debateId;
+    if (debateId) {
+      const { data: debate } = await supabaseAdmin
+        .from('debates')
+        .select('category, topic')
+        .eq('id', debateId)
+        .single();
+      if (debate) {
+        category = category || debate.category;
+        topic = topic || debate.topic;
+      }
+    }
+  }
 
   // Stage 1: 비속어 사전 필터
   const dictResult = filterByDictionary(content);
@@ -37,7 +57,7 @@ export async function contentFilterMiddleware(req, res, next) {
   if (['work', 'education'].includes(category)) return next();
 
   // Stage 3: AI 게이트키퍼 (주제 적합성)
-  const gateResult = await filterByGatekeeper(content, req.body.topic);
+  const gateResult = await filterByGatekeeper(content, topic);
   if (gateResult.action === 'block') {
     return res.status(400).json({
       error: '주제와 관련 없는 내용입니다.',

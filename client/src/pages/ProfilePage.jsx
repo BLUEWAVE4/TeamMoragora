@@ -236,19 +236,6 @@ export default function ProfilePage() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </motion.button>
 
-        {/* ✍️ 서비스 평가하기 (팀원 기능을 iOS 스타일로 통합) */}
-        <motion.button 
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setIsFeedbackOpen(true)}
-          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-lg">✍️</span>
-            <span className="text-[15px] font-bold text-black">서비스 평가하기</span>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
-        </motion.button>
-
         {/* 📜 나의 논쟁 리스트 섹션 */}
         <div className="mb-10">
           <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3 ml-1">나의 논쟁 리스트</h3>
@@ -278,6 +265,19 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
+
+        {/* ✍️ 서비스 평가하기 */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIsFeedbackOpen(true)}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-4"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✍️</span>
+            <span className="text-[15px] font-bold text-black">서비스 평가하기</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </motion.button>
 
         {/* 🔗 하단 푸터 링크 */}
         <div className="flex justify-center gap-4 mb-6 text-center">

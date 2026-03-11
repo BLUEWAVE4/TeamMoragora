@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { preprocessArgument } from '../services/preprocessor.service.js';
 import { generateCounterArgument } from '../services/ai/solo.service.js';
+import { triggerJudgment } from '../services/judgmentTrigger.service.js';
 
 export async function submitArgument(req, res, next) {
   try {
@@ -47,6 +48,19 @@ export async function submitArgument(req, res, next) {
     if (result.warnings.length > 0) {
       response.warnings = result.warnings;
     }
+
+    // 양측 주장 모두 제출 완료 시 비동기로 AI 판결 트리거
+    const { count } = await supabaseAdmin
+      .from('arguments')
+      .select('*', { count: 'exact', head: true })
+      .eq('debate_id', debateId);
+
+    if (count >= 2) {
+      triggerJudgment(debateId).catch((err) =>
+        console.error(`[Auto-Judgment] 판결 트리거 실패 (debate: ${debateId}):`, err.message)
+      );
+    }
+
     res.status(201).json(response);
   } catch (err) {
     next(err);
@@ -119,6 +133,11 @@ export async function generateSoloArgument(req, res, next) {
       .single();
 
     if (error) throw error;
+
+    // 솔로 모드: B측 생성 완료 → 비동기로 AI 판결 트리거
+    triggerJudgment(debateId).catch((err) =>
+      console.error(`[Auto-Judgment] 솔로 판결 트리거 실패 (debate: ${debateId}):`, err.message)
+    );
 
     res.status(201).json({ ...data, ai_generated: true });
   } catch (err) {

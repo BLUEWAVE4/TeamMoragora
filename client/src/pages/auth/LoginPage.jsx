@@ -10,12 +10,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      const hasNickname = user.user_metadata?.nickname || user.user_metadata?.full_name; 
+      const hasNickname = user.user_metadata?.nickname || user.user_metadata?.full_name;
 
-      if (hasNickname) {
-        navigate('/moragora', { replace: true });
-      } else {
+      if (!hasNickname) {
         navigate('/auth/nickname', { replace: true });
+        return;
+      }
+
+      // 로그인 전 저장된 경로가 있으면 그곳으로 이동
+      const redirect = sessionStorage.getItem('redirectAfterLogin');
+      if (redirect) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/moragora', { replace: true });
       }
     }
   }, [user, navigate]);

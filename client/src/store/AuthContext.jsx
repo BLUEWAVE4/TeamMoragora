@@ -16,8 +16,20 @@ export function AuthProvider({ children }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setUser(session?.user ?? null);
+
+        // OAuth 로그인 완료 후 저장된 리다이렉트 경로로 이동
+        if (event === 'SIGNED_IN' && session?.user) {
+          const redirect = sessionStorage.getItem('redirectAfterLogin');
+          if (redirect) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            // 현재 페이지가 이미 해당 경로가 아닐 때만 이동
+            if (window.location.pathname !== redirect) {
+              window.location.href = redirect;
+            }
+          }
+        }
       }
     );
 

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { finalizeVerdict } from '../services/verdict.service.js';
+// 투표 XP는 마감 후 verdict.service에서 적중/미적중 정산
 
 export async function castVote(req, res, next) {
   try {
@@ -40,6 +41,9 @@ export async function castVote(req, res, next) {
       .single();
 
     if (error) throw error;
+
+    // 투표 XP는 마감 후 적중/미적중으로 정산 (참여 즉시 지급 없음)
+
     res.json(data);
   } catch (err) {
     next(err);

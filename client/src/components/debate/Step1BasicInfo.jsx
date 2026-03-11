@@ -39,9 +39,9 @@ export default function Step1BasicInfo({
       </div>
 
       <Card
-        variant={purpose === "battle" ? "clean" : "base"}
+        variant={purpose === "승부" ? "clean" : "base"}
         onClick={() => {
-          setPurpose("battle");
+          setPurpose("승부");
           setError("");
         }}
         className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
@@ -50,9 +50,9 @@ export default function Step1BasicInfo({
       </Card>
 
       <Card
-        variant={purpose === "consensus" ? "clean" : "base"}
+        variant={purpose === "합의" ? "clean" : "base"}
         onClick={() => {
-          setPurpose("consensus");
+          setPurpose("합의");
           setError("");
         }}
         className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
@@ -61,9 +61,9 @@ export default function Step1BasicInfo({
       </Card>
 
       <Card
-        variant={purpose === "analysis" ? "clean" : "base"}
+        variant={purpose === "분석" ? "clean" : "base"}
         onClick={() => {
-          setPurpose("analysis");
+          setPurpose("분석");
           setError("");
         }}
         className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
