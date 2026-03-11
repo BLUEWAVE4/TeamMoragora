@@ -158,7 +158,7 @@ export default function InvitePage() {
       content: {
         title: '⚔️ 모라고라 논쟁 초대',
         description: `"${debate?.topic}"\n지금 바로 당신의 반박을 보여주세요!`,
-        imageUrl: 'https://moragora.vercel.app/og-image.png',
+        imageUrl: `${window.location.origin}/ogCard2.png`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
       buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
