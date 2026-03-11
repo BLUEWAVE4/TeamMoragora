@@ -49,4 +49,8 @@ export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
 export const getMyProfile = () => api.get('/auth/me');
 export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
 
+// ===== 피드백 (Feedbacks) =====
+export const submitFeedback = (data) => api.post('/feedbacks', data);
+export const getMyFeedbacks = () => api.get('/feedbacks/me');
+
 export default api;

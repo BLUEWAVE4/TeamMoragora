@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
+import { trackEvent } from '../../services/analytics';
 import VerdictDetailModal from '../VerdictDetailModal';
 
 const ModelStatus = ({ name, color, status }) => {
@@ -126,7 +127,7 @@ export default function JudgingPage() {
 
             <div className="space-y-4">
               <button 
-                onClick={() => setIsModalOpen(true)} 
+                onClick={() => { trackEvent('verdict_view', { debateId }); setIsModalOpen(true); }}
                 disabled={!isAllDone}
                 className={`w-full h-[60px] rounded-[18px] font-black text-lg transition-all duration-500 transform active:scale-95 shadow-xl
                   ${isAllDone ? 'bg-[#E63946] text-white cursor-pointer' : 'bg-white/10 text-white/20 border border-white/5 cursor-not-allowed'}`}

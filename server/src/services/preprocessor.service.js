@@ -1,8 +1,9 @@
 // 주장 입력 전처리 서비스
 // 프롬프트 인젝션 방어 + 텍스트 정규화 + 유효성 검증
 
-// ===== 프롬프트 인젝션 패턴 =====
+// ===== 프롬프트 인젝션 패턴 (영문 + 한국어) =====
 const INJECTION_PATTERNS = [
+  // 영문 패턴
   /system\s*:/gi,
   /ignore\s+(all\s+)?previous\s+instructions/gi,
   /you\s+are\s+now/gi,
@@ -18,6 +19,19 @@ const INJECTION_PATTERNS = [
   /\bdo\s+not\s+judge\b/gi,
   /\boutput\s+the\s+following\b/gi,
   /\brespond\s+with\b/gi,
+  // 한국어 패턴
+  /이전\s*(지시|명령|지침|프롬프트).*무시/gi,
+  /모든\s*(지시|명령|규칙).*무시/gi,
+  /(너|당신)는?\s*이제\s*부터/gi,
+  /(너|당신)는?\s*.{0,5}(판사|판결자|AI)가?\s*아니/gi,
+  /(너|당신)는?\s*.{0,15}(지지자|변호사|대변인)/gi,
+  /시스템\s*:?\s*(새로운|변경|수정)/gi,
+  /역할\s*을?\s*(변경|바꿔|바꾸)/gi,
+  /다음과\s*같이\s*(출력|응답|답변)/gi,
+  /(무조건|반드시)\s*(A|B)측?\s*(승리|이기|승)/gi,
+  /JSON\s*으?로?\s*(출력|응답|답변)/gi,
+  /winner_side/gi,
+  /score_[ab]/gi,
 ];
 
 const MAX_LENGTH = 2000;

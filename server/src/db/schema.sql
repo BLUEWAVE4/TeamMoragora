@@ -47,7 +47,7 @@ CREATE TABLE debates (
     CHECK (mode IN ('duo', 'solo')),
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
-    CHECK (status IN ('waiting', 'arguing', 'judging', 'voting', 'completed')),
+    CHECK (status IN ('waiting', 'both_joined', 'arguing', 'judging', 'voting', 'completed')),
   vote_deadline TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -74,12 +74,14 @@ CREATE TABLE verdicts (
   summary TEXT,
   ai_score_a INTEGER NOT NULL DEFAULT 0,
   ai_score_b INTEGER NOT NULL DEFAULT 0,
-  citizen_score_a INTEGER,
-  citizen_score_b INTEGER,
-  final_score_a INTEGER NOT NULL DEFAULT 0,
-  final_score_b INTEGER NOT NULL DEFAULT 0,
+  citizen_score_a INTEGER DEFAULT 0,
+  citizen_score_b INTEGER DEFAULT 0,
+  final_score_a NUMERIC(5,2) NOT NULL DEFAULT 0,
+  final_score_b NUMERIC(5,2) NOT NULL DEFAULT 0,
+  citizen_vote_count INTEGER NOT NULL DEFAULT 0,
   is_citizen_applied BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 5. ai_judgments
@@ -93,7 +95,8 @@ CREATE TABLE ai_judgments (
   score_b INTEGER NOT NULL DEFAULT 0,
   score_detail_a JSONB,
   score_detail_b JSONB,
-  confidence NUMERIC(3,2) DEFAULT 0.0,
+  confidence NUMERIC(4,2) DEFAULT 0.0,
+  status TEXT NOT NULL DEFAULT 'success',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -111,9 +114,10 @@ CREATE TABLE votes (
 CREATE TABLE content_filter_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id),
+  debate_id UUID REFERENCES debates(id),
   content_type TEXT NOT NULL,
   filter_stage INTEGER NOT NULL CHECK (filter_stage IN (1, 2, 3)),
-  blocked BOOLEAN NOT NULL DEFAULT false,
+  result TEXT NOT NULL DEFAULT 'pass',
   reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -150,6 +154,49 @@ CREATE TABLE comment_likes (
   UNIQUE (comment_id, user_id)
 );
 
+-- 11. feedbacks (서비스 평가)
+CREATE TABLE feedbacks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  satisfaction INTEGER NOT NULL CHECK (satisfaction BETWEEN 1 AND 5),
+  ai_accuracy INTEGER NOT NULL CHECK (ai_accuracy BETWEEN 1 AND 5),
+  ui_ease INTEGER NOT NULL CHECK (ui_ease BETWEEN 1 AND 5),
+  fairness INTEGER NOT NULL CHECK (fairness BETWEEN 1 AND 5),
+  recommend INTEGER NOT NULL CHECK (recommend BETWEEN 1 AND 5),
+  best_feature TEXT,
+  improvement TEXT,
+  additional TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 12. page_views (방문자 통계)
+CREATE TABLE page_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  path TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  referrer TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_page_views_created ON page_views(created_at);
+CREATE INDEX idx_page_views_path ON page_views(path);
+
+-- 13. analytics_events (커스텀 이벤트)
+CREATE TABLE analytics_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_name TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  path TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_analytics_events_name ON analytics_events(event_name);
+CREATE INDEX idx_analytics_events_created ON analytics_events(created_at);
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================
@@ -163,6 +210,7 @@ ALTER TABLE content_filter_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xp_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 
 -- profiles: 누구나 읽기, 본인만 수정
 CREATE POLICY "profiles_read" ON profiles FOR SELECT USING (true);
@@ -202,3 +250,15 @@ CREATE POLICY "comments_insert" ON comments FOR INSERT WITH CHECK (auth.uid() = 
 CREATE POLICY "comment_likes_read" ON comment_likes FOR SELECT USING (true);
 CREATE POLICY "comment_likes_insert" ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "comment_likes_delete" ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- feedbacks: 본인만 작성/읽기
+CREATE POLICY "feedbacks_insert" ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "feedbacks_read" ON feedbacks FOR SELECT USING (auth.uid() = user_id);
+
+-- page_views / analytics_events: 누구나 INSERT, 읽기는 service_role만
+ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "page_views_insert" ON page_views FOR INSERT WITH CHECK (true);
+CREATE POLICY "page_views_service" ON page_views FOR SELECT USING (auth.role() = 'service_role');
+CREATE POLICY "analytics_events_insert" ON analytics_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "analytics_events_service" ON analytics_events FOR SELECT USING (auth.role() = 'service_role');

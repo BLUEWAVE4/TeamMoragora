@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { createDebate } from "../../services/api";
+import { trackEvent } from "../../services/analytics";
 
 import ModeSelector from "../../components/ui/ModeSelector";
 import StepWizard from "../../components/common/StepWizard";
@@ -81,6 +82,7 @@ export default function CreateDebatePage() {
       };
 
       await createDebate(data);
+      trackEvent('debate_create', { category, purpose, lens, mode });
 
       alert("논쟁 생성 완료");
 

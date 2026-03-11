@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
+import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import api from '../services/api'; 
-import VerdictDetailModal from './VerdictDetailModal';
+import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// 📈 iOS 스타일 부드러운 숫자 카운팅
+// 🛠️ 컴포넌트 및 모달 불러오기
+import VerdictDetailModal from './VerdictDetailModal';
+import TierModal from './TierModal';
+import LogicChartModal from './LogicChartModal';
+import FeedbackModal from './FeedbackModal';
+
+// 📈 iOS 스타일 부드러운 숫자 카운팅 컴포넌트
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -81,6 +87,9 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  
+  // 🆕 서버 팀원이 추가한 상태
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // 📝 나의 논쟁 리스트 더미 데이터
   const dummyDebates = [
@@ -151,7 +160,7 @@ export default function ProfilePage() {
   if (!user) return <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7]">로그인이 필요합니다.</div>;
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-32 font-[-apple-system,BlinkMacSystemFont,sans-serif]">
+    <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
       
       {/* 🍏 iOS 내비게이션 바 */}
       <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-14 flex items-center justify-between border-b border-gray-200/50">
@@ -168,7 +177,7 @@ export default function ProfilePage() {
 
       <div className="max-w-md mx-auto px-4 pt-8">
         
-        {/* ✨ 프로필 메인 섹션 (편집 애니메이션 포함) */}
+        {/* ✨ 프로필 메인 섹션 */}
         <div className="flex flex-col items-center mb-10">
           <motion.div 
             animate={{ scale: isEditing ? 1.05 : 1 }}
@@ -221,13 +230,26 @@ export default function ProfilePage() {
         <motion.button 
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsSheetOpen(true)}
-          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-8"
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-3"
         >
           <span className="text-[15px] font-bold text-black">나의 논리 프로필 분석</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </motion.button>
 
-        {/* 📜 나의 논쟁 리스트 섹션 (서버 연결용) */}
+        {/* ✍️ 서비스 평가하기 (팀원 기능을 iOS 스타일로 통합) */}
+        <motion.button 
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIsFeedbackOpen(true)}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-8"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✍️</span>
+            <span className="text-[15px] font-bold text-black">서비스 평가하기</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </motion.button>
+
+        {/* 📜 나의 논쟁 리스트 섹션 */}
         <div className="mb-10">
           <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3 ml-1">나의 논쟁 리스트</h3>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
@@ -255,13 +277,16 @@ export default function ProfilePage() {
               </motion.div>
             ))}
           </div>
-          <button className="w-full py-4 text-[#007AFF] text-[14px] font-semibold active:opacity-30 transition-opacity">
-            전체 기록 보기
-          </button>
+        </div>
+
+        {/* 🔗 하단 푸터 링크 */}
+        <div className="flex justify-center gap-4 mb-6 text-center">
+          <Link to="/terms" className="text-xs text-gray-400 underline">이용약관</Link>
+          <Link to="/privacy" className="text-xs text-gray-400 underline">개인정보처리방침</Link>
         </div>
       </div>
 
-      {/* 📥 논리 프로필 바텀시트 (드래그 기능 포함) */}
+      {/* 📥 논리 프로필 바텀시트 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
@@ -283,7 +308,7 @@ export default function ProfilePage() {
               <div className="px-6">
                 <div className="flex justify-between items-end mb-4">
                   <h3 className="text-xl font-bold text-black">나의 논리 프로필</h3>
-                  <span className="text-[11px] text-gray-400 font-medium">업데이트: 2026-02-18</span>
+                  <span className="text-[11px] text-gray-400 font-medium">업데이트: 2026-03-11</span>
                 </div>
 
                 <div className="bg-[#F9F9F9] rounded-[24px] mb-6 border border-gray-50">
@@ -305,30 +330,6 @@ export default function ProfilePage() {
                   </ul>
                 </div>
 
-                <h4 className="text-[12px] font-bold text-[#8E8E93] uppercase mb-4 ml-1 tracking-widest">Category Expertise</h4>
-                <div className="space-y-3 mb-8">
-                  {[
-                    { cat: '연애/관계', count: 47, rate: 89, color: '#FF2D55' },
-                    { cat: '직장/업무', count: 31, rate: 76, color: '#007AFF' },
-                    { cat: '생활/습관', count: 28, rate: 71, color: '#34C759' },
-                    { cat: '사회/이슈', count: 12, rate: 52, color: '#FF9500' },
-                  ].map((item) => (
-                    <div key={item.cat} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: item.color }} />
-                        <div>
-                          <p className="text-[14px] font-bold text-black">{item.cat}</p>
-                          <p className="text-[11px] text-gray-400">{item.count}건</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[16px] font-black text-[#007AFF]">{item.rate}%</p>
-                        <p className="text-[9px] font-bold text-gray-300 uppercase italic">Win</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
                 <button onClick={() => setIsSheetOpen(false)} className="w-full py-4.5 bg-black text-white font-bold rounded-2xl active:scale-95 transition-all">확인</button>
               </div>
             </motion.div>
@@ -336,7 +337,10 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
+      {/* 🛠️ 모달 컴포넌트들 */}
       <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      {/* 필요 시 추가: <TierModal />, <LogicChartModal /> */}
     </div>
   );
 }

@@ -3,18 +3,37 @@ import { buildContentFilterPrompt, buildGatekeeperPrompt } from './ai/prompts.js
 
 // ===== Stage 1: 비속어 사전 필터 =====
 const PROFANITY_DICT = [
-  '시발', '씨발', 'ㅅㅂ', '병신', 'ㅂㅅ', '지랄', 'ㅈㄹ',
-  '개새끼', '닥쳐', '꺼져', '미친놈', '미친년',
+  '시발', '씨발', '쉬발', '쉬밟', '씨빨', '씨팔', '시ㅂ', 'ㅅㅂ',
+  '병신', 'ㅂㅅ', '병ㅅ', 'ㅂ신', 'ㅄ',
+  '지랄', 'ㅈㄹ', '지ㄹ', 'ㅈ랄',
+  '개새끼', '개세끼', '개섀끼',
+  '닥쳐', '꺼져', '미친놈', '미친년', '씹', '좆', '엿먹',
 ];
 
-const PERSONAL_INFO_REGEX = /(\d{3}[-\s]?\d{4}[-\s]?\d{4})|(\d{6}[-\s]?\d{7})|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+// 특수문자/공백/숫자 삽입 우회 방어: 한글+영문+ㄱ-ㅎ+ㅏ-ㅣ만 남기고 제거
+function stripNoise(text) {
+  return text.replace(/[^가-힣a-zA-Zㄱ-ㅎㅏ-ㅣ]/g, '');
+}
+
+// "시발점", "지랄도" 등 정상 단어 오탐 방지용 허용 목록
+const FALSE_POSITIVE_WORDS = ['시발점', '시발역', '지랄도', '꺼져있', '꺼져서'];
+
+// /g 플래그 제거 → test() 호출 시 lastIndex 버그 방지
+const PERSONAL_INFO_REGEX = /(\d{3}[-\s]?\d{4}[-\s]?\d{4})|(\d{6}[-\s]?\d{7})|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
 
 export function filterByDictionary(content) {
   const lower = content.toLowerCase();
+  const stripped = stripNoise(lower);
 
-  for (const word of PROFANITY_DICT) {
-    if (lower.includes(word)) {
-      return { blocked: true, reason: `금지어 포함: ${word}` };
+  // 허용 목록에 해당하면 비속어 검사 건너뛰기
+  const hasFalsePositive = FALSE_POSITIVE_WORDS.some(fp => lower.includes(fp));
+
+  // 원본 + 노이즈 제거본 모두 검사
+  if (!hasFalsePositive) {
+    for (const word of PROFANITY_DICT) {
+      if (lower.includes(word) || stripped.includes(word)) {
+        return { blocked: true, reason: `금지어 포함: ${word}` };
+      }
     }
   }
 

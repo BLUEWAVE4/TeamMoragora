@@ -117,7 +117,7 @@ export async function getVerdictFeed(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, creator:profiles!creator_id(nickname))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))')
       .order('created_at', { ascending: false })
       .limit(20);
 
