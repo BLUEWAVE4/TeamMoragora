@@ -6,13 +6,12 @@ import api from '../../services/api';
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
 
-  // feed 구조: verdict 객체 (id, debate_id, winner_side, ai_score_a, ai_score_b,
-  //             citizen_vote_count, debate: { topic, category, creator, status })
+  // feed 구조에 따른 안전한 데이터 접근
+  const debate = feed?.debate || feed || {};
+  const debateId = feed?.debate_id || feed?.id;
+  const isVotingStatus = debate.status === 'voting';
 
-  const debateStatus = feed?.debate?.status;
-  const isVotingStatus = debateStatus === 'voting';
-
-  const storageKey = `my_vote_${feed?.debate_id}_${user?.id}`;
+  const storageKey = `my_vote_${debateId}_${user?.id}`;
   const savedVote = localStorage.getItem(storageKey);
 
   const [myVote, setMyVote] = useState(savedVote || null);
@@ -22,12 +21,11 @@ export default function DebateCard({ feed, formatTime }) {
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  // voting 중인 경우에만 실시간 투표 수 불러오기
   useEffect(() => {
-    if (!feed?.debate_id || !isVotingStatus) return;
+    if (!debateId || !isVotingStatus) return;
     const fetchVoteCounts = async () => {
       try {
-        const res = await api.get(`/votes/${feed.debate_id}`);
+        const res = await api.get(`/votes/${debateId}`);
         setVoteCounts({
           agree: res?.A ?? 0,
           disagree: res?.B ?? 0,
@@ -37,13 +35,11 @@ export default function DebateCard({ feed, formatTime }) {
       }
     };
     fetchVoteCounts();
-  }, [feed?.debate_id, isVotingStatus]);
+  }, [debateId, isVotingStatus]);
 
   if (!feed) return null;
 
-  const debate = feed.debate || {};
   const topic = debate.topic || "제목 없는 논쟁";
-
   const isMe = user && (debate.creator_id === user.id);
   const creatorNickname = isMe
     ? (user.user_metadata?.nickname || "김준민짱")
@@ -59,14 +55,9 @@ export default function DebateCard({ feed, formatTime }) {
   const disagreePercent = 100 - agreePercent;
 
   const handleVote = async (side) => {
-    if (!user) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
+    if (!user) { alert('로그인이 필요합니다.'); return; }
     if (isVoting) return;
 
-    const isFirst = myVote === null;
-    const isSwitching = myVote !== null && myVote !== side;
     const prevVote = myVote;
     const prevCounts = { ...voteCounts };
 
@@ -74,9 +65,9 @@ export default function DebateCard({ feed, formatTime }) {
     localStorage.setItem(storageKey, side);
     setVoteCounts(prev => {
       const next = { ...prev };
-      if (isFirst) {
+      if (prevVote === null) {
         next[side === 'A' ? 'agree' : 'disagree'] += 1;
-      } else if (isSwitching) {
+      } else if (prevVote !== side) {
         next[prevVote === 'A' ? 'agree' : 'disagree'] -= 1;
         next[side === 'A' ? 'agree' : 'disagree'] += 1;
       }
@@ -85,15 +76,11 @@ export default function DebateCard({ feed, formatTime }) {
 
     setIsVoting(true);
     try {
-      await api.post(`/votes/${feed.debate_id}`, { voted_side: side });
+      await api.post(`/votes/${debateId}`, { voted_side: side });
     } catch (err) {
-      console.error('투표 실패:', err);
       setMyVote(prevVote);
-      if (prevVote) localStorage.setItem(storageKey, prevVote);
-      else localStorage.removeItem(storageKey);
       setVoteCounts(prevCounts);
-      const msg = err?.message || '투표에 실패했습니다. 다시 시도해주세요.';
-      alert(msg);
+      alert(err?.message || '투표 실패');
     } finally {
       setIsVoting(false);
     }
@@ -101,21 +88,14 @@ export default function DebateCard({ feed, formatTime }) {
 
   const btnStyle = (side) => {
     const isSelected = myVote === side;
-    if (side === 'A') {
-      return isSelected
-        ? 'flex-1 flex flex-col items-center justify-center py-2 rounded-2xl border-2 border-blue-500 bg-blue-50 transition-all active:scale-[0.98]'
-        : 'flex-1 flex flex-col items-center justify-center py-2 rounded-2xl border-2 border-blue-200 bg-blue-50/20 hover:bg-blue-50 hover:border-blue-100 transition-all active:scale-[0.98]';
-    } else {
-      return isSelected
-        ? 'flex-1 flex flex-col items-center justify-center py-2 rounded-2xl border-2 border-red-500 bg-red-50 transition-all active:scale-[0.98]'
-        : 'flex-1 flex flex-col items-center justify-center py-2 rounded-2xl border-2 border-red-200 bg-red-50/20 hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98]';
-    }
+    const color = side === 'A' ? 'blue' : 'red';
+    return `flex-1 flex flex-col items-center justify-center py-2 rounded-2xl border-2 transition-all active:scale-[0.98] ${
+      isSelected ? `border-${color}-500 bg-${color}-50` : `border-${color}-200 bg-${color}-50/20 hover:bg-${color}-50`
+    }`;
   };
 
   return (
     <div className="w-full bg-white border border-gray-200 rounded-[24px] mb-3 overflow-hidden shadow-sm transition-all hover:shadow-md font-sans">
-
-      {/* 1. 헤더 */}
       <div className="flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 p-[2px]">
@@ -134,41 +114,23 @@ export default function DebateCard({ feed, formatTime }) {
           </div>
         </div>
         <p className="text-[11px] text-gray-400 font-semibold tracking-tighter">
-          {formatTime ? formatTime(feed.created_at) : '2026. 3. 5.'}
+          {feed.created_at ? new Date(feed.created_at).toLocaleDateString() : '2026. 3. 11.'}
         </p>
       </div>
 
-      {/* 2. 본문 */}
       <div className="px-5 py-2">
-        <h3 className="text-[17px] font-normal text-[#262626] leading-relaxed break-keep">
-          {topic}
-        </h3>
+        <h3 className="text-[17px] font-normal text-[#262626] leading-relaxed break-keep">{topic}</h3>
       </div>
 
-      {/* 3. 투표 버튼 */}
       <div className="px-6 py-3 flex gap-5">
-        <button
-          onClick={() => handleVote('A')}
-          disabled={isVoting}
-          className={btnStyle('A')}
-        >
-          <span className="text-[16px] font-black text-blue-900 tracking-tight">
-            {myVote === 'A' ? '✓ 찬성' : '찬성'}
-          </span>
+        <button onClick={() => handleVote('A')} disabled={isVoting} className={btnStyle('A')}>
+          <span className="text-[16px] font-black text-blue-900 tracking-tight">{myVote === 'A' ? '✓ 찬성' : '찬성'}</span>
         </button>
-
-        <button
-          onClick={() => handleVote('B')}
-          disabled={isVoting}
-          className={btnStyle('B')}
-        >
-          <span className="text-[16px] font-black text-red-900 tracking-tight">
-            {myVote === 'B' ? '✓ 반대' : '반대'}
-          </span>
+        <button onClick={() => handleVote('B')} disabled={isVoting} className={btnStyle('B')}>
+          <span className="text-[16px] font-black text-red-900 tracking-tight">{myVote === 'B' ? '✓ 반대' : '반대'}</span>
         </button>
       </div>
 
-      {/* 4. 투표 결과 바 */}
       {myVote !== null && (
         <div className="px-6 pb-2">
           <div className="flex justify-between text-[12px] font-bold mb-1">
@@ -176,46 +138,17 @@ export default function DebateCard({ feed, formatTime }) {
             <span className="text-red-500">{disagreePercent}% ({voteCounts.disagree.toLocaleString()}명)</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-red-200 overflow-hidden">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-500"
-              style={{ width: `${agreePercent}%` }}
-            />
+            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${agreePercent}%` }} />
           </div>
-          <p className="text-center text-[11px] text-gray-400 mt-1.5">
-            총 {totalVotes.toLocaleString()}명 참여 · 다른 버튼을 눌러 변경 가능
-          </p>
         </div>
       )}
 
-      {/* 5. 하단 액션 바 */}
       <div className="px-5 py-3 flex justify-between items-center h-14">
         <div className="flex items-center gap-4">
-          <button className="hover:opacity-50 transition-opacity">
-            <svg aria-label="좋아요" fill="#262626" height="24" viewBox="0 0 24 24" width="24"><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.194 2.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.325.427.54.832.617 1.03a4.21 4.21 0 0 1 3.675-1.941l.167-.03z" /></svg>
-          </button>
-          <button className="hover:opacity-50 transition-opacity">
-            <svg aria-label="댓글" fill="#262626" height="24" viewBox="0 0 24 24" width="24"><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" /></svg>
-          </button>
-          <button className="hover:opacity-50 transition-opacity">
-            <svg aria-label="조회" fill="none" stroke="#262626" strokeWidth="2" height="24" viewBox="0 0 24 24" width="24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-          </button>
-          <button className="hover:opacity-50 transition-opacity">
-            <svg aria-label="공유" fill="#262626" height="24" viewBox="0 0 24 24" width="24"><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083" /><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" /></svg>
-          </button>
+          <svg aria-label="좋아요" fill="#262626" height="24" viewBox="0 0 24 24" width="24"><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.194 2.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.325.427.54.832.617 1.03a4.21 4.21 0 0 1 3.675-1.941l.167-.03z" /></svg>
+          <svg aria-label="댓글" fill="#262626" height="24" viewBox="0 0 24 24" width="24"><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" /></svg>
         </div>
-        <Link
-          to={`/debate/${feed.debate_id}`}
-          className="bg-[#0095f6] text-white px-5 py-2 rounded-2xl text-[13px] font-bold hover:bg-blue-600 transition-all shadow-sm active:scale-95"
-        >
-          참여하기
-        </Link>
-      </div>
-
-      {/* 6. 좋아요 개수 */}
-      <div className="px-5 pb-5 pt-1">
-        <p className="text-[13px] font-bold text-[#262626] leading-none">
-          좋아요 {debate.likes_count?.toLocaleString() || '530'}개
-        </p>
+        <Link to={`/debate/${debateId}`} className="bg-[#0095f6] text-white px-5 py-2 rounded-2xl text-[13px] font-bold">참여하기</Link>
       </div>
     </div>
   );
