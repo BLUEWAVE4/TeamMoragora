@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { grantDebateXP } from './xp.service.js';
 
 // 복합 판결 계산: AI 판결 즉시 저장 (시민 투표는 마감 후 합산)
 export async function calculateCompositeVerdict(debateId, judgments) {
@@ -126,6 +127,17 @@ export async function finalizeVerdict(debateId) {
 
   // 프로필 전적 업데이트 (wins/losses/draws + total_score)
   await updateProfileStats(debateId, finalWinner, finalA, finalB);
+
+  // XP 지급 + 티어 업데이트
+  const { data: debate2 } = await supabaseAdmin
+    .from('debates')
+    .select('creator_id, opponent_id')
+    .eq('id', debateId)
+    .single();
+
+  if (debate2?.creator_id && debate2?.opponent_id) {
+    await grantDebateXP(debateId, debate2.creator_id, debate2.opponent_id, finalWinner);
+  }
 
   return { finalA, finalB, finalWinner, citizenApplied, voterCount: votes?.length || 0 };
 }

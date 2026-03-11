@@ -4,7 +4,7 @@ export async function getPublicProfile(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, nickname, avatar_url, wins, losses, draws, total_score')
+      .select('id, nickname, avatar_url, wins, losses, draws, total_score, xp, tier')
       .eq('id', req.params.userId)
       .single();
 
@@ -33,11 +33,27 @@ export async function getMyVerdicts(req, res, next) {
   }
 }
 
+export async function getMyXPLogs(req, res, next) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('xp_logs')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getRanking(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, nickname, avatar_url, wins, losses, draws, total_score')
+      .select('id, nickname, avatar_url, wins, losses, draws, total_score, xp, tier')
       .order('total_score', { ascending: false })
       .limit(50);
 

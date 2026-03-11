@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { finalizeVerdict } from '../services/verdict.service.js';
+import { grantVoteXP } from '../services/xp.service.js';
 
 export async function castVote(req, res, next) {
   try {
@@ -40,6 +41,10 @@ export async function castVote(req, res, next) {
       .single();
 
     if (error) throw error;
+
+    // 투표 참여 XP 지급 (+3 XP)
+    await grantVoteXP(req.user.id, debateId);
+
     res.json(data);
   } catch (err) {
     next(err);
