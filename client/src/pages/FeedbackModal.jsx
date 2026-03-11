@@ -20,11 +20,14 @@ const BEST_FEATURES = [
 
 const STAR_LABELS = ['매우 불만', '불만족', '보통', '만족', '매우 만족'];
 const STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z';
-const STAR_SIZE = 40;
+const STAR_W = 36;
+const STAR_GAP = 6;
 
 function StarRating({ id: ratingId, value, onChange }) {
   const [hover, setHover] = useState(0);
   const containerRef = useRef(null);
+  const touchActive = useRef(false);
+  const touchStartY = useRef(0);
   const active = hover || value;
 
   const calcValue = useCallback((clientX) => {
@@ -35,24 +38,30 @@ function StarRating({ id: ratingId, value, onChange }) {
     return Math.max(0.5, Math.min(5, Math.round(raw * 2) / 2));
   }, []);
 
+  // PC: 마우스 호버 + 클릭
   const handleMouseMove = (e) => setHover(calcValue(e.clientX));
   const handleMouseLeave = () => setHover(0);
   const handleClick = (e) => onChange(calcValue(e.clientX));
 
+  // 모바일: 수평 드래그만 별 변경, 수직은 스크롤 허용
   const handleTouchStart = (e) => {
-    e.preventDefault();
+    touchActive.current = true;
+    touchStartY.current = e.touches[0].clientY;
     onChange(calcValue(e.touches[0].clientX));
   };
   const handleTouchMove = (e) => {
+    if (!touchActive.current) return;
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (dy > 10) {
+      // 수직 이동 → 스크롤 의도, 별 조작 중단
+      touchActive.current = false;
+      return;
+    }
+    // 수평 이동 → 별 드래그
     e.preventDefault();
     onChange(calcValue(e.touches[0].clientX));
   };
-
-  const getFill = (star) => {
-    if (active >= star) return 'full';
-    if (active >= star - 0.5) return 'half';
-    return 'empty';
-  };
+  const handleTouchEnd = () => { touchActive.current = false; };
 
   const getLabel = (val) => {
     if (val <= 0) return '';
@@ -63,42 +72,63 @@ function StarRating({ id: ratingId, value, onChange }) {
     return STAR_LABELS[4];
   };
 
+  const totalW = STAR_W * 5 + STAR_GAP * 4;
+
   return (
     <div className="flex items-center gap-3">
-      <svg
+      <div
         ref={containerRef}
-        width={STAR_SIZE * 5 + 16}
-        height={STAR_SIZE + 4}
-        viewBox={`0 0 ${STAR_SIZE * 5 + 16} ${STAR_SIZE + 4}`}
-        className="cursor-pointer select-none touch-none"
+        className="relative cursor-pointer select-none"
+        style={{ width: totalW, height: STAR_W }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <defs>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <linearGradient key={star} id={`star-${ratingId}-${star}`}>
-              {getFill(star) === 'full' ? (
-                <stop offset="100%" stopColor="#FFBD43" />
-              ) : getFill(star) === 'half' ? (
-                <>
-                  <stop offset="50%" stopColor="#FFBD43" />
-                  <stop offset="50%" stopColor="#E5E7EB" />
-                </>
-              ) : (
-                <stop offset="100%" stopColor="#E5E7EB" />
-              )}
-            </linearGradient>
+        {/* 빈 별 배경 */}
+        <svg width={totalW} height={STAR_W} viewBox={`0 0 ${totalW} ${STAR_W}`} className="absolute inset-0">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <g key={i} transform={`translate(${i * (STAR_W + STAR_GAP)}, 0) scale(${STAR_W / 24})`}>
+              <path d={STAR_PATH} fill="#E5E7EB" />
+            </g>
           ))}
-        </defs>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <g key={star} transform={`translate(${(star - 1) * (STAR_SIZE + 4) + 2}, 2) scale(${STAR_SIZE / 24})`}>
-            <path d={STAR_PATH} fill={`url(#star-${ratingId}-${star})`} />
-          </g>
-        ))}
-      </svg>
+        </svg>
+        {/* 채워진 별 (clipPath로 정확히 자름) */}
+        {active > 0 && (
+          <svg width={totalW} height={STAR_W} viewBox={`0 0 ${totalW} ${STAR_W}`} className="absolute inset-0">
+            <defs>
+              <clipPath id={`clip-${ratingId}`}>
+                {/* active 값에 따라 채울 영역 계산 */}
+                {(() => {
+                  const fullStars = Math.floor(active);
+                  const hasHalf = active % 1 !== 0;
+                  const rects = [];
+                  for (let i = 0; i < fullStars; i++) {
+                    rects.push(
+                      <rect key={i} x={i * (STAR_W + STAR_GAP)} y={0} width={STAR_W} height={STAR_W} />
+                    );
+                  }
+                  if (hasHalf) {
+                    rects.push(
+                      <rect key="half" x={fullStars * (STAR_W + STAR_GAP)} y={0} width={STAR_W / 2} height={STAR_W} />
+                    );
+                  }
+                  return rects;
+                })()}
+              </clipPath>
+            </defs>
+            <g clipPath={`url(#clip-${ratingId})`}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <g key={i} transform={`translate(${i * (STAR_W + STAR_GAP)}, 0) scale(${STAR_W / 24})`}>
+                  <path d={STAR_PATH} fill="#FFBD43" />
+                </g>
+              ))}
+            </g>
+          </svg>
+        )}
+      </div>
       {value > 0 && (
         <div className="flex flex-col items-start">
           <span className="text-base font-black text-[#FFBD43] leading-none">{value}</span>
