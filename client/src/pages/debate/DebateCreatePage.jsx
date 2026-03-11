@@ -112,11 +112,11 @@ export default function DebateCreatePage() {
 
   return (
 
-    <div className="min-h-screen flex justify-center items-center px-4 bg-[#FAFAF5]">
+    <div className="min-h-screen flex justify-center items-start px-4 pt-6 pb-28 bg-[#FAFAF5]">
 
       <div className="w-full max-w-md">
 
-        <h2 className="text-2xl font-bold mb-6 text-center">
+        <h2 className="text-2xl font-bold mb-4 text-center">
           논쟁 생성하기
         </h2>
 
