@@ -32,10 +32,10 @@ export default function Step3Confirm({
   };
 
   const categoryMap = {
-    society: "사회",
-    technology: "기술",
-    politics: "정치",
-    philosophy: "철학"
+    사회: "사회", 기술: "기술", 정치: "정치", 철학: "철학",
+    일상: "일상", 연애: "연애", 문화: "문화", 기타: "기타",
+    // 하위호환 (기존 영문 데이터)
+    society: "사회", technology: "기술", politics: "정치", philosophy: "철학",
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,10 +92,14 @@ export default function Step3Confirm({
           className="w-full px-5 py-4 rounded-2xl border border-gold/20"
         >
           <option value="">선택</option>
-          <option value="society">사회</option>
-          <option value="technology">기술</option>
-          <option value="politics">정치</option>
-          <option value="philosophy">철학</option>
+          <option value="사회">사회</option>
+          <option value="기술">기술</option>
+          <option value="정치">정치</option>
+          <option value="철학">철학</option>
+          <option value="일상">일상</option>
+          <option value="연애">연애</option>
+          <option value="문화">문화</option>
+          <option value="기타">기타</option>
         </select>
 
       </div>
