@@ -15,19 +15,22 @@ export async function submitFeedback(req, res, next) {
       }
     }
 
+    const payload = {
+      user_id: req.user.id,
+      satisfaction,
+      ai_accuracy,
+      ui_ease,
+      fairness,
+      recommend,
+      best_feature: best_feature || null,
+      improvement: improvement || null,
+      additional: additional || null,
+    };
+
+    // upsert: 기존 피드백 있으면 수정, 없으면 새로 생성
     const { data, error } = await supabaseAdmin
       .from('feedbacks')
-      .insert({
-        user_id: req.user.id,
-        satisfaction,
-        ai_accuracy,
-        ui_ease,
-        fairness,
-        recommend,
-        best_feature: best_feature || null,
-        improvement: improvement || null,
-        additional: additional || null,
-      })
+      .upsert(payload, { onConflict: 'user_id' })
       .select()
       .single();
 

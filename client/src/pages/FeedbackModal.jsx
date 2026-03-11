@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { submitFeedback } from '../services/api';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { submitFeedback, getMyFeedbacks } from '../services/api';
 
 const RATING_ITEMS = [
   { key: 'satisfaction', label: '전반적 만족도', desc: '모라고라 서비스를 전반적으로 어떻게 평가하시나요?' },
@@ -148,6 +148,32 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [additional, setAdditional] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+
+  // 기존 피드백 불러오기
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const res = await getMyFeedbacks();
+        const list = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
+        if (list.length > 0) {
+          const prev = list[0];
+          setRatings({
+            satisfaction: prev.satisfaction || 0,
+            ai_accuracy: prev.ai_accuracy || 0,
+            ui_ease: prev.ui_ease || 0,
+            fairness: prev.fairness || 0,
+            recommend: prev.recommend || 0,
+          });
+          setBestFeatures(prev.best_feature ? prev.best_feature.split(', ') : []);
+          setImprovement(prev.improvement || '');
+          setAdditional(prev.additional || '');
+          setIsEdit(true);
+        }
+      } catch { /* 첫 제출 */ }
+    })();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -180,6 +206,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
     setImprovement('');
     setAdditional('');
     setSubmitted(false);
+    setIsEdit(false);
     onClose();
   };
 
@@ -297,7 +324,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
-              {submitting ? '제출 중...' : '평가 제출하기'}
+              {submitting ? '제출 중...' : isEdit ? '평가 수정하기' : '평가 제출하기'}
             </button>
           </div>
         )}
