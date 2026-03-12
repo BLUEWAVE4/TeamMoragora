@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import api from '../services/api';
+import api, { getVerdict } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import VerdictDetailModal from './VerdictDetailModal';
+import VerdictContent from '../components/verdict/VerdictContent';
 import TierModal from './TierModal';
 import LogicChartModal from './LogicChartModal';
 import FeedbackModal from './FeedbackModal';
@@ -94,6 +94,7 @@ export default function ProfilePage() {
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
+  const [verdictLoading, setVerdictLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
@@ -152,6 +153,19 @@ export default function ProfilePage() {
       window.location.reload();
     } catch (err) { alert('변경 중 오류가 발생했습니다.'); }
     finally { setLoading(false); }
+  };
+
+  const handleVerdictClick = async (debateId) => {
+    setVerdictLoading(true);
+    try {
+      const data = await getVerdict(debateId);
+      setSelectedVerdict(data);
+    } catch (err) {
+      console.error('판결 데이터 로드 실패:', err);
+      alert('판결 데이터를 불러올 수 없습니다.');
+    } finally {
+      setVerdictLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -304,6 +318,7 @@ export default function ProfilePage() {
                   <motion.div
                     key={debate.id}
                     whileTap={{ backgroundColor: "#F9F9F9" }}
+                    onClick={() => handleVerdictClick(debate.id)}
                     className="p-4 flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex-1 pr-4">
@@ -451,7 +466,52 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-      <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
+      {/* 판결 상세 모달 */}
+      <AnimatePresence>
+        {selectedVerdict && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelectedVerdict(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 z-[201] flex justify-center"
+            >
+              <div className="w-full max-w-md max-h-[90vh] bg-[#FAFAF5] rounded-t-[30px] overflow-hidden flex flex-col shadow-2xl">
+                {/* 헤더 */}
+                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative shrink-0">
+                  <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mb-4" />
+                  <button onClick={() => setSelectedVerdict(null)} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
+                  <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
+                  <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
+                    "{selectedVerdict.debate?.topic || selectedVerdict.debates?.topic || '논쟁 주제'}"
+                  </h2>
+                </div>
+                {/* 스크롤 콘텐츠 */}
+                <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-4">
+                  <VerdictContent verdictData={selectedVerdict} />
+                  <button
+                    onClick={() => setSelectedVerdict(null)}
+                    className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+                  >
+                    판결 리포트 닫기
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 로딩 오버레이 */}
+      {verdictLoading && (
+        <div className="fixed inset-0 bg-black/30 z-[199] flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );

@@ -5,7 +5,7 @@ import { ValidationError } from '../errors/index.js';
 
 export async function createDebate(req, res, next) {
   try {
-    const { topic, description, category, purpose, lens, mode } = req.body;
+    const { topic, description, category, purpose, lens, mode, pro_side, con_side } = req.body;
 
     if (!topic?.trim()) throw new ValidationError('주제를 입력해주세요.');
 
@@ -31,6 +31,8 @@ export async function createDebate(req, res, next) {
         purpose,
         lens,
         mode: debateMode,
+        pro_side: pro_side || null,
+        con_side: con_side || null,
         invite_code: inviteCode,
         status: debateMode === 'solo' ? 'arguing' : 'waiting',
       })
