@@ -157,7 +157,7 @@ export default function InvitePage() {
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl)
+    navigator.clipboard.writeText(ogShareUrl)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
   }
