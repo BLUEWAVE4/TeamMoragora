@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import DoorTransition from './DoorTransition';
 
 const HomeIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -18,7 +17,6 @@ const UserIcon = () => (
 export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isDoorOpen, setIsDoorOpen] = useState(false);
 
   const menuItems = [
     { to: '/', icon: <HomeIcon />, label: '홈' },
@@ -29,62 +27,50 @@ export default function TabBar() {
   ];
 
   return (
-    <>
-      {/* ✨ 문 애니메이션 컴포넌트 (nav 바깥 최상단 레이어) */}
-      {isDoorOpen && (
-        <DoorTransition 
-          onAnimationComplete={() => {
-            navigate('/debate/create');
-            setIsDoorOpen(false);
-          }} 
-        />
-      )}
+    <div className="fixed bottom-0 left-0 right-0 flex justify-center z-50 px-1 pb-[env(safe-area-inset-bottom,16px)] mb-0.5 pointer-events-none">
+      <nav className="w-full max-w-[420px] bg-white backdrop-blur-md rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-gray-300 h-[76px] flex items-center justify-around px-2 pointer-events-auto">
 
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-50 px-1 pb-[env(safe-area-inset-bottom,16px)] mb-0.5 pointer-events-none">
-        <nav className="w-full max-w-[420px] bg-white backdrop-blur-md rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-gray-300 h-[76px] flex items-center justify-around px-2 pointer-events-auto">
-          
-          {menuItems.map((item, idx) => {
-            if (item.isButton) {
-              return (
-                <button 
-                  key="center-btn"
-                  onClick={() => setIsDoorOpen(true)}
-                  className="w-14 h-14 bg-[#1a1a1a] text-white rounded-4xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 hover:bg-black"
-                >
-                  <span className="text-3xl font-light">+</span>
-                </button>
-              );
-            }
-
-            const isActive = location.pathname === item.to;
-
+        {menuItems.map((item, idx) => {
+          if (item.isButton) {
             return (
-              <NavLink 
-                key={item.to}
-                to={item.to} 
-                className="flex-1 flex justify-center items-center h-full no-underline"
+              <button
+                key="center-btn"
+                onClick={() => navigate('/debate/create')}
+                className="w-14 h-14 bg-[#1a1a1a] text-white rounded-4xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 hover:bg-black"
               >
-                <div className={`
-                  flex flex-col items-center justify-center w-[64px] h-[58px] rounded-[1.5rem] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]
-                  ${isActive 
-                    ? 'bg-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-yellow-400 scale-105' 
-                    : 'bg-transparent border border-transparent text-gray-800'}
-                `}>
-                  <div className={`transition-transform duration-300 ${isActive ? 'text-gray-900 translate-y-[-2px]' : ''}`}>
-                    {item.icon}
-                  </div>
-                  <span className={`
-                    text-[10px] mt-0.5 font-bold transition-all duration-300
-                    ${isActive ? 'opacity-100 text-black' : 'opacity-0 h-0 overflow-hidden'}
-                  `}>
-                    {item.label}
-                  </span>
-                </div>
-              </NavLink>
+                <span className="text-3xl font-light">+</span>
+              </button>
             );
-          })}
-        </nav>
-      </div>
-    </>
+          }
+
+          const isActive = location.pathname === item.to;
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className="flex-1 flex justify-center items-center h-full no-underline"
+            >
+              <div className={`
+                flex flex-col items-center justify-center w-[64px] h-[58px] rounded-[1.5rem] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]
+                ${isActive
+                  ? 'bg-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-yellow-400 scale-105'
+                  : 'bg-transparent border border-transparent text-gray-800'}
+              `}>
+                <div className={`transition-transform duration-300 ${isActive ? 'text-gray-900 translate-y-[-2px]' : ''}`}>
+                  {item.icon}
+                </div>
+                <span className={`
+                  text-[10px] mt-0.5 font-bold transition-all duration-300
+                  ${isActive ? 'opacity-100 text-black' : 'opacity-0 h-0 overflow-hidden'}
+                `}>
+                  {item.label}
+                </span>
+              </div>
+            </NavLink>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
