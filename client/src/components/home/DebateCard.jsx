@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import api from '../../services/api';
+//import api from '../../services/api'; 변경전 동작확인 되면 삭제 
+import { castVote, getVoteTally, cancelVote } from '../../services/api'; //변경후
 
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
@@ -27,7 +28,8 @@ export default function DebateCard({ feed, formatTime }) {
     if (!feed?.debate_id || !isVotingStatus) return;
     const fetchVoteCounts = async () => {
       try {
-        const res = await api.get(`/votes/${feed.debate_id}`);
+        //const res = await api.get(`/votes/${feed.debate_id}`); 변경전 동작확인되면 삭제
+        const res = await getVoteTally(feed.debate_id);
         setVoteCounts({
           agree: res?.A ?? 0,
           disagree: res?.B ?? 0,
@@ -103,10 +105,12 @@ export default function DebateCard({ feed, formatTime }) {
     try {
       if (isCanceling) {
         // 서버에 투표 삭제 요청 (API 설계에 맞춰 DELETE 사용)
-        await api.delete(`/votes/${feed.debate_id}`);
+        //await api.delete(`/votes/${feed.debate_id}`); 변경전 동작확인되면 삭제
+        await cancelVote(feed.debate_id); //변경후
       } else {
         // 투표 생성 또는 수정 요청
-        await api.post(`/votes/${feed.debate_id}`, { voted_side: side });
+        // await api.post(`/votes/${feed.debate_id}`, { voted_side: side }); 변경전 동작확인 되면 삭제
+        await castVote(feed.debate_id, side);
       }
     } catch (err) {
       console.error('투표 통신 실패:', err);
