@@ -15,7 +15,8 @@ export default function RankingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
 
-  const myNickname = user?.user_metadata?.nickname || '김준민';
+  // 기본 닉네임 설정 (데이터 로딩 전용)
+  const myNickname = user?.user_metadata?.nickname || '사용자';
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -32,10 +33,12 @@ export default function RankingPage() {
     fetchRankings();
   }, []);
 
+  // 내 데이터 찾기
   const myRankIndex = rankings.findIndex(r => r.id === user?.id);
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
 
+  // 상위 3명 시상대 데이터
   const podiumData = rankings.slice(0, 3).map((r, idx) => ({
     ...r,
     rank: idx + 1,
@@ -44,18 +47,20 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white/60 to-white/20' : idx === 1 ? 'bg-gradient-to-b from-white/50 to-white/10' : 'bg-gradient-to-b from-white/40 to-white/5',
   }));
 
+  // 4위부터 리스트 데이터
   const listRankers = rankings.slice(3, visibleCount + 3);
 
+  // 리그 시스템 데이터 (디자인 최적화용)
   const leagueSystem = [
-    { tier: 'Tier 5', name: '대법관 (Supreme)', icon: <Building2 className="w-5 h-5" />, color: '#FF3B30', condition: '상위 1%', group: '50명 단위 그룹', rule: '매월 10명 강등' },
-    { tier: 'Tier 4', name: '판사 (Judge)', icon: <Gavel className="w-5 h-5" />, color: '#FF9500', condition: '상위 5%', group: '50명 단위 그룹', rule: '매월 상위 10명 승격 / 하위 10명 강등' },
-    { tier: 'Tier 3', name: '변호사 (Attorney)', icon: <Scale className="w-5 h-5" />, color: '#AF52DE', condition: '상위 20%', group: '50명 단위 그룹', rule: '매월 상위 10명 승격 / 하위 10명 강등' },
-    { tier: 'Tier 2', name: '배심원 (Juror)', icon: <Users className="w-5 h-5" />, color: '#007AFF', condition: '상위 50%', group: '50명 단위 그룹', rule: '매월 상위 10명 승격 / 하위 10명 강등' },
-    { tier: 'Tier 1', name: '시민 (Citizen)', icon: <User className="w-5 h-5" />, color: '#8E8E93', condition: '나머지 전체', group: '50명 단위 그룹', rule: '매월 상위 10명 승격' },
+    { tier: 'Tier 5', name: '대법관 (Supreme)', icon: <Building2 />, color: '#FF3B30' },
+    { tier: 'Tier 4', name: '판사 (Judge)', icon: <Gavel />, color: '#FF9500' },
+    { tier: 'Tier 3', name: '변호사 (Attorney)', icon: <Scale />, color: '#AF52DE' },
+    { tier: 'Tier 2', name: '배심원 (Juror)', icon: <Users />, color: '#007AFF' },
+    { tier: 'Tier 1', name: '시민 (Citizen)', icon: <User />, color: '#8E8E93' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-56 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans overflow-x-hidden">
 
       {/* 상단 내비게이션 */}
       <nav className="sticky top-0 z-[100] bg-white/70 backdrop-blur-2xl px-6 pt-14 pb-5 flex justify-between items-end border-b border-gray-200/30">
@@ -69,26 +74,26 @@ export default function RankingPage() {
       </nav>
 
       <div className="max-w-md mx-auto px-5 pt-8">
-        {/* 로딩 */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
-            {/* 시상대 */}
+            {/* 1. 시상대 섹션 */}
             {podiumData.length >= 3 && (
-              <div className="flex justify-center items-end gap-3 h-[360px] mb-12">
+              <div className="flex justify-center items-end gap-3 h-[360px] mb-8">
                 {[1, 0, 2].map((idx) => {
                   const p = podiumData[idx];
                   const isFirst = idx === 0;
+                  const isPodiumMe = user && p.id === user.id;
                   return (
                     <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1, type: 'spring' }} className="flex-1 flex flex-col items-center">
                       <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.5, delay: idx * 0.2 }}>
                         <Trophy className={`w-7 h-7 ${p.trophyColor} mb-2 drop-shadow-[0_4px_6px_rgba(0,0,0,0.1)]`} />
                       </motion.div>
                       <div className="relative mb-5">
-                        <div className={`rounded-full p-1 bg-gradient-to-tr ${p.color} shadow-lg`}>
+                        <div className={`rounded-full p-1 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-4 ring-blue-400 ring-offset-2' : ''}`}>
                           <div className="rounded-full bg-white p-0.5">
                             <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20' : 'w-16 h-16'} bg-gray-50`}>
                               <img src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nickname}`} alt="avatar" />
@@ -101,7 +106,9 @@ export default function RankingPage() {
                       </div>
                       <div className={`w-full ${isFirst ? 'h-48' : idx === 1 ? 'h-36' : 'h-32'} rounded-t-[32px] relative overflow-hidden flex flex-col items-center justify-center pt-2 shadow-2xl border border-white/60 ${p.podiumBg} backdrop-blur-md`}>
                         <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${p.color}`} />
-                        <p className="text-[14px] font-black text-gray-800 mb-0.5">{p.nickname}</p>
+                        <p className={`text-[14px] font-black mb-0.5 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>
+                          {p.nickname} {isPodiumMe && '(나)'}
+                        </p>
                         <p className="text-[12px] font-extrabold text-[#007AFF] mb-3">{p.total_score?.toLocaleString()} XP</p>
                         <div className="text-[9px] font-black px-2.5 py-1 bg-black/5 rounded-full text-gray-400 uppercase tracking-tighter border border-black/5">{p.wins}W {p.losses}L</div>
                       </div>
@@ -111,35 +118,80 @@ export default function RankingPage() {
               </div>
             )}
 
-            {/* 랭킹 리스트 */}
+            {/* 2. 내 랭킹 요약 카드 */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              onClick={() => setIsXPDetailOpen(true)}
+              className="mb-10 cursor-pointer active:scale-[0.98] transition-all"
+            >
+              <div className="bg-[#EBF5FF]/80 backdrop-blur-xl border-2 border-[#007AFF]/20 shadow-lg rounded-[28px] p-5 flex items-center gap-4">
+                <div className="w-10 flex flex-col items-center">
+                  <span className="text-[22px] font-black text-[#007AFF] italic">{myRank}</span>
+                  <span className="text-[8px] font-black text-[#007AFF]/50 uppercase tracking-tighter">RANK</span>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden shadow-sm border border-[#007AFF]/10 flex-shrink-0">
+                  <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.nickname || myNickname}`} alt="avatar" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[18px] font-black text-black truncate">
+                      {myData?.nickname || myNickname} (나)
+                    </span>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#007AFF] text-white uppercase flex-shrink-0">{myData?.tier || '시민'}</span>
+                  </div>
+                  <div className="flex items-center text-[12px] font-bold text-gray-500">
+                    <span className="text-[#007AFF] font-black">{myData?.total_score?.toLocaleString() || 0} XP</span>
+                    <span className="mx-2 opacity-30">•</span>
+                    <span>{myData?.wins || 0}승 {myData?.losses || 0}패</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-50">
+                   <ChevronRight className="w-5 h-5 text-[#007AFF]" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 3. 실시간 랭킹 리스트 */}
             <div className="flex items-center gap-2 mb-4 px-1">
               <TrendingUp className="w-4 h-4 text-[#007AFF]" />
               <h3 className="text-[15px] font-black text-black">실시간 랭킹 순위</h3>
             </div>
             <div className="space-y-3 mb-6">
               <AnimatePresence mode='popLayout'>
-                {listRankers.map((player, idx) => (
-                  <motion.div key={player.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[24px] p-4 flex items-center shadow-[0_4px_12px_rgba(0,0,0,0.02)] border border-white">
-                    <div className="w-8 flex flex-col items-center mr-3">
-                      <span className="text-[18px] font-black text-black/20 italic">{idx + 4}</span>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner">
-                      <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[16px] font-bold text-black">{player.nickname}</span>
-                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400 uppercase">{player.tier || '시민'}</span>
+                {listRankers.map((player, idx) => {
+                  const isListMe = user && player.id === user.id;
+                  return (
+                    <motion.div 
+                      key={player.id} layout 
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
+                      className={`rounded-[24px] p-4 flex items-center shadow-[0_4px_12px_rgba(0,0,0,0.02)] border transition-all ${isListMe ? 'bg-blue-50 border-blue-200' : 'bg-white border-white'}`}
+                    >
+                      <div className="w-8 flex flex-col items-center mr-3">
+                        <span className={`text-[18px] font-black italic ${isListMe ? 'text-[#007AFF]' : 'text-black/20'}`}>{idx + 4}</span>
                       </div>
-                      <div className="text-[11px] font-bold text-gray-400">{player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP</div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-300" />
-                  </motion.div>
-                ))}
+                      <div className="w-12 h-12 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner border border-white">
+                        <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={`text-[16px] font-bold ${isListMe ? 'text-[#007AFF]' : 'text-black'}`}>
+                            {player.nickname} {isListMe && '(나)'}
+                          </span>
+                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase ${isListMe ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                            {player.tier || '시민'}
+                          </span>
+                        </div>
+                        <div className={`text-[11px] font-bold ${isListMe ? 'text-blue-400' : 'text-gray-400'}`}>
+                          {player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-5 h-5 ${isListMe ? 'text-blue-300' : 'text-gray-300'}`} />
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
 
-            {/* 더 불러오기 */}
             {visibleCount + 3 < rankings.length && (
               <button onClick={() => setVisibleCount(v => v + 10)} className="w-full py-4 mb-10 bg-white rounded-[22px] border border-gray-100 shadow-sm text-[14px] font-bold text-gray-500 active:scale-95 transition-all">
                 + 랭커 더 불러오기
@@ -149,37 +201,7 @@ export default function RankingPage() {
         )}
       </div>
 
-      {/* 내 랭킹 플로팅 바 (수정된 부분) */}
-      <motion.div
-        initial={{ y: 100 }} animate={{ y: 0 }} whileTap={{ scale: 0.98 }}
-        onClick={() => setIsXPDetailOpen(true)}
-        className="fixed bottom-24 left-0 right-0 z-[90] cursor-pointer"
-      >
-        <div className="max-w-md mx-auto px-5">
-          <div className="bg-[#EBF5FF]/90 backdrop-blur-xl border-2 border-[#007AFF]/30 shadow-[0_8px_32px_rgba(0,122,255,0.15)] rounded-[24px] p-4 flex items-center gap-4">
-            <div className="w-8 flex flex-col items-center mr-3">
-              <span className="text-[18px] font-black text-[#007AFF] italic">{myRank}</span>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-white overflow-hidden shadow-sm border border-[#007AFF]/10 flex-shrink-0">
-              <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myNickname}`} alt="avatar" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[16px] font-black text-black truncate">{myNickname} (나)</span>
-                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-[#007AFF] text-white uppercase flex-shrink-0">{myData?.tier || '시민'}</span>
-              </div>
-              <div className="flex items-center text-[11px] font-bold text-gray-500">
-                <span className="whitespace-nowrap">{myData?.wins || 0}승 {myData?.losses || 0}패 {myData?.draws || 0}무</span>
-                <span className="mx-1.5 opacity-30">•</span>
-                <span className="text-[#007AFF] font-black whitespace-nowrap">{myData?.total_score?.toLocaleString() || 0} XP</span>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-[#007AFF]/50 flex-shrink-0" />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 바텀시트 1 - 내 활동 요약 */}
+      {/* 내 활동 요약 바텀시트 */}
       <AnimatePresence>
         {isXPDetailOpen && (
           <>
@@ -230,49 +252,71 @@ export default function RankingPage() {
         )}
       </AnimatePresence>
 
-      {/* 바텀시트 2 - 리그 가이드 */}
+      {/* 리그 시스템 가이드 바텀시트 (Moragora 버전) */}
       <AnimatePresence>
         {isLevelInfoOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsLevelInfoOpen(false)} className="fixed inset-0 bg-black/40 z-[1000] backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsLevelInfoOpen(false)} className="fixed inset-0 bg-black/60 z-[1000] backdrop-blur-md" />
             <motion.div
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
               onDragEnd={(_, info) => info.offset.y > 100 && setIsLevelInfoOpen(false)}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 200 }}
-
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[1001] rounded-t-[36px] max-h-[85vh] overflow-y-auto pb-12 shadow-2xl"
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F8F9FC] z-[1001] rounded-t-[40px] max-h-[85vh] overflow-y-auto pb-12 shadow-2xl"
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
+              <div className="w-12 h-1.5 bg-gray-300/60 rounded-full mx-auto my-5 mb-8" />
               <div className="px-6">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 text-[#007AFF] mb-1">
-                    <Trophy className="w-5 h-5" />
-                    <span className="text-[14px] font-black uppercase tracking-widest">Verdict League</span>
+                <div className="text-center mb-10">
+                  <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-1.5 rounded-full text-[#007AFF] mb-3">
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-[12px] font-black uppercase tracking-[0.15em]">Moragora League</span>
                   </div>
-                  <h3 className="text-[24px] font-black text-black">리그 시스템 가이드</h3>
+                  <h3 className="text-[26px] font-black text-black leading-tight">등급 체계 안내</h3>
+                  <p className="text-gray-400 text-[14px] font-medium mt-2">논리적인 토론을 통해 당신의 티어를 증명하세요!</p>
                 </div>
-                <div className="space-y-4">
-                  {leagueSystem.map((lv) => (
-                    <div key={lv.tier} className="bg-white rounded-[26px] p-5 shadow-sm border border-white">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-[18px] flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: lv.color }}>{lv.icon}</div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-black text-gray-400 uppercase">{lv.tier}</span>
-                            <span className="text-[17px] font-black text-black">{lv.name}</span>
+
+                <div className="grid gap-4">
+                  {leagueSystem.map((lv, idx) => (
+                    <motion.div 
+                      key={lv.tier}
+                      initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="relative overflow-hidden bg-white rounded-[30px] p-6 shadow-[0_8px_20px_rgba(0,0,0,0.04)] border border-white"
+                    >
+                      <span className="absolute -right-2 -bottom-4 text-[60px] font-black text-gray-50/50 select-none tracking-tighter italic">
+                        {lv.tier.split(' ')[1]}
+                      </span>
+                      <div className="flex items-center gap-5 relative z-10">
+                        <div 
+                          className="w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-lg transform -rotate-3"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${lv.color}, ${lv.color}CC)`,
+                            boxShadow: `0 8px 16px -4px ${lv.color}66`
+                          }}
+                        >
+                          {React.cloneElement(lv.icon, { className: "w-8 h-8" })}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-gray-100 text-gray-400 uppercase tracking-tighter">
+                              {lv.tier}
+                            </span>
                           </div>
-                          <div className="text-[12px] font-bold text-[#007AFF]">{lv.condition} • {lv.group}</div>
+                          <div className="text-[20px] font-black text-black tracking-tight">
+                            {lv.name.split(' (')[0]}
+                            <span className="text-[13px] font-bold text-gray-400 ml-2 font-mono uppercase">
+                              {lv.name.match(/\(([^)]+)\)/)?.[0]}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                          <ChevronRight className="w-4 h-4 text-gray-300" />
                         </div>
                       </div>
-                      <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100/50 flex items-start gap-2">
-                        <Zap className="w-3.5 h-3.5 text-orange-400 mt-0.5" />
-                        <p className="text-[12px] text-gray-500 font-bold leading-relaxed">{lv.rule}</p>
-                      </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-                <button onClick={() => setIsLevelInfoOpen(false)} className="w-full py-4 bg-black text-white font-bold rounded-[22px] mt-10">확인</button>
+                <button onClick={() => setIsLevelInfoOpen(false)} className="w-full py-5 bg-black text-white font-black text-[17px] rounded-[24px] mt-10 shadow-xl shadow-black/10 active:scale-[0.98] transition-all">확인했습니다</button>
               </div>
             </motion.div>
           </>

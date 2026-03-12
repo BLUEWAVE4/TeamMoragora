@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import DoorTransition from './DoorTransition';
 
 // --- 아이콘 컴포넌트 세트 ---
 
@@ -50,9 +49,6 @@ const UserIcon = ({ active }) => (
 export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isDoorOpen, setIsDoorOpen] = useState(false);
-
-  // 현재 경로가 생성 페이지인지 확인하여 상태 유지
   const isCreateActive = location.pathname === '/debate/create';
 
   const menuItems = [
@@ -65,28 +61,16 @@ export default function TabBar() {
 
   return (
     <>
-      {/* 문 애니메이션 레이어 (최상단) */}
-      {isDoorOpen && (
-        <DoorTransition 
-          onAnimationComplete={() => {
-            navigate('/debate/create');
-            setIsDoorOpen(false);
-          }} 
-        />
-      )}
-
-      {/* 하단 네비게이션 컨테이너 (인스타그램 스타일 바닥 밀착) */}
       <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
         <nav className="w-full max-w-[450px] bg-white/95 backdrop-blur-md border-t border-gray-100 h-[60px] flex items-center justify-around pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
           
           {menuItems.map((item, idx) => {
-            // 중앙 추가 버튼 (클릭 시 애니메이션 실행)
             if (item.isButton) {
-              const activeStatus = isDoorOpen || isCreateActive;
+              const activeStatus = isCreateActive;
               return (
-                <button 
+                <button
                   key="center-btn"
-                  onClick={() => setIsDoorOpen(true)}
+                  onClick={() => navigate('/debate/create')}
                   className={`flex-1 flex justify-center items-center h-full transition-all duration-200 
                     ${activeStatus ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >

@@ -1,197 +1,348 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from "react";
+
+// AI 모델 → 표시 정보 매핑
+const JUDGE_INFO = {
+  gpt: { key: 'gpt', label: 'Judge G', model: 'GPT-4o', color: '#10A37F', desc: '분석적이고 정중한' },
+  gemini: { key: 'gemini', label: 'Judge M', model: 'Gemini 2.5', color: '#4285F4', desc: '통찰력 있는' },
+  claude: { key: 'claude', label: 'Judge C', model: 'Claude Sonnet', color: '#D97706', desc: '신중하고 공정한' },
+};
+
+function resolveJudgeKey(aiModel) {
+  const m = (aiModel || '').toLowerCase();
+  if (m.includes('gpt') || m.includes('grok')) return 'gpt';
+  if (m.includes('gemini')) return 'gemini';
+  if (m.includes('claude')) return 'claude';
+  return 'gpt';
+}
+
+const DETAIL_LABELS = {
+  logic: '논리력',
+  evidence: '근거력',
+  persuasion: '설득력',
+  consistency: '일관성',
+  expression: '표현력',
+};
 
 export default function VerdictDetailModal({ selectedVerdict, onClose }) {
-  const [activeAI, setActiveAI] = useState(null);
+  const [activeJudge, setActiveJudge] = useState(0);
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setAnimated(true), 100);
+    return () => clearTimeout(t);
+  }, []);
 
   if (!selectedVerdict) return null;
 
-  // 1. 데이터 추출 (ProfilePage와 동일한 데이터 트리 참조)
   const debateData = selectedVerdict.debate || selectedVerdict.debates || {};
-  
-  // 2. 승패 판정 로직 동기화 (ProfilePage 리스트와 동일)
-  const isWin = selectedVerdict.is_win ?? (selectedVerdict.voted_side === debateData.win_side);
+  const topic = debateData.topic || selectedVerdict.topic || debateData.title || "참여한 논쟁 주제";
 
-  // 3. AI 분석 데이터 (서버 데이터가 있다면 해당 필드로 대체 가능)
-  const aiAnalyses = [
-    { 
-      id: 'gpt', 
-      name: 'GPT-4o', 
-      side: 'A', 
-      score: '82', 
-      color: 'text-emerald-500', 
-      comment: "논리적 구조가 매우 탄탄하며, 제시된 근거의 데이터 신뢰성이 매우 높습니다." 
-    },
-    { 
-      id: 'claude', 
-      name: 'Claude-3', 
-      side: 'A', 
-      score: '74', 
-      color: 'text-amber-500', 
-      comment: "감성적 호소와 이성적 논거의 밸런스가 훌륭하나, 일부 반박이 다소 추상적입니다." 
-    },
-    { 
-      id: 'gemini', 
-      name: 'Gemini', 
-      side: 'B', 
-      score: '45', 
-      color: 'text-blue-500', 
-      comment: "창의적인 시각을 제시했으나, 핵심 쟁점에서의 논리적 일관성이 경쟁사 대비 아쉽습니다." 
-    }
-  ];
+  // AI judgments 가공
+  const rawJudgments = selectedVerdict.ai_judgments || [];
+  const judges = rawJudgments.map((j) => {
+    const jKey = resolveJudgeKey(j.ai_model);
+    const info = JUDGE_INFO[jKey] || JUDGE_INFO.gpt;
+    return {
+      ...info,
+      winner_side: j.winner_side,
+      score_a: j.score_a || 0,
+      score_b: j.score_b || 0,
+      score_detail_a: j.score_detail_a || {},
+      score_detail_b: j.score_detail_b || {},
+      verdict_text: j.verdict_text || '',
+      confidence: j.confidence || 0.5,
+    };
+  });
 
-  // 투표 수 가공 (서버 데이터가 있다면 매핑: 예: debateData.vote_count_a)
-  const voteA = 849;
-  const voteB = 399;
-  const totalVotes = voteA + voteB;
-  const percentA = Math.round((voteA / totalVotes) * 100);
-  const percentB = 100 - percentA;
+  // 최종 승자
+  const winnerSide = selectedVerdict.winner_side || debateData.winner_side || debateData.win_side || 'A';
+
+  // AI 다수결 계산
+  const aiSideA = judges.filter(j => j.winner_side === 'A').length;
+  const aiSideB = judges.filter(j => j.winner_side === 'B').length;
+  const aiMajority = aiSideA > aiSideB ? 'A' : aiSideA < aiSideB ? 'B' : 'draw';
+
+  // 최종 합산 점수
+  const finalScoreA = selectedVerdict.final_score_a || selectedVerdict.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
+  const finalScoreB = selectedVerdict.final_score_b || selectedVerdict.score_b || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_b, 0) / judges.length) : 0);
+
+  // 시민 투표
+  const voteA = debateData.vote_count_a || selectedVerdict.vote_count_a || 0;
+  const voteB = debateData.vote_count_b || selectedVerdict.vote_count_b || 0;
+  const totalVotes = voteA + voteB || 0;
+  const percentA = totalVotes > 0 ? Math.round((voteA / totalVotes) * 100) : 50;
+  const percentB = totalVotes > 0 ? 100 - percentA : 50;
+
+  // 현재 선택된 judge
+  const currentJudge = judges[activeJudge] || null;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#0F121D]/95 backdrop-blur-xl animate-in fade-in duration-300" onClick={onClose}>
-      <div 
-        className="bg-[#F8F9FA] w-full max-w-md rounded-[50px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md max-h-[95vh] flex flex-col bg-[#FAFAF5] rounded-2xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* 상단 헤더: 논쟁 제목 */}
-        <div className="bg-[#2D3350] p-8 pt-12 pb-14 text-center relative overflow-hidden shrink-0">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#FFBD43]/10 rounded-full blur-3xl"></div>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#FFBD43] text-[#2D3350] text-[11px] font-black rounded-full mb-4 shadow-[0_0_20px_rgba(255,189,67,0.4)] tracking-[0.2em]">
-            VERDICT REPORT
-          </div>
-          <h3 className="text-white text-xl font-black leading-tight px-2 tracking-tight line-clamp-2">
-            "{debateData.topic || selectedVerdict.topic || "참여한 논쟁 주제"}"
-          </h3>
+
+        {/* ===== HERO ===== */}
+        <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-8 pb-10 text-center relative shrink-0">
+          <button onClick={onClose} className="absolute top-3 left-4 text-white/60 text-xl">←</button>
+          <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
+          <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
+            "{topic}"
+          </h2>
         </div>
 
-        {/* 메인 컨텐츠 (스크롤 가능) */}
-        <div className="px-6 flex flex-col gap-6 -mt-10 bg-[#F8F9FA] rounded-t-[50px] pt-8 pb-8 overflow-y-auto overflow-x-hidden">
-          
-          {/* 나의 논쟁 vs 상대방 논쟁 */}
-          <div className="flex flex-col gap-3">
-            <div className="self-start max-w-[90%] bg-white p-5 rounded-r-[30px] rounded-tl-[30px] rounded-bl-[10px] shadow-sm border-l-4 border-blue-500">
-              <span className="text-[10px] font-black text-blue-500 mb-1 block uppercase tracking-wider">My Argument (Side {selectedVerdict.voted_side})</span>
-              <p className="text-[12px] text-gray-700 leading-relaxed font-medium">
-                {selectedVerdict.my_argument || "본인의 주장 데이터가 존재하지 않습니다."}
-              </p>
-            </div>
-            <div className="self-end max-w-[90%] bg-white p-5 rounded-l-[30px] rounded-tr-[30px] rounded-br-[10px] shadow-sm border-r-4 border-purple-500 text-right">
-              <span className="text-[10px] font-black text-purple-500 mb-1 block uppercase tracking-wider">Opponent Argument</span>
-              <p className="text-[12px] text-gray-700 leading-relaxed font-medium text-right">
-                {selectedVerdict.opponent_argument || "상대방의 주장 데이터가 존재하지 않습니다."}
-              </p>
-            </div>
-          </div>
+        {/* ===== SCROLLABLE CONTENT ===== */}
+        <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-5">
 
-          {/* AI 투표 현황 및 상세 판결 */}
-          <div className="bg-white rounded-[35px] p-6 shadow-sm border border-gray-50">
-            <div className="flex justify-between items-center mb-5">
-              <h4 className="text-[14px] font-black text-[#2D3350]">AI MODELS ANALYSIS</h4>
-              <div className="text-[10px] font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-full italic">A Side Dominant</div>
-            </div>
-            
-            <div className="flex gap-2 mb-4">
-              {aiAnalyses.map((ai) => (
-                <button 
-                  key={ai.id}
-                  onClick={() => setActiveAI(activeAI === ai.id ? null : ai.id)}
-                  className={`flex-1 flex flex-col items-center p-3 rounded-[24px] transition-all duration-300 border ${
-                    activeAI === ai.id ? 'bg-[#2D3350] border-[#2D3350] shadow-md scale-105' : 'bg-gray-50 border-gray-50 hover:border-gray-200'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 bg-white shadow-inner text-[10px] font-black ${ai.color}`}>
-                    {ai.name[0]}
+          {/* --- Composite Verdict Card --- */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-5 relative">
+            {/* rainbow top bar */}
+            <div className="h-1 bg-gradient-to-r from-[#10A37F] via-[#4285F4] to-[#D97706]" />
+            <div className="p-5 text-center">
+              <div className="text-4xl mb-1">⚖️</div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2">복합 판결</p>
+              <p className="text-2xl font-extrabold text-[#1B2A4A] mb-4">
+                {winnerSide === 'draw' ? '무승부' : `🏆 ${winnerSide}측 승리`}
+              </p>
+
+              {/* AI 판결 breakdown */}
+              <div className="bg-[#F5F0E8] rounded-lg p-3 mb-3 text-left">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">🤖 AI 판결</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {judges.map((j, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-full text-xs font-bold"
+                      style={{ background: `${j.color}15`, color: j.color }}
+                    >
+                      {j.label[j.label.length - 1]}: {j.winner_side === 'draw' ? '무승부' : `${j.winner_side}측`}
+                    </span>
+                  ))}
+                  <span className="text-xs font-bold text-[#1B2A4A]">
+                    → {aiMajority === 'draw' ? '무승부' : `다수결 ${aiMajority}측`}
+                  </span>
+                </div>
+              </div>
+
+              {/* 시민 투표 bar */}
+              {totalVotes > 0 && (
+                <div className="bg-[#F5F0E8] rounded-lg p-3 mb-3 text-left">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">🗳️ 시민 투표</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#059669]">A측 {percentA}%</span>
+                    <div className="flex-1 h-2 bg-[#E6394615] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#059669] rounded-full transition-all duration-1000"
+                        style={{ width: animated ? `${percentA}%` : '0%' }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#E63946]">B측 {percentB}%</span>
                   </div>
-                  <span className={`text-[9px] font-black ${activeAI === ai.id ? 'text-[#FFBD43]' : 'text-gray-400'}`}>{ai.name}</span>
-                  <span className={`text-[11px] font-black mt-0.5 ${activeAI === ai.id ? 'text-white' : 'text-[#2D3350]'}`}>{ai.side}측</span>
-                  <span className={`text-[9px] font-bold ${activeAI === ai.id ? 'text-white/40' : 'text-gray-300'}`}>{ai.score}pt</span>
-                </button>
-              ))}
-            </div>
+                </div>
+              )}
 
-            {activeAI && (
-              <div className="p-4 bg-[#F8F9FA] rounded-[22px] border border-dashed border-gray-200 animate-in slide-in-from-top-2">
-                <p className="text-[12px] text-gray-600 leading-[1.6] italic font-medium">
-                   " {aiAnalyses.find(a => a.id === activeAI)?.comment} "
+              {/* 최종 점수 */}
+              <div className="bg-[#1B2A4A] rounded-lg p-3 text-center">
+                <p className="text-[11px] text-white/50 mb-1">최종 점수</p>
+                <p className="text-2xl font-extrabold">
+                  <span className="text-emerald-400">{finalScoreA}</span>
+                  <span className="text-white/30 text-sm mx-2">VS</span>
+                  <span className="text-red-400">{finalScoreB}</span>
                 </p>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* 시민 투표 현황 (막대바 그래프) */}
-          <div className="bg-white rounded-[35px] p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-5">
-              <div>
-                <h4 className="text-[14px] font-black text-[#2D3350] tracking-tight">CITIZEN VOTES</h4>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">실시간 집계 통계</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-black text-gray-300 block mb-0.5 uppercase">Total</span>
-                <span className="text-[13px] font-black text-[#2D3350]">{totalVotes.toLocaleString()} <span className="text-[10px] text-gray-400 uppercase font-bold">Votes</span></span>
-              </div>
+          {/* --- Score Comparison Bars --- */}
+          {currentJudge && Object.keys(DETAIL_LABELS).length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
+              <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-4 flex items-center gap-2">
+                📊 항목별 점수 비교
+              </h3>
+              {/* 평균 점수 기준으로 bar 표시 */}
+              {Object.entries(DETAIL_LABELS).map(([key, label]) => {
+                const avgA = judges.length > 0
+                  ? Math.round(judges.reduce((s, j) => s + (j.score_detail_a?.[key] || 0), 0) / judges.length)
+                  : 0;
+                const avgB = judges.length > 0
+                  ? Math.round(judges.reduce((s, j) => s + (j.score_detail_b?.[key] || 0), 0) / judges.length)
+                  : 0;
+                const total = avgA + avgB || 1;
+                const pctA = Math.round((avgA / total) * 100);
+                const pctB = 100 - pctA;
+                return (
+                  <div key={key} className="mb-3">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-semibold text-gray-700">{label}</span>
+                      <span className="text-[11px] text-gray-400">{avgA} vs {avgB}</span>
+                    </div>
+                    <div className="flex gap-0.5 h-5 items-center">
+                      <div
+                        className="h-full rounded-l flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
+                        style={{
+                          width: animated ? `${pctA}%` : '0%',
+                          minWidth: '28px',
+                          background: 'linear-gradient(90deg, #059669, #10B981)',
+                        }}
+                      >
+                        {avgA}
+                      </div>
+                      <div
+                        className="h-full rounded-r flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
+                        style={{
+                          width: animated ? `${pctB}%` : '0%',
+                          minWidth: '28px',
+                          background: 'linear-gradient(90deg, #F87171, #E63946)',
+                        }}
+                      >
+                        {avgB}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          )}
 
-            <div className="flex flex-col gap-4">
-              {/* A측 막대 */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-end px-1">
-                  <span className="text-[11px] font-black text-blue-600 uppercase">A Side</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[13px] font-black text-[#2D3350]">{voteA.toLocaleString()}명</span>
-                    <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{percentA}%</span>
+          {/* --- Judge Tabs + Cards --- */}
+          {judges.length > 0 && (
+            <div className="mb-5">
+              <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-3 flex items-center gap-2">
+                🤖 AI 판결문
+              </h3>
+
+              {/* Tabs */}
+              <div className="flex gap-2 mb-3 overflow-x-auto">
+                {judges.map((j, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveJudge(i)}
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all border-2 ${
+                      activeJudge === i
+                        ? 'border-[#1B2A4A] bg-[#1B2A4A]/5 text-[#1B2A4A]'
+                        : 'border-transparent bg-[#F5F0E8] text-gray-500'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: j.color }} />
+                    {j.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active Judge Card */}
+              {currentJudge && (
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  {/* Judge header */}
+                  <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-extrabold"
+                      style={{ background: currentJudge.color }}
+                    >
+                      {currentJudge.label[currentJudge.label.length - 1]}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold">{currentJudge.label}</p>
+                      <p className="text-[11px] text-gray-400">{currentJudge.model} · {currentJudge.desc}</p>
+                    </div>
+                    <span
+                      className="px-2.5 py-1 rounded-full text-xs font-bold"
+                      style={{
+                        background: currentJudge.winner_side === 'A' ? '#05966910' : currentJudge.winner_side === 'B' ? '#E6394610' : '#D4AF3710',
+                        color: currentJudge.winner_side === 'A' ? '#059669' : currentJudge.winner_side === 'B' ? '#E63946' : '#D4AF37',
+                      }}
+                    >
+                      {currentJudge.winner_side === 'draw' ? '무승부' : `${currentJudge.winner_side}측 승리`}
+                    </span>
+                  </div>
+
+                  <div className="p-4">
+                    {/* Scores */}
+                    <div className="flex gap-2 mb-3">
+                      <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
+                        <p className="text-[10px] text-gray-400 font-semibold">A측</p>
+                        <p className="text-xl font-extrabold text-[#059669]">{currentJudge.score_a}</p>
+                      </div>
+                      <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
+                        <p className="text-[10px] text-gray-400 font-semibold">B측</p>
+                        <p className="text-xl font-extrabold text-[#E63946]">{currentJudge.score_b}</p>
+                      </div>
+                      <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
+                        <p className="text-[10px] text-gray-400 font-semibold">차이</p>
+                        <p className="text-xl font-extrabold text-[#1B2A4A]">
+                          {currentJudge.score_a - currentJudge.score_b > 0 ? '+' : ''}{currentJudge.score_a - currentJudge.score_b}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Verdict text */}
+                    {currentJudge.verdict_text && (
+                      <div
+                        className="text-[13px] leading-relaxed p-3.5 bg-[#F5F0E8] rounded-lg border-l-[3px]"
+                        style={{ borderColor: currentJudge.color }}
+                      >
+                        {currentJudge.verdict_text}
+                      </div>
+                    )}
+
+                    {/* Confidence */}
+                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                      <span>확신도</span>
+                      <div className="flex-1 h-1.5 bg-[#F5F0E8] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000"
+                          style={{
+                            width: animated ? `${currentJudge.confidence * 100}%` : '0%',
+                            background: currentJudge.color,
+                          }}
+                        />
+                      </div>
+                      <span className="font-semibold">{currentJudge.confidence.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-1000 ease-out" 
-                    style={{ width: `${percentA}%` }}
-                  ></div>
+              )}
+            </div>
+          )}
+
+          {/* --- Citizen Vote Section --- */}
+          {totalVotes > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
+              <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-1 flex items-center gap-2">
+                🗳️ 시민 투표 현황
+              </h3>
+              <div className="text-center mb-4">
+                <span className="text-2xl font-extrabold text-[#1B2A4A]">{totalVotes.toLocaleString()}</span>
+                <span className="text-xs text-gray-400 ml-1">명 참여</span>
+              </div>
+              <div className="mb-2">
+                <div className="flex justify-between text-sm font-bold mb-1">
+                  <span className="text-[#059669]">A측 {percentA}%</span>
+                  <span className="text-[#E63946]">B측 {percentB}%</span>
+                </div>
+                <div className="h-3 bg-[#E6394615] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#059669] rounded-full transition-all duration-1000"
+                    style={{ width: animated ? `${percentA}%` : '0%' }}
+                  />
                 </div>
               </div>
-
-              {/* B측 막대 */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-end px-1">
-                  <span className="text-[11px] font-black text-purple-600 uppercase">B Side</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[13px] font-black text-[#2D3350]">{voteB.toLocaleString()}명</span>
-                    <span className="text-[10px] font-black text-purple-500 bg-purple-50 px-1.5 py-0.5 rounded">{percentB}%</span>
-                  </div>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-1000 ease-out" 
-                    style={{ width: `${percentB}%` }}
-                  ></div>
-                </div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>{voteA.toLocaleString()}명</span>
+                <span>{voteB.toLocaleString()}명</span>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* 최종 승리 및 나의 결과 */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-[35px] shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1">
-              <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-center">Final Winner</p>
-              <p className="text-xl font-black text-[#2D3350] italic tracking-tighter">
-                <span className="text-[#FFBD43] uppercase">{debateData.win_side || 'A'}</span> SIDE
-              </p>
-            </div>
-            <div className={`p-5 rounded-[35px] shadow-lg flex flex-col items-center justify-center gap-1 border-b-4 ${
-              isWin ? 'bg-green-500 border-green-700 shadow-green-200' : 'bg-red-500 border-red-700 shadow-red-200'
-            }`}>
-              <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">My Result</p>
-              <p className="text-xl font-black text-white italic tracking-tighter">
-                {isWin ? 'WIN승' : 'LOSS패'}
-              </p>
-            </div>
-          </div>
-
-          {/* 리포트 닫기 버튼 */}
-          <button 
-            onClick={onClose} 
-            className="w-full py-6 bg-gradient-to-r from-[#2D3350] to-[#1A1E31] text-[#FFBD43] rounded-[30px] font-black shadow-[0_10px_25px_-5px_rgba(45,51,80,0.4)] active:scale-[0.97] transition-all text-base tracking-[0.1em] shrink-0"
+          {/* --- Close Button --- */}
+          <button
+            onClick={onClose}
+            className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
           >
-            리포트 닫기
+            판결 리포트 닫기
           </button>
         </div>
       </div>

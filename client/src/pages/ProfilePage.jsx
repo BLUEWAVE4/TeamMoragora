@@ -76,8 +76,10 @@ const getTier = (pts) => {
 };
 
 const categoryMap = {
-  daily: '일상', romance: '연애', work: '직장',
-  education: '교육', social: '사회', politics: '정치',
+  daily: '일상', romance: '연애', work: '직장', education: '교육',
+  social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
+  culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
+  사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
 
 const formatDate = (iso) => {
@@ -277,7 +279,7 @@ export default function ProfilePage() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </motion.button>
 
-        {/* 나의 논쟁 리스트 — 실제 서버 데이터 */}
+        {/* 나의 논쟁 리스트 */}
         <div className="mb-10">
           <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3 ml-1">
             나의 논쟁 리스트

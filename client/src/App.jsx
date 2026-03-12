@@ -32,6 +32,8 @@ export default function App() {
         {/* Public - 누구나 접근 가능 */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        {/* 카카오 전용 랜딩 페이지 경로 추가 */}
+        <Route path="/login/kakao" element={<LoginPage isKakaoOnly={true} />} />
         <Route path="/invite/:inviteCode" element={<InvitePage />} />
         <Route path="/moragora" element={<MoragoraFeedPage />} />
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
