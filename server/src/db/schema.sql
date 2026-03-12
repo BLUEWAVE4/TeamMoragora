@@ -40,6 +40,8 @@ CREATE TABLE debates (
   opponent_id UUID REFERENCES profiles(id),
   topic TEXT NOT NULL,
   description TEXT,
+  pro_side TEXT,                          -- A측(찬성) 입장 제목
+  con_side TEXT,                          -- B측(반대) 입장 제목
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
