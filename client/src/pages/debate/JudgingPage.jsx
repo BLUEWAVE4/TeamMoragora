@@ -183,9 +183,9 @@ export default function JudgingPage() {
 
           {/* ===== AI 모델 상태 카드 ===== */}
           <div className="bg-white/5 backdrop-blur-md rounded-[24px] p-5 border border-white/5 mt-8 shrink-0">
-            <ModelStatus name="Judge G (GPT-4o)" color="bg-[#10A37F]" status={judgeStatus.gpt} score={judgeScores.gpt} />
-            <ModelStatus name="Judge M (Gemini 2.5)" color="bg-[#4285F4]" status={judgeStatus.gemini} score={judgeScores.gemini} />
-            <ModelStatus name="Judge C (Claude Sonnet)" color="bg-[#D97706]" status={judgeStatus.claude} score={judgeScores.claude} />
+            <ModelStatus name="지피티 판결" color="bg-[#000000]" status={judgeStatus.gpt} score={judgeScores.gpt} />
+            <ModelStatus name="제미나이 판결" color="bg-[#4285F4]" status={judgeStatus.gemini} score={judgeScores.gemini} />
+            <ModelStatus name="클로드 판결" color="bg-[#D97706]" status={judgeStatus.claude} score={judgeScores.claude} />
           </div>
 
           {/* ===== 시민 투표 현황 (진행 중) ===== */}
