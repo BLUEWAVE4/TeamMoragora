@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getVerdictFeed } from '../services/api';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
@@ -9,24 +9,75 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState('최신순');
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasNext, setHasNext] = useState(true);
+  const [page, setPage] = useState(1);
   const [showSortMenu, setShowSortMenu] = useState(false);
 
-  const loadRealData = async () => {
+  const hasNextRef = useRef(true);
+  const loadingMoreRef = useRef(false);
+  const pageRef = useRef(1);
+
+  const loadInitialData = async () => {
     try {
-      const data = await getVerdictFeed();
-      setFeeds(Array.isArray(data) ? data : data?.data || []);
+      setLoading(true);
+      const res = await getVerdictFeed(1, 5);
+      console.log('피드 응답 전체:', res);
+      setFeeds(res?.data ?? []);
+      pageRef.current = 1;
+      hasNextRef.current = res?.hasNext ?? false;
+      setHasNext(res?.hasNext ?? false);
+      setPage(1);
     } catch (error) {
-      console.error("데이터 로드 실패:", error);
+      console.error('데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadRealData();
-    const timer = setInterval(loadRealData, 60000);
-    return () => clearInterval(timer);
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasNextRef.current) return;
+    try {
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+      const nextPage = pageRef.current + 1;
+      const res = await getVerdictFeed(nextPage, 5);
+      console.log(`${nextPage}페이지 응답:`, res);
+      setFeeds(prev => [...prev, ...(res?.data ?? [])]);
+      pageRef.current = nextPage;
+      hasNextRef.current = res?.hasNext ?? false;
+      setPage(nextPage);
+      setHasNext(res?.hasNext ?? false);
+    } catch (error) {
+      console.error('추가 로드 실패:', error);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // 스크롤 이벤트 방식으로 변경
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const distanceFromBottom = docHeight - scrollTop - windowHeight;
+
+      console.log('스크롤 감지 - 바닥까지:', distanceFromBottom, 'hasNext:', hasNextRef.current);
+
+      if (distanceFromBottom < 200 && hasNextRef.current && !loadingMoreRef.current) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
 
   const sortOptions = [
     { name: '최신순', description: '최근 작성된 글' },
@@ -37,8 +88,8 @@ export default function HomePage() {
   ];
 
   const getProcessedFeeds = () => {
-    let result = filter === '전체' 
-      ? [...feeds] 
+    let result = filter === '전체'
+      ? [...feeds]
       : feeds.filter(feed => (feed.debate?.category || '일상') === filter);
 
     return result.sort((a, b) => {
@@ -60,11 +111,15 @@ export default function HomePage() {
     const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
     if (diffInMinutes < 1) return '방금 전';
     if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes/60)}시간 전`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}시간 전`;
     return past.toLocaleDateString();
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-400">데이터 동기화 중...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center font-bold text-gray-400">
+      데이터 동기화 중...
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDFDFD] pb-32 pt-4">
@@ -84,11 +139,26 @@ export default function HomePage() {
           </div>
         </div>
         <CategoryFilter filter={filter} setFilter={setFilter} />
+
         <section className="mt-4 flex flex-col gap-6">
           {getProcessedFeeds().map((feed) => (
             <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
           ))}
         </section>
+
+        {/* 로딩 스피너 */}
+        {loadingMore && (
+          <div className="flex justify-center py-6">
+            <div className="w-6 h-6 border-4 border-[#FF6B6B] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* 더 이상 없을 때 */}
+        {!hasNext && feeds.length > 0 && (
+          <p className="text-center text-[13px] text-gray-300 font-bold py-6">
+            모든 논쟁을 다 봤어요 🎉
+          </p>
+        )}
       </main>
     </div>
   );
