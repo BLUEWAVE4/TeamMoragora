@@ -1,12 +1,21 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { nanoid } from '../utils/nanoid.js';
+import { filterByDictionary } from '../services/contentFilter.service.js';
+import { ValidationError } from '../errors/index.js';
 
 export async function createDebate(req, res, next) {
   try {
     const { topic, description, category, purpose, lens, mode } = req.body;
 
-    if (!topic?.trim()) {
-      return res.status(400).json({ error: '주제를 입력해주세요.' });
+    if (!topic?.trim()) throw new ValidationError('주제를 입력해주세요.');
+
+    // 주제/설명 콘텐츠 필터링 (비속어 사전)
+    const topicFilter = filterByDictionary(topic);
+    if (topicFilter.blocked) throw new ValidationError(`주제: ${topicFilter.reason}`);
+
+    if (description) {
+      const descFilter = filterByDictionary(description);
+      if (descFilter.blocked) throw new ValidationError(`설명: ${descFilter.reason}`);
     }
 
     const inviteCode = nanoid(8);

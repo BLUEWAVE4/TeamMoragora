@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-router.post('/finalize', finalizeExpiredVotes);
+router.post('/finalize', requireAuth, finalizeExpiredVotes);
 router.get('/:debateId', getVoteTally);
 router.post('/:debateId', requireAuth, castVote);
 router.delete('/:debateId', requireAuth, cancelVote);

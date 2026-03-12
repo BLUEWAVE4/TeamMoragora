@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from './ai/judgment.service.js';
-import { calculateCompositeVerdict } from './verdict.service.js';
+import { env } from '../config/env.js';
 
 // 양측 주장 제출 완료 시 비동기로 AI 판결 실행
 export async function triggerJudgment(debateId) {
@@ -102,8 +102,7 @@ export async function triggerJudgment(debateId) {
   await updateCompositeVerdict(verdictId, judgments);
 
   // 7. voting 상태 + 투표 마감시간 설정
-  const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);
-  const voteDeadline = new Date(Date.now() + voteDurationHours * 60 * 60 * 1000);
+  const voteDeadline = new Date(Date.now() + env.VOTE_DURATION_HOURS * 60 * 60 * 1000);
 
   await supabaseAdmin
     .from('debates')

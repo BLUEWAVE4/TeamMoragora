@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { supabaseAdmin } from '../config/supabase.js';
+import { env } from '../config/env.js';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.get('/invite/:inviteCode', async (req, res) => {
     const purpose = debate?.purpose || '';
     const description = `${category ? `[${category}] ` : ''}${purpose ? `${purpose} ` : ''}토론에 참여해보세요!`;
 
-    const clientUrl = process.env.CLIENT_URL || 'https://team-moragora-client.vercel.app';
+    const clientUrl = env.CLIENT_URL;
     const ogImage = `${clientUrl}/og-image.png`;
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -44,7 +45,7 @@ router.get('/invite/:inviteCode', async (req, res) => {
 </body>
 </html>`);
   } catch (err) {
-    const clientUrl = process.env.CLIENT_URL || 'https://team-moragora-client.vercel.app';
+    const clientUrl = env.CLIENT_URL;
     res.redirect(`${clientUrl}/invite/${req.params.inviteCode}`);
   }
 });

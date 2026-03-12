@@ -3,6 +3,13 @@ import { judgeWithGPT } from './openai.service.js';
 import { judgeWithGemini } from './gemini.service.js';
 import { judgeWithClaude } from './claude.service.js';
 import { judgeWithGrok } from './grok.service.js';
+import {
+  AI_RETRY_DELAY_MS,
+  SCORE_DETAIL_MIN, SCORE_DETAIL_MAX,
+  CONFIDENCE_MIN, CONFIDENCE_MAX, CONFIDENCE_DEFAULT,
+  VERDICT_TEXT_MAX_LENGTH,
+} from '../../config/constants.js';
+import { env } from '../../config/env.js';
 
 // ===== AI 응답 유효성 검증 =====
 
@@ -27,7 +34,7 @@ export function validateAndCorrectVerdict(raw) {
     const corrected = {};
     for (const key of DETAIL_KEYS) {
       const val = Number(detail?.[key]) || 0;
-      corrected[key] = Math.max(0, Math.min(20, Math.round(val)));
+      corrected[key] = Math.max(SCORE_DETAIL_MIN, Math.min(SCORE_DETAIL_MAX, Math.round(val)));
     }
     return corrected;
   };
@@ -40,7 +47,7 @@ export function validateAndCorrectVerdict(raw) {
   raw.score_a = sumA;
   raw.score_b = sumB;
 
-  raw.confidence = Math.max(0.50, Math.min(1.00, Number(raw.confidence) || 0.65));
+  raw.confidence = Math.max(CONFIDENCE_MIN, Math.min(CONFIDENCE_MAX, Number(raw.confidence) || CONFIDENCE_DEFAULT));
 
   if (raw.winner_side === 'A' && raw.score_a < raw.score_b) {
     raw.winner_side = 'B';
@@ -51,7 +58,7 @@ export function validateAndCorrectVerdict(raw) {
   }
 
   if (typeof raw.verdict_text === 'string') {
-    raw.verdict_text = raw.verdict_text.slice(0, 2000);
+    raw.verdict_text = raw.verdict_text.slice(0, VERDICT_TEXT_MAX_LENGTH);
   }
 
   return raw;
@@ -65,8 +72,8 @@ async function callWithRetry(fn, modelName) {
   try {
     return await fn();
   } catch (firstErr) {
-    console.warn(`[AI] ${modelName} 1차 실패: ${firstErr.message} → 15초 후 재시도`);
-    await delay(15000);
+    console.warn(`[AI] ${modelName} 1차 실패: ${firstErr.message} → ${AI_RETRY_DELAY_MS / 1000}초 후 재시도`);
+    await delay(AI_RETRY_DELAY_MS);
     try {
       return await fn();
     } catch (retryErr) {
@@ -103,14 +110,12 @@ export async function runParallelJudgment(debateContext, verdictId) {
   const judgments = [];
   const failedModels = [];
 
-  // 각 AI를 독립적으로 실행하고, 완료 즉시 DB 저장
   const tasks = [
     callWithRetry(() => judgeWithGPT(debateContext), 'GPT-4o'),
     callWithRetry(() => judgeWithGemini(debateContext), 'Gemini'),
     callWithRetry(() => judgeWithClaude(debateContext), 'Claude'),
   ];
 
-  // 각 Promise에 즉시 저장 로직 연결
   const wrappedTasks = tasks.map((task, i) =>
     task
       .then(async (result) => {
@@ -126,11 +131,10 @@ export async function runParallelJudgment(debateContext, verdictId) {
       })
   );
 
-  // 모든 AI 완료 대기
   await Promise.all(wrappedTasks);
 
   // Grok 폴백
-  if (failedModels.length > 0 && process.env.GROK_API_KEY) {
+  if (failedModels.length > 0 && env.GROK_API_KEY) {
     const grokAttempts = Math.min(failedModels.length, 2);
     console.log(`[AI] ${failedModels.join(', ')} 실패 → Grok 대체 ${grokAttempts}회 시도`);
 

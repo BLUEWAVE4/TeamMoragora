@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { filterByDictionary, filterByAI } from '../services/contentFilter.service.js';
+import { CATEGORY_ALL_STAGES } from '../config/constants.js';
 
 // 필터 로그를 DB에 저장하는 헬퍼
 async function saveFilterLog({ userId, debateId, contentType, stage, blocked, reason, result }) {
@@ -30,7 +31,7 @@ export async function checkContent(req, res, next) {
     }
 
     // Stage 2: AI 유해성 필터 (사회/정치 카테고리)
-    if (['social', 'politics', '사회', '정치'].includes(category)) {
+    if (CATEGORY_ALL_STAGES.includes(category)) {
       const aiResult = await filterByAI(content);
       if (aiResult.action === 'block') {
         if (userId) await saveFilterLog({ userId, debateId, contentType: 'check', stage: 2, blocked: true, reason: aiResult.reason, result: 'block' });

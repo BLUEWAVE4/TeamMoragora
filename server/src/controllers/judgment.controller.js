@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from '../services/ai/judgment.service.js';
+import { NotFoundError, ValidationError, ConflictError } from '../errors/index.js';
+import { env } from '../config/env.js';
 
 export async function requestJudgment(req, res, next) {
   try {
@@ -12,27 +14,20 @@ export async function requestJudgment(req, res, next) {
       .eq('id', debateId)
       .single();
 
-    if (!debate) {
-      return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
-    }
+    if (!debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
 
-    // 상태 검증: arguing 상태에서만 판결 요청 가능
     if (debate.status !== 'arguing') {
-      return res.status(400).json({
-        error: `현재 상태(${debate.status})에서는 판결을 요청할 수 없습니다.`,
-      });
+      throw new ValidationError(`현재 상태(${debate.status})에서는 판결을 요청할 수 없습니다.`);
     }
 
-    // 중복 판결 방지: 이미 verdict가 존재하면 거부
+    // 중복 판결 방지
     const { data: existingVerdict } = await supabaseAdmin
       .from('verdicts')
       .select('id')
       .eq('debate_id', debateId)
       .maybeSingle();
 
-    if (existingVerdict) {
-      return res.status(409).json({ error: '이미 판결이 존재합니다.' });
-    }
+    if (existingVerdict) throw new ConflictError('이미 판결이 존재합니다.');
 
     const { data: args } = await supabaseAdmin
       .from('arguments')
@@ -42,9 +37,7 @@ export async function requestJudgment(req, res, next) {
     const sideA = args.find((a) => a.side === 'A');
     const sideB = args.find((a) => a.side === 'B');
 
-    if (!sideA || !sideB) {
-      return res.status(400).json({ error: '양측 주장이 모두 필요합니다.' });
-    }
+    if (!sideA || !sideB) throw new ValidationError('양측 주장이 모두 필요합니다.');
 
     // Update status to judging (원자적 상태 전환으로 동시 요청 방지)
     const { data: updated, error: updateErr } = await supabaseAdmin
@@ -55,9 +48,7 @@ export async function requestJudgment(req, res, next) {
       .select('id')
       .single();
 
-    if (updateErr || !updated) {
-      return res.status(409).json({ error: '다른 판결 요청이 이미 진행 중입니다.' });
-    }
+    if (updateErr || !updated) throw new ConflictError('다른 판결 요청이 이미 진행 중입니다.');
 
     // 빈 verdict 먼저 생성 (프론트가 ai_judgments를 즉시 폴링 가능)
     const { data: emptyVerdict, error: vErr } = await supabaseAdmin
@@ -122,8 +113,7 @@ export async function requestJudgment(req, res, next) {
     const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
     // Update status to voting + set vote deadline
-    const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);
-    const voteDeadline = new Date(Date.now() + voteDurationHours * 60 * 60 * 1000);
+    const voteDeadline = new Date(Date.now() + env.VOTE_DURATION_HOURS * 60 * 60 * 1000);
 
     await supabaseAdmin
       .from('debates')
@@ -146,7 +136,7 @@ export async function getVerdict(req, res, next) {
 
     if (error) throw error;
     if (!verdict) {
-      return res.status(404).json({ error: '아직 판결이 완료되지 않았습니다.' });
+      throw new NotFoundError('아직 판결이 완료되지 않았습니다.');
     }
     res.json(verdict);
   } catch (err) {
