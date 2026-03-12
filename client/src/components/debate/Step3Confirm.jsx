@@ -10,6 +10,8 @@ export default function Step3Confirm({
   lens,
   topic,
   setTopic,
+  description,
+  setDescription,
   category,
   setCategory,
   prevStep,
@@ -17,7 +19,7 @@ export default function Step3Confirm({
 
 }) {
 
-  const purposeMap = {
+    const purposeMap = {
     battle: "승부",
     consensus: "합의",
     analysis: "분석"
@@ -32,16 +34,17 @@ export default function Step3Confirm({
   };
 
   const categoryMap = {
-    사회: "사회", 기술: "기술", 정치: "정치", 철학: "철학",
-    일상: "일상", 연애: "연애", 문화: "문화", 기타: "기타",
-    // 하위호환 (기존 영문 데이터)
-    society: "사회", technology: "기술", politics: "정치", philosophy: "철학",
+    society: "사회",
+    technology: "기술",
+    politics: "정치",
+    philosophy: "철학"
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [errorCategory, setErrorCategory] = useState("");
   const [errorTopic, setErrorTopic] = useState("");
+  const [errorDescription, setErrorDescription] = useState("");
 
   const handleStart = () => {
 
@@ -54,6 +57,11 @@ export default function Step3Confirm({
 
     if (!topic) {
       setErrorTopic("제목을 입력해주세요.");
+      valid = false;
+    }
+
+    if (!description) {
+      setErrorDescription("내용을 입력해주세요.");
       valid = false;
     }
 
@@ -83,24 +91,41 @@ export default function Step3Confirm({
 
         </div>
 
-        <select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setErrorCategory("");
-          }}
-          className="w-full px-5 py-4 rounded-2xl border border-gold/20"
-        >
-          <option value="">선택</option>
-          <option value="사회">사회</option>
-          <option value="기술">기술</option>
-          <option value="정치">정치</option>
-          <option value="철학">철학</option>
-          <option value="일상">일상</option>
-          <option value="연애">연애</option>
-          <option value="문화">문화</option>
-          <option value="기타">기타</option>
-        </select>
+        <div className="relative">
+
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setErrorCategory("");
+            }}
+            className={`
+            w-full px-5 py-4 rounded-2xl
+            font-serif text-primary
+            border
+            ${errorCategory ? "border-red-400 animate-pulse" : "border-gold/20"}
+            bg-gradient-to-br from-surface to-surface-alt
+            shadow-inner outline-none
+            transition-all duration-300
+            focus:border-gold focus:ring-4 focus:ring-gold/10
+            hover:border-gold/40
+            appearance-none
+            `}
+          >
+
+            <option value="">선택</option>
+            <option value="society">사회</option>
+            <option value="technology">기술</option>
+            <option value="politics">정치</option>
+            <option value="philosophy">철학</option>
+
+          </select>
+
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gold text-sm">
+            ▼
+          </div>
+
+        </div>
 
       </div>
 
@@ -129,6 +154,36 @@ export default function Step3Confirm({
             setErrorTopic("");
           }}
           placeholder="논쟁 주제 입력"
+        />
+
+      </div>
+
+
+      {/* DESCRIPTION */}
+      <div className="flex flex-col gap-2">
+
+        <div className="flex justify-between items-center px-2">
+
+          <span className="text-primary font-serif font-bold text-[11px] uppercase tracking-[0.2em] opacity-80">
+            DESCRIPTION
+          </span>
+
+          {errorDescription && (
+            <span className="text-xs text-red-500">
+              {errorDescription}
+            </span>
+          )}
+
+        </div>
+
+        <Input
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            setErrorDescription("");
+          }}
+          multiline
+          rows={6}
         />
 
       </div>
@@ -178,6 +233,13 @@ export default function Step3Confirm({
 
           <div>
             <span className="font-bold text-gold">제목</span> : {topic}
+          </div>
+
+          <div>
+            <span className="font-bold text-gold">설명</span>
+            <p className="mt-1 text-gold-light/80">
+              {description}
+            </p>
           </div>
 
         </div>

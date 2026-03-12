@@ -8,6 +8,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Request interceptor: attach Supabase JWT
 api.interceptors.request.use(async (config) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.access_token) {
@@ -16,6 +17,7 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Response interceptor: normalize errors
 api.interceptors.response.use(
   (res) => res.data,
   (err) => {
@@ -24,23 +26,30 @@ api.interceptors.response.use(
   }
 );
 
-// ===== 개별 Export 함수들 (다른 파일에서 import 하여 사용) =====
+// ===== 논쟁 (Debates) =====
 export const createDebate = (data) => api.post('/debates', data);
 export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
+
+// ===== 주장 (Arguments) =====
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
+
+// ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
+export const getVerdictFeed = (page = 1, limit = 5) => api.get(`/judgments/feed?page=${page}&limit=${limit}`);
 
-// 무한 스크롤을 위한 page, limit 매개변수 적용
-export const getVerdictFeed = (page = 1, limit = 5) => 
-  api.get(`/judgments/feed?page=${page}&limit=${limit}`);
-
+// ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
+
+
+// ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/auth/me');
 export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
+
+// ===== 피드백 (Feedbacks) =====
 export const submitFeedback = (data) => api.post('/feedbacks', data);
 export const getMyFeedbacks = () => api.get('/feedbacks/me');
 
