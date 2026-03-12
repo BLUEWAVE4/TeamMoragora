@@ -33,17 +33,24 @@ export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
 
+// ===== AI 분석 =====
+export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
+// ===== AI =====
+export const generateDebateSides = (data) =>
+  api.post('/ai/generate-sides', data);
+
 // ===== 주장 (Arguments) =====
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
-export const getVerdictFeed = () => api.get('/judgments/feed');
-
+export const getVerdictFeed = (page = 1, limit = 5) => api.get(`/judgments/feed?page=${page}&limit=${limit}`);
 
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
+export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`); // 추가
+
 
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/auth/me');

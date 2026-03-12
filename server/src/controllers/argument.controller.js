@@ -1,12 +1,54 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { preprocessArgument } from '../services/preprocessor.service.js';
+import { filterByDictionary, filterByAI } from '../services/contentFilter.service.js';
 import { generateCounterArgument } from '../services/ai/solo.service.js';
 import { triggerJudgment } from '../services/judgmentTrigger.service.js';
+import { CATEGORY_ALL_STAGES } from '../config/constants.js';
+import { NotFoundError, ValidationError, ConflictError, ForbiddenError } from '../errors/index.js';
+
+// 필터 로그 저장 헬퍼
+async function saveFilterLog({ userId, debateId, contentType, stage, reason, result }) {
+  try {
+    await supabaseAdmin.from('content_filter_logs').insert({
+      user_id: userId,
+      debate_id: debateId,
+      content_type: contentType,
+      filter_stage: stage,
+      reason: reason || null,
+      result,
+    });
+  } catch (err) {
+    console.error('[FilterLog] 저장 실패:', err.message);
+  }
+}
 
 export async function submitArgument(req, res, next) {
   try {
     const { debateId } = req.params;
     const { content, side } = req.body;
+    const userId = req.user.id;
+
+    // === 콘텐츠 필터링 (Stage 1: 비속어 사전) ===
+    const dictResult = filterByDictionary(content);
+    if (dictResult.blocked) {
+      await saveFilterLog({ userId, debateId, contentType: 'argument', stage: 1, reason: dictResult.reason, result: 'block' });
+      return res.status(400).json({ error: dictResult.reason });
+    }
+
+    // === 콘텐츠 필터링 (Stage 2: AI 유해성 - 사회/정치 카테고리) ===
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('category')
+      .eq('id', debateId)
+      .single();
+
+    if (debate && CATEGORY_ALL_STAGES.includes(debate.category)) {
+      const aiResult = await filterByAI(content);
+      if (aiResult.action === 'block') {
+        await saveFilterLog({ userId, debateId, contentType: 'argument', stage: 2, reason: aiResult.reason, result: 'block' });
+        return res.status(400).json({ error: aiResult.reason });
+      }
+    }
 
     // 상대측 주장 조회 (유사도 체크용)
     const otherSide = side === 'A' ? 'B' : 'A';
@@ -79,15 +121,9 @@ export async function generateSoloArgument(req, res, next) {
       .eq('id', debateId)
       .single();
 
-    if (!debate) {
-      return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
-    }
-    if (debate.status !== 'arguing') {
-      return res.status(400).json({ error: '주장 제출 단계가 아닙니다.' });
-    }
-    if (debate.creator_id !== req.user.id) {
-      return res.status(403).json({ error: '논쟁 생성자만 솔로 모드를 사용할 수 있습니다.' });
-    }
+    if (!debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
+    if (debate.status !== 'arguing') throw new ValidationError('주장 제출 단계가 아닙니다.');
+    if (debate.creator_id !== req.user.id) throw new ForbiddenError('논쟁 생성자만 솔로 모드를 사용할 수 있습니다.');
 
     // A측 주장 조회
     const { data: sideA } = await supabaseAdmin
@@ -97,9 +133,7 @@ export async function generateSoloArgument(req, res, next) {
       .eq('side', 'A')
       .single();
 
-    if (!sideA) {
-      return res.status(400).json({ error: '먼저 A측 주장을 제출해주세요.' });
-    }
+    if (!sideA) throw new ValidationError('먼저 A측 주장을 제출해주세요.');
 
     // 이미 B측 주장이 있으면 거부
     const { data: existingB } = await supabaseAdmin
@@ -109,9 +143,7 @@ export async function generateSoloArgument(req, res, next) {
       .eq('side', 'B')
       .maybeSingle();
 
-    if (existingB) {
-      return res.status(409).json({ error: '이미 B측 주장이 존재합니다.' });
-    }
+    if (existingB) throw new ConflictError('이미 B측 주장이 존재합니다.');
 
     // AI 반대 주장 생성
     const aiResult = await generateCounterArgument({

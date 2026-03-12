@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from '../services/ai/judgment.service.js';
-import { calculateCompositeVerdict } from '../services/verdict.service.js';
+import { NotFoundError, ValidationError, ConflictError } from '../errors/index.js';
+import { env } from '../config/env.js';
 
 export async function requestJudgment(req, res, next) {
   try {
@@ -13,27 +14,20 @@ export async function requestJudgment(req, res, next) {
       .eq('id', debateId)
       .single();
 
-    if (!debate) {
-      return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
-    }
+    if (!debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
 
-    // 상태 검증: arguing 상태에서만 판결 요청 가능
     if (debate.status !== 'arguing') {
-      return res.status(400).json({
-        error: `현재 상태(${debate.status})에서는 판결을 요청할 수 없습니다.`,
-      });
+      throw new ValidationError(`현재 상태(${debate.status})에서는 판결을 요청할 수 없습니다.`);
     }
 
-    // 중복 판결 방지: 이미 verdict가 존재하면 거부
+    // 중복 판결 방지
     const { data: existingVerdict } = await supabaseAdmin
       .from('verdicts')
       .select('id')
       .eq('debate_id', debateId)
       .maybeSingle();
 
-    if (existingVerdict) {
-      return res.status(409).json({ error: '이미 판결이 존재합니다.' });
-    }
+    if (existingVerdict) throw new ConflictError('이미 판결이 존재합니다.');
 
     const { data: args } = await supabaseAdmin
       .from('arguments')
@@ -43,9 +37,7 @@ export async function requestJudgment(req, res, next) {
     const sideA = args.find((a) => a.side === 'A');
     const sideB = args.find((a) => a.side === 'B');
 
-    if (!sideA || !sideB) {
-      return res.status(400).json({ error: '양측 주장이 모두 필요합니다.' });
-    }
+    if (!sideA || !sideB) throw new ValidationError('양측 주장이 모두 필요합니다.');
 
     // Update status to judging (원자적 상태 전환으로 동시 요청 방지)
     const { data: updated, error: updateErr } = await supabaseAdmin
@@ -56,23 +48,40 @@ export async function requestJudgment(req, res, next) {
       .select('id')
       .single();
 
-    if (updateErr || !updated) {
-      return res.status(409).json({ error: '다른 판결 요청이 이미 진행 중입니다.' });
-    }
+    if (updateErr || !updated) throw new ConflictError('다른 판결 요청이 이미 진행 중입니다.');
+
+    // 빈 verdict 먼저 생성 (프론트가 ai_judgments를 즉시 폴링 가능)
+    const { data: emptyVerdict, error: vErr } = await supabaseAdmin
+      .from('verdicts')
+      .insert({
+        debate_id: debateId,
+        winner_side: 'draw',
+        summary: '',
+        ai_score_a: 0,
+        ai_score_b: 0,
+        final_score_a: 0,
+        final_score_b: 0,
+        is_citizen_applied: false,
+      })
+      .select('id')
+      .single();
+
+    if (vErr) throw vErr;
+    const verdictId = emptyVerdict.id;
 
     let judgments;
     try {
-      // 3-model parallel judgment
       judgments = await runParallelJudgment({
         topic: debate.topic,
         purpose: debate.purpose,
         lens: debate.lens,
         argumentA: sideA.content,
         argumentB: sideB.content,
-      });
+      }, verdictId);
     } catch (aiErr) {
-      // AI 전체 실패 시 status를 arguing으로 롤백
       console.error(`[AI] 판결 실패, status 롤백: ${aiErr.message}`);
+      await supabaseAdmin.from('ai_judgments').delete().eq('verdict_id', verdictId);
+      await supabaseAdmin.from('verdicts').delete().eq('id', verdictId);
       await supabaseAdmin
         .from('debates')
         .update({ status: 'arguing' })
@@ -80,12 +89,31 @@ export async function requestJudgment(req, res, next) {
       throw aiErr;
     }
 
-    // Save individual AI judgments + composite verdict (AI only)
-    const verdict = await calculateCompositeVerdict(debateId, judgments);
+    // 복합 판결 업데이트
+    const avg = (arr) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
+    const aiScoreA = avg(judgments.map((j) => j.score_a));
+    const aiScoreB = avg(judgments.map((j) => j.score_b));
+    const winnerVotes = { A: 0, B: 0, draw: 0 };
+    judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
+    const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
+      : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+
+    await supabaseAdmin
+      .from('verdicts')
+      .update({
+        winner_side: aiWinner,
+        summary: judgments[0]?.verdict_text || '',
+        ai_score_a: aiScoreA,
+        ai_score_b: aiScoreB,
+        final_score_a: aiScoreA,
+        final_score_b: aiScoreB,
+      })
+      .eq('id', verdictId);
+
+    const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
     // Update status to voting + set vote deadline
-    const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);
-    const voteDeadline = new Date(Date.now() + voteDurationHours * 60 * 60 * 1000);
+    const voteDeadline = new Date(Date.now() + env.VOTE_DURATION_HOURS * 60 * 60 * 1000);
 
     await supabaseAdmin
       .from('debates')
@@ -108,7 +136,7 @@ export async function getVerdict(req, res, next) {
 
     if (error) throw error;
     if (!verdict) {
-      return res.status(404).json({ error: '아직 판결이 완료되지 않았습니다.' });
+      throw new NotFoundError('아직 판결이 완료되지 않았습니다.');
     }
     res.json(verdict);
   } catch (err) {
@@ -116,16 +144,27 @@ export async function getVerdict(req, res, next) {
   }
 }
 
-export async function getVerdictFeed(_req, res, next) {
+export async function getVerdictFeed(req, res, next) {
   try {
-    const { data, error } = await supabaseAdmin
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(20);
+      .range(from, to);
 
     if (error) throw error;
-    res.json(data);
+    res.json({
+      data,
+      page,
+      limit,
+      total: count,
+      hasNext: to < count - 1,
+    });
   } catch (err) {
     next(err);
   }

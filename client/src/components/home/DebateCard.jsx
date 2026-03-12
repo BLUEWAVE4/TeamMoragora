@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import api from '../../services/api';
+//import api from '../../services/api'; 변경전 동작확인 되면 삭제 
+import { castVote, getVoteTally, cancelVote } from '../../services/api'; //변경후
 
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
 
   // feed 구조: verdict 객체 (id, debate_id, winner_side, ai_score_a, ai_score_b,
-  //             citizen_vote_count, debate: { topic, category, creator, status })
+  //               citizen_vote_count, debate: { topic, category, creator, status })
 
   const debateStatus = feed?.debate?.status;
   const isVotingStatus = debateStatus === 'voting';
@@ -27,7 +28,8 @@ export default function DebateCard({ feed, formatTime }) {
     if (!feed?.debate_id || !isVotingStatus) return;
     const fetchVoteCounts = async () => {
       try {
-        const res = await api.get(`/votes/${feed.debate_id}`);
+        //const res = await api.get(`/votes/${feed.debate_id}`); 변경전 동작확인되면 삭제
+        const res = await getVoteTally(feed.debate_id);
         setVoteCounts({
           agree: res?.A ?? 0,
           disagree: res?.B ?? 0,
@@ -50,8 +52,9 @@ export default function DebateCard({ feed, formatTime }) {
     : (debate.creator?.nickname || "논쟁마스터");
 
   const categoryMap = {
-    'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'LOVE': '연애', 'ECONOMY': '경제',
-    'TECHNOLOGY': '기술', 'POLITICS': '정치', 'PHILOSOPHY': '철학', 'CULTURE': '문화',
+    'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'ROMANCE': '연애', 'LOVE': '연애',
+    'EDUCATION': '교육', 'TECHNOLOGY': '기술', 'POLITICS': '정치', 'PHILOSOPHY': '철학',
+    'CULTURE': '문화', 'ECONOMY': '경제',
   };
   const categoryName = categoryMap[debate.category?.toUpperCase()] || debate.category || '일상';
 
@@ -66,18 +69,33 @@ export default function DebateCard({ feed, formatTime }) {
     }
     if (isVoting) return;
 
+    const isCanceling = myVote === side; // 이미 선택된 버튼을 다시 누름 -> 취소
     const isFirst = myVote === null;
-    const isSwitching = myVote !== null && myVote !== side;
+    const isSwitching = myVote !== null && !isCanceling;
+
     const prevVote = myVote;
     const prevCounts = { ...voteCounts };
 
-    setMyVote(side);
-    localStorage.setItem(storageKey, side);
+    // 1. 상태 업데이트 (UI 우선 반영 - 낙관적 업데이트)
+    const nextVote = isCanceling ? null : side;
+    setMyVote(nextVote);
+
+    if (nextVote) {
+      localStorage.setItem(storageKey, nextVote);
+    } else {
+      localStorage.removeItem(storageKey);
+    }
+
     setVoteCounts(prev => {
       const next = { ...prev };
-      if (isFirst) {
+      if (isCanceling) {
+        // 투표 취소
+        next[side === 'A' ? 'agree' : 'disagree'] -= 1;
+      } else if (isFirst) {
+        // 신규 투표
         next[side === 'A' ? 'agree' : 'disagree'] += 1;
       } else if (isSwitching) {
+        // 투표 변경
         next[prevVote === 'A' ? 'agree' : 'disagree'] -= 1;
         next[side === 'A' ? 'agree' : 'disagree'] += 1;
       }
@@ -86,15 +104,25 @@ export default function DebateCard({ feed, formatTime }) {
 
     setIsVoting(true);
     try {
-      await api.post(`/votes/${feed.debate_id}`, { voted_side: side });
+      if (isCanceling) {
+        // 서버에 투표 삭제 요청 (API 설계에 맞춰 DELETE 사용)
+        //await api.delete(`/votes/${feed.debate_id}`); 변경전 동작확인되면 삭제
+        await cancelVote(feed.debate_id); //변경후
+      } else {
+        // 투표 생성 또는 수정 요청
+        // await api.post(`/votes/${feed.debate_id}`, { voted_side: side }); 변경전 동작확인 되면 삭제
+        await castVote(feed.debate_id, side);
+      }
     } catch (err) {
-      console.error('투표 실패:', err);
+      console.error('투표 통신 실패:', err);
+      // 에러 발생 시 상태 롤백
       setMyVote(prevVote);
       if (prevVote) localStorage.setItem(storageKey, prevVote);
       else localStorage.removeItem(storageKey);
       setVoteCounts(prevCounts);
-      const msg = err?.message || '투표에 실패했습니다. 다시 시도해주세요.';
-      alert(msg);
+      
+      const errorMsg = err?.response?.data?.message || '투표 처리에 실패했습니다.';
+      alert(errorMsg);
     } finally {
       setIsVoting(false);
     }
@@ -183,7 +211,7 @@ export default function DebateCard({ feed, formatTime }) {
             />
           </div>
           <p className="text-center text-[11px] text-gray-400 mt-1.5">
-            총 {totalVotes.toLocaleString()}명 참여 · 다른 버튼을 눌러 변경 가능
+            총 {totalVotes.toLocaleString()}명 참여 · 선택한 버튼 재클릭 시 투표 취소
           </p>
         </div>
       )}

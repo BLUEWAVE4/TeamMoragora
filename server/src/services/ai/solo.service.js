@@ -3,14 +3,15 @@
 
 import { openai } from '../../config/ai.js';
 import { buildCounterArgumentPrompt } from './prompts.js';
-
-const TIMEOUT_MS = 30000;
+import { callAI } from './aiWrapper.js';
+import { AI_TEMPERATURE_SOLO, ARGUMENT_MIN_LENGTH } from '../../config/constants.js';
 
 export async function generateCounterArgument({ topic, category, sideA_argument }) {
   const prompt = buildCounterArgumentPrompt({ topic, category, sideA_argument });
 
-  const response = await Promise.race([
-    openai.chat.completions.create({
+  const parsed = await callAI(
+    'GPT-4o (Solo)',
+    () => openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -20,16 +21,12 @@ export async function generateCounterArgument({ topic, category, sideA_argument 
         { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.7,
+      temperature: AI_TEMPERATURE_SOLO,
     }),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('AI 반대 주장 생성 타임아웃 (30초)')), TIMEOUT_MS)
-    ),
-  ]);
+    (res) => res.choices[0].message.content,
+  );
 
-  const parsed = JSON.parse(response.choices[0].message.content);
-
-  if (!parsed.content || parsed.content.length < 50) {
+  if (!parsed.content || parsed.content.length < ARGUMENT_MIN_LENGTH) {
     throw new Error('AI 반대 주장 생성 실패: 내용이 부족합니다.');
   }
 

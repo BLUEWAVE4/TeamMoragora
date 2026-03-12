@@ -141,7 +141,7 @@ export default function InvitePage() {
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl)
+    navigator.clipboard.writeText(ogShareUrl)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
   }
@@ -153,7 +153,7 @@ export default function InvitePage() {
       content: {
         title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
         description: `${toKor(debate?.category) ? `[${toKor(debate?.category)}] ` : ''}${toKor(debate?.purpose)} 토론에 참여해보세요!`,
-        imageUrl: `${window.location.origin}/ogCard2.png`, // 실제 경로 확인 필요
+        imageUrl: `${window.location.origin}/ogCard2.png`,
         link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl },
       },
       buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl } }],

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 
+import { env } from './src/config/env.js';
 import authRoutes from './src/routes/auth.routes.js';
 import debateRoutes from './src/routes/debate.routes.js';
 import argumentRoutes from './src/routes/argument.routes.js';
@@ -10,16 +11,16 @@ import voteRoutes from './src/routes/vote.routes.js';
 import profileRoutes from './src/routes/profile.routes.js';
 import contentRoutes from './src/routes/content.routes.js';
 import feedbackRoutes from './src/routes/feedback.routes.js';
+import ogRoutes from './src/routes/og.routes.js';
+import aiRoutes from './src/routes/ai.routes.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
-// 배포 단계에서는 .env 파일 URL 주소 수정필요
 app.use(cors({
   origin: [
-    process.env.CLIENT_URL,
+    env.CLIENT_URL,
     'http://localhost:5173',
   ].filter(Boolean),
   credentials: true,
@@ -36,6 +37,8 @@ app.use('/api/votes', voteRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
+app.use('/og', ogRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -45,6 +48,6 @@ app.get('/api/health', (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(env.PORT, () => {
+  console.log(`Server running on http://localhost:${env.PORT}`);
 });

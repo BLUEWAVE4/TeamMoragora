@@ -13,6 +13,11 @@ server/dist/
 .env.production.local
 .env.*.local
 
+# Archive
+*.zip
+*.tar.gz
+*.rar
+
 # IDE
 .vscode/
 .idea/
