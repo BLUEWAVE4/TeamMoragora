@@ -68,7 +68,7 @@ export default function HomePage() {
       const docHeight = document.documentElement.scrollHeight;
       const distanceFromBottom = docHeight - scrollTop - windowHeight;
 
-      console.log('스크롤 감지 - 바닥까지:', distanceFromBottom, 'hasNext:', hasNextRef.current);
+
 
       if (distanceFromBottom < 200 && hasNextRef.current && !loadingMoreRef.current) {
         loadMore();
@@ -123,7 +123,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDFDFD] pb-32 pt-4">
-      <TodayDebate item={feeds[0]} />
+      <TodayDebate items={feeds.slice(0, 5)} />
       <main className="flex flex-col mt-10 px-6">
         <div className="flex justify-between items-end mb-2 relative">
           <h2 className="text-[22px] font-black text-[#2D3350]">실시간 논쟁 피드</h2>

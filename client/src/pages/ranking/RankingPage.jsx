@@ -22,8 +22,6 @@ export default function RankingPage() {
       try {
         setIsLoading(true);
         const res = await api.get('/profiles/ranking');
-        console.log('랭킹 전체:', res);
-        console.log('랭킹 첫번째 유저:', res[0]);
         setRankings(res);
       } catch (err) {
         console.error('랭킹 불러오기 실패:', err);
@@ -71,7 +69,6 @@ export default function RankingPage() {
       </nav>
 
       <div className="max-w-md mx-auto px-5 pt-8">
-
         {/* 로딩 */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -152,31 +149,33 @@ export default function RankingPage() {
         )}
       </div>
 
-      {/* 내 랭킹 플로팅 바 */}
+      {/* 내 랭킹 플로팅 바 (수정된 부분) */}
       <motion.div
         initial={{ y: 100 }} animate={{ y: 0 }} whileTap={{ scale: 0.98 }}
         onClick={() => setIsXPDetailOpen(true)}
-        className="fixed bottom-24 left-4 right-4 z-[90] cursor-pointer"
+        className="fixed bottom-24 left-0 right-0 z-[90] cursor-pointer"
       >
-        <div className="bg-[#EBF5FF]/90 backdrop-blur-xl border-2 border-[#007AFF]/30 shadow-[0_8px_32px_rgba(0,122,255,0.15)] rounded-[24px] p-4 flex items-center gap-4">
-          <div className="w-8 flex flex-col items-center mr-3">
-            <span className="text-[18px] font-black text-[#007AFF] italic">{myRank}</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-white overflow-hidden shadow-sm border border-[#007AFF]/10">
-            <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myNickname}`} alt="avatar" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[16px] font-black text-black">{myNickname} (나)</span>
-              <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-[#007AFF] text-white uppercase font-bold">{myData?.tier || '시민'}</span>
+        <div className="max-w-md mx-auto px-5">
+          <div className="bg-[#EBF5FF]/90 backdrop-blur-xl border-2 border-[#007AFF]/30 shadow-[0_8px_32px_rgba(0,122,255,0.15)] rounded-[24px] p-4 flex items-center gap-4">
+            <div className="w-8 flex flex-col items-center mr-3">
+              <span className="text-[18px] font-black text-[#007AFF] italic">{myRank}</span>
             </div>
-            <div className="flex items-center text-[11px] font-bold text-gray-500">
-              <span>{myData?.wins || 0}승 {myData?.losses || 0}패 {myData?.draws || 0}무</span>
-              <span className="mx-1.5 opacity-30">•</span>
-              <span className="text-[#007AFF] font-black">{myData?.total_score?.toLocaleString() || 0} XP</span>
+            <div className="w-12 h-12 rounded-2xl bg-white overflow-hidden shadow-sm border border-[#007AFF]/10 flex-shrink-0">
+              <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myNickname}`} alt="avatar" className="w-full h-full object-cover" />
             </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[16px] font-black text-black truncate">{myNickname} (나)</span>
+                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-[#007AFF] text-white uppercase flex-shrink-0">{myData?.tier || '시민'}</span>
+              </div>
+              <div className="flex items-center text-[11px] font-bold text-gray-500">
+                <span className="whitespace-nowrap">{myData?.wins || 0}승 {myData?.losses || 0}패 {myData?.draws || 0}무</span>
+                <span className="mx-1.5 opacity-30">•</span>
+                <span className="text-[#007AFF] font-black whitespace-nowrap">{myData?.total_score?.toLocaleString() || 0} XP</span>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#007AFF]/50 flex-shrink-0" />
           </div>
-          <ChevronRight className="w-5 h-5 text-[#007AFF]/50" />
         </div>
       </motion.div>
 
@@ -189,6 +188,7 @@ export default function RankingPage() {
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
               onDragEnd={(_, info) => info.offset.y > 100 && setIsXPDetailOpen(false)}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 200 }}
               className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[1001] rounded-t-[36px] overflow-hidden pb-12 shadow-2xl"
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
@@ -239,6 +239,8 @@ export default function RankingPage() {
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
               onDragEnd={(_, info) => info.offset.y > 100 && setIsLevelInfoOpen(false)}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 200 }}
+
               className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[1001] rounded-t-[36px] max-h-[85vh] overflow-y-auto pb-12 shadow-2xl"
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
