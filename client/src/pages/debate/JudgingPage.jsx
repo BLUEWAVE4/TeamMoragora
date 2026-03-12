@@ -89,9 +89,35 @@ const MODEL_MAP = {
 
 // AI 판사 캐릭터 정보
 const AI_JUDGES = {
-  gpt: { name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortFlat&hairColor=a55728&facialHair=beardMajestic&facialHairProbability=100&facialHairColor=a55728&eyes=default&eyebrows=defaultNatural&mouth=serious&clothing=blazerAndShirt&clothesColor=262e33&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
-  gemini: { name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c', desc: '분석적이고 정중한 판사' },
+  gpt: { name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortCurly&hairColor=724133&facialHairProbability=0&eyes=default&eyebrows=defaultNatural&mouth=twinkle&clothing=shirtCrewNeck&clothesColor=3c4f5c&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
+  gemini: { name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c&accessories=round&accessoriesProbability=100&accessoriesColor=000000', desc: '분석적이고 정중한 판사' },
   claude: { name: '클로드', color: '#D97706', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&eyes=happy&eyebrows=upDown&mouth=smile&clothing=hoodie&clothesColor=e6e6e6', desc: '신중하고 공정한 판사' },
+};
+
+// 카운트업 애니메이션 훅
+const useCountUp = (target, duration = 2000) => {
+  const [value, setValue] = useState(0);
+  const prevTarget = useRef(0);
+
+  useEffect(() => {
+    if (target === null || target === undefined) return;
+    const start = prevTarget.current;
+    const diff = target - start;
+    if (diff === 0) { setValue(target); return; }
+    const startTime = performance.now();
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(start + diff * eased));
+      if (progress < 1) requestAnimationFrame(animate);
+      else prevTarget.current = target;
+    };
+    requestAnimationFrame(animate);
+  }, [target, duration]);
+
+  return value;
 };
 
 const ModelCard = ({ judgeKey, status, score }) => {
@@ -99,7 +125,8 @@ const ModelCard = ({ judgeKey, status, score }) => {
   const isDone = status === 'done';
   const isFailed = status === 'failed';
   const isActive = status === 'active';
-  const winner = score ? (score.a > score.b ? 'A' : score.b > score.a ? 'B' : 'draw') : null;
+  const displayA = useCountUp(isDone && score ? score.a : null);
+  const displayB = useCountUp(isDone && score ? score.b : null);
 
   return (
     <div className={`flex-1 rounded-2xl overflow-hidden transition-all duration-500 ${
@@ -110,28 +137,26 @@ const ModelCard = ({ judgeKey, status, score }) => {
     }`}>
       <div className="p-3 flex flex-col items-center text-center">
         <div
-          className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg shrink-0 transition-all duration-500 ${
-            isActive ? 'animate-pulse' : ''
-          }`}
+          className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg shrink-0 transition-all duration-500 ${isActive ? 'animate-pulse' : ''}`}
           style={{
             borderColor: isDone ? (judge.borderColor || judge.color) : `${judge.borderColor || judge.color}40`,
-            boxShadow: isDone ? `0 4px 14px ${judge.borderColor || judge.color}40` : 'none'
+            boxShadow: isDone
+              ? `0 4px 14px ${judge.borderColor || judge.color}40`
+              : 'none'
           }}
         >
           <img src={judge.avatar} alt={judge.name} className="w-full h-full object-cover" />
         </div>
-        <span className="text-sm font-bold text-white mt-2">{judge.name}</span>
-        <p className="text-[10px] text-white/40 truncate w-full">{judge.desc}</p>
+        <span className="text-sm font-serif font-bold text-white mt-2">{judge.name}</span>
+        <p className="text-[10px] font-serif text-white/40 truncate w-full">{judge.desc}</p>
 
         {/* 판결 결과 or 상태 */}
         <div className="mt-2">
           {isDone && score ? (
-            <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
-              winner === 'A' ? 'bg-emerald-500/20 text-emerald-400'
-                : winner === 'B' ? 'bg-red-500/20 text-red-400'
-                : 'bg-white/10 text-white/60'
-            }`}>
-              {winner === 'A' ? '찬성' : winner === 'B' ? '반대' : '무승부'}
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-[12px] font-black font-serif tracking-wider">
+              <span className={displayA >= displayB ? 'text-emerald-400' : 'text-emerald-400/40'}>{String(displayA).padStart(2, '0')}</span>
+              <span className="text-white/30">:</span>
+              <span className={displayB >= displayA ? 'text-red-400' : 'text-red-400/40'}>{String(displayB).padStart(2, '0')}</span>
             </span>
           ) : isActive ? (
             <span className="flex items-center justify-center gap-1 text-[11px] text-blue-400 font-semibold">
@@ -260,27 +285,27 @@ export default function JudgingPage() {
 
   return (
     <div className="fixed inset-0 flex justify-center bg-[#FAFAF5] z-50">
-      <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#435479] to-[#ffffff] shadow-2xl overflow-hidden">
+      <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#1a2744] via-60% to-[#FAFAF5] shadow-2xl overflow-hidden">
         <div className="flex-1 flex flex-col px-6 pt-16 pb-32 overflow-y-auto">
 
           {/* ===== 헤더 영역 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
-            <h2 className="text-white text-2xl font-black tracking-tight">
+            <h2 className="text-white text-2xl font-serif font-black tracking-tight">
               {isAllDone ? "판결이 완료되었습니다!" : "AI가 판결 중입니다"}
             </h2>
             {isAllDone ? (
-              <p className="text-white/60 text-[15px] italic font-medium tracking-tight">
+              <p className="text-white/60 text-[15px] font-serif italic font-medium tracking-tight">
                 결과가 도착했습니다. 아래에서 확인하세요!
               </p>
             ) : (
               <TypingMessage messages={JUDGING_MESSAGES} />
             )}
-            <p className="text-[13px] text-white/60 font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
+            <p className="text-[13px] text-white/60 font-serif font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
             </p>
             {(proSide || conSide) && (
-              <div className="flex items-center gap-2 text-xs font-bold mt-1">
-                <span className="text-blue-300">{proSide || '찬성'}</span>
+              <div className="flex items-center gap-2 text-xs font-serif font-bold mt-1">
+                <span className="text-emerald-400">{proSide || '찬성'}</span>
                 <span className="text-white/30">vs</span>
                 <span className="text-red-300">{conSide || '반대'}</span>
               </div>
@@ -319,6 +344,46 @@ export default function JudgingPage() {
             <div className="mt-8">
               <VerdictContent verdictData={verdictData} topic={debateTitle} />
 
+              {/* ===== 시민 투표 현황 ===== */}
+              {(() => {
+                const vA = verdictData.debate?.vote_count_a || verdictData.vote_count_a || 0;
+                const vB = verdictData.debate?.vote_count_b || verdictData.vote_count_b || 0;
+                const total = vA + vB;
+                const pA = total > 0 ? Math.round((vA / total) * 100) : 0;
+                const pB = total > 0 ? 100 - pA : 0;
+                return (
+                  <div className="mt-5 bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[14px] font-serif font-bold text-primary">🗳️ 시민 투표 현황</p>
+                      <span className="text-[12px] text-primary/40">{total > 0 ? `${total.toLocaleString()}명 참여` : '투표 진행 중'}</span>
+                    </div>
+                    {total > 0 ? (
+                      <>
+                        <div className="flex justify-between text-sm font-bold mb-1.5">
+                          <span className="text-emerald-600">찬성 {pA}%</span>
+                          <span className="text-red-500">반대 {pB}%</span>
+                        </div>
+                        <div className="h-3 bg-red-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                            style={{ width: `${pA}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[11px] text-primary/40 mt-1">
+                          <span>{vA.toLocaleString()}명</span>
+                          <span>{vB.toLocaleString()}명</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-[13px] text-primary/40 font-serif">아직 투표가 없습니다</p>
+                        <p className="text-[11px] text-primary/25 mt-1">공유하여 시민 투표를 받아보세요</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <button
                 onClick={() => {
                   const url = `${window.location.origin}/debate/${debateId}`;
@@ -327,10 +392,10 @@ export default function JudgingPage() {
                     setTimeout(() => setCopied(false), 2000);
                   });
                 }}
-                className={`w-full mt-5 py-4 rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-all duration-300 ${
+                className={`w-full mt-5 py-4 rounded-xl font-serif font-bold text-base uppercase tracking-wider border-2 shadow-md active:scale-95 transition-all duration-300 ${
                   copied
-                    ? 'bg-emerald-500 text-white scale-[0.97]'
-                    : 'bg-[#1B2A4A] text-[#D4AF37]'
+                    ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
+                    : 'bg-primary text-gold border-gold hover:bg-gold hover:text-primary hover:shadow-[0_0_15px_rgba(212,175,55,0.5)]'
                 }`}
               >
                 {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
