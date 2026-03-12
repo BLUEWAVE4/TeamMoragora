@@ -76,8 +76,10 @@ const getTier = (pts) => {
 };
 
 const categoryMap = {
-  daily: '일상', romance: '연애', work: '직장',
-  education: '교육', social: '사회', politics: '정치',
+  daily: '일상', romance: '연애', work: '직장', education: '교육',
+  social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
+  culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
+  사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
 
 const formatDate = (iso) => {
