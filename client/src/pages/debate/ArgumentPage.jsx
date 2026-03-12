@@ -168,7 +168,7 @@ export default function ArgumentPage() {
     </div>
   )
 
-  const sideLabel = debate?.creator_id === user?.id ? 'A측' : 'B측'
+  const sideLabel = debate?.creator_id === user?.id ? '찬성' : '반대'
 
   return (
     <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-10">
