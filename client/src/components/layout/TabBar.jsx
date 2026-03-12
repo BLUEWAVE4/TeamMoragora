@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from "../../store/AuthContext"
 
 const HomeIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -17,6 +18,25 @@ const UserIcon = () => (
 export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const isLoggedIn = !!user;
+
+   const handleCreateClick = () => {
+    if (!isLoggedIn) {
+      const confirmMove = window.confirm(
+        "논쟁 생성은 로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?"
+      );
+      
+      if (confirmMove) {
+        // AuthContext 로직에 맞게 sessionStorage에 리다이렉트 경로 저장
+        sessionStorage.setItem('redirectAfterLogin', '/debate/create');
+        navigate('/login');
+      }
+    } else {
+      navigate('/debate/create');
+    }
+  };
 
   const menuItems = [
     { to: '/', icon: <HomeIcon />, label: '홈' },
@@ -35,7 +55,7 @@ export default function TabBar() {
             return (
               <button
                 key="center-btn"
-                onClick={() => navigate('/debate/create')}
+                onClick={handleCreateClick}
                 className="w-14 h-14 bg-[#1a1a1a] text-white rounded-4xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 hover:bg-black"
               >
                 <span className="text-3xl font-light">+</span>
