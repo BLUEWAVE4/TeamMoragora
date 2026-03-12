@@ -33,6 +33,7 @@ export default function InvitePage() {
   const [isCreator, setIsCreator] = useState(null) 
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
+  const ogShareUrl = `https://teammoragora.onrender.com/og/invite/${inviteCode}`
 
   // ── 1. 초대 정보 로드
   // 명세서상 GET /debates/invite/:inviteCode 없음
@@ -166,12 +167,12 @@ export default function InvitePage() {
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: '⚔️ 모라고라 논쟁 초대',
-        description: `"${debate?.topic}"\n지금 바로 당신의 반박을 보여주세요!`,
+        title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
+        description: `${toKor(debate?.category) ? `[${toKor(debate?.category)}] ` : ''}${toKor(debate?.purpose)} 토론에 참여해보세요!`,
         imageUrl: `${window.location.origin}/ogCard2.png`,
-        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl },
       },
-      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl } }],
     })
   }
 
@@ -179,9 +180,9 @@ export default function InvitePage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: '모라고라 논쟁 초대',
+          title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
           text: `"${debate?.topic}" 논쟁에 당신을 초대합니다!`,
-          url: shareUrl,
+          url: ogShareUrl,
         })
       } catch (err) { console.log('공유 취소') }
     } else {
