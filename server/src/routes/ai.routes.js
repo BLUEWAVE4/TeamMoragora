@@ -40,7 +40,6 @@ router.post('/generate-sides', async (req, res) => {
     });
   } catch (err) {
     console.error('[AI] generate-sides 실패:', err.message);
-    // AI 실패 시 기본 텍스트 반환
     res.json({
       pro: `${topic}에 대해 긍정적인 입장`,
       con: `${topic}에 대해 부정적인 입장`,

@@ -23,16 +23,11 @@ export default function Step3CategoryTime({
         className="px-4 py-3 rounded-xl border"
       >
         <option value="">선택</option>
-        <option value="일상">일상</option>
-        <option value="연애">연애</option>
-        <option value="직장">직장</option>
-        <option value="교육">교육</option>
         <option value="사회">사회</option>
-        <option value="정치">정치</option>
         <option value="기술">기술</option>
+        <option value="정치">정치</option>
         <option value="철학">철학</option>
-        <option value="문화">문화</option>
-        <option value="기타">기타</option>
+        <option value="일상">일상</option>
       </select>
 
       <h3 className="font-bold text-lg">토론 시간</h3>
