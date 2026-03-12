@@ -53,14 +53,13 @@ export default function Header() {
                 placeholder="논쟁 검색"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-sm text-[#2D3350] placeholder:text-gray-400"
+                className="flex-1 bg-transparent border-none outline-none text-[16px] text-[#2D3350] placeholder:text-gray-400"
               />
             </div>
             <button 
               type="button" 
               onClick={() => setIsSearchOpen(false)}
-              className="text-[15px] font-bold text-[#007AFF] active:opacity-60 transition-opacity"
-            >
+              className="flex-shrink-0 text-[15px] font-bold text-[#007AFF] active:opacity-60 transition-opacity">
               취소
             </button>
           </form>
