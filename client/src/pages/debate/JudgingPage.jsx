@@ -200,21 +200,18 @@
 //     </div>
 //   );
 // }
-/**
- * 파일명: JudgingPage.jsx
- * 담당자: 프론트 B 채유진
- */
 
 
 /**
  * 파일명: JudgingPage.jsx
  * 담당자: 프론트 B 채유진
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictDetailModal from '../VerdictDetailModal';
+import confetti from 'canvas-confetti'; // 1. 라이브러리 추가
 
 // AI 모델 매핑 (서버 ai_model 값 → UI key)
 const MODEL_MAP = {
@@ -275,6 +272,28 @@ export default function JudgingPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [verdictData, setVerdictData] = useState(null);
+
+  const confettiFiredRef = useRef(false);
+  
+// 꽃가루 실행 함수 정의
+  const fireConfetti = () => {
+    // 중앙에서 강하게 한 번 터짐
+    confetti({
+      particleCount: 150, // 개수를 조금 늘려서 더 화려하게
+      spread: 70, // 옆으로 퍼지는 정도
+      origin: { y: 0.6 }, // 화면 하단에서 약간 위쪽
+      zIndex: 9999, // 다른 요소 위에 표시
+      colors: ['#FEE500', '#E63946', '#4285F4', '#10A37F', '#FFFFFF'] // 브랜드 컬러 조합
+    });
+  };
+
+  // 판결 완료 감지 시 꽃가루 실행
+  useEffect(() => {
+   if (isAllDone && !confettiFiredRef.current) {
+      fireConfetti();
+      confettiFiredRef.current = true;
+    }
+  }, [isAllDone]);
 
   useEffect(() => {
     const initFetch = async () => {
@@ -349,19 +368,21 @@ export default function JudgingPage() {
     }
   }, [displayCount, voteCount]);
 
-  const handleShowVerdict = () => {
-    trackEvent('verdict_view', { debateId });
-    setIsModalOpen(true);
-  };
-
-  return (
+ return (
     <div className="fixed inset-0 flex justify-center bg-[#FAFAF5] z-50">
       <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#435479] to-[#ffffff] shadow-2xl overflow-hidden">
         <div className="flex-1 flex flex-col justify-between px-6 pt-24 pb-32 overflow-y-auto">
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
-            <div className="text-5xl mb-2 animate-bounce">⚖️</div>
-            <h2 className="text-white text-2xl font-black tracking-tight">AI가 판결 중입니다</h2>
-            <p className="text-white/60 text-[15px] italic font-medium tracking-tight">3개 AI 모델이 동시에 분석하고 있습니다...</p>
+            {/* 3. 판결 완료 시 이모지와 텍스트 변경 로직 적용 */}
+            <div className="text-5xl mb-2 animate-bounce">
+              {isAllDone ? "🏆" : "⚖️"}
+            </div>
+            <h2 className="text-white text-2xl font-black tracking-tight">
+              {isAllDone ? "판결이 완료되었습니다!" : "AI가 판결 중입니다"}
+            </h2>
+            <p className="text-white/60 text-[15px] italic font-medium tracking-tight">
+              {isAllDone ? "결과가 도착했습니다. 아래에서 확인하세요!" : "3개 AI 모델이 동시에 분석하고 있습니다..."}
+            </p>
             <p className="text-[13px] text-white/60 font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
             </p>
@@ -381,24 +402,16 @@ export default function JudgingPage() {
               </p>
             </div>
 
-            {/* [추가된 요약 프리뷰 섹션] 별도 라이브러리 없이 데이터만 노출 */}
-            {isAllDone && verdictData && (
-              <div className="bg-white/10 border border-yellow-500/30 p-4 rounded-2xl animate-fade-in shadow-inner">
-                <p className="text-yellow-500 text-[11px] font-black uppercase tracking-widest mb-2">AI Verdict Summary</p>
-                <p className="text-white/90 text-sm leading-relaxed italic">
-                  "{verdictData.summary || '판사들의 의견이 취합되었습니다. 최종 승자를 확인해보세요!'}"
-                </p>
-              </div>
-            )}
-
             <div className="space-y-4">
               <button
-                onClick={handleShowVerdict}
+                onClick={() => { trackEvent('verdict_view', { debateId }); setIsModalOpen(true); }}
                 disabled={!isAllDone}
                 className={`w-full h-[60px] rounded-[18px] font-black text-lg transition-all duration-500 transform active:scale-95 shadow-xl
-                  ${isAllDone ? 'bg-[#E63946] text-white cursor-pointer shadow-red-900/40' : 'bg-white/10 text-white/20 border border-white/5 cursor-not-allowed'}`}
+                  ${isAllDone 
+                    ? 'bg-[#E63946] text-white cursor-pointer hover:bg-[#ff4d5d] hover:scale-[1.02] shadow-[0_0_25px_rgba(230,57,70,0.4)]' 
+                    : 'bg-white/10 text-white/20 border border-white/5 cursor-not-allowed'}`}
               >
-                {isAllDone ? "상세 판결문 읽기" : "최종 분석 중..."}
+                {isAllDone ? "판결 결과 보기" : "최종 분석 중..."}
               </button>
             </div>
           </div>
@@ -414,4 +427,3 @@ export default function JudgingPage() {
     </div>
   );
 }
-
