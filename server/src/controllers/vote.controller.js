@@ -80,6 +80,37 @@ export async function getVoteTally(req, res, next) {
   }
 }
 
+// 투표 취소
+export async function cancelVote(req, res, next) {
+  try {
+    const { debateId } = req.params;
+
+    // 1. 투표 가능 상태인지 확인
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('status')
+      .eq('id', debateId)
+      .single();
+
+    if (!debate || debate.status !== 'voting') {
+      return res.status(400).json({ error: '투표 기간이 아닙니다.' });
+    }
+
+    // 2. 투표 삭제
+    const { error } = await supabaseAdmin
+      .from('votes')
+      .delete()
+      .eq('debate_id', debateId)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+
+    res.json({ message: '투표가 취소되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // 마감된 투표 일괄 확정 (cron 또는 수동 호출용)
 export async function finalizeExpiredVotes(_req, res, next) {
   try {
