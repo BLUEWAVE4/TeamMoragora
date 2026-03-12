@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import kakaoBtn from '../../assets/KakaoLoginButton.svg';
@@ -12,15 +12,11 @@ export default function LoginPage({ isKakaoOnly = false }) {
   const isFromDebateCreate = sessionStorage.getItem('redirectAfterLogin') === '/debate/create';
 
   useEffect(() => {
-    // 1. 인앱 브라우저 감지 및 외부 브라우저 유도 로직
     const userAgent = navigator.userAgent.toLowerCase();
-    const isInApp = /kakao|instagram|line|naver|fbav|facebot|messenger/i.test(userAgent);
-
-    if (isInApp) {
-      // 안드로이드 카카오톡 인앱일 경우 크롬으로 강제 실행 유도
-      if (userAgent.includes('kakao') && userAgent.includes('android')) {
-        window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=http;package=com.android.chrome;end`;
-      }
+    
+    // 1. 안드로이드 카카오톡 인앱일 경우 크롬으로 강제 실행 유도
+    if (userAgent.includes('kakao') && userAgent.includes('android')) {
+      window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=http;package=com.android.chrome;end`;
     }
 
     // 2. 로그인 상태 리다이렉트 로직
@@ -43,14 +39,16 @@ export default function LoginPage({ isKakaoOnly = false }) {
 
   if (user) return null;
 
-  // 현재 브라우저가 인앱인지 체크 (렌더링 시 사용)
-  const isInAppBrowser = /kakao|instagram|line|naver|fbav|facebot|messenger/i.test(navigator.userAgent.toLowerCase());
+  // 🔍 환경 감지 변수
+  const ua = navigator.userAgent.toLowerCase();
+  const isKakaoTalk = ua.includes('kakao');
+  const isOtherInApp = /instagram|line|naver|fbav|facebot|messenger/i.test(ua);
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#FAFAF5]">
       {/* 상단 헤더 섹션 */}
       <div className="bg-gradient-to-b from-[#1a2744] to-[#2D3350] px-8 pt-24 pb-16 text-center shadow-lg shrink-0">
-        <div className="text-6xl mb-4 inline-block animate-bounce">⚖️</div>
+        <div className="text-6xl mb-4 font-normal inline-block animate-bounce">⚖️</div>
         <h1 className="text-white text-4xl font-black tracking-tighter">
           모라고라<span className="text-yellow-400">.</span>
         </h1>
@@ -84,24 +82,24 @@ export default function LoginPage({ isKakaoOnly = false }) {
 
           {/* 로그인 버튼 섹션 */}
           <div className="flex flex-col gap-4">
-            {/* 인앱 브라우저 경고 (구글 로그인 불가 안내) */}
-            {isInAppBrowser && !isKakaoOnly && (
-              <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl animate-pulse">
-                <p className="text-[11px] text-amber-800 font-bold text-center leading-tight">
-                  ⚠️ 인앱 브라우저에서는 구글 로그인이 안 될 수 있습니다.<br/>
-                  가급적 크롬(Chrome)이나 사파리(Safari)를 권장합니다.
-                </p>
-              </div>
-            )}
-
-            {isKakaoOnly && (
+            
+            {/* 🔵 안내 문구 최적화 (중복 방지) */}
+            {(isKakaoOnly || isKakaoTalk) ? (
               <div className="text-center mb-1">
-                <p className="text-[13px] text-blue-900 font-bold bg-blue-50 py-2 rounded-lg">
+                <p className="text-[13px] text-blue-900 font-bold bg-blue-50 py-2 rounded-lg border border-blue-100 shadow-sm">
                   카카오톡 전용 로그인 페이지입니다
                 </p>
               </div>
-            )}
+            ) : isOtherInApp ? (
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl animate-pulse shadow-sm">
+                <p className="text-[11px] text-amber-800 font-bold text-center leading-tight">
+                  ⚠️ 현재 브라우저에서는 구글 로그인이 안 될 수 있습니다.<br/>
+                  가급적 크롬(Chrome)이나 사파리(Safari)를 권장합니다.
+                </p>
+              </div>
+            ) : null}
 
+            {/* 카카오 로그인 버튼 */}
             <button
               onClick={signInWithKakao}
               className="flex items-center justify-center gap-3 bg-[#FEE500] rounded-xl px-4 py-4 cursor-pointer font-bold text-[#191919] hover:bg-[#F0D900] active:scale-[0.97] transition-all w-full shadow-sm"
@@ -110,7 +108,8 @@ export default function LoginPage({ isKakaoOnly = false }) {
               <span className="text-[15px]">카카오로 시작하기</span>
             </button>
 
-            {!isKakaoOnly && (
+            {/* ⚪ 구글 버튼: 카톡이 아닐 때만 노출 */}
+            {!isKakaoOnly && !isKakaoTalk && (
               <button
                 onClick={signInWithGoogle}
                 className="flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-4 cursor-pointer font-bold text-gray-700 hover:bg-gray-50 active:scale-[0.97] transition-all w-full shadow-sm"
