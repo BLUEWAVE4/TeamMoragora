@@ -9,6 +9,16 @@ import { useAuth } from '../../store/AuthContext'
 
 const INVITE_TIMEOUT = 300 // 5분
 
+const labelMap = {
+  // purpose
+  battle: '승부', consensus: '합의', analysis: '분석',
+  // lens
+  logic: '논리', emotion: '감정', practical: '현실', ethics: '윤리', general: '일반',
+  // category
+  society: '사회', technology: '기술', politics: '정치', philosophy: '철학',
+}
+const toKor = (v) => labelMap[v] || v
+
 export default function InvitePage() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
@@ -23,6 +33,7 @@ export default function InvitePage() {
   const [isCreator, setIsCreator] = useState(null) 
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
+  const ogShareUrl = `https://teammoragora.onrender.com/og/invite/${inviteCode}`
 
   // ── 1. 초대 정보 로드
   // 명세서상 GET /debates/invite/:inviteCode 없음
@@ -146,7 +157,7 @@ export default function InvitePage() {
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl)
+    navigator.clipboard.writeText(ogShareUrl)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
   }
@@ -156,12 +167,12 @@ export default function InvitePage() {
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: '⚔️ 모라고라 논쟁 초대',
-        description: `"${debate?.topic}"\n지금 바로 당신의 반박을 보여주세요!`,
+        title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
+        description: `${toKor(debate?.category) ? `[${toKor(debate?.category)}] ` : ''}${toKor(debate?.purpose)} 토론에 참여해보세요!`,
         imageUrl: `${window.location.origin}/ogCard2.png`,
-        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl },
       },
-      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl } }],
     })
   }
 
@@ -169,9 +180,9 @@ export default function InvitePage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: '모라고라 논쟁 초대',
+          title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
           text: `"${debate?.topic}" 논쟁에 당신을 초대합니다!`,
-          url: shareUrl,
+          url: ogShareUrl,
         })
       } catch (err) { console.log('공유 취소') }
     } else {
@@ -230,9 +241,9 @@ export default function InvitePage() {
             "{debate?.topic}"
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {debate?.purpose}</span>
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {debate?.lens}</span>
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">📁 {debate?.category}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {toKor(debate?.purpose)}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {toKor(debate?.lens)}</span>
+            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">📁 {toKor(debate?.category)}</span>
           </div>
         </div>
 
@@ -289,8 +300,8 @@ export default function InvitePage() {
 
         {debate && (
           <div className="flex justify-center gap-2 mb-10 flex-wrap">
-            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {debate.purpose}</span>
-            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {debate.lens}</span>
+            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {toKor(debate.purpose)}</span>
+            <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {toKor(debate.lens)}</span>
           </div>
         )}
 

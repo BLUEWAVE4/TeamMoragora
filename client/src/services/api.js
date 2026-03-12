@@ -38,12 +38,12 @@ export const submitArgument = (debateId, data) => api.post(`/arguments/${debateI
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
-export const getVerdictFeed = () => api.get('/judgments/feed');
-
+export const getVerdictFeed = (page = 1, limit = 5) => api.get(`/judgments/feed?page=${page}&limit=${limit}`);
 
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
+
 
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/auth/me');

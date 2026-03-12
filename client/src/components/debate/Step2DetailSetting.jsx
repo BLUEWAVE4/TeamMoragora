@@ -49,40 +49,40 @@ export default function Step2DetailSetting({
       <div className="grid grid-cols-2 gap-4">
 
         <Card
-          variant={lens === "logic" ? "clean" : "base"}
-          onClick={() => handleSelect("logic")}
+          variant={lens === "논리" ? "clean" : "base"}
+          onClick={() => handleSelect("논리")}
           className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
         >
           논리
         </Card>
 
         <Card
-          variant={lens === "emotion" ? "clean" : "base"}
-          onClick={() => handleSelect("emotion")}
+          variant={lens === "감정" ? "clean" : "base"}
+          onClick={() => handleSelect("감정")}
           className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
         >
           감정
         </Card>
 
         <Card
-          variant={lens === "practical" ? "clean" : "base"}
-          onClick={() => handleSelect("practical")}
+          variant={lens === "현실" ? "clean" : "base"}
+          onClick={() => handleSelect("현실")}
           className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
         >
           현실
         </Card>
 
         <Card
-          variant={lens === "ethics" ? "clean" : "base"}
-          onClick={() => handleSelect("ethics")}
+          variant={lens === "윤리" ? "clean" : "base"}
+          onClick={() => handleSelect("윤리")}
           className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
         >
           윤리
         </Card>
 
         <Card
-          variant={lens === "general" ? "clean" : "base"}
-          onClick={() => handleSelect("general")}
+          variant={lens === "일반" ? "clean" : "base"}
+          onClick={() => handleSelect("일반")}
           className={`cursor-pointer ${error ? "animate-shake border-red-400" : ""}`}
         >
           일반
