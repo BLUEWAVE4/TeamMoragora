@@ -77,7 +77,7 @@ export default function TabBar() {
 
       {/* 하단 네비게이션 컨테이너 (인스타그램 스타일 바닥 밀착) */}
       <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
-        <nav className="w-full max-w-[420px] bg-white/95 backdrop-blur-md border-t border-gray-100 h-[60px] flex items-center justify-around pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
+        <nav className="w-full max-w-[450px] bg-white/95 backdrop-blur-md border-t border-gray-100 h-[60px] flex items-center justify-around pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
           
           {menuItems.map((item, idx) => {
             // 중앙 추가 버튼 (클릭 시 애니메이션 실행)
