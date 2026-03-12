@@ -1,5 +1,5 @@
-// // 담당: 서우주 (프론트A) - 32h // 
-// // 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// // // 담당: 서우주 (프론트A) - 32h // 
+// // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +24,6 @@ export default function DebateCreatePage() {
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
-
   const [proSide, setProSide] = useState("");
   const [conSide, setConSide] = useState("");
 
@@ -36,25 +35,42 @@ export default function DebateCreatePage() {
 
   const [showBackModal, setShowBackModal] = useState(false);
 
-  const nextStep = () => setStep(prev => prev + 1);
+  // 다음 단계
+  const nextStep = () => {
+    setStep((prev) => prev + 1);
+  };
 
+  // 이전 단계
   const prevStep = () => {
 
+    // Step1에서 뒤로가기 → 모드선택 모달
     if (step === 1) {
       setShowBackModal(true);
       return;
     }
 
-    setStep(prev => prev - 1);
-
+    setStep((prev) => prev - 1);
   };
 
+  // 🔥 모든 입력 데이터 초기화
+  const resetDebateState = () => {
+    setTopic("");
+    setProSide("");
+    setConSide("");
+    setPurpose("");
+    setLens("");
+    setCategory("");
+    setTime("");
+    setStep(1);
+  };
+
+  // 게임 모드 시작
   const handleModeStart = (selectedMode) => {
     setMode(selectedMode);
     setGameStarted(true);
   };
 
-  // 🔥 AI 찬반 생성
+  // AI 찬반 생성
   const handleGenerateSides = async () => {
 
     if (!topic) {
@@ -77,9 +93,9 @@ export default function DebateCreatePage() {
       alert("AI 생성 실패");
 
     }
-
   };
 
+  // 토론 생성
   const handleSubmit = async () => {
 
     try {
@@ -99,7 +115,10 @@ export default function DebateCreatePage() {
 
       const inviteCode = result?.invite_code;
 
-      sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+      sessionStorage.setItem(
+        `debate_invite_${inviteCode}`,
+        JSON.stringify(result)
+      );
 
       navigate(`/invite/${inviteCode}`);
 
@@ -109,7 +128,6 @@ export default function DebateCreatePage() {
       alert("생성 실패");
 
     }
-
   };
 
   return (
@@ -122,18 +140,22 @@ export default function DebateCreatePage() {
           논쟁 생성하기
         </h2>
 
+        {/* 게임 시작 전 */}
         {!gameStarted && (
-          <ModeSelector onStart={handleModeStart}/>
+          <ModeSelector onStart={handleModeStart} />
         )}
 
+        {/* 게임 시작 후 */}
         {gameStarted && mode === "battle" && (
           <>
-            <StepWizard currentStep={step} total={3}/>
+            <StepWizard currentStep={step} total={3} />
 
             {step === 1 && (
               <Step1Topic
                 topic={topic}
                 setTopic={setTopic}
+                category={category}
+                setCategory={setCategory}
                 proSide={proSide}
                 conSide={conSide}
                 handleGenerateSides={handleGenerateSides}
@@ -155,20 +177,24 @@ export default function DebateCreatePage() {
 
             {step === 3 && (
               <Step3CategoryTime
+                topic={topic}
+                proSide={proSide}
+                conSide={conSide}
+                purpose={purpose}
+                lens={lens}
                 category={category}
-                setCategory={setCategory}
                 time={time}
                 setTime={setTime}
                 prevStep={prevStep}
                 handleSubmit={handleSubmit}
               />
             )}
-
           </>
         )}
 
       </div>
 
+      {/* 모드 선택으로 돌아갈지 확인 */}
       <Modal
         isOpen={showBackModal}
         onClose={() => setShowBackModal(false)}
@@ -186,10 +212,16 @@ export default function DebateCreatePage() {
 
           <Button
             onClick={() => {
+
+              // 🔥 모든 입력 데이터 초기화
+              resetDebateState();
+
+              // 모드 선택 화면으로 이동
               setGameStarted(false);
               setMode(null);
-              setStep(1);
+
               setShowBackModal(false);
+
             }}
           >
             예
