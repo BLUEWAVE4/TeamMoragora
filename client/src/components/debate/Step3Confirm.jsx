@@ -5,7 +5,7 @@ import Modal from "../common/Modal";
 
 export default function Step3Confirm({
 
-  mode,
+  // mode,
   purpose,
   lens,
   topic,
