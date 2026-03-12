@@ -90,21 +90,22 @@ export default function JudgingPage() {
           setVoteCount(totalVotes);
         } catch (_) { /* 투표 데이터 없을 수 있음 */ }
 
-        // debate status 확인 → judging이면 아직 AI 처리 중이므로 verdict 호출 불필요
+        // debate status 확인
         const debateData = await getDebate(debateId);
-        if (debateData.status === 'judging' || debateData.status === 'arguing') {
-          // AI가 아직 처리 중 — verdict 폴링 스킵 (불필요한 404 방지)
-          return;
-        }
+        const isVotingOrDone = ['voting', 'completed'].includes(debateData.status);
 
-        // voting/closed 상태 = 판결 완료 → verdict 조회
-        const verdictResponse = await getVerdict(debateId);
-        if (verdictResponse && verdictResponse.winner_side) {
-          // ai_judgments에서 완료된 모델 확인
+        if (debateData.status === 'arguing') return; // 아직 시작 안 함
+
+        // judging/voting 모두 verdict 조회 (judging 중에도 개별 AI 결과 실시간 표시)
+        try {
+          const verdictResponse = await getVerdict(debateId);
+          if (!verdictResponse) return;
+
           const aiJudgments = verdictResponse.ai_judgments || [];
           const newStatus = { gpt: 'active', gemini: 'active', claude: 'active' };
           const newScores = { gpt: null, gemini: null, claude: null };
 
+          // 완료된 모델 반영
           aiJudgments.forEach((j) => {
             const key = MODEL_MAP[j.ai_model] || MODEL_MAP[j.ai_model?.split('-')[0]];
             if (key) {
@@ -113,10 +114,8 @@ export default function JudgingPage() {
             }
           });
 
-          // 판결 완료 상태: 매칭 안 된 모델은 '실패'로 표시
-          const doneCount = Object.values(newStatus).filter(s => s === 'done').length;
-          if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
-            // 결과가 없는 모델은 failed로 표시 (GPT 실패 시 Grok이 대체하지 못한 경우 등)
+          // voting 상태 = 모든 AI 완료 → 나머지는 실패 처리
+          if (isVotingOrDone) {
             Object.keys(newStatus).forEach(k => {
               if (newStatus[k] !== 'done') newStatus[k] = 'failed';
             });
@@ -125,11 +124,14 @@ export default function JudgingPage() {
           setJudgeStatus({ ...newStatus });
           setJudgeScores(newScores);
 
-          if (doneCount >= aiJudgments.length && aiJudgments.length > 0) {
+          // 판결 최종 완료 (voting 상태 도달)
+          if (isVotingOrDone && aiJudgments.length > 0) {
             setVerdictData(verdictResponse);
             setIsAllDone(true);
             clearInterval(pollInterval);
           }
+        } catch (_) {
+          // verdict 아직 없을 수 있음 (404) — 무시
         }
       } catch (error) {
         // 네트워크 에러 등 — 무시하고 다음 폴링에서 재시도

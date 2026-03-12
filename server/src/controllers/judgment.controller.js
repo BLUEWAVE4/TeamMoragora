@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from '../services/ai/judgment.service.js';
-import { calculateCompositeVerdict } from '../services/verdict.service.js';
 
 export async function requestJudgment(req, res, next) {
   try {
@@ -60,19 +59,38 @@ export async function requestJudgment(req, res, next) {
       return res.status(409).json({ error: '다른 판결 요청이 이미 진행 중입니다.' });
     }
 
+    // 빈 verdict 먼저 생성 (프론트가 ai_judgments를 즉시 폴링 가능)
+    const { data: emptyVerdict, error: vErr } = await supabaseAdmin
+      .from('verdicts')
+      .insert({
+        debate_id: debateId,
+        winner_side: 'draw',
+        summary: '',
+        ai_score_a: 0,
+        ai_score_b: 0,
+        final_score_a: 0,
+        final_score_b: 0,
+        is_citizen_applied: false,
+      })
+      .select('id')
+      .single();
+
+    if (vErr) throw vErr;
+    const verdictId = emptyVerdict.id;
+
     let judgments;
     try {
-      // 3-model parallel judgment
       judgments = await runParallelJudgment({
         topic: debate.topic,
         purpose: debate.purpose,
         lens: debate.lens,
         argumentA: sideA.content,
         argumentB: sideB.content,
-      });
+      }, verdictId);
     } catch (aiErr) {
-      // AI 전체 실패 시 status를 arguing으로 롤백
       console.error(`[AI] 판결 실패, status 롤백: ${aiErr.message}`);
+      await supabaseAdmin.from('ai_judgments').delete().eq('verdict_id', verdictId);
+      await supabaseAdmin.from('verdicts').delete().eq('id', verdictId);
       await supabaseAdmin
         .from('debates')
         .update({ status: 'arguing' })
@@ -80,8 +98,28 @@ export async function requestJudgment(req, res, next) {
       throw aiErr;
     }
 
-    // Save individual AI judgments + composite verdict (AI only)
-    const verdict = await calculateCompositeVerdict(debateId, judgments);
+    // 복합 판결 업데이트
+    const avg = (arr) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
+    const aiScoreA = avg(judgments.map((j) => j.score_a));
+    const aiScoreB = avg(judgments.map((j) => j.score_b));
+    const winnerVotes = { A: 0, B: 0, draw: 0 };
+    judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
+    const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
+      : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+
+    await supabaseAdmin
+      .from('verdicts')
+      .update({
+        winner_side: aiWinner,
+        summary: judgments[0]?.verdict_text || '',
+        ai_score_a: aiScoreA,
+        ai_score_b: aiScoreB,
+        final_score_a: aiScoreA,
+        final_score_b: aiScoreB,
+      })
+      .eq('id', verdictId);
+
+    const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
     // Update status to voting + set vote deadline
     const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);

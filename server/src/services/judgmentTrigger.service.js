@@ -47,7 +47,36 @@ export async function triggerJudgment(debateId) {
 
   if (updateErr || !updated) return; // 다른 요청이 먼저 처리됨
 
-  // 4. 3-model 병렬 판결
+  // 4. 빈 verdict 먼저 생성 (프론트가 ai_judgments를 즉시 폴링할 수 있도록)
+  let verdictId;
+  try {
+    const { data: emptyVerdict, error: vErr } = await supabaseAdmin
+      .from('verdicts')
+      .insert({
+        debate_id: debateId,
+        winner_side: 'draw', // 임시값, 나중에 업데이트
+        summary: '',
+        ai_score_a: 0,
+        ai_score_b: 0,
+        final_score_a: 0,
+        final_score_b: 0,
+        is_citizen_applied: false,
+      })
+      .select('id')
+      .single();
+
+    if (vErr) throw vErr;
+    verdictId = emptyVerdict.id;
+  } catch (err) {
+    console.error(`[triggerJudgment] verdict 생성 실패, 롤백: ${err.message}`);
+    await supabaseAdmin
+      .from('debates')
+      .update({ status: 'arguing' })
+      .eq('id', debateId);
+    throw err;
+  }
+
+  // 5. 3-model 병렬 판결 (각 결과 즉시 ai_judgments에 저장)
   let judgments;
   try {
     judgments = await runParallelJudgment({
@@ -56,10 +85,12 @@ export async function triggerJudgment(debateId) {
       lens: debate.lens,
       argumentA: sideA.content,
       argumentB: sideB.content,
-    });
+    }, verdictId);
   } catch (aiErr) {
-    // AI 전체 실패 시 status 롤백
+    // AI 전체 실패 시 verdict 삭제 + status 롤백
     console.error(`[triggerJudgment] AI 판결 실패, 롤백: ${aiErr.message}`);
+    await supabaseAdmin.from('ai_judgments').delete().eq('verdict_id', verdictId);
+    await supabaseAdmin.from('verdicts').delete().eq('id', verdictId);
     await supabaseAdmin
       .from('debates')
       .update({ status: 'arguing' })
@@ -67,10 +98,10 @@ export async function triggerJudgment(debateId) {
     throw aiErr;
   }
 
-  // 5. 복합 판결 저장
-  await calculateCompositeVerdict(debateId, judgments);
+  // 6. 복합 판결 업데이트 (빈 verdict를 최종 점수로 갱신)
+  await updateCompositeVerdict(verdictId, judgments);
 
-  // 6. voting 상태 + 투표 마감시간 설정
+  // 7. voting 상태 + 투표 마감시간 설정
   const voteDurationHours = parseInt(process.env.VOTE_DURATION_HOURS || '24', 10);
   const voteDeadline = new Date(Date.now() + voteDurationHours * 60 * 60 * 1000);
 
@@ -80,4 +111,31 @@ export async function triggerJudgment(debateId) {
     .eq('id', debateId);
 
   console.log(`[triggerJudgment] 판결 완료 → voting (debate: ${debateId})`);
+}
+
+// verdict를 최종 점수로 업데이트 (ai_judgments는 이미 개별 저장됨)
+async function updateCompositeVerdict(verdictId, judgments) {
+  const avg = (arr) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
+
+  const aiScoreA = avg(judgments.map((j) => j.score_a));
+  const aiScoreB = avg(judgments.map((j) => j.score_b));
+
+  const winnerVotes = { A: 0, B: 0, draw: 0 };
+  judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
+  const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
+    : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+
+  const summary = judgments[0]?.verdict_text || '';
+
+  await supabaseAdmin
+    .from('verdicts')
+    .update({
+      winner_side: aiWinner,
+      summary,
+      ai_score_a: aiScoreA,
+      ai_score_b: aiScoreB,
+      final_score_a: aiScoreA,
+      final_score_b: aiScoreB,
+    })
+    .eq('id', verdictId);
 }
