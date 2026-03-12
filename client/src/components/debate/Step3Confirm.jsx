@@ -5,7 +5,7 @@ import Modal from "../common/Modal";
 
 export default function Step3Confirm({
 
-  mode,
+  // mode,
   purpose,
   lens,
   topic,
@@ -165,15 +165,15 @@ export default function Step3Confirm({
         <div className="space-y-3 text-sm">
 
           <div>
-            <span className="font-bold text-gold">목적</span> : {purposeMap[purpose]}
+            <span className="font-bold text-gold">목적</span> : {purposeMap[purpose] || purpose}
           </div>
 
           <div>
-            <span className="font-bold text-gold">렌즈</span> : {lensMap[lens]}
+            <span className="font-bold text-gold">렌즈</span> : {lensMap[lens] || lens}
           </div>
 
           <div>
-            <span className="font-bold text-gold">카테고리</span> : {categoryMap[category]}
+            <span className="font-bold text-gold">카테고리</span> : {categoryMap[category] || category}
           </div>
 
           <div>
