@@ -70,11 +70,14 @@ export function validateAndCorrectVerdict(raw) {
 
 // ===== 재시도 래퍼 (1회 재시도) =====
 
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function callWithRetry(fn, modelName) {
   try {
     return await fn();
   } catch (firstErr) {
-    console.warn(`[AI] ${modelName} 1차 실패: ${firstErr.message} → 재시도`);
+    console.warn(`[AI] ${modelName} 1차 실패: ${firstErr.message} → 15초 후 재시도`);
+    await delay(15000); // Rate limit 회피용 대기
     try {
       return await fn();
     } catch (retryErr) {

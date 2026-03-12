@@ -43,7 +43,7 @@ export async function contentFilterMiddleware(req, res, next) {
   // 일상/연애 카테고리는 Stage 1만 적용
   if (['daily', 'romance'].includes(category)) return next();
 
-  // Stage 2: AI 콘텐츠 필터 (Gemini Flash)
+  // Stage 2: AI 콘텐츠 필터 (GPT-4o)
   const aiResult = await filterByAI(content);
   if (aiResult.action === 'block') {
     return res.status(400).json({
