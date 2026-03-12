@@ -1,12 +1,52 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { preprocessArgument } from '../services/preprocessor.service.js';
+import { filterByDictionary, filterByAI } from '../services/contentFilter.service.js';
 import { generateCounterArgument } from '../services/ai/solo.service.js';
 import { triggerJudgment } from '../services/judgmentTrigger.service.js';
+
+// 필터 로그 저장 헬퍼
+async function saveFilterLog({ userId, debateId, contentType, stage, reason, result }) {
+  try {
+    await supabaseAdmin.from('content_filter_logs').insert({
+      user_id: userId,
+      debate_id: debateId,
+      content_type: contentType,
+      filter_stage: stage,
+      reason: reason || null,
+      result,
+    });
+  } catch (err) {
+    console.error('[FilterLog] 저장 실패:', err.message);
+  }
+}
 
 export async function submitArgument(req, res, next) {
   try {
     const { debateId } = req.params;
     const { content, side } = req.body;
+    const userId = req.user.id;
+
+    // === 콘텐츠 필터링 (Stage 1: 비속어 사전) ===
+    const dictResult = filterByDictionary(content);
+    if (dictResult.blocked) {
+      await saveFilterLog({ userId, debateId, contentType: 'argument', stage: 1, reason: dictResult.reason, result: 'block' });
+      return res.status(400).json({ error: dictResult.reason });
+    }
+
+    // === 콘텐츠 필터링 (Stage 2: AI 유해성 - 사회/정치 카테고리) ===
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('category')
+      .eq('id', debateId)
+      .single();
+
+    if (debate && ['사회', '정치', 'social', 'politics'].includes(debate.category)) {
+      const aiResult = await filterByAI(content);
+      if (aiResult.action === 'block') {
+        await saveFilterLog({ userId, debateId, contentType: 'argument', stage: 2, reason: aiResult.reason, result: 'block' });
+        return res.status(400).json({ error: aiResult.reason });
+      }
+    }
 
     // 상대측 주장 조회 (유사도 체크용)
     const otherSide = side === 'A' ? 'B' : 'A';
