@@ -3,11 +3,12 @@
  * JudgingPage(인라인), ProfilePage(모달), MoragoraDetailPage(페이지)에서 공유
  */
 import { useState, useEffect } from "react";
+import { GoLaw } from "react-icons/go";
 
 const JUDGE_INFO = {
-  gpt: { key: 'gpt', label: 'Judge G', model: 'GPT-4o', color: '#10A37F', desc: '분석적이고 정중한' },
-  gemini: { key: 'gemini', label: 'Judge M', model: 'Gemini 2.5', color: '#4285F4', desc: '통찰력 있는' },
-  claude: { key: 'claude', label: 'Judge C', model: 'Claude Sonnet', color: '#D97706', desc: '신중하고 공정한' },
+  gpt: { key: 'gpt', name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortFlat&hairColor=a55728&facialHair=beardMajestic&facialHairProbability=100&facialHairColor=a55728&eyes=default&eyebrows=defaultNatural&mouth=serious&clothing=blazerAndShirt&clothesColor=262e33&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
+  gemini: { key: 'gemini', name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c', desc: '분석적이고 정중한 판사' },
+  claude: { key: 'claude', name: '클로드', color: '#D97706', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&eyes=happy&eyebrows=upDown&mouth=smile&clothing=hoodie&clothesColor=e6e6e6', desc: '신중하고 공정한 판사' },
 };
 
 function resolveJudgeKey(aiModel) {
@@ -78,233 +79,253 @@ export default function VerdictContent({ verdictData, topic }) {
   const currentJudge = judges[activeJudge] || null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
 
-      {/* --- Composite Verdict Card --- */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden relative">
-        <div className="h-1 bg-gradient-to-r from-[#10A37F] via-[#4285F4] to-[#D97706]" />
-        <div className="p-5 text-center">
-          <div className="text-4xl mb-1">⚖️</div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2">복합 판결</p>
-          <p className="text-2xl font-extrabold text-[#1B2A4A] mb-4">
-            {winnerSide === 'draw' ? '무승부' : `🏆 ${winnerSide}측 승리`}
-          </p>
-
-          {/* AI 판결 breakdown */}
-          <div className="bg-[#F5F0E8] rounded-lg p-3 mb-3 text-left">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">🤖 AI 판결</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {judges.map((j, i) => (
-                <span
-                  key={i}
-                  className="px-2.5 py-1 rounded-full text-xs font-bold"
-                  style={{ background: `${j.color}15`, color: j.color }}
-                >
-                  {j.label[j.label.length - 1]}: {j.winner_side === 'draw' ? '무승부' : `${j.winner_side}측`}
-                </span>
-              ))}
-              <span className="text-xs font-bold text-[#1B2A4A]">
-                → {aiMajority === 'draw' ? '무승부' : `다수결 ${aiMajority}측`}
-              </span>
-            </div>
-          </div>
-
-          {/* 시민 투표 bar */}
-          {totalVotes > 0 && (
-            <div className="bg-[#F5F0E8] rounded-lg p-3 mb-3 text-left">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">🗳️ 시민 투표</p>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#059669]">A측 {percentA}%</span>
-                <div className="flex-1 h-2 bg-[#E6394615] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#059669] rounded-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentA}%` : '0%' }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-[#E63946]">B측 {percentB}%</span>
-              </div>
-            </div>
-          )}
-
-          {/* 최종 점수 */}
-          <div className="bg-[#1B2A4A] rounded-lg p-3 text-center">
-            <p className="text-[11px] text-white/50 mb-1">최종 점수</p>
-            <p className="text-2xl font-extrabold">
-              <span className="text-emerald-400">{finalScoreA}</span>
-              <span className="text-white/30 text-sm mx-2">VS</span>
-              <span className="text-red-400">{finalScoreB}</span>
+      {/* ===== 복합 판결 카드 ===== */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#4285F4] via-[#10A37F] to-[#D97706]" />
+        <div className="p-5">
+          {/* 승자 */}
+          <div className="text-center mb-5">
+            <GoLaw className="mx-auto text-4xl text-[#D4AF37] mb-2" />
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-1">복합 판결</p>
+            <p className="text-2xl font-extrabold text-[#1B2A4A]">
+              {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? '찬성측 승리' : '반대측 승리'}
             </p>
           </div>
-        </div>
-      </div>
 
-      {/* --- Score Comparison Bars --- */}
-      {currentJudge && Object.keys(DETAIL_LABELS).length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-4 flex items-center gap-2">
-            📊 항목별 점수 비교
-          </h3>
-          {Object.entries(DETAIL_LABELS).map(([key, label]) => {
-            const avgA = judges.length > 0
-              ? Math.round(judges.reduce((s, j) => s + (j.score_detail_a?.[key] || 0), 0) / judges.length)
-              : 0;
-            const avgB = judges.length > 0
-              ? Math.round(judges.reduce((s, j) => s + (j.score_detail_b?.[key] || 0), 0) / judges.length)
-              : 0;
-            const total = avgA + avgB || 1;
-            const pctA = Math.round((avgA / total) * 100);
-            const pctB = 100 - pctA;
-            return (
-              <div key={key} className="mb-3">
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-700">{label}</span>
-                  <span className="text-[11px] text-gray-400">{avgA} vs {avgB}</span>
-                </div>
-                <div className="flex gap-0.5 h-5 items-center">
-                  <div
-                    className="h-full rounded-l flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
-                    style={{
-                      width: animated ? `${pctA}%` : '0%',
-                      minWidth: '28px',
-                      background: 'linear-gradient(90deg, #059669, #10B981)',
-                    }}
-                  >
-                    {avgA}
-                  </div>
-                  <div
-                    className="h-full rounded-r flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
-                    style={{
-                      width: animated ? `${pctB}%` : '0%',
-                      minWidth: '28px',
-                      background: 'linear-gradient(90deg, #F87171, #E63946)',
-                    }}
-                  >
-                    {avgB}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* --- Judge Tabs + Cards --- */}
-      {judges.length > 0 && (
-        <div>
-          <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-3 flex items-center gap-2">
-            🤖 AI 판결문
-          </h3>
-
-          <div className="flex gap-2 mb-3 overflow-x-auto">
+          {/* AI 다수결 요약 */}
+          <div className="flex items-center justify-center gap-2 mb-4">
             {judges.map((j, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveJudge(i)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all border-2 ${
-                  activeJudge === i
-                    ? 'border-[#1B2A4A] bg-[#1B2A4A]/5 text-[#1B2A4A]'
-                    : 'border-transparent bg-[#F5F0E8] text-gray-500'
-                }`}
-              >
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: j.color }} />
-                {j.label}
-              </button>
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50"
+                style={{ border: `1.5px solid ${(j.borderColor || j.color)}25` }}>
+                <img src={j.avatar} alt={j.name} className="w-5 h-5 rounded-full border"
+                  style={{ borderColor: j.borderColor || j.color }} />
+                <span className="text-[11px] font-semibold text-gray-600">
+                  {j.winner_side === 'draw' ? '무승부' : j.winner_side === 'A' ? '찬성' : '반대'}
+                </span>
+              </div>
             ))}
           </div>
 
-          {currentJudge && (
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-extrabold"
-                  style={{ background: currentJudge.color }}
+          {/* 최종 점수 */}
+          <div className="bg-[#1B2A4A] rounded-xl p-4 text-center">
+            <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2 font-semibold">최종 점수</p>
+            <div className="flex items-center justify-center gap-4">
+              <div>
+                <p className="text-3xl font-black text-emerald-400">{finalScoreA}</p>
+                <p className="text-[10px] text-white/40 mt-0.5">찬성</p>
+              </div>
+              <span className="text-white/20 text-lg font-bold">VS</span>
+              <div>
+                <p className="text-3xl font-black text-red-400">{finalScoreB}</p>
+                <p className="text-[10px] text-white/40 mt-0.5">반대</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 시민 투표 */}
+          {totalVotes > 0 && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">시민 투표</p>
+                <span className="text-[11px] text-gray-400">{totalVotes.toLocaleString()}명 참여</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-emerald-600 w-8">{percentA}%</span>
+                <div className="flex-1 h-2.5 bg-red-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                    style={{ width: animated ? `${percentA}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-red-500 w-8 text-right">{percentB}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ===== 항목별 점수 비교 ===== */}
+      {judges.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm p-5">
+          <h3 className="text-[14px] font-bold text-[#1B2A4A] mb-4">항목별 점수 비교</h3>
+          <div className="space-y-3">
+            {Object.entries(DETAIL_LABELS).map(([key, label]) => {
+              const avgA = judges.length > 0
+                ? Math.round(judges.reduce((s, j) => s + (j.score_detail_a?.[key] || 0), 0) / judges.length)
+                : 0;
+              const avgB = judges.length > 0
+                ? Math.round(judges.reduce((s, j) => s + (j.score_detail_b?.[key] || 0), 0) / judges.length)
+                : 0;
+              const total = avgA + avgB || 1;
+              const pctA = Math.round((avgA / total) * 100);
+              const pctB = 100 - pctA;
+              const aLeads = avgA > avgB;
+
+              return (
+                <div key={key}>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs font-semibold text-gray-700">{label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[11px] font-bold ${aLeads ? 'text-emerald-600' : 'text-gray-400'}`}>{avgA}</span>
+                      <span className="text-[10px] text-gray-300">:</span>
+                      <span className={`text-[11px] font-bold ${!aLeads && avgA !== avgB ? 'text-red-500' : 'text-gray-400'}`}>{avgB}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-0.5 h-[18px]">
+                    <div
+                      className="rounded-l-md flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
+                      style={{
+                        width: animated ? `${pctA}%` : '0%',
+                        minWidth: '24px',
+                        background: aLeads ? 'linear-gradient(90deg, #059669, #10B981)' : '#d1d5db',
+                      }}
+                    >
+                      {avgA}
+                    </div>
+                    <div
+                      className="rounded-r-md flex items-center justify-center text-[10px] font-bold text-white transition-all duration-1000"
+                      style={{
+                        width: animated ? `${pctB}%` : '0%',
+                        minWidth: '24px',
+                        background: !aLeads && avgA !== avgB ? 'linear-gradient(90deg, #F87171, #E63946)' : '#d1d5db',
+                      }}
+                    >
+                      {avgB}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===== AI 판결문 탭 ===== */}
+      {judges.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-4 pb-0">
+            <h3 className="text-[14px] font-bold text-[#1B2A4A] mb-3">AI 판결문</h3>
+
+            {/* 탭 버튼 */}
+            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+              {judges.map((j, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveJudge(i)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${
+                    activeJudge === i
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
                 >
-                  {currentJudge.label[currentJudge.label.length - 1]}
+                  <img
+                    src={j.avatar}
+                    alt={j.name}
+                    className={`w-5 h-5 rounded-full ${activeJudge === i ? '' : 'opacity-40 grayscale'}`}
+                  />
+                  {j.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 선택된 판사 카드 */}
+          {currentJudge && (
+            <div className="p-4">
+              {/* 판사 정보 헤더 */}
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="w-10 h-10 rounded-full overflow-hidden border-2"
+                  style={{ borderColor: currentJudge.borderColor || currentJudge.color, boxShadow: `0 4px 12px ${currentJudge.borderColor || currentJudge.color}30` }}
+                >
+                  <img src={currentJudge.avatar} alt={currentJudge.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-bold">{currentJudge.label}</p>
-                  <p className="text-[11px] text-gray-400">{currentJudge.model} · {currentJudge.desc}</p>
+                  <p className="text-sm font-bold text-gray-900">{currentJudge.name}</p>
+                  <p className="text-[11px] text-gray-400">{currentJudge.desc}</p>
                 </div>
                 <span
-                  className="px-2.5 py-1 rounded-full text-xs font-bold"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
                   style={{
-                    background: currentJudge.winner_side === 'A' ? '#05966910' : currentJudge.winner_side === 'B' ? '#E6394610' : '#D4AF3710',
+                    background: currentJudge.winner_side === 'A' ? '#05966912' : currentJudge.winner_side === 'B' ? '#E6394612' : '#D4AF3712',
                     color: currentJudge.winner_side === 'A' ? '#059669' : currentJudge.winner_side === 'B' ? '#E63946' : '#D4AF37',
                   }}
                 >
-                  {currentJudge.winner_side === 'draw' ? '무승부' : `${currentJudge.winner_side}측 승리`}
+                  {currentJudge.winner_side === 'draw' ? '무승부' : currentJudge.winner_side === 'A' ? '찬성측 승리' : '반대측 승리'}
                 </span>
               </div>
 
-              <div className="p-4">
-                <div className="flex gap-2 mb-3">
-                  <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
-                    <p className="text-[10px] text-gray-400 font-semibold">A측</p>
-                    <p className="text-xl font-extrabold text-[#059669]">{currentJudge.score_a}</p>
-                  </div>
-                  <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
-                    <p className="text-[10px] text-gray-400 font-semibold">B측</p>
-                    <p className="text-xl font-extrabold text-[#E63946]">{currentJudge.score_b}</p>
-                  </div>
-                  <div className="flex-1 text-center p-2.5 bg-[#F5F0E8] rounded-lg">
-                    <p className="text-[10px] text-gray-400 font-semibold">차이</p>
-                    <p className="text-xl font-extrabold text-[#1B2A4A]">
-                      {currentJudge.score_a - currentJudge.score_b > 0 ? '+' : ''}{currentJudge.score_a - currentJudge.score_b}
-                    </p>
-                  </div>
+              {/* 점수 비교 */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="text-center p-3 bg-emerald-50 rounded-xl">
+                  <p className="text-[10px] text-emerald-600/60 font-semibold mb-0.5">찬성</p>
+                  <p className="text-xl font-black text-emerald-600">{currentJudge.score_a}</p>
                 </div>
+                <div className="text-center p-3 bg-gray-50 rounded-xl flex flex-col justify-center">
+                  <p className="text-[10px] text-gray-400 font-semibold mb-0.5">차이</p>
+                  <p className="text-xl font-black text-[#1B2A4A]">
+                    {currentJudge.score_a - currentJudge.score_b > 0 ? '+' : ''}{currentJudge.score_a - currentJudge.score_b}
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-red-50 rounded-xl">
+                  <p className="text-[10px] text-red-500/60 font-semibold mb-0.5">반대</p>
+                  <p className="text-xl font-black text-red-500">{currentJudge.score_b}</p>
+                </div>
+              </div>
 
-                {currentJudge.verdict_text && (
+              {/* 판결문 */}
+              {currentJudge.verdict_text && (
+                <div
+                  className="text-[13px] leading-[1.8] text-gray-700 p-4 bg-gray-50 rounded-xl border-l-[3px]"
+                  style={{ borderColor: currentJudge.color }}
+                >
+                  {currentJudge.verdict_text}
+                </div>
+              )}
+
+              {/* 확신도 */}
+              <div className="flex items-center gap-3 mt-4 px-1">
+                <span className="text-[11px] text-gray-400 font-medium">확신도</span>
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="text-[13px] leading-relaxed p-3.5 bg-[#F5F0E8] rounded-lg border-l-[3px]"
-                    style={{ borderColor: currentJudge.color }}
-                  >
-                    {currentJudge.verdict_text}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                  <span>확신도</span>
-                  <div className="flex-1 h-1.5 bg-[#F5F0E8] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: animated ? `${currentJudge.confidence * 100}%` : '0%',
-                        background: currentJudge.color,
-                      }}
-                    />
-                  </div>
-                  <span className="font-semibold">{currentJudge.confidence.toFixed(2)}</span>
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                      width: animated ? `${currentJudge.confidence * 100}%` : '0%',
+                      background: currentJudge.color,
+                    }}
+                  />
                 </div>
+                <span className="text-[11px] font-bold" style={{ color: currentJudge.color }}>
+                  {Math.round(currentJudge.confidence * 100)}%
+                </span>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* --- Citizen Vote Section --- */}
+      {/* ===== 시민 투표 현황 ===== */}
       {totalVotes > 0 && (
         <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-1 flex items-center gap-2">
-            🗳️ 시민 투표 현황
-          </h3>
-          <div className="text-center mb-4">
-            <span className="text-2xl font-extrabold text-[#1B2A4A]">{totalVotes.toLocaleString()}</span>
-            <span className="text-xs text-gray-400 ml-1">명 참여</span>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[14px] font-bold text-[#1B2A4A]">시민 투표 현황</h3>
+            <span className="text-xs text-gray-400 font-medium">{totalVotes.toLocaleString()}명 참여</span>
           </div>
-          <div className="mb-2">
-            <div className="flex justify-between text-sm font-bold mb-1">
-              <span className="text-[#059669]">A측 {percentA}%</span>
-              <span className="text-[#E63946]">B측 {percentB}%</span>
+          <div className="mb-3">
+            <div className="flex justify-between text-sm font-bold mb-1.5">
+              <span className="text-emerald-600">찬성 {percentA}%</span>
+              <span className="text-red-500">반대 {percentB}%</span>
             </div>
-            <div className="h-3 bg-[#E6394615] rounded-full overflow-hidden">
+            <div className="h-3 bg-red-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#059669] rounded-full transition-all duration-1000"
+                className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                 style={{ width: animated ? `${percentA}%` : '0%' }}
               />
             </div>
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-[11px] text-gray-400">
             <span>{voteA.toLocaleString()}명</span>
             <span>{voteB.toLocaleString()}명</span>
           </div>

@@ -4,7 +4,7 @@
  * 인라인 판결 결과 표시 (VerdictContent 공통 컴포넌트 사용)
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
@@ -87,78 +87,71 @@ const MODEL_MAP = {
   'grok': 'gpt',
 };
 
-const ModelStatus = ({ name, nameColor = 'text-white', status, score }) => {
+// AI 판사 캐릭터 정보
+const AI_JUDGES = {
+  gpt: { name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortFlat&hairColor=a55728&facialHair=beardMajestic&facialHairProbability=100&facialHairColor=a55728&eyes=default&eyebrows=defaultNatural&mouth=serious&clothing=blazerAndShirt&clothesColor=262e33&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
+  gemini: { name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c', desc: '분석적이고 정중한 판사' },
+  claude: { name: '클로드', color: '#D97706', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&eyes=happy&eyebrows=upDown&mouth=smile&clothing=hoodie&clothesColor=e6e6e6', desc: '신중하고 공정한 판사' },
+};
+
+const ModelCard = ({ judgeKey, status, score }) => {
+  const judge = AI_JUDGES[judgeKey];
   const isDone = status === 'done';
   const isFailed = status === 'failed';
   const isActive = status === 'active';
-
-  const total = score ? score.a + score.b : 0;
-  const pctA = total > 0 ? Math.round((score.a / total) * 100) : 50;
-  const pctB = 100 - pctA;
-  const isDraw = score && score.a === score.b;
-  const aWins = score && score.a > score.b;
-
-  const barClassA = isDraw
-    ? 'bg-gradient-to-r from-gray-400 to-gray-500'
-    : aWins
-      ? 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]'
-      : 'bg-gradient-to-r from-gray-500/40 to-gray-500/60';
-
-  const barClassB = isDraw
-    ? 'bg-gradient-to-r from-gray-500 to-gray-400'
-    : !aWins
-      ? 'bg-gradient-to-r from-red-400 via-red-500 to-red-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]'
-      : 'bg-gradient-to-r from-gray-500/60 to-gray-500/40';
+  const winner = score ? (score.a > score.b ? 'A' : score.b > score.a ? 'B' : 'draw') : null;
 
   return (
-    <div className={`p-4 mb-3 rounded-2xl transition-all duration-500 ${
-      isDone ? 'bg-white/10' : isFailed ? 'bg-red-900/20' : isActive ? 'bg-white/5 animate-pulse' : 'bg-white/5 opacity-50'
+    <div className={`flex-1 rounded-2xl overflow-hidden transition-all duration-500 ${
+      isDone ? 'bg-white/[0.08] backdrop-blur-sm border border-white/10'
+        : isFailed ? 'bg-red-900/15 border border-red-500/20'
+        : isActive ? 'bg-white/[0.04] border border-white/5'
+        : 'bg-white/[0.03] border border-white/5 opacity-40'
     }`}>
-      {/* 모델명 + 상태 (중앙 정렬) */}
-      <div className="flex items-center justify-center mb-2">
-        {isDone ? (
-          <span className={`font-bold text-sm ${nameColor}`}>{name}</span>
-        ) : (
-          <span className={`font-bold text-sm ${nameColor} opacity-70`}>
-            {name}
-            <span className="ml-2 text-xs font-bold">
-              {isFailed ? (
-                <span className="text-red-400">응답 실패</span>
-              ) : isActive ? (
-                <span className="text-blue-400">분석 중...</span>
-              ) : (
-                <span className="text-white/30">대기 중</span>
-              )}
-            </span>
-          </span>
-        )}
-      </div>
-
-      {/* 게이지 바 (완료 시만) */}
-      {isDone && score && (
-        <div className="relative flex h-7 rounded-full overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-white/15">
-          <div
-            className={`transition-all duration-700 flex items-center justify-center ${barClassA}`}
-            style={{ width: `${pctA}%`, minWidth: '32px' }}
-          >
-            <span className={`text-xs font-black drop-shadow-md ${isDraw || aWins ? 'text-white' : 'text-white/60'}`}>{score.a}</span>
-          </div>
-          <div className="w-[2px] bg-white/60 shrink-0" />
-          <div
-            className={`transition-all duration-700 flex items-center justify-center ${barClassB}`}
-            style={{ width: `${pctB}%`, minWidth: '32px' }}
-          >
-            <span className={`text-xs font-black drop-shadow-md ${isDraw || !aWins ? 'text-white' : 'text-white/60'}`}>{score.b}</span>
-          </div>
+      <div className="p-3 flex flex-col items-center text-center">
+        <div
+          className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg shrink-0 transition-all duration-500 ${
+            isActive ? 'animate-pulse' : ''
+          }`}
+          style={{
+            borderColor: isDone ? (judge.borderColor || judge.color) : `${judge.borderColor || judge.color}40`,
+            boxShadow: isDone ? `0 4px 14px ${judge.borderColor || judge.color}40` : 'none'
+          }}
+        >
+          <img src={judge.avatar} alt={judge.name} className="w-full h-full object-cover" />
         </div>
-      )}
+        <span className="text-sm font-bold text-white mt-2">{judge.name}</span>
+        <p className="text-[10px] text-white/40 truncate w-full">{judge.desc}</p>
+
+        {/* 판결 결과 or 상태 */}
+        <div className="mt-2">
+          {isDone && score ? (
+            <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
+              winner === 'A' ? 'bg-emerald-500/20 text-emerald-400'
+                : winner === 'B' ? 'bg-red-500/20 text-red-400'
+                : 'bg-white/10 text-white/60'
+            }`}>
+              {winner === 'A' ? '찬성' : winner === 'B' ? '반대' : '무승부'}
+            </span>
+          ) : isActive ? (
+            <span className="flex items-center justify-center gap-1 text-[11px] text-blue-400 font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              </span>
+              분석 중
+            </span>
+          ) : isFailed ? (
+            <span className="text-[11px] text-red-400/80 font-semibold">실패</span>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 };
 
 export default function JudgingPage() {
   const { debateId } = useParams();
-  const navigate = useNavigate();
 
   const [judgeStatus, setJudgeStatus] = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores] = useState({ gpt: null, gemini: null, claude: null });
@@ -169,6 +162,7 @@ export default function JudgingPage() {
   const [proSide, setProSide] = useState(null);
   const [conSide, setConSide] = useState(null);
   const [verdictData, setVerdictData] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const confettiFiredRef = useRef(false);
 
@@ -293,11 +287,11 @@ export default function JudgingPage() {
             )}
           </div>
 
-          {/* ===== AI 모델 상태 카드 ===== */}
-          <div className="bg-white/5 backdrop-blur-md rounded-[24px] p-5 border border-white/5 mt-8 shrink-0">
-            <ModelStatus name="지피티 판결" nameColor="text-gray-900" status={judgeStatus.gpt} score={judgeScores.gpt} />
-            <ModelStatus name="제미나이 판결" nameColor="text-blue-400" status={judgeStatus.gemini} score={judgeScores.gemini} />
-            <ModelStatus name="클로드 판결" nameColor="text-orange-400" status={judgeStatus.claude} score={judgeScores.claude} />
+          {/* ===== AI 판사 카드 ===== */}
+          <div className="flex gap-2 mt-8 shrink-0">
+            <ModelCard judgeKey="gpt" status={judgeStatus.gpt} score={judgeScores.gpt} />
+            <ModelCard judgeKey="gemini" status={judgeStatus.gemini} score={judgeScores.gemini} />
+            <ModelCard judgeKey="claude" status={judgeStatus.claude} score={judgeScores.claude} />
           </div>
 
           {/* ===== 시민 투표 현황 (진행 중) ===== */}
@@ -326,10 +320,20 @@ export default function JudgingPage() {
               <VerdictContent verdictData={verdictData} topic={debateTitle} />
 
               <button
-                onClick={() => navigate(`/debate/${debateId}`)}
-                className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+                onClick={() => {
+                  const url = `${window.location.origin}/debate/${debateId}`;
+                  navigator.clipboard.writeText(url).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                className={`w-full mt-5 py-4 rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-all duration-300 ${
+                  copied
+                    ? 'bg-emerald-500 text-white scale-[0.97]'
+                    : 'bg-[#1B2A4A] text-[#D4AF37]'
+                }`}
               >
-                투표 참여하기
+                {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
               </button>
             </div>
           )}
