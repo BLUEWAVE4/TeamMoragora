@@ -118,10 +118,10 @@ export default function ArgumentPage() {
         <button
           type="submit"
           disabled={isInvalid}
-          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl transform active:scale-[0.97] ${
+          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl ${
             isInvalid
-              ? 'bg-gray-100 text-gray-300 shadow-none'
-              : 'bg-[#1a2744] text-white shadow-[#1a2744]/20 hover:bg-[#151f36]'
+              ? 'bg-gray-100 text-gray-300 shadow-none cursor-not-allowed'
+              : 'bg-[#1a2744] text-white shadow-[#1a2744]/20 hover:bg-[#151f36] transform active:scale-[0.97] cursor-pointer '
           }`}
         >
           주장 제출하기
