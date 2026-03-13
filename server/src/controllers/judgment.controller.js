@@ -145,12 +145,16 @@ export async function getVerdict(req, res, next) {
     // 양측 주장도 함께 반환
     const { data: args } = await supabaseAdmin
       .from('arguments')
-      .select('side, content')
+      .select('side, content, user:profiles!user_id(nickname)')
       .eq('debate_id', req.params.debateId);
 
+    const argA = args?.find(a => a.side === 'A');
+    const argB = args?.find(a => a.side === 'B');
     verdict.arguments = {
-      A: args?.find(a => a.side === 'A')?.content || null,
-      B: args?.find(a => a.side === 'B')?.content || null,
+      A: argA?.content || null,
+      B: argB?.content || null,
+      nicknameA: argA?.user?.nickname || null,
+      nicknameB: argB?.user?.nickname || null,
     };
 
     res.json(verdict);

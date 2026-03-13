@@ -101,6 +101,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const lens = LENS_LABELS[debateData.lens] || debateData.lens || '';
   const argA = verdictData.arguments?.A || null;
   const argB = verdictData.arguments?.B || null;
+  const nicknameA = verdictData.arguments?.nicknameA || null;
+  const nicknameB = verdictData.arguments?.nicknameB || null;
 
   return (
     <div className="space-y-4">
@@ -244,13 +246,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <div className="px-4 pb-4 space-y-3">
               {argA && (
                 <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성)</p>
+                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
                   <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
                 </div>
               )}
               {argB && (
                 <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대)</p>
+                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
                   <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
                 </div>
               )}
