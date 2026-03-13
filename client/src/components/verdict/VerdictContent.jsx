@@ -111,10 +111,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const finalScoreA = verdictData.final_score_a || verdictData.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
   const finalScoreB = verdictData.final_score_b || verdictData.score_b || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_b, 0) / judges.length) : 0);
 
-  // 시민 투표
-  const voteA = debateData.vote_count_a || verdictData.vote_count_a || 0;
-  const voteB = debateData.vote_count_b || verdictData.vote_count_b || 0;
-  const totalVotes = voteA + voteB || 0;
+  // 시민 투표 (verdicts 테이블: citizen_score_a/b, citizen_vote_count)
+  const voteA = verdictData.citizen_score_a || 0;
+  const voteB = verdictData.citizen_score_b || 0;
+  const totalVotes = verdictData.citizen_vote_count || (voteA + voteB) || 0;
   const percentA = totalVotes > 0 ? Math.round((voteA / totalVotes) * 100) : 50;
   const percentB = totalVotes > 0 ? 100 - percentA : 50;
 

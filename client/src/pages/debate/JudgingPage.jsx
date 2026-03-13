@@ -339,9 +339,9 @@ export default function JudgingPage() {
 
               {/* ===== 시민 투표 현황 ===== */}
               {(() => {
-                const vA = verdictData.debate?.vote_count_a || verdictData.vote_count_a || 0;
-                const vB = verdictData.debate?.vote_count_b || verdictData.vote_count_b || 0;
-                const total = vA + vB;
+                const vA = verdictData.citizen_score_a || 0;
+                const vB = verdictData.citizen_score_b || 0;
+                const total = verdictData.citizen_vote_count || (vA + vB);
                 const pA = total > 0 ? Math.round((vA / total) * 100) : 0;
                 const pB = total > 0 ? 100 - pA : 0;
                 return (
