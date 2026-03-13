@@ -304,7 +304,7 @@ export default function JudgingPage() {
           {!isAllDone && (
             <div className="mt-10 shrink-0">
               <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col items-center gap-1 backdrop-blur-sm">
-                <p className="text-[13px] font-bold text-yellow-500/90 tracking-wider">🗳️ 실시간 시민 투표 현황</p>
+                <p className="text-[13px] font-bold text-yellow-500/90 tracking-wider">실시간 시민 투표 현황</p>
                 <p className="text-3xl font-black text-white tabular-nums">
                   {displayCount.toLocaleString()} / 500명
                 </p>
