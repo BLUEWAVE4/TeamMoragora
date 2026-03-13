@@ -19,7 +19,6 @@ import {
   ArrowRight,
   BarChart3
 } from 'lucide-react';
-import VerdictDetailModal from './VerdictDetailModal';
 import FeedbackModal from './FeedbackModal';
 
 const CountUp = ({ end }) => {
@@ -106,7 +105,6 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState(null);
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
@@ -358,7 +356,7 @@ export default function ProfilePage() {
                   const result = getDebateResult(debate);
                   const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
                   return (
-                    <motion.div key={debate.id} whileTap={{ backgroundColor: "#F9F9F9" }} onClick={() => setSelectedVerdict(debate)} className="p-6 flex items-center justify-between cursor-pointer">
+                    <motion.div key={debate.id} whileTap={{ backgroundColor: "#F9F9F9" }} className="p-6 flex items-center justify-between cursor-pointer">
                       <div className="flex-1 pr-4">
                         <div className="flex items-center gap-3 mb-2">
                           {result && (
@@ -455,7 +453,7 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-      {/* 논리 분석 바텀시트 - 스크롤 현상 수정 완료 */}
+      {/* 논리 분석 바텀시트 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
@@ -463,8 +461,8 @@ export default function ProfilePage() {
               onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
             <motion.div
               drag="y"
-              dragControls={analysisDragControls} // 드래그 컨트롤러 연결
-              dragListener={false} // 본문 드래그 비활성화 (스크롤 보호)
+              dragControls={analysisDragControls}
+              dragListener={false}
               dragConstraints={{ top: 0 }}
               dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
@@ -472,7 +470,6 @@ export default function ProfilePage() {
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
               className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              {/* 상단 핸들: 여기서만 드래그 가능 */}
               <div 
                 onPointerDown={(e) => analysisDragControls.start(e)}
                 className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
@@ -480,7 +477,6 @@ export default function ProfilePage() {
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto" />
               </div>
 
-              {/* 스크롤 가능한 내부 영역 */}
               <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex justify-between items-end mb-8">
                   <h3 className="text-[26px] font-black text-black">논리 분석</h3>
@@ -515,7 +511,6 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-      <VerdictDetailModal selectedVerdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );
