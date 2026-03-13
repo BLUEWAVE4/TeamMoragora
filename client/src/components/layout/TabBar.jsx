@@ -19,7 +19,7 @@ const TrophyIcon = ({ active }) => (
 
 // 3. 중앙 + 버튼: ★핵심 수정 사항 (배경 채움 + 선 색상 반전)
 const PlusIcon = ({ active }) => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
     {/* 외곽 프레임 */}
     <rect width="18" height="18" x="3" y="3" rx="5" ry="5"/>
     {/* active일 때 선 색상을 stroke-white(흰색)로 변경하여 반전 효과 부여 */}

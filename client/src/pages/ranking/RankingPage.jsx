@@ -1,22 +1,239 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../../services/supabase';
 import api from '../../services/api';
 import { 
-  Gavel, Scale, User, Trophy, Info, TrendingUp, BarChart3, Users, Building2, Zap, ChevronRight
+  Gavel, Scale, User, Trophy, Info, ChevronRight, FileText, Crown, Sparkles, X, History, MessageSquarePlus
 } from 'lucide-react';
+
+const TIER_LIST = [
+  { name: '시민', en: 'CITIZEN', min: 0, max: 299, icon: User, color: '#8E8E93', bg: '#F5F5F7', desc: '논쟁의 첫 발걸음' },
+  { name: '배심원', en: 'JUROR', min: 300, max: 1000, icon: Gavel, color: '#007AFF', bg: '#EBF5FF', desc: '공정한 시각으로 논쟁을 바라보는 자' },
+  { name: '변호사', en: 'ATTORNEY', min: 1001, max: 2000, icon: FileText, color: '#AF52DE', bg: '#F9F0FF', desc: '탄탄한 논거로 상대를 압박하는 자' },
+  { name: '판사', en: 'JUDGE', min: 2001, max: 5000, icon: Scale, color: '#FF9500', bg: '#FFF5EB', desc: '논리와 이성으로 판단을 내리는 자' },
+  { name: '대법관', en: 'SUPREME', min: 5001, max: null, icon: Crown, color: '#FF3B30', bg: '#FFF0EF', desc: '서버 최강의 논쟁 지배자' },
+];
+
+const categoryMap = {
+  daily: '일상', romance: '연애', work: '직장', education: '교육',
+  social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
+  culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
+  사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
+};
+
+const formatDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const findTierByScore = (score) => {
+  const pts = score || 0;
+  for (let i = TIER_LIST.length - 1; i >= 0; i--) {
+    if (pts >= TIER_LIST[i].min) return TIER_LIST[i];
+  }
+  return TIER_LIST[0];
+};
+
+// 상대방 프로필 바텀시트
+function PlayerProfileSheet({ player, rank, onClose }) {
+  const [debates, setDebates] = useState([]);
+  const [loadingDebates, setLoadingDebates] = useState(true);
+
+  const tier = findTierByScore(player?.total_score);
+  const wins = player?.wins || 0;
+  const losses = player?.losses || 0;
+  const draws = player?.draws || 0;
+  const totalGames = wins + losses + draws;
+  const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0.0';
+  const winPct = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+  const drawPct = totalGames > 0 ? (draws / totalGames) * 100 : 0;
+  const lossPct = totalGames > 0 ? (losses / totalGames) * 100 : 0;
+
+  useEffect(() => {
+    if (!player?.id) return;
+    const fetchDebates = async () => {
+      setLoadingDebates(true);
+      try {
+        const { data, error } = await supabase
+          .from('debates')
+          .select(`*, verdicts (*)`)
+          .or(`creator_id.eq.${player.id},opponent_id.eq.${player.id}`)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        setDebates(data || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingDebates(false);
+      }
+    };
+    fetchDebates();
+  }, [player?.id]);
+
+  const getResult = (debate) => {
+    const verdict = debate.verdicts?.[0];
+    if (!verdict) return null;
+    const isCreator = debate.creator_id === player.id;
+    const mySide = isCreator ? 'A' : 'B';
+    if (verdict.winner_side === 'draw') return '무승부';
+    return verdict.winner_side === mySide ? '승리' : '패배';
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm"
+      />
+      <motion.div
+        drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
+        onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+        className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] overflow-y-auto pb-16 shadow-2xl"
+      >
+        {/* 핸들 */}
+        <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto my-4" />
+
+        {/* 닫기 버튼 */}
+        <button onClick={onClose} className="absolute top-4 right-5 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center active:scale-90 transition-all">
+          <X size={16} className="text-gray-500" />
+        </button>
+
+        <div className="px-5">
+          {/* 상단 프로필 헤더 */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-[24px] overflow-hidden border-2 shadow-lg" style={{ borderColor: tier.color }}>
+                <img
+                  src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`}
+                  alt="avatar" className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black text-white shadow-md" style={{ backgroundColor: tier.color }}>
+                #{rank}
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-[22px] font-black text-black">{player.nickname}</h2>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md text-white flex items-center gap-1" style={{ backgroundColor: tier.color }}>
+                  <tier.icon size={9} /> {tier.name}
+                </span>
+              </div>
+              <p className="text-[13px] font-bold" style={{ color: tier.color }}>
+                {player.total_score?.toLocaleString()} XP
+              </p>
+            </div>
+          </div>
+
+          {/* 승률 카드 */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[11px] font-bold text-gray-500 uppercase">전체 승률</span>
+              <span className="text-[20px] font-black text-[#007AFF]">{winRate}%</span>
+            </div>
+            <div className="flex justify-between text-[11px] font-black mb-2 px-0.5">
+              <span className="text-[#007AFF]">{wins}승</span>
+              <span className="text-[#8E8E93]">{draws}무</span>
+              <span className="text-[#FF3B30]">{losses}패</span>
+            </div>
+            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden flex gap-[1px]">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${winPct}%` }} transition={{ duration: 1 }} className="h-full bg-[#007AFF] rounded-l-full" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${drawPct}%` }} transition={{ duration: 1, delay: 0.1 }} className="h-full bg-[#8E8E93]" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${lossPct}%` }} transition={{ duration: 1, delay: 0.2 }} className="h-full bg-[#FF3B30] rounded-r-full" />
+            </div>
+            <p className="text-[10px] text-gray-400 font-bold mt-2 text-center">총 {totalGames}회 참여</p>
+          </div>
+
+          {/* 티어 진행도 카드 */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-gray-500 uppercase">티어 진행도</span>
+              <span className="text-[11px] font-black" style={{ color: tier.color }}>{tier.name}</span>
+            </div>
+            {(() => {
+              const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
+              const progress = nextTier
+                ? Math.round(((player.total_score - tier.min) / (nextTier.min - tier.min)) * 100)
+                : 100;
+              return (
+                <>
+                  <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                    <motion.div
+                      initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                      className="h-full rounded-full" style={{ backgroundColor: tier.color }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-bold text-right">
+                    {nextTier ? `${(nextTier.min - player.total_score).toLocaleString()}점 더 모으면 ${nextTier.name}` : '최고 등급 달성!'}
+                  </p>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* 논쟁 리스트 */}
+          <div className="flex items-center gap-1.5 mb-3 ml-1">
+            <History size={13} className="text-[#8E8E93]" />
+            <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">논쟁 리스트</h3>
+          </div>
+
+          {loadingDebates ? (
+            <div className="flex justify-center py-8">
+              <div className="w-6 h-6 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : debates.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+              <MessageSquarePlus size={36} className="mx-auto text-gray-200 mb-3" />
+              <p className="text-[13px] font-bold text-gray-400">아직 참여한 논쟁이 없어요</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+              {debates.map((debate) => {
+                const result = getResult(debate);
+                const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
+                return (
+                  <div key={debate.id} className="p-4 flex items-center justify-between">
+                    <div className="flex-1 pr-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        {result && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                            result === '승리' ? 'bg-blue-50 text-[#007AFF]'
+                            : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
+                            : 'bg-gray-100 text-[#8E8E93]'
+                          }`}>
+                            {result}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
+                      </div>
+                      <h4 className="text-[14px] font-semibold text-black line-clamp-1">{debate.topic}</h4>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-300 flex-shrink-0">{category}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </>
+  );
+}
 
 export default function RankingPage() {
   const { user } = useAuth();
-  
-  const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(false);
-  const [isXPDetailOpen, setIsXPDetailOpen] = useState(false);
+  const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null); // { player, rank }
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
-
-  // 기본 닉네임 설정 (데이터 로딩 전용)
-  const myNickname = user?.user_metadata?.nickname || '사용자';
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -33,84 +250,86 @@ export default function RankingPage() {
     fetchRankings();
   }, []);
 
-  // 내 데이터 찾기
   const myRankIndex = rankings.findIndex(r => r.id === user?.id);
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
+  const currentTier = findTierByScore(myData?.total_score);
 
-  // 상위 3명 시상대 데이터
   const podiumData = rankings.slice(0, 3).map((r, idx) => ({
     ...r,
     rank: idx + 1,
+    tierData: findTierByScore(r.total_score),
     color: idx === 0 ? 'from-[#FFD700] to-[#FF9500]' : idx === 1 ? 'from-[#C0C0C0] to-[#8E8E93]' : 'from-[#CD7F32] to-[#A2845E]',
-    trophyColor: idx === 0 ? 'text-[#FFD700]' : idx === 1 ? 'text-[#C0C0C0]' : 'text-[#CD7F32]',
-    podiumBg: idx === 0 ? 'bg-gradient-to-b from-white/60 to-white/20' : idx === 1 ? 'bg-gradient-to-b from-white/50 to-white/10' : 'bg-gradient-to-b from-white/40 to-white/5',
+    trophyColor: idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32',
+    podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  // 4위부터 리스트 데이터
   const listRankers = rankings.slice(3, visibleCount + 3);
 
-  // 리그 시스템 데이터 (디자인 최적화용)
-  const leagueSystem = [
-    { tier: 'Tier 5', name: '대법관 (Supreme)', icon: <Building2 />, color: '#FF3B30' },
-    { tier: 'Tier 4', name: '판사 (Judge)', icon: <Gavel />, color: '#FF9500' },
-    { tier: 'Tier 3', name: '변호사 (Attorney)', icon: <Scale />, color: '#AF52DE' },
-    { tier: 'Tier 2', name: '배심원 (Juror)', icon: <Users />, color: '#007AFF' },
-    { tier: 'Tier 1', name: '시민 (Citizen)', icon: <User />, color: '#8E8E93' },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans overflow-x-hidden">
-
-      {/* 상단 내비게이션 */}
-      <nav className="sticky top-0 z-[100] bg-white/70 backdrop-blur-2xl px-6 pt-14 pb-5 flex justify-between items-end border-b border-gray-200/30">
+    <div className="min-h-screen bg-[#F2F2F7] font-sans">
+      <nav className="sticky top-0 z-[50] bg-white/70 backdrop-blur-2xl px-6 pt-5 pb-5 flex justify-between items-end border-b border-gray-200/30">
         <div>
           <p className="text-[12px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-0.5 ml-0.5">Hall of Fame</p>
           <h1 className="text-[28px] font-black text-black tracking-tight leading-none">명예의 전당</h1>
         </div>
-        <button onClick={() => setIsLevelInfoOpen(true)} className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center text-[#007AFF] active:scale-90 transition-all">
-          <Info className="w-5 h-5" />
+        <button onClick={() => setIsTierSheetOpen(true)} className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center text-[#007AFF] active:scale-90 transition-all">
+          <Info size={20} />
         </button>
       </nav>
 
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-8 pb-20">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
-            {/* 1. 시상대 섹션 */}
+            {/* 시상대 섹션 */}
             {podiumData.length >= 3 && (
-              <div className="flex justify-center items-end gap-3 h-[360px] mb-8">
+              <div className="flex justify-center items-end gap-2 h-[380px] mb-8 pt-10">
                 {[1, 0, 2].map((idx) => {
                   const p = podiumData[idx];
+                  if (!p) return null;
                   const isFirst = idx === 0;
                   const isPodiumMe = user && p.id === user.id;
+
                   return (
-                    <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1, type: 'spring' }} className="flex-1 flex flex-col items-center">
-                      <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.5, delay: idx * 0.2 }}>
-                        <Trophy className={`w-7 h-7 ${p.trophyColor} mb-2 drop-shadow-[0_4px_6px_rgba(0,0,0,0.1)]`} />
-                      </motion.div>
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="flex-1 flex flex-col items-center cursor-pointer"
+                      onClick={() => setSelectedPlayer({ player: p, rank: p.rank })}
+                    >
+                      <div className="relative mb-2">
+                        <motion.div animate={{ y: [0, -6, 0], rotate: isFirst ? [-5, 5, -5] : 0 }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="relative z-10">
+                          <Trophy size={isFirst ? 36 : 28} fill={p.trophyColor} color={p.trophyColor} className="drop-shadow-lg" />
+                        </motion.div>
+                        {isFirst && <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-yellow-400 blur-2xl rounded-full -z-10" />}
+                        <Sparkles className="absolute -top-4 -right-2 text-yellow-200 w-4 h-4 animate-pulse" />
+                      </div>
+
                       <div className="relative mb-5">
-                        <div className={`rounded-full p-1 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-4 ring-blue-400 ring-offset-2' : ''}`}>
+                        <div className={`rounded-full p-1 bg-gradient-to-tr ${p.color} shadow-xl ${isPodiumMe ? 'ring-4 ring-blue-400 ring-offset-2' : ''}`}>
                           <div className="rounded-full bg-white p-0.5">
                             <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20' : 'w-16 h-16'} bg-gray-50`}>
                               <img src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nickname}`} alt="avatar" />
                             </div>
                           </div>
                         </div>
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white px-3 py-1 h-6 flex items-center justify-center rounded-full shadow-md border border-gray-100 text-[10px] font-black text-[#007AFF] whitespace-nowrap min-w-[54px] z-10">
-                          {p.tier || '시민'}
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg border border-gray-100 text-[14px] font-black" style={{ color: p.trophyColor }}>
+                          {p.rank}
                         </div>
                       </div>
-                      <div className={`w-full ${isFirst ? 'h-48' : idx === 1 ? 'h-36' : 'h-32'} rounded-t-[32px] relative overflow-hidden flex flex-col items-center justify-center pt-2 shadow-2xl border border-white/60 ${p.podiumBg} backdrop-blur-md`}>
+
+                      <div className={`w-full ${isFirst ? 'h-44' : idx === 1 ? 'h-32' : 'h-28'} rounded-t-[32px] relative overflow-hidden flex flex-col items-center justify-start pt-4 shadow-xl border border-white/80 ${p.podiumBg} backdrop-blur-md`}>
                         <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${p.color}`} />
-                        <p className={`text-[14px] font-black mb-0.5 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>
-                          {p.nickname} {isPodiumMe && '(나)'}
-                        </p>
-                        <p className="text-[12px] font-extrabold text-[#007AFF] mb-3">{p.total_score?.toLocaleString()} XP</p>
-                        <div className="text-[9px] font-black px-2.5 py-1 bg-black/5 rounded-full text-gray-400 uppercase tracking-tighter border border-black/5">{p.wins}W {p.losses}L</div>
+                        <p className={`text-[14px] font-black mb-1 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>{p.nickname}</p>
+                        <p className="text-[12px] font-black text-[#007AFF]">{p.total_score?.toLocaleString()} XP</p>
+                        <div className="mt-2 px-3 py-1 bg-black/5 rounded-full text-[10px] font-black text-gray-500">
+                          {p.wins}승 {p.losses}패
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -118,74 +337,74 @@ export default function RankingPage() {
               </div>
             )}
 
-            {/* 2. 내 랭킹 요약 카드 */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-              onClick={() => setIsXPDetailOpen(true)}
-              className="mb-10 cursor-pointer active:scale-[0.98] transition-all"
-            >
-              <div className="bg-[#EBF5FF]/80 backdrop-blur-xl border-2 border-[#007AFF]/20 shadow-lg rounded-[28px] p-5 flex items-center gap-4">
-                <div className="w-10 flex flex-col items-center">
-                  <span className="text-[22px] font-black text-[#007AFF] italic">{myRank}</span>
-                  <span className="text-[8px] font-black text-[#007AFF]/50 uppercase tracking-tighter">RANK</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden shadow-sm border border-[#007AFF]/10 flex-shrink-0">
-                  <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.nickname || myNickname}`} alt="avatar" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[18px] font-black text-black truncate">
-                      {myData?.nickname || myNickname} (나)
-                    </span>
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#007AFF] text-white uppercase flex-shrink-0">{myData?.tier || '시민'}</span>
+            {/* 내 랭킹 요약 카드 */}
+            {!isLoading && myData && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="mb-12 bg-white rounded-[32px] p-6 shadow-xl border-2 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
+                style={{ borderColor: currentTier.color, boxShadow: `0 15px 30px -10px ${currentTier.color}40` }}
+                onClick={() => setSelectedPlayer({ player: myData, rank: myRank })}
+              >
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="text-center min-w-[50px]">
+                    <p className="text-[32px] font-black italic leading-none tracking-tighter" style={{ color: currentTier.color }}>{myRank}</p>
+                    <p className="text-[10px] font-black text-gray-300 mt-1 uppercase tracking-widest">Rank</p>
                   </div>
-                  <div className="flex items-center text-[12px] font-bold text-gray-500">
-                    <span className="text-[#007AFF] font-black">{myData?.total_score?.toLocaleString() || 0} XP</span>
-                    <span className="mx-2 opacity-30">•</span>
-                    <span>{myData?.wins || 0}승 {myData?.losses || 0}패</span>
+                  <div className="w-16 h-16 rounded-[22px] bg-gray-50 overflow-hidden border border-gray-100 shadow-inner flex-shrink-0">
+                    <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.nickname}`} alt="avatar" className="w-full h-full object-cover" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[20px] font-black text-black truncate">{myData?.nickname}</span>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-md text-white uppercase" style={{ backgroundColor: currentTier.color }}>{currentTier.name}</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-gray-400">
+                      {myData.wins}승 {myData.losses}패 • <span style={{ color: currentTier.color }}>{myData.total_score?.toLocaleString()} XP</span>
+                    </p>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-200" />
                 </div>
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-50">
-                   <ChevronRight className="w-5 h-5 text-[#007AFF]" />
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
 
-            {/* 3. 실시간 랭킹 리스트 */}
-            <div className="flex items-center gap-2 mb-4 px-1">
-              <TrendingUp className="w-4 h-4 text-[#007AFF]" />
-              <h3 className="text-[15px] font-black text-black">실시간 랭킹 순위</h3>
+            {/* 전체 랭킹 리스트 */}
+            <div className="flex items-center gap-2 mb-6 px-1">
+              <div className="w-1 h-5 bg-[#007AFF] rounded-full" />
+              <h3 className="text-[17px] font-black text-black">전체 랭킹 순위</h3>
             </div>
-            <div className="space-y-3 mb-6">
+
+            <div className="space-y-3.5">
               <AnimatePresence mode='popLayout'>
                 {listRankers.map((player, idx) => {
                   const isListMe = user && player.id === user.id;
+                  const playerTier = findTierByScore(player.total_score);
                   return (
-                    <motion.div 
-                      key={player.id} layout 
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
-                      className={`rounded-[24px] p-4 flex items-center shadow-[0_4px_12px_rgba(0,0,0,0.02)] border transition-all ${isListMe ? 'bg-blue-50 border-blue-200' : 'bg-white border-white'}`}
+                    <motion.div
+                      key={player.id} layout
+                      onClick={() => setSelectedPlayer({ player, rank: idx + 4 })}
+                      className={`rounded-[26px] p-4 flex items-center transition-all relative cursor-pointer active:scale-[0.98]
+                        ${isListMe ? 'z-10 border-2 shadow-xl scale-[1.03] ring-[6px] ring-white' : 'bg-white border border-white shadow-sm'}`}
+                      style={{ borderColor: isListMe ? playerTier.color : 'transparent', backgroundColor: isListMe ? `${playerTier.color}05` : 'white' }}
                     >
-                      <div className="w-8 flex flex-col items-center mr-3">
-                        <span className={`text-[18px] font-black italic ${isListMe ? 'text-[#007AFF]' : 'text-black/20'}`}>{idx + 4}</span>
-                      </div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner border border-white">
-                        <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className={`text-[16px] font-bold ${isListMe ? 'text-[#007AFF]' : 'text-black'}`}>
-                            {player.nickname} {isListMe && '(나)'}
-                          </span>
-                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase ${isListMe ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                            {player.tier || '시민'}
-                          </span>
+                      {isListMe && (
+                        <div className="absolute -top-3.5 left-6 bg-[#007AFF] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg animate-bounce flex items-center gap-1">
+                          <User size={10} fill="white" /> YOU ARE HERE!
                         </div>
-                        <div className={`text-[11px] font-bold ${isListMe ? 'text-blue-400' : 'text-gray-400'}`}>
-                          {player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP
-                        </div>
+                      )}
+                      <div className="w-10 flex flex-col items-center mr-3">
+                        <span className={`text-[20px] font-black italic ${isListMe ? 'text-black' : 'text-black/15'}`}>{idx + 4}</span>
                       </div>
-                      <ChevronRight className={`w-5 h-5 ${isListMe ? 'text-blue-300' : 'text-gray-300'}`} />
+                      <div className="w-12 h-12 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner flex-shrink-0">
+                        <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[16px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md text-white uppercase flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
+                        </div>
+                        <div className="text-[12px] font-bold text-gray-400">{player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP</div>
+                      </div>
+                      <ChevronRight className={`w-5 h-5 flex-shrink-0 ${isListMe ? 'text-black' : 'text-gray-200'}`} />
                     </motion.div>
                   );
                 })}
@@ -193,133 +412,85 @@ export default function RankingPage() {
             </div>
 
             {visibleCount + 3 < rankings.length && (
-              <button onClick={() => setVisibleCount(v => v + 10)} className="w-full py-4 mb-10 bg-white rounded-[22px] border border-gray-100 shadow-sm text-[14px] font-bold text-gray-500 active:scale-95 transition-all">
-                + 랭커 더 불러오기
+              <button onClick={() => setVisibleCount(v => v + 10)} className="w-full py-5 mt-8 bg-white rounded-[26px] border-2 border-dashed border-gray-200 text-[15px] font-black text-gray-400 active:scale-95 transition-all">
+                VIEW MORE RANKERS
               </button>
             )}
           </>
         )}
       </div>
 
-      {/* 내 활동 요약 바텀시트 */}
+      {/* 등급 시스템 바텀시트 */}
       <AnimatePresence>
-        {isXPDetailOpen && (
+        {isTierSheetOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsXPDetailOpen(false)} className="fixed inset-0 bg-black/40 z-[1000] backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsTierSheetOpen(false)}
+              className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
             <motion.div
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-              onDragEnd={(_, info) => info.offset.y > 100 && setIsXPDetailOpen(false)}
+              onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[1001] rounded-t-[36px] overflow-hidden pb-12 shadow-2xl"
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] overflow-y-auto pb-12 shadow-2xl"
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
-              <div className="px-7">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-9 h-9 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#007AFF] border border-gray-100">
-                    <BarChart3 className="w-5 h-5" />
+              <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto my-4 mb-6" />
+              <div className="px-5">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Point System</p>
+                    <h3 className="text-[22px] font-black text-black">등급 시스템</h3>
                   </div>
-                  <h3 className="text-[22px] font-black text-black">내 활동 요약</h3>
-                </div>
-                <div className="bg-white rounded-[28px] overflow-hidden border border-white shadow-sm mb-8">
-                  <div className="flex justify-between items-center p-5 border-b border-gray-50">
-                    <span className="text-[16px] font-bold text-gray-800">승리</span>
-                    <span className="text-[16px] font-black text-[#008161]">{myData?.wins || 0}회</span>
-                  </div>
-                  <div className="flex justify-between items-center p-5 border-b border-gray-50">
-                    <span className="text-[16px] font-bold text-gray-800">패배</span>
-                    <span className="text-[16px] font-black text-gray-400">{myData?.losses || 0}회</span>
-                  </div>
-                  <div className="flex justify-between items-center p-5 border-b border-gray-50">
-                    <span className="text-[16px] font-bold text-gray-800">무승부</span>
-                    <span className="text-[16px] font-black text-gray-400">{myData?.draws || 0}회</span>
-                  </div>
-                  <div className="flex justify-between items-center p-5 border-b border-gray-50">
-                    <span className="text-[16px] font-bold text-gray-800">승률</span>
-                    <span className="text-[16px] font-black text-[#007AFF]">
-                      {myData ? (((myData.wins / (myData.wins + myData.losses + myData.draws)) || 0) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                  <div className="bg-gray-50/50 p-5 flex justify-between items-center border-t border-gray-100 font-black">
-                    <span className="text-[17px] text-black">보유 XP</span>
-                    <span className="text-[20px] text-[#008161]">{myData?.total_score?.toLocaleString() || 0} XP</span>
+                  <div className="flex flex-col items-center px-3 py-2 rounded-2xl" style={{ backgroundColor: currentTier.bg }}>
+                    <currentTier.icon size={24} style={{ color: currentTier.color }} />
+                    <span className="text-[10px] font-black mt-1" style={{ color: currentTier.color }}>현재 등급</span>
+                    <span className="text-[13px] font-black" style={{ color: currentTier.color }}>{currentTier.name}</span>
                   </div>
                 </div>
-                <button onClick={() => setIsXPDetailOpen(false)} className="w-full py-4 bg-black text-white font-bold rounded-[22px] shadow-xl active:scale-95 transition-all">확인</button>
+                <div className="space-y-2.5 mb-8">
+                  {[...TIER_LIST].reverse().map((t, i) => {
+                    const isCurrent = t.name === currentTier.name;
+                    return (
+                      <motion.div key={t.name}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="rounded-2xl p-4 flex items-center gap-3 border-2 transition-all"
+                        style={{ backgroundColor: isCurrent ? t.bg : 'white', borderColor: isCurrent ? t.color : 'transparent' }}
+                      >
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ backgroundColor: t.bg }}>
+                          <t.icon size={24} style={{ color: t.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[15px] font-black" style={{ color: t.color }}>{t.name}</span>
+                            <span className="text-[10px] text-gray-300 font-bold">{t.en}</span>
+                            {isCurrent && <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: t.color }}>현재</span>}
+                          </div>
+                          <p className="text-[11px] text-gray-400 font-medium">{t.desc}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-[11px] font-black" style={{ color: t.color }}>{t.min.toLocaleString()}{t.max ? ` ~ ${t.max.toLocaleString()}` : '+'}</p>
+                          <p className="text-[9px] text-gray-300 font-bold">포인트</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-4 bg-black text-white font-bold rounded-2xl active:scale-95 transition-all">확인</button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* 리그 시스템 가이드 바텀시트 (Moragora 버전) */}
+      {/* 플레이어 프로필 바텀시트 */}
       <AnimatePresence>
-        {isLevelInfoOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsLevelInfoOpen(false)} className="fixed inset-0 bg-black/60 z-[1000] backdrop-blur-md" />
-            <motion.div
-              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-              onDragEnd={(_, info) => info.offset.y > 100 && setIsLevelInfoOpen(false)}
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F8F9FC] z-[1001] rounded-t-[40px] max-h-[85vh] overflow-y-auto pb-12 shadow-2xl"
-            >
-              <div className="w-12 h-1.5 bg-gray-300/60 rounded-full mx-auto my-5 mb-8" />
-              <div className="px-6">
-                <div className="text-center mb-10">
-                  <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-1.5 rounded-full text-[#007AFF] mb-3">
-                    <Trophy className="w-4 h-4" />
-                    <span className="text-[12px] font-black uppercase tracking-[0.15em]">Moragora League</span>
-                  </div>
-                  <h3 className="text-[26px] font-black text-black leading-tight">등급 체계 안내</h3>
-                  <p className="text-gray-400 text-[14px] font-medium mt-2">논리적인 토론을 통해 당신의 티어를 증명하세요!</p>
-                </div>
-
-                <div className="grid gap-4">
-                  {leagueSystem.map((lv, idx) => (
-                    <motion.div 
-                      key={lv.tier}
-                      initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="relative overflow-hidden bg-white rounded-[30px] p-6 shadow-[0_8px_20px_rgba(0,0,0,0.04)] border border-white"
-                    >
-                      <span className="absolute -right-2 -bottom-4 text-[60px] font-black text-gray-50/50 select-none tracking-tighter italic">
-                        {lv.tier.split(' ')[1]}
-                      </span>
-                      <div className="flex items-center gap-5 relative z-10">
-                        <div 
-                          className="w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-lg transform -rotate-3"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${lv.color}, ${lv.color}CC)`,
-                            boxShadow: `0 8px 16px -4px ${lv.color}66`
-                          }}
-                        >
-                          {React.cloneElement(lv.icon, { className: "w-8 h-8" })}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-gray-100 text-gray-400 uppercase tracking-tighter">
-                              {lv.tier}
-                            </span>
-                          </div>
-                          <div className="text-[20px] font-black text-black tracking-tight">
-                            {lv.name.split(' (')[0]}
-                            <span className="text-[13px] font-bold text-gray-400 ml-2 font-mono uppercase">
-                              {lv.name.match(/\(([^)]+)\)/)?.[0]}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                          <ChevronRight className="w-4 h-4 text-gray-300" />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-                <button onClick={() => setIsLevelInfoOpen(false)} className="w-full py-5 bg-black text-white font-black text-[17px] rounded-[24px] mt-10 shadow-xl shadow-black/10 active:scale-[0.98] transition-all">확인했습니다</button>
-              </div>
-            </motion.div>
-          </>
+        {selectedPlayer && (
+          <PlayerProfileSheet
+            player={selectedPlayer.player}
+            rank={selectedPlayer.rank}
+            onClose={() => setSelectedPlayer(null)}
+          />
         )}
       </AnimatePresence>
     </div>
