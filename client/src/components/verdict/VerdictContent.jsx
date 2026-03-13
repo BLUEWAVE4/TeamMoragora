@@ -105,42 +105,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   return (
     <div className="space-y-4">
 
-      {/* ===== 논쟁 요약 (접이식) ===== */}
-      {(argA || argB) && (
-        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
-          <button
-            onClick={() => setShowArgs(!showArgs)}
-            className="w-full flex items-center justify-between p-4 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
-              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary/50 font-medium">{category}</span>}
-              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold/70 font-medium">{lens} 렌즈</span>}
-            </div>
-            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
-          </button>
-
-          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="px-4 pb-4 space-y-3">
-              {/* 찬성 주장 */}
-              {argA && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성)</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
-                </div>
-              )}
-              {/* 반대 주장 */}
-              {argB && (
-                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대)</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ===== 복합 판결 카드 ===== */}
       <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-lg overflow-hidden border border-gold/10">
         <div className="p-6">
@@ -260,6 +224,40 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           )}
         </div>
       </div>
+
+      {/* ===== 논쟁 요약 (접이식) ===== */}
+      {(argA || argB) && (
+        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
+          <button
+            onClick={() => setShowArgs(!showArgs)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
+              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary/50 font-medium">{category}</span>}
+              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold/70 font-medium">{lens} 렌즈</span>}
+            </div>
+            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="px-4 pb-4 space-y-3">
+              {argA && (
+                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성)</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
+                </div>
+              )}
+              {argB && (
+                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대)</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== 항목별 점수 비교 (레이더 차트) ===== */}
       {judges.length > 0 && (() => {

@@ -21,7 +21,7 @@ router.post('/generate-sides', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: '당신은 논쟁 주제에 대해 찬성(A측)과 반대(B측) 입장을 생성하는 AI입니다. 각 입장은 2~3문장으로 핵심 논거를 포함해야 합니다. 반드시 JSON 형식으로만 응답하세요.',
+            content: '당신은 논쟁 주제에 대해 찬성(A측)과 반대(B측) 입장을 생성하는 AI입니다. 각 입장은 10자 이내의 짧은 제목으로 작성하세요. 반드시 JSON 형식으로만 응답하세요.',
           },
           {
             role: 'user',
