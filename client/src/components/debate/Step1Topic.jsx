@@ -19,33 +19,35 @@ export default function Step1Topic({
   aiLoading,
 }) {
 
-  const [errorTopic, setErrorTopic] = useState("");
-  const [errorCategory, setErrorCategory] = useState("");
+  const [error, setError] = useState({ topic: "", category: "" });
 
-  const [editingPro, setEditingPro] = useState(false);
-  const [editingCon, setEditingCon] = useState(false);
+  const [editingSide, setEditingSide] = useState(null);
+  const [tempText, setTempText] = useState("");
 
-  const [proTemp, setProTemp] = useState("");
-  const [conTemp, setConTemp] = useState("");
-
+  const [showTopicInput, setShowTopicInput] = useState(true);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
   const categories = [
-    "일상", "연애", "직장", "교육", "사회",
-    "정치", "기술", "철학", "문화", "기타",
+    "일상","연애","직장","교육","사회",
+    "정치","기술","철학","문화","기타",
   ];
 
   const handleNext = () => {
 
+    if (editingSide) {
+      alert("수정을 완료해주세요.");
+      return;
+    }
+
     let valid = true;
 
     if (!topic.trim()) {
-      setErrorTopic("논쟁 주제를 입력해주세요.");
+      setError(prev => ({ ...prev, topic: "논쟁 주제를 입력해주세요." }));
       valid = false;
     }
 
-    if (!category) {
-      setErrorCategory("카테고리를 선택해주세요.");
+    if (!category || category.trim() === "") {
+      setError(prev => ({ ...prev, category: "카테고리를 선택해주세요." }));
       valid = false;
     }
 
@@ -54,261 +56,300 @@ export default function Step1Topic({
     nextStep();
   };
 
+  const handleAIGenerate = async () => {
+
+    if (!topic.trim()) {
+      setError(prev => ({ ...prev, topic: "논쟁 주제를 먼저 입력해주세요." }));
+      return;
+    }
+
+    const result = await handleGenerateSides();
+
+    // AI가 category 반환하면 자동 설정
+    if (result?.category) {
+      setCategory(result.category);
+    }
+
+    setShowTopicInput(false);
+  };
+
+  const resetTopic = () => {
+
+    setShowTopicInput(true);
+
+    setTopic("");
+    setProSide("");
+    setConSide("");
+    setCategory("");
+    setEditingSide(null);
+  };
+
   const startEdit = (side) => {
 
-    if (side === "pro") {
-      setProTemp(proSide);
-      setEditingPro(true);
-    } else {
-      setConTemp(conSide);
-      setEditingCon(true);
-    }
+    if (side === "pro") setTempText(proSide);
+    else setTempText(conSide);
 
+    setEditingSide(side);
   };
 
-  const confirmEdit = (side) => {
+  const confirmEdit = () => {
 
-    if (side === "pro") {
-      setProSide(proTemp);
-      setEditingPro(false);
+    if (editingSide === "pro") {
+      setProSide(tempText);
     } else {
-      setConSide(conTemp);
-      setEditingCon(false);
+      setConSide(tempText);
     }
 
+    setEditingSide(null);
   };
 
-  const cancelEdit = (side) => {
-
-    if (side === "pro") {
-      setEditingPro(false);
-    } else {
-      setEditingCon(false);
-    }
-
+  const cancelEdit = () => {
+    setEditingSide(null);
   };
 
   return (
 
     <div className="flex flex-col gap-6 mt-6">
 
-      {/* TOPIC */}
-      <div className="flex flex-col gap-2">
+      {/* TOPIC INPUT 화면 */}
+      {showTopicInput && (
 
-        <div className="flex justify-between">
+        <>
+          <div className="flex flex-col gap-2">
 
-          <h3 className="font-bold text-lg">
-            논쟁 주제
-          </h3>
+            <div className="flex justify-between">
 
-          {errorTopic && (
-            <span className="text-xs text-red-500">
-              {errorTopic}
-            </span>
-          )}
+              <h3 className="font-bold text-lg">
+                논쟁 주제
+              </h3>
 
-        </div>
+              {error.topic && (
+                <span className="text-xs text-red-500">
+                  {error.topic}
+                </span>
+              )}
 
-        <Input
-          value={topic}
-          onChange={(e) => {
-            setTopic(e.target.value);
-            setErrorTopic("");
-          }}
-          placeholder="예: AI가 인간 일자리를 대체할 것인가?"
-        />
+            </div>
 
-      </div>
-
-
-      {/* AI GENERATE */}
-      <div className="flex items-center gap-2">
-
-        <Button
-          variant="outline"
-          onClick={handleGenerateSides}
-          disabled={aiLoading}
-        >
-          {aiLoading ? "AI 생성중..." : "AI 논쟁 생성"}
-        </Button>
-
-        {/* help icon */}
-        <button
-          onClick={() => setShowHelpModal(true)}
-          className="text-primary/40 hover:text-primary transition-colors"
-        >
-          <HelpCircle size={20} />
-        </button>
-
-      </div>
-
-
-      {/* CATEGORY */}
-      <div className="flex flex-col gap-2">
-
-        <div className="flex justify-between">
-
-          <h3 className="font-bold text-lg">
-            카테고리
-          </h3>
-
-          {errorCategory && (
-            <span className="text-xs text-red-500">
-              {errorCategory}
-            </span>
-          )}
-
-        </div>
-
-        <Input
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setErrorCategory("");
-          }}
-          options={categories}
-        />
-
-      </div>
-
-
-      {/* AI GENERATED SIDES */}
-      {(proSide || conSide) && (
-
-        <div className="flex flex-col gap-4 mt-4">
-
-          <h3 className="font-serif font-bold text-primary text-lg tracking-tight">
-            AI 논쟁 초안
-          </h3>
-
-          <div className="flex flex-col gap-5">
-
-            {/* PRO */}
-            {proSide && (
-              <Card variant="base" title="찬성 측 주장">
-
-                {editingPro ? (
-
-                  <div className="flex flex-col gap-3">
-
-                    <Input
-                      value={proTemp}
-                      onChange={(e) => setProTemp(e.target.value)}
-                      multiline
-                      rows={5}
-                      placeholder="찬성 측 입장을 수정해주세요."
-                    />
-
-                    <div className="flex gap-2">
-
-                      <Button
-                        className="w-full text-sm py-2"
-                        onClick={() => confirmEdit("pro")}
-                      >
-                        확인
-                      </Button>
-
-                      <Button
-                        variant="accent"
-                        className="w-full text-sm py-2"
-                        onClick={() => cancelEdit("pro")}
-                      >
-                        취소
-                      </Button>
-
-                    </div>
-
-                  </div>
-
-                ) : (
-
-                  <div className="flex flex-col gap-3">
-
-                    <p className="text-primary/90 leading-relaxed">
-                      {proSide}
-                    </p>
-
-                    <button
-                      onClick={() => startEdit("pro")}
-                      className="self-end text-xs text-primary/40 font-serif hover:text-primary/70 transition-colors underline underline-offset-2"
-                    >
-                      수정하기
-                    </button>
-
-                  </div>
-
-                )}
-
-              </Card>
-            )}
-
-            {/* CON */}
-            {conSide && (
-              <Card variant="base" title="반대 측 주장">
-
-                {editingCon ? (
-
-                  <div className="flex flex-col gap-3">
-
-                    <Input
-                      value={conTemp}
-                      onChange={(e) => setConTemp(e.target.value)}
-                      multiline
-                      rows={5}
-                      placeholder="반대 측 입장을 수정해주세요."
-                    />
-
-                    <div className="flex gap-2">
-
-                      <Button
-                        className="w-full text-sm py-2"
-                        onClick={() => confirmEdit("con")}
-                      >
-                        확인
-                      </Button>
-
-                      <Button
-                        variant="accent"
-                        className="w-full text-sm py-2"
-                        onClick={() => cancelEdit("con")}
-                      >
-                        취소
-                      </Button>
-
-                    </div>
-
-                  </div>
-
-                ) : (
-
-                  <div className="flex flex-col gap-3">
-
-                    <p className="text-primary/90 leading-relaxed">
-                      {conSide}
-                    </p>
-
-                    <button
-                      onClick={() => startEdit("con")}
-                      className="self-end text-xs text-primary/40 font-serif hover:text-primary/70 transition-colors underline underline-offset-2"
-                    >
-                      수정하기
-                    </button>
-
-                  </div>
-
-                )}
-
-              </Card>
-            )}
+            <Input
+              value={topic}
+              onChange={(e) => {
+                setTopic(e.target.value);
+                setError(prev => ({ ...prev, topic: "" }));
+              }}
+              placeholder="예: AI가 인간 일자리를 대체해야 하는가?"
+            />
 
           </div>
 
-        </div>
+          <div className="flex items-center justify-center gap-2">
 
+            <Button
+              variant="outline"
+              onClick={handleAIGenerate}
+              disabled={aiLoading}
+            >
+              {aiLoading ? "AI 생성중..." : "AI 논쟁 생성"}
+            </Button>
+
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="text-primary/40 hover:text-primary transition-colors"
+            >
+              <HelpCircle size={20}/>
+            </button>
+
+          </div>
+
+        </>
       )}
 
-      {/* NAV BUTTONS */}
-      <div className="flex gap-3 mt-2">
+      {/* AI RESULT 화면 */}
+      {!showTopicInput && (
+
+        <>
+
+          {/* 사용자 입력 주제 표시 */}
+          <div className="flex flex-col gap-1">
+
+            <span className="text-xs text-primary/50">
+              논쟁 주제
+            </span>
+
+            <h2 className="text-xl font-bold text-primary">
+              {topic}
+            </h2>
+
+          </div>
+
+
+          <div className="flex flex-col gap-4">
+
+            <h3 className="font-serif font-bold text-primary text-lg tracking-tight">
+              AI 논쟁 초안
+            </h3>
+
+            <div className="flex flex-col gap-5">
+
+              {proSide && (
+                <Card variant="base" title="찬성 측 주장">
+
+                  {editingSide === "pro" ? (
+
+                    <div className="flex flex-col gap-3">
+
+                      <Input
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        multiline
+                        rows={5}
+                      />
+
+                      <div className="flex gap-2">
+
+                        <Button
+                          className="w-full text-sm py-2"
+                          onClick={confirmEdit}
+                        >
+                          확인
+                        </Button>
+
+                        <Button
+                          variant="accent"
+                          className="w-full text-sm py-2"
+                          onClick={cancelEdit}
+                        >
+                          취소
+                        </Button>
+
+                      </div>
+
+                    </div>
+
+                  ) : (
+
+                    <div className="flex flex-col gap-3">
+
+                      <p className="text-primary/90 leading-relaxed">
+                        {proSide}
+                      </p>
+
+                      <button
+                        onClick={() => startEdit("pro")}
+                        className="self-end text-xs text-primary/40 underline"
+                      >
+                        수정하기
+                      </button>
+
+                    </div>
+
+                  )}
+
+                </Card>
+              )}
+
+              {conSide && (
+                <Card variant="base" title="반대 측 주장">
+
+                  {editingSide === "con" ? (
+
+                    <div className="flex flex-col gap-3">
+
+                      <Input
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        multiline
+                        rows={5}
+                      />
+
+                      <div className="flex gap-2">
+
+                        <Button
+                          className="w-full text-sm py-2"
+                          onClick={confirmEdit}
+                        >
+                          확인
+                        </Button>
+
+                        <Button
+                          variant="accent"
+                          className="w-full text-sm py-2"
+                          onClick={cancelEdit}
+                        >
+                          취소
+                        </Button>
+
+                      </div>
+
+                    </div>
+
+                  ) : (
+
+                    <div className="flex flex-col gap-3">
+
+                      <p className="text-primary/90 leading-relaxed">
+                        {conSide}
+                      </p>
+
+                      <button
+                        onClick={() => startEdit("con")}
+                        className="self-end text-xs text-primary/40 underline"
+                      >
+                        수정하기
+                      </button>
+
+                    </div>
+
+                  )}
+
+                </Card>
+              )}
+
+            </div>
+
+          </div>
+
+          {/* CATEGORY */}
+          <div className="flex flex-col gap-2">
+
+            <div className="flex justify-between">
+
+              <h3 className="font-bold text-lg">
+                카테고리
+              </h3>
+
+              {error.category && (
+                <span className="text-xs text-red-500">
+                  {error.category}
+                </span>
+              )}
+
+            </div>
+
+            <Input
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setError(prev => ({ ...prev, category: "" }));
+              }}
+              options={categories}
+            />
+
+          </div>
+
+          {/* 주제 다시 입력 버튼 */}
+          <Button
+            variant="outline"
+            onClick={resetTopic}
+          >
+            주제 다시 입력하기
+          </Button>
+
+        </>
+      )}
+
+      {/* NAV */}
+      <div className="flex gap-3">
 
         <Button
           variant="accent"
@@ -339,16 +380,16 @@ export default function Step1Topic({
             </h3>
 
             <p className="text-sm text-primary/80 leading-relaxed">
-              AI가 입력한 논쟁 주제를 기반으로 <b>찬성 / 반대 측 주장</b>
-              과 <b>카테고리</b>을 자동으로 생성합니다.
-              <br /><br />
-              생성된 내용은 초안이며 자유롭게 수정하여
-              토론 주제를 발전시킬 수 있습니다.
+              AI가 입력한 논쟁 주제를 기반으로
+              <b> 찬성 / 반대 주장</b>과 <b>카테고리</b>를
+              자동으로 생성합니다.
+              <br/><br/>
+              생성된 내용은 초안이며 자유롭게 수정할 수 있습니다.
             </p>
 
             <button
               onClick={() => setShowHelpModal(false)}
-              className="mt-6 w-full py-2 rounded-xl bg-gold text-white font-serif hover:opacity-90"
+              className="mt-6 w-full py-2 rounded-xl bg-gold text-white"
             >
               확인
             </button>
@@ -361,5 +402,4 @@ export default function Step1Topic({
 
     </div>
   );
-
 }

@@ -71,40 +71,43 @@ export default function DebateCreatePage() {
   // 🔥 AI 찬반 생성 + 카테고리 자동 설정
   const handleGenerateSides = async () => {
 
-    if (!topic.trim()) {
-      alert("주제를 입력하세요");
-      return;
+  if (!topic.trim()) {
+    alert("주제를 입력하세요");
+    return null;
+  }
+
+  try {
+
+    setAiLoading(true);
+
+    const result = await generateDebateSides({ topic });
+
+    if (result.unavailable) {
+      alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+      return null;
     }
 
-    try {
+    setProSide(result.pro);
+    setConSide(result.con);
 
-      setAiLoading(true);
-
-      const result = await generateDebateSides({ topic });
-
-      if (result.unavailable) {
-        alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
-        return;
-      }
-
-      setProSide(result.pro);
-      setConSide(result.con);
-
-      if (result.category) {
-        setCategory(result.category);
-      }
-
-    } catch (err) {
-
-      console.error(err);
-      alert("AI 생성 실패");
-
-    } finally {
-
-      setAiLoading(false);
-
+    if (result.category) {
+      setCategory(result.category);
     }
-  };
+
+    return result;   // ⭐⭐⭐ 핵심
+
+  } catch (err) {
+
+    console.error(err);
+    alert("AI 생성 실패");
+    return null;
+
+  } finally {
+
+    setAiLoading(false);
+
+  }
+};
 
   const handleSubmit = async () => {
 
