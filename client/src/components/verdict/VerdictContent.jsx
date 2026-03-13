@@ -2,27 +2,27 @@
  * VerdictContent.jsx — 판결 상세 공통 컴포넌트
  * JudgingPage(인라인), ProfilePage(모달), MoragoraDetailPage(페이지)에서 공유
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { GoLaw } from "react-icons/go";
 import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
+import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-const JUDGE_INFO = {
-  gpt: { key: 'gpt', name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortCurly&hairColor=724133&facialHairProbability=0&eyes=default&eyebrows=defaultNatural&mouth=twinkle&clothing=shirtCrewNeck&clothesColor=3c4f5c&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
-  gemini: { key: 'gemini', name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c&accessories=round&accessoriesProbability=100&accessoriesColor=000000', desc: '분석적이고 정중한 판사' },
-  claude: { key: 'claude', name: '클로드', color: '#D97706', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&eyes=happy&eyebrows=upDown&mouth=smile&clothing=hoodie&clothesColor=e6e6e6', desc: '신중하고 공정한 판사' },
+import { IoChevronDown } from "react-icons/io5";
+
+const CATEGORY_LABELS = {
+  daily: '일상', relationship: '연애', food: '음식', culture: '문화',
+  tech: '기술', sports: '스포츠', politics: '정치', philosophy: '철학',
+  humor: '유머', other: '기타',
 };
 
-function resolveJudgeKey(aiModel) {
-  const m = (aiModel || '').toLowerCase();
-  if (m.includes('gpt') || m.includes('grok')) return 'gpt';
-  if (m.includes('gemini')) return 'gemini';
-  if (m.includes('claude')) return 'claude';
-  return 'gpt';
-}
+const LENS_LABELS = {
+  general: '종합', logic: '논리', emotion: '감정', practical: '실용',
+  ethics: '윤리', humor: '유머', custom: '자유설정',
+};
 
 const DETAIL_LABELS = {
   logic: '논리력',
@@ -32,9 +32,23 @@ const DETAIL_LABELS = {
   expression: '표현력',
 };
 
-export default function VerdictContent({ verdictData, topic }) {
+function VerdictContentInner({ verdictData, topic }, ref) {
   const [activeJudge, setActiveJudge] = useState(0);
   const [animated, setAnimated] = useState(false);
+  const [showArgs, setShowArgs] = useState(false);
+  const verdictTabRef = useRef(null);
+
+  // 외부에서 탭 전환 + 스크롤 이동 가능하도록 expose
+  useImperativeHandle(ref, () => ({
+    scrollToJudge(judgeKey) {
+      const JUDGE_ORDER = ['gpt', 'gemini', 'claude'];
+      const idx = JUDGE_ORDER.indexOf(judgeKey);
+      if (idx !== -1) {
+        setActiveJudge(idx);
+        verdictTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    },
+  }));
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 300);
@@ -50,7 +64,7 @@ export default function VerdictContent({ verdictData, topic }) {
   const JUDGE_ORDER = ['gpt', 'gemini', 'claude'];
   const judges = rawJudgments.map((j) => {
     const jKey = resolveJudgeKey(j.ai_model);
-    const info = JUDGE_INFO[jKey] || JUDGE_INFO.gpt;
+    const info = AI_JUDGES[jKey] || AI_JUDGES.gpt;
     return {
       ...info,
       winner_side: j.winner_side,
@@ -79,8 +93,53 @@ export default function VerdictContent({ verdictData, topic }) {
 
   const currentJudge = judges[activeJudge] || null;
 
+  // 논쟁 정보
+  const debateTopic = topic || debateData.topic || '';
+  const proSide = debateData.pro_side || '찬성';
+  const conSide = debateData.con_side || '반대';
+  const category = CATEGORY_LABELS[debateData.category] || debateData.category || '';
+  const lens = LENS_LABELS[debateData.lens] || debateData.lens || '';
+  const argA = verdictData.arguments?.A || null;
+  const argB = verdictData.arguments?.B || null;
+
   return (
     <div className="space-y-4">
+
+      {/* ===== 논쟁 요약 (접이식) ===== */}
+      {(argA || argB) && (
+        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
+          <button
+            onClick={() => setShowArgs(!showArgs)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
+              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary/50 font-medium">{category}</span>}
+              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold/70 font-medium">{lens} 렌즈</span>}
+            </div>
+            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="px-4 pb-4 space-y-3">
+              {/* 찬성 주장 */}
+              {argA && (
+                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성)</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
+                </div>
+              )}
+              {/* 반대 주장 */}
+              {argB && (
+                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대)</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== 복합 판결 카드 ===== */}
       <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-lg overflow-hidden border border-gold/10">
@@ -346,7 +405,7 @@ export default function VerdictContent({ verdictData, topic }) {
 
       {/* ===== AI 판결문 탭 ===== */}
       {judges.length > 0 && (
-        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm overflow-hidden border border-gold/10">
+        <div ref={verdictTabRef} className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm overflow-hidden border border-gold/10">
           <div className="p-4 pb-0">
             <h3 className="text-[14px] font-serif font-bold text-primary mb-3">AI 판결문</h3>
 
@@ -484,3 +543,6 @@ export default function VerdictContent({ verdictData, topic }) {
     </div>
   );
 }
+
+const VerdictContent = forwardRef(VerdictContentInner);
+export default VerdictContent;

@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
+import { AI_JUDGES, MODEL_MAP } from '../../constants/judges';
 import confetti from 'canvas-confetti';
 
 // ===== 판결 중 랜덤 메시지 =====
@@ -74,25 +75,7 @@ const TypingMessage = ({ messages }) => {
   );
 };
 
-// AI 모델 매핑 (서버 ai_model 값 → UI key)
-const MODEL_MAP = {
-  'gpt-4o': 'gpt',
-  'gemini-2.5-flash': 'gemini',
-  'gemini-2.0-flash': 'gemini',
-  'gemini': 'gemini',
-  'claude-sonnet': 'claude',
-  'claude-3.5-sonnet': 'claude',
-  'claude': 'claude',
-  'grok-3-mini': 'gpt',
-  'grok': 'gpt',
-};
-
-// AI 판사 캐릭터 정보
-const AI_JUDGES = {
-  gpt: { name: '지피티', color: '#4285F4', borderColor: '#000000', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortCurly&hairColor=724133&facialHairProbability=0&eyes=default&eyebrows=defaultNatural&mouth=twinkle&clothing=shirtCrewNeck&clothesColor=3c4f5c&accessoriesProbability=0', desc: '다각적 시각의 통찰가' },
-  gemini: { name: '제미나이', color: '#10A37F', borderColor: '#4285F4', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&eyes=squint&eyebrows=raisedExcited&mouth=twinkle&clothing=collarAndSweater&clothesColor=25557c&accessories=round&accessoriesProbability=100&accessoriesColor=000000', desc: '분석적이고 정중한 판사' },
-  claude: { name: '클로드', color: '#D97706', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&eyes=happy&eyebrows=upDown&mouth=smile&clothing=hoodie&clothesColor=e6e6e6', desc: '신중하고 공정한 판사' },
-};
+// AI_JUDGES, MODEL_MAP → constants/judges.js에서 import
 
 // 카운트업 애니메이션 훅
 const useCountUp = (target, duration = 2000) => {
@@ -120,7 +103,7 @@ const useCountUp = (target, duration = 2000) => {
   return value;
 };
 
-const ModelCard = ({ judgeKey, status, score }) => {
+const ModelCard = ({ judgeKey, status, score, onClick }) => {
   const judge = AI_JUDGES[judgeKey];
   const isDone = status === 'done';
   const isFailed = status === 'failed';
@@ -128,9 +111,17 @@ const ModelCard = ({ judgeKey, status, score }) => {
   const displayA = useCountUp(isDone && score ? score.a : null);
   const displayB = useCountUp(isDone && score ? score.b : null);
 
+  // 상태별 아바타 선택
+  const avatarSrc = isFailed ? judge.avatarFailed
+    : isDone ? judge.avatarDone
+    : isActive ? judge.avatarActive
+    : judge.avatar;
+
   return (
-    <div className={`flex-1 rounded-2xl overflow-hidden transition-all duration-500 ${
-      isDone ? 'bg-white/[0.08] backdrop-blur-sm border border-white/10'
+    <div
+      onClick={isDone ? onClick : undefined}
+      className={`flex-1 rounded-2xl overflow-hidden transition-all duration-500 ${
+      isDone ? 'bg-white/[0.08] backdrop-blur-sm border border-white/10 cursor-pointer active:scale-95'
         : isFailed ? 'bg-red-900/15 border border-red-500/20'
         : isActive ? 'bg-white/[0.04] border border-white/5'
         : 'bg-white/[0.03] border border-white/5 opacity-40'
@@ -145,7 +136,7 @@ const ModelCard = ({ judgeKey, status, score }) => {
               : 'none'
           }}
         >
-          <img src={judge.avatar} alt={judge.name} className="w-full h-full object-cover" />
+          <img src={avatarSrc} alt={judge.name} className="w-full h-full object-cover transition-opacity duration-300" />
         </div>
         <span className="text-sm font-serif font-bold text-white mt-2">{judge.name}</span>
         <p className="text-[10px] font-serif text-white/40 truncate w-full">{judge.desc}</p>
@@ -188,6 +179,7 @@ export default function JudgingPage() {
   const [conSide, setConSide] = useState(null);
   const [verdictData, setVerdictData] = useState(null);
   const [copied, setCopied] = useState(false);
+  const verdictRef = useRef(null);
 
   const confettiFiredRef = useRef(false);
 
@@ -314,9 +306,9 @@ export default function JudgingPage() {
 
           {/* ===== AI 판사 카드 ===== */}
           <div className="flex gap-2 mt-8 shrink-0">
-            <ModelCard judgeKey="gpt" status={judgeStatus.gpt} score={judgeScores.gpt} />
-            <ModelCard judgeKey="gemini" status={judgeStatus.gemini} score={judgeScores.gemini} />
-            <ModelCard judgeKey="claude" status={judgeStatus.claude} score={judgeScores.claude} />
+            <ModelCard judgeKey="gpt" status={judgeStatus.gpt} score={judgeScores.gpt} onClick={() => verdictRef.current?.scrollToJudge('gpt')} />
+            <ModelCard judgeKey="gemini" status={judgeStatus.gemini} score={judgeScores.gemini} onClick={() => verdictRef.current?.scrollToJudge('gemini')} />
+            <ModelCard judgeKey="claude" status={judgeStatus.claude} score={judgeScores.claude} onClick={() => verdictRef.current?.scrollToJudge('claude')} />
           </div>
 
           {/* ===== 시민 투표 현황 (진행 중) ===== */}
@@ -342,7 +334,7 @@ export default function JudgingPage() {
           {/* ===== 인라인 판결 결과 (완료 시) ===== */}
           {isAllDone && verdictData && (
             <div className="mt-8">
-              <VerdictContent verdictData={verdictData} topic={debateTitle} />
+              <VerdictContent ref={verdictRef} verdictData={verdictData} topic={debateTitle} />
 
               {/* ===== 시민 투표 현황 ===== */}
               {(() => {
