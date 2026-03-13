@@ -337,46 +337,6 @@ export default function JudgingPage() {
             <div className="mt-8">
               <VerdictContent ref={verdictRef} verdictData={verdictData} topic={debateTitle} />
 
-              {/* ===== 시민 투표 현황 ===== */}
-              {(() => {
-                const vA = verdictData.citizen_score_a || 0;
-                const vB = verdictData.citizen_score_b || 0;
-                const total = verdictData.citizen_vote_count || (vA + vB);
-                const pA = total > 0 ? Math.round((vA / total) * 100) : 0;
-                const pB = total > 0 ? 100 - pA : 0;
-                return (
-                  <div className="mt-5 bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-[14px] font-sans font-bold text-primary">🗳️ 시민 투표 현황</p>
-                      <span className="text-[12px] text-primary/40">{total > 0 ? `${total.toLocaleString()}명 참여` : '투표 진행 중'}</span>
-                    </div>
-                    {total > 0 ? (
-                      <>
-                        <div className="flex justify-between text-sm font-bold mb-1.5">
-                          <span className="text-emerald-600">찬성 {pA}%</span>
-                          <span className="text-red-500">반대 {pB}%</span>
-                        </div>
-                        <div className="h-3 bg-red-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                            style={{ width: `${pA}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-primary/40 mt-1">
-                          <span>{vA.toLocaleString()}명</span>
-                          <span>{vB.toLocaleString()}명</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-[13px] text-primary/40 font-sans">아직 투표가 없습니다</p>
-                        <p className="text-[11px] text-primary/25 mt-1">공유하여 시민 투표를 받아보세요</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
               <button
                 onClick={() => {
                   const url = `${window.location.origin}/debate/${debateId}`;

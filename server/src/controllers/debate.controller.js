@@ -56,9 +56,10 @@ export async function getDebate(req, res, next) {
       .from('debates')
       .select('*, creator:profiles!creator_id(*), opponent:profiles!opponent_id(*)')
       .eq('id', req.params.id)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
     res.json(data);
   } catch (err) {
     next(err);
