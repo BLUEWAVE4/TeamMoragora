@@ -12,10 +12,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.6",
     "canvas-confetti": "^1.9.4",
-<<<<<<< HEAD
-=======
     "chart.js": "^4.5.1",
->>>>>>> origin/develop
     "framer-motion": "^12.35.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",
