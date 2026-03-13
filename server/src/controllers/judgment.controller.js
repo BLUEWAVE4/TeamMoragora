@@ -112,8 +112,11 @@ export async function requestJudgment(req, res, next) {
 
     const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
-    // Update status to voting + set vote deadline
-    const voteDeadline = new Date(Date.now() + env.VOTE_DURATION_HOURS * 60 * 60 * 1000);
+    // Update status to voting + set vote deadline (debate.vote_duration 분 단위, 없으면 기본값)
+    const durationMs = debate.vote_duration
+      ? debate.vote_duration * 60 * 1000
+      : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
+    const voteDeadline = new Date(Date.now() + durationMs);
 
     await supabaseAdmin
       .from('debates')
@@ -130,7 +133,7 @@ export async function getVerdict(req, res, next) {
   try {
     const { data: verdict, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, ai_judgments(*)')
+      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side)')
       .eq('debate_id', req.params.debateId)
       .maybeSingle();
 
@@ -138,6 +141,22 @@ export async function getVerdict(req, res, next) {
     if (!verdict) {
       throw new NotFoundError('아직 판결이 완료되지 않았습니다.');
     }
+
+    // 양측 주장도 함께 반환
+    const { data: args } = await supabaseAdmin
+      .from('arguments')
+      .select('side, content, user:profiles!user_id(nickname)')
+      .eq('debate_id', req.params.debateId);
+
+    const argA = args?.find(a => a.side === 'A');
+    const argB = args?.find(a => a.side === 'B');
+    verdict.arguments = {
+      A: argA?.content || null,
+      B: argB?.content || null,
+      nicknameA: argA?.user?.nickname || null,
+      nicknameB: argB?.user?.nickname || null,
+    };
+
     res.json(verdict);
   } catch (err) {
     next(err);

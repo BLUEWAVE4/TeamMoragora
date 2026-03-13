@@ -5,7 +5,7 @@ export const AI_TIMEOUT_MS = 30000;
 export const AI_RETRY_DELAY_MS = 15000;
 export const AI_TEMPERATURE_JUDGE = 0.3;
 export const AI_TEMPERATURE_SOLO = 0.7;
-export const AI_MAX_TOKENS_CLAUDE = 1024;
+export const AI_MAX_TOKENS_CLAUDE = 2048;
 
 // 판결 가중치
 export const VERDICT_AI_WEIGHT = 0.75;

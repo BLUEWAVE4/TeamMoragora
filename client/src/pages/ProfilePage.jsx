@@ -8,6 +8,9 @@ import VerdictContent from '../components/verdict/VerdictContent';
 import TierModal from './TierModal';
 import LogicChartModal from './LogicChartModal';
 import FeedbackModal from './FeedbackModal';
+import { Trash2 } from 'lucide-react';
+
+
 
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
@@ -100,6 +103,8 @@ export default function ProfilePage() {
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  // 삭제 기능
+  const [isListEditing, setIsListEditing] = useState(false);
 
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
@@ -167,6 +172,24 @@ export default function ProfilePage() {
       setVerdictLoading(false);
     }
   };
+
+  // 논쟁 삭제 핸들러 추가
+const handleDeleteDebate = async (debateId, e) => {
+  e.stopPropagation(); // 리스트 클릭 이벤트(상세보기) 방지
+
+  if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
+
+  try {
+    // 실제 서비스 환경에서는 api.delete 사용
+    await api.delete(`/profiles/me/verdicts/${debateId}`);
+    
+    // UI 상태 즉시 업데이트
+    setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
+  } catch (err) {
+    console.error('삭제 실패:', err);
+    alert('삭제 처리 중 오류가 발생했습니다.');
+  }
+};
 
   const handleLogout = async () => {
     if (!window.confirm("로그아웃 하시겠습니까?")) return;
@@ -294,58 +317,99 @@ export default function ProfilePage() {
         </motion.button>
 
         {/* 나의 논쟁 리스트 */}
-        <div className="mb-10">
-          <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3 ml-1">
-            나의 논쟁 리스트
-          </h3>
+<div className="mb-10">
+  <div className="flex items-center justify-between mb-3 px-1">
+    <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
+      나의 논쟁 리스트
+    </h3>
+    <button 
+      onClick={() => setIsListEditing(!isListEditing)}
+      className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
+    >
+      {isListEditing ? '완료' : '편집'}
+    </button>
+  </div>
 
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-6 h-6 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+  {loading ? (
+    <div className="flex justify-center py-10">
+      <div className="w-6 h-6 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+    </div>
+  ) : myJudgments.length === 0 ? (
+    <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+      <p className="text-gray-300 text-4xl mb-3">⚖️</p>
+      <p className="text-[14px] font-bold text-gray-400">아직 참여한 논쟁이 없어요</p>
+      <p className="text-[12px] text-gray-300 mt-1">첫 논쟁을 시작해보세요!</p>
+    </div>
+  ) : (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+      {myJudgments.map((debate) => {
+        const result = getDebateResult(debate);
+        const category = categoryMap[debate.category?.toLowerCase()] || debate.category || '기타';
+        
+        return (
+          <motion.div
+            key={debate.id}
+            layout
+            whileTap={{ backgroundColor: "#F9F9F9" }}
+            // 편집 모드일 때는 클릭해도 상세보기 모달이 뜨지 않도록 방어
+            onClick={() => !isListEditing && handleVerdictClick(debate.id)}
+            className="p-4 flex items-center justify-between cursor-pointer"
+          >
+            {/* 왼쪽 & 중앙: 결과 태그와 주제 */}
+            <div className="flex-1 pr-2 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {result && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                    result === '승리' ? 'bg-blue-50 text-[#007AFF]'
+                    : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
+                    : 'bg-gray-100 text-[#8E8E93]'
+                  }`}>
+                    {result}
+                  </span>
+                )}
+                <span className="text-[10px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
+              </div>
+              <h4 className="text-[15px] font-semibold text-black line-clamp-1">{debate.topic}</h4>
             </div>
-          ) : myJudgments.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <p className="text-gray-300 text-4xl mb-3">⚖️</p>
-              <p className="text-[14px] font-bold text-gray-400">아직 참여한 논쟁이 없어요</p>
-              <p className="text-[12px] text-gray-300 mt-1">첫 논쟁을 시작해보세요!</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-              {myJudgments.map((debate) => {
-                const result = getDebateResult(debate);
-                const category = categoryMap[debate.category?.toLowerCase()] || debate.category || '기타';
-                return (
-                  <motion.div
-                    key={debate.id}
-                    whileTap={{ backgroundColor: "#F9F9F9" }}
-                    onClick={() => handleVerdictClick(debate.id)}
-                    className="p-4 flex items-center justify-between cursor-pointer"
+
+            {/* 오른쪽: 편집 모드에 따라 '카테고리' 또는 '휴지통' 표시 */}
+            <div className="flex items-center flex-shrink-0 ml-2">
+              <AnimatePresence mode="wait">
+                {isListEditing ? (
+                  // 편집 모드: 상세 화살표 대신 휴지통 아이콘 등장
+                  <motion.button
+                    key="delete-action"
+                    initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                    onClick={(e) => handleDeleteDebate(debate.id, e)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-[#FF3B30] active:scale-90 transition-all"
                   >
-                    <div className="flex-1 pr-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        {result && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
-                            result === '승리' ? 'bg-blue-50 text-[#007AFF]'
-                            : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
-                            : 'bg-gray-100 text-[#8E8E93]'
-                          }`}>
-                            {result}
-                          </span>
-                        )}
-                        <span className="text-[10px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
-                      </div>
-                      <h4 className="text-[15px] font-semibold text-black line-clamp-1">{debate.topic}</h4>
-                    </div>
-                    <div className="flex items-center gap-1 text-[#C7C7CC]">
-                      <span className="text-[12px] font-medium text-gray-300">{category}</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m9 18 6-6-6-6"/></svg>
-                    </div>
+                    <Trash2 size={18} strokeWidth={2.5} />
+                  </motion.button>
+                ) : (
+                  // 일반 모드: 기존 카테고리와 상세 화살표
+                  <motion.div
+                    key="default-view"
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -5 }}
+                    className="flex items-center gap-1 text-[#C7C7CC]"
+                  >
+                    <span className="text-[12px] font-medium text-gray-300">{category}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
                   </motion.div>
-                );
-              })}
+                )}
+              </AnimatePresence>
             </div>
-          )}
-        </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  )}
+</div>
 
         <div className="flex justify-center gap-4 mb-6 text-center">
           <Link to="/terms" className="text-xs text-gray-400 underline">이용약관</Link>
