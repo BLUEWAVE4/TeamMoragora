@@ -27,7 +27,7 @@ export default function InvitePage() {
   const [isCopied, setIsCopied] = useState(false)
   const [isOpponentJoined, setIsOpponentJoined] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
-  const [isCreator, setIsCreator] = useState(true) 
+  const [isCreator, setIsCreator] = useState(true)
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
   const ogShareUrl = `https://teammoragora.onrender.com/og/invite/${inviteCode}`
@@ -62,9 +62,9 @@ export default function InvitePage() {
           if (targetId) navigate(`/debate/${targetId}/argument`)
         } catch (joinErr) {
           const msg = joinErr.message || ''
-          
-          if (joinErr.status === 400 && 
-            (msg.includes('본인') || msg.includes('자신') || 
+
+          if (joinErr.status === 400 &&
+            (msg.includes('본인') || msg.includes('자신') ||
             msg.includes('yourself') || msg.includes('own'))) {
             // [A측 판별] 본인이 만든 토론인 경우 정보 조회 후 작성자 UI 표시
             try {
@@ -122,7 +122,6 @@ export default function InvitePage() {
     setTimeLeft(prev => {
       if (prev <= 1) {
         clearInterval(timer)
-        // 🔥 타이머 종료 시 자동 이동 추가
         alert('초대 가능 시간이 만료되었습니다.')
         navigate('/')
         return 0
@@ -182,7 +181,7 @@ export default function InvitePage() {
       sessionStorage.setItem('redirectAfterLogin', `/invite/${inviteCode}`);
       const isKakaoApp = /KAKAOTALK/i.test(navigator.userAgent);
      if (isKakaoApp) {
-      navigate('/login/kakao'); 
+      navigate('/login/kakao');
     } else {
       navigate('/login');
     }

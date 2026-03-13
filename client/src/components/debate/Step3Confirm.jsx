@@ -1,7 +1,13 @@
+import { useState } from "react";
 import Button from "../common/Button";
 
 export default function Step3CategoryTime({
 
+  // mode,
+  purpose,
+  lens,
+  topic,
+  setTopic,
   category,
   setCategory,
   time,
@@ -11,6 +17,54 @@ export default function Step3CategoryTime({
 
 }) {
 
+  const purposeMap = {
+    battle: "승부",
+    consensus: "합의",
+    analysis: "분석"
+  };
+
+  const lensMap = {
+    logic: "논리",
+    emotion: "감정",
+    practical: "현실",
+    ethics: "윤리",
+    general: "일반"
+  };
+
+  const categoryMap = {
+    일상: "일상", 연애: "연애", 직장: "직장", 교육: "교육",
+    사회: "사회", 정치: "정치", 기술: "기술", 철학: "철학",
+    문화: "문화", 기타: "기타",
+    // 하위호환 (기존 영문 데이터)
+    daily: "일상", romance: "연애", work: "직장", education: "교육",
+    society: "사회", politics: "정치", technology: "기술", philosophy: "철학",
+    culture: "문화",
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [errorCategory, setErrorCategory] = useState("");
+  const [errorTopic, setErrorTopic] = useState("");
+
+  const handleStart = () => {
+
+    let valid = true;
+
+    if (!category) {
+      setErrorCategory("카테고리를 선택해주세요.");
+      valid = false;
+    }
+
+    if (!topic) {
+      setErrorTopic("제목을 입력해주세요.");
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    setIsModalOpen(true);
+  };
+
   return (
 
     <div className="flex flex-col gap-5 mt-6">
@@ -19,7 +73,10 @@ export default function Step3CategoryTime({
 
       <select
         value={category}
-        onChange={(e)=>setCategory(e.target.value)}
+        onChange={(e) => {
+          setCategory(e.target.value);
+          setErrorCategory("");
+        }}
         className="px-4 py-3 rounded-xl border"
       >
         <option value="">선택</option>
@@ -34,6 +91,10 @@ export default function Step3CategoryTime({
         <option value="문화">문화</option>
         <option value="기타">기타</option>
       </select>
+
+      {errorCategory && (
+        <span className="text-xs text-red-500">{errorCategory}</span>
+      )}
 
       <h3 className="font-bold text-lg">토론 시간</h3>
 

@@ -83,7 +83,7 @@ export default function CategoryFilter({ filter, setFilter }) {
   ];
 
   return (
-    <div className="py-3 border-b border-gray-100 bg-[#F8F9FA]">
+    <div className="py-3">
       <div className="flex gap-3 px-6 overflow-x-auto no-scrollbar scroll-smooth w-full items-center">
         {categories.map((cat) => (
           <button
