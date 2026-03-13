@@ -157,6 +157,23 @@ export async function getVerdict(req, res, next) {
       nicknameB: argB?.user?.nickname || null,
     };
 
+    // 실시간 시민 투표 수 조회 (finalizeVerdict 전에도 표시되도록)
+    const { data: votes } = await supabaseAdmin
+      .from('votes')
+      .select('voted_side')
+      .eq('debate_id', req.params.debateId);
+
+    if (votes && votes.length > 0) {
+      const voteCountA = votes.filter(v => v.voted_side === 'A').length;
+      const voteCountB = votes.filter(v => v.voted_side === 'B').length;
+      // citizen_score가 아직 계산 안 됐으면 실시간 값으로 채움
+      if (!verdict.citizen_vote_count || verdict.citizen_vote_count === 0) {
+        verdict.citizen_score_a = voteCountA;
+        verdict.citizen_score_b = voteCountB;
+        verdict.citizen_vote_count = votes.length;
+      }
+    }
+
     res.json(verdict);
   } catch (err) {
     next(err);
