@@ -138,8 +138,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           {/* 승자 */}
           <div className="text-center mb-5">
             <GoLaw className="mx-auto text-4xl text-gold mb-2" />
-            <p className="text-[11px] font-serif font-bold text-primary/40 uppercase tracking-[3px] mb-1">복합 판결</p>
-            <p className="text-2xl font-serif font-extrabold text-primary">
+            <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-[3px] mb-1">복합 판결</p>
+            <p className="text-2xl font-sans font-extrabold text-primary">
               {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? '찬성측 승리' : '반대측 승리'}
             </p>
           </div>
@@ -148,13 +148,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="relative bg-gradient-to-b from-[#1B2A4A] to-[#0f1a2e] rounded-xl overflow-hidden border border-gold/20 shadow-[0_0_25px_rgba(212,175,55,0.12)]">
 
             <div className="px-5 pt-4 pb-5">
-              <p className="text-[10px] text-gold/60 uppercase tracking-[4px] mb-4 font-serif font-bold text-center">최종 점수</p>
+              <p className="text-[10px] text-gold/60 uppercase tracking-[4px] mb-4 font-sans font-bold text-center">최종 점수</p>
 
               <div className="flex items-stretch">
                 {/* 찬성 */}
                 <div className="flex-1 text-center">
-                  <p className={`text-[10px] font-serif font-bold uppercase tracking-wider mb-1 ${finalScoreA >= finalScoreB ? 'text-emerald-400/70' : 'text-emerald-400/40'}`}>찬성</p>
-                  <p className={`text-4xl font-black font-serif leading-none transition-all ${finalScoreA >= finalScoreB ? 'text-emerald-400' : 'text-emerald-400/40'}`}
+                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreA >= finalScoreB ? 'text-emerald-400/70' : 'text-emerald-400/40'}`}>찬성</p>
+                  <p className={`text-4xl font-black font-sans leading-none transition-all ${finalScoreA >= finalScoreB ? 'text-emerald-400' : 'text-emerald-400/40'}`}
                     style={finalScoreA > finalScoreB ? { textShadow: '0 0 16px rgba(5,150,105,0.3)' } : {}}
                   >{finalScoreA}</p>
                   {/* 찬성 측 아바타 1행 (AI + 시민) */}
@@ -177,15 +177,15 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 <div className="flex flex-col items-center justify-center px-4">
                   <div className="w-px h-3 bg-gold/20" />
                   <div className="my-1.5 w-9 h-9 rounded-full border border-gold/30 flex items-center justify-center bg-gold/10">
-                    <span className="text-[11px] font-serif font-black text-gold tracking-wider">VS</span>
+                    <span className="text-[11px] font-sans font-black text-gold tracking-wider">VS</span>
                   </div>
                   <div className="w-px h-3 bg-gold/20" />
                 </div>
 
                 {/* 반대 */}
                 <div className="flex-1 text-center">
-                  <p className={`text-[10px] font-serif font-bold uppercase tracking-wider mb-1 ${finalScoreB >= finalScoreA ? 'text-red-400/70' : 'text-red-400/40'}`}>반대</p>
-                  <p className={`text-4xl font-black font-serif leading-none transition-all ${finalScoreB >= finalScoreA ? 'text-red-400' : 'text-red-400/40'}`}
+                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreB >= finalScoreA ? 'text-red-400/70' : 'text-red-400/40'}`}>반대</p>
+                  <p className={`text-4xl font-black font-sans leading-none transition-all ${finalScoreB >= finalScoreA ? 'text-red-400' : 'text-red-400/40'}`}
                     style={finalScoreB > finalScoreA ? { textShadow: '0 0 16px rgba(230,57,70,0.3)' } : {}}
                   >{finalScoreB}</p>
                   {/* 반대 측 아바타 1행 (AI + 시민) */}
@@ -221,8 +221,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       </div>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[9px] text-emerald-400/50 font-serif font-bold">찬성 {Math.round((finalScoreA / (finalScoreA + finalScoreB || 1)) * 100)}%</span>
-                      <span className="text-[9px] text-red-400/50 font-serif font-bold">반대 {Math.round((finalScoreB / (finalScoreA + finalScoreB || 1)) * 100)}%</span>
+                      <span className="text-[9px] text-emerald-400/50 font-sans font-bold">찬성 {Math.round((finalScoreA / (finalScoreA + finalScoreB || 1)) * 100)}%</span>
+                      <span className="text-[9px] text-red-400/50 font-sans font-bold">반대 {Math.round((finalScoreB / (finalScoreA + finalScoreB || 1)) * 100)}%</span>
                     </div>
                   </>
                 );
@@ -234,7 +234,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           {totalVotes > 0 && (
             <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-gold/10">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-serif font-bold text-primary/40 uppercase tracking-wider">시민 투표</p>
+                <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-wider">시민 투표</p>
                 <span className="text-[11px] text-primary/40">{totalVotes.toLocaleString()}명 참여</span>
               </div>
               <div className="flex items-center gap-2">
@@ -371,7 +371,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
 
         return (
           <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
-            <h3 className="text-[14px] font-serif font-bold text-primary mb-1">항목별 점수 비교</h3>
+            <h3 className="text-[14px] font-sans font-bold text-primary mb-1">항목별 점수 비교</h3>
 
             {/* 레이더 차트 */}
             <div className="max-w-[300px] mx-auto">
@@ -398,7 +398,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       {judges.length > 0 && (
         <div ref={verdictTabRef} className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm overflow-hidden border border-gold/10">
           <div className="p-4 pb-0">
-            <h3 className="text-[14px] font-serif font-bold text-primary mb-3">AI 판결문</h3>
+            <h3 className="text-[14px] font-sans font-bold text-primary mb-3">AI 판결문</h3>
 
             {/* 탭 버튼 */}
             <div className="flex gap-1 bg-primary/5 rounded-xl p-1 border border-gold/10">
@@ -406,7 +406,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 <button
                   key={i}
                   onClick={() => setActiveJudge(i)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-serif font-semibold transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-sans font-semibold transition-all ${
                     activeJudge === i
                       ? 'bg-white text-primary shadow-sm border border-gold/20'
                       : 'text-primary/40 hover:text-primary/60'
@@ -435,11 +435,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   <img src={currentJudge.avatar} alt={currentJudge.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-serif font-bold text-primary">{currentJudge.name}</p>
+                  <p className="text-sm font-sans font-bold text-primary">{currentJudge.name}</p>
                   <p className="text-[11px] text-primary/40">{currentJudge.desc}</p>
                 </div>
                 <span
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-serif font-bold border"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-sans font-bold border"
                   style={{
                     background: currentJudge.winner_side === 'A' ? '#05966910' : currentJudge.winner_side === 'B' ? '#E6394610' : '#D4AF3710',
                     color: currentJudge.winner_side === 'A' ? '#059669' : currentJudge.winner_side === 'B' ? '#E63946' : '#D4AF37',
@@ -457,12 +457,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     ? 'bg-emerald-50 border-emerald-500 shadow-sm shadow-emerald-200'
                     : 'bg-emerald-50/50 border-emerald-100'
                 }`}>
-                  <p className={`text-[10px] font-serif font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>찬성</p>
-                  <p className={`text-xl font-black font-serif ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600' : 'text-emerald-600/30'}`}>{currentJudge.score_a}</p>
+                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>찬성</p>
+                  <p className={`text-xl font-black font-sans ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600' : 'text-emerald-600/30'}`}>{currentJudge.score_a}</p>
                 </div>
                 <div className="text-center p-3 bg-primary/5 rounded-xl border border-gold/10 flex flex-col justify-center">
-                  <p className="text-[10px] text-primary/40 font-serif font-semibold mb-0.5">차이</p>
-                  <p className={`text-xl font-black font-serif ${
+                  <p className="text-[10px] text-primary/40 font-sans font-semibold mb-0.5">차이</p>
+                  <p className={`text-xl font-black font-sans ${
                     currentJudge.score_a > currentJudge.score_b ? 'text-emerald-600' : currentJudge.score_b > currentJudge.score_a ? 'text-red-500' : 'text-primary'
                   }`}>
                     {currentJudge.score_a - currentJudge.score_b > 0 ? '+' : ''}{currentJudge.score_a - currentJudge.score_b}
@@ -473,8 +473,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     ? 'bg-red-50 border-red-500 shadow-sm shadow-red-200'
                     : 'bg-red-50/50 border-red-100'
                 }`}>
-                  <p className={`text-[10px] font-serif font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>반대</p>
-                  <p className={`text-xl font-black font-serif ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500' : 'text-red-500/30'}`}>{currentJudge.score_b}</p>
+                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>반대</p>
+                  <p className={`text-xl font-black font-sans ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500' : 'text-red-500/30'}`}>{currentJudge.score_b}</p>
                 </div>
               </div>
 
@@ -484,7 +484,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   <div className="flex gap-1 bg-primary/5 rounded-lg p-0.5 mb-3 border border-gold/10">
                     <button
                       onClick={() => setVerdictView('summary')}
-                      className={`flex-1 py-1.5 rounded-md text-[11px] font-serif font-bold transition-all ${
+                      className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
                         verdictView === 'summary'
                           ? 'bg-white text-primary shadow-sm border border-gold/20'
                           : 'text-primary/40 hover:text-primary/60'
@@ -494,7 +494,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     </button>
                     <button
                       onClick={() => setVerdictView('detail')}
-                      className={`flex-1 py-1.5 rounded-md text-[11px] font-serif font-bold transition-all ${
+                      className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
                         verdictView === 'detail'
                           ? 'bg-white text-primary shadow-sm border border-gold/20'
                           : 'text-primary/40 hover:text-primary/60'
@@ -576,7 +576,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               <div className="mt-4 px-1">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-primary/40 font-serif font-medium">확신도</span>
+                    <span className="text-[11px] text-primary/40 font-sans font-medium">확신도</span>
                     <button
                       onClick={() => setShowConfidenceInfo(!showConfidenceInfo)}
                       className="text-primary/30 hover:text-primary/50 transition-colors"
@@ -593,7 +593,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       }}
                     />
                   </div>
-                  <span className="text-[11px] font-serif font-bold" style={{ color: currentJudge.color }}>
+                  <span className="text-[11px] font-sans font-bold" style={{ color: currentJudge.color }}>
                     {Math.round(currentJudge.confidence * 100)}%
                   </span>
                 </div>
@@ -616,7 +616,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             className="w-full flex items-center justify-between p-4 text-left"
           >
             <div className="flex items-center gap-2">
-              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
+              <span className="text-[14px] font-sans font-bold text-primary">📋 논쟁 요약</span>
               {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
               {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
             </div>
@@ -627,13 +627,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <div className="px-4 pb-4 space-y-3">
               {argA && (
                 <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
+                  <p className="text-[11px] font-sans font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
                   <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
                 </div>
               )}
               {argB && (
                 <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
+                  <p className="text-[11px] font-sans font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
                   <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
                 </div>
               )}
@@ -646,7 +646,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       {totalVotes > 0 && (
         <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[14px] font-serif font-bold text-primary">시민 투표 현황</h3>
+            <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
             <span className="text-xs text-primary/40 font-medium">{totalVotes.toLocaleString()}명 참여</span>
           </div>
           <div className="mb-3">

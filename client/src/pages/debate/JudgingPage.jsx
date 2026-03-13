@@ -138,13 +138,13 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
         >
           <img src={avatarSrc} alt={judge.name} className="w-full h-full object-cover transition-opacity duration-300" />
         </div>
-        <span className="text-sm font-serif font-bold text-white mt-2">{judge.name}</span>
-        <p className="text-[10px] font-serif text-white/40 truncate w-full">{judge.desc}</p>
+        <span className="text-sm font-sans font-bold text-white mt-2">{judge.name}</span>
+        <p className="text-[10px] font-sans text-white/40 truncate w-full">{judge.desc}</p>
 
         {/* 판결 결과 or 상태 */}
         <div className="mt-2">
           {isDone && score ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-[12px] font-black font-serif tracking-wider">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-[12px] font-black font-sans tracking-wider">
               <span className={displayA >= displayB ? 'text-emerald-400' : 'text-emerald-400/40'}>{String(displayA).padStart(2, '0')}</span>
               <span className="text-white/30">:</span>
               <span className={displayB >= displayA ? 'text-red-400' : 'text-red-400/40'}>{String(displayB).padStart(2, '0')}</span>
@@ -282,21 +282,21 @@ export default function JudgingPage() {
 
           {/* ===== 헤더 영역 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
-            <h2 className="text-white text-2xl font-serif font-black tracking-tight">
+            <h2 className="text-white text-2xl font-sans font-black tracking-tight">
               {isAllDone ? "판결이 완료되었습니다!" : "AI가 판결 중입니다"}
             </h2>
             {isAllDone ? (
-              <p className="text-white/60 text-[15px] font-serif italic font-medium tracking-tight">
+              <p className="text-white/60 text-[15px] font-sans italic font-medium tracking-tight">
                 결과가 도착했습니다. 아래에서 확인하세요!
               </p>
             ) : (
               <TypingMessage messages={JUDGING_MESSAGES} />
             )}
-            <p className="text-[13px] text-white/60 font-serif font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
+            <p className="text-[13px] text-white/60 font-sans font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
             </p>
             {(proSide || conSide) && (
-              <div className="flex items-center gap-2 text-xs font-serif font-bold mt-1">
+              <div className="flex items-center gap-2 text-xs font-sans font-bold mt-1">
                 <span className="text-emerald-400">{proSide || '찬성'}</span>
                 <span className="text-white/30">vs</span>
                 <span className="text-red-300">{conSide || '반대'}</span>
@@ -346,7 +346,7 @@ export default function JudgingPage() {
                 return (
                   <div className="mt-5 bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-[14px] font-serif font-bold text-primary">🗳️ 시민 투표 현황</p>
+                      <p className="text-[14px] font-sans font-bold text-primary">🗳️ 시민 투표 현황</p>
                       <span className="text-[12px] text-primary/40">{total > 0 ? `${total.toLocaleString()}명 참여` : '투표 진행 중'}</span>
                     </div>
                     {total > 0 ? (
@@ -368,7 +368,7 @@ export default function JudgingPage() {
                       </>
                     ) : (
                       <div className="text-center py-4">
-                        <p className="text-[13px] text-primary/40 font-serif">아직 투표가 없습니다</p>
+                        <p className="text-[13px] text-primary/40 font-sans">아직 투표가 없습니다</p>
                         <p className="text-[11px] text-primary/25 mt-1">공유하여 시민 투표를 받아보세요</p>
                       </div>
                     )}
@@ -384,7 +384,7 @@ export default function JudgingPage() {
                     setTimeout(() => setCopied(false), 2000);
                   });
                 }}
-                className={`w-full mt-5 py-4 rounded-xl font-serif font-bold text-base uppercase tracking-wider border-2 shadow-md active:scale-95 transition-all duration-300 ${
+                className={`w-full mt-5 py-4 rounded-xl font-sans font-bold text-base uppercase tracking-wider border-2 shadow-md active:scale-95 transition-all duration-300 ${
                   copied
                     ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
                     : 'bg-primary text-gold border-gold hover:bg-gold hover:text-primary hover:shadow-[0_0_15px_rgba(212,175,55,0.5)]'
