@@ -4,7 +4,7 @@
  * 인라인 판결 결과 표시 (VerdictContent 공통 컴포넌트 사용)
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
@@ -168,7 +168,6 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
 
 export default function JudgingPage() {
   const { debateId } = useParams();
-  const navigate = useNavigate();
 
   const [judgeStatus, setJudgeStatus] = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores] = useState({ gpt: null, gemini: null, claude: null });
@@ -348,7 +347,7 @@ export default function JudgingPage() {
                 return (
                   <div className="mt-5 bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</p>
+                      <p className="text-[14px] font-sans font-bold text-primary">🗳️ 시민 투표 현황</p>
                       <span className="text-[12px] text-primary/40">{total > 0 ? `${total.toLocaleString()}명 참여` : '투표 진행 중'}</span>
                     </div>
                     {total > 0 ? (

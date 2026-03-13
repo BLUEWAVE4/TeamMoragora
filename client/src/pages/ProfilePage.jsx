@@ -7,22 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VerdictContent from '../components/verdict/VerdictContent';
 import TierModal from './TierModal';
 import LogicChartModal from './LogicChartModal';
-import {
-  User,
-  Gavel,
-  FileText,
-  Scale,
-  Crown,
-  ChevronRight,
-  LogOut,
-  Edit3,
-  Trophy,
-  History,
-  MessageSquarePlus,
-  ArrowRight,
-  BarChart3
-} from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
+import { Trash2 } from 'lucide-react';
+
+
 
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
@@ -41,9 +29,9 @@ const CountUp = ({ end }) => {
 };
 
 const RadarChart = ({ data }) => {
-  const size = 300;
+  const size = 220;
   const center = size / 2;
-  const radius = size * 0.3;
+  const radius = size * 0.35;
   const angleStep = (Math.PI * 2) / data.length;
   const points = data.map((d, i) => {
     const r = radius * (d.val / 100);
@@ -52,8 +40,8 @@ const RadarChart = ({ data }) => {
     return `${x},${y}`;
   }).join(' ');
   return (
-    <div className="flex justify-center items-center py-4">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <div className="flex justify-center items-center py-6">
+      <svg width={size} height={size}>
         {[0.5, 1].map((m) => (
           <polygon key={m} points={data.map((_, i) => {
             const x = center + radius * m * Math.cos(i * angleStep - Math.PI / 2);
@@ -66,9 +54,9 @@ const RadarChart = ({ data }) => {
           points={points} fill="rgba(0, 122, 255, 0.15)" stroke="#007AFF" strokeWidth="2.5"
         />
         {data.map((d, i) => {
-          const x = center + (radius + 45) * Math.cos(i * angleStep - Math.PI / 2);
-          const y = center + (radius + 25) * Math.sin(i * angleStep - Math.PI / 2);
-          return <text key={i} x={x} y={y} textAnchor="middle" fontSize="16" fontWeight="700" fill="#8E8E93">{d.label}</text>;
+          const x = center + (radius + 28) * Math.cos(i * angleStep - Math.PI / 2);
+          const y = center + (radius + 15) * Math.sin(i * angleStep - Math.PI / 2);
+          return <text key={i} x={x} y={y} textAnchor="middle" fontSize="11" fontWeight="800" fill="#8E8E93">{d.label}</text>;
         })}
       </svg>
     </div>
@@ -76,11 +64,11 @@ const RadarChart = ({ data }) => {
 };
 
 const TIER_LIST = [
-  { name: '시민', en: 'Citizen', min: 0, max: 299, color: '#8E8E93', bg: '#F5F5F7', icon: User, desc: '논쟁의 첫 발걸음' },
-  { name: '배심원', en: 'Juror', min: 300, max: 1000, color: '#007AFF', bg: '#EBF5FF', icon: Gavel, desc: '공정한 시각으로 논쟁을 바라보는 자' },
-  { name: '변호사', en: 'Attorney', min: 1001, max: 2000, color: '#AF52DE', bg: '#F9F0FF', icon: FileText, desc: '탄탄한 논거로 상대를 압박하는 자' },
-  { name: '판사', en: 'Judge', min: 2001, max: 5000, color: '#FF9500', bg: '#FFF5EB', icon: Scale, desc: '논리와 이성으로 판단을 내리는 자' },
-  { name: '대법관', en: 'Supreme', min: 5001, max: null, color: '#FF3B30', bg: '#FFF0EF', icon: Crown, desc: '서버 최강의 논쟁 지배자' },
+  { name: '시민',   en: 'Citizen',  min: 0,    max: 299,  color: '#8E8E93', bg: '#F5F5F7', emoji: '👤', desc: '논쟁의 첫 발걸음' },
+  { name: '배심원', en: 'Juror',    min: 300,  max: 1000, color: '#007AFF', bg: '#EBF5FF', emoji: '⚖️', desc: '공정한 시각으로 논쟁을 바라보는 자' },
+  { name: '변호사', en: 'Attorney', min: 1001, max: 2000, color: '#AF52DE', bg: '#F9F0FF', emoji: '📜', desc: '탄탄한 논거로 상대를 압박하는 자' },
+  { name: '판사',   en: 'Judge',    min: 2001, max: 5000, color: '#FF9500', bg: '#FFF5EB', emoji: '🔨', desc: '논리와 이성으로 판단을 내리는 자' },
+  { name: '대법관', en: 'Supreme',  min: 5001, max: null, color: '#FF3B30', bg: '#FFF0EF', emoji: '👑', desc: '서버 최강의 논쟁 지배자' },
 ];
 
 const getTier = (pts) => {
@@ -110,35 +98,24 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [verdictLoading, setVerdictLoading] = useState(false);
-
-  // 모달 열릴 때 body 스크롤 잠금
-  useEffect(() => {
-    if (selectedVerdict) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [selectedVerdict]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  // 삭제 기능
+  const [isListEditing, setIsListEditing] = useState(false);
 
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
   const totalGames = wins + losses + draws;
-
-  const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-  const drawRate = totalGames > 0 ? (draws / totalGames) * 100 : 0;
-  const lossRate = totalGames > 0 ? (losses / totalGames) * 100 : 0;
+ const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0.0';
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
   const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
   const progress = nextTier
-    ? Math.min(100, Math.max(0, ((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
+    ? Math.round(((currentScore - tier.min) / (nextTier.min - tier.min)) * 100)
     : 100;
 
   useEffect(() => {
@@ -146,29 +123,23 @@ export default function ProfilePage() {
       if (!user) return;
       try {
         setLoading(true);
-        const pRes = await api.get('/auth/me');
+        const [pRes, vRes] = await Promise.all([
+          api.get('/auth/me'),
+          api.get('/profiles/me/verdicts')
+        ]);
+        console.log('verdicts 응답 원본:', vRes);  // 이거 추가
         const profile = pRes.data || pRes;
         setProfileData(profile);
         setNewNickname(profile.nickname || '');
-
-        const { data: debates, error } = await supabase
-          .from('debates')
-          .select(`*, verdicts (*)`)
-          .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setMyJudgments(debates || []);
-
-      } catch (error) {
-        console.error('fetchAllData error:', error);
-      } finally {
-        setLoading(false);
-      }
+        // 응답이 배열인지 확인 후 저장
+        const verdicts = Array.isArray(vRes) ? vRes : (Array.isArray(vRes?.data) ? vRes.data : []);
+        setMyJudgments(verdicts);
+      } catch (error) { console.error(error); } finally { setLoading(false); }
     };
     fetchAllData();
   }, [user]);
 
+  // 내가 creator인지 opponent인지에 따라 승패 결정
   const getDebateResult = (debate) => {
     const verdict = debate.verdicts?.[0];
     if (!verdict) return null;
@@ -185,11 +156,8 @@ export default function ProfilePage() {
       await api.patch('/auth/me', { nickname: newNickname });
       setIsEditing(false);
       window.location.reload();
-    } catch (err) {
-      alert('변경 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert('변경 중 오류가 발생했습니다.'); }
+    finally { setLoading(false); }
   };
 
   const handleVerdictClick = async (debateId) => {
@@ -205,6 +173,24 @@ export default function ProfilePage() {
     }
   };
 
+  // 논쟁 삭제 핸들러 추가
+const handleDeleteDebate = async (debateId, e) => {
+  e.stopPropagation(); // 리스트 클릭 이벤트(상세보기) 방지
+
+  if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
+
+  try {
+    // 실제 서비스 환경에서는 api.delete 사용
+    await api.delete(`/profiles/me/verdicts/${debateId}`);
+    
+    // UI 상태 즉시 업데이트
+    setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
+  } catch (err) {
+    console.error('삭제 실패:', err);
+    alert('삭제 처리 중 오류가 발생했습니다.');
+  }
+};
+
   const handleLogout = async () => {
     if (!window.confirm("로그아웃 하시겠습니까?")) return;
     try {
@@ -217,29 +203,25 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user) return (
-    <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7] text-[16px]">
-      로그인이 필요합니다.
-    </div>
-  );
+  if (!user) return <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7]">로그인이 필요합니다.</div>;
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
-      <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-16 flex items-center justify-between border-b border-gray-200/50">
-        <h1 className="text-[18px] font-semibold text-black">프로필</h1>
+
+      <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-14 flex items-center justify-between border-b border-gray-200/50">
+        <h1 className="text-[17px] font-semibold text-black">프로필</h1>
         <div className="flex gap-4">
-          <button onClick={() => setIsEditing(!isEditing)} className="text-[#007AFF] text-[16px] active:opacity-30 transition-opacity font-medium">
+          <button onClick={() => setIsEditing(!isEditing)} className="text-[#007AFF] text-[17px] active:opacity-30 transition-opacity font-medium">
             {isEditing ? '취소' : '편집'}
           </button>
           {!isEditing && (
-            <button onClick={handleLogout} className="text-[#FF3B30] flex items-center gap-1 text-[16px] active:opacity-30 transition-opacity font-medium">
-              <LogOut size={18} /> 로그아웃
-            </button>
+            <button onClick={handleLogout} className="text-[#FF3B30] text-[17px] active:opacity-30 transition-opacity font-medium">로그아웃</button>
           )}
         </div>
       </nav>
 
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-4 pt-8">
+
         {/* 프로필 메인 섹션 */}
         <div className="flex flex-col items-center mb-10">
           <motion.div
@@ -247,261 +229,256 @@ export default function ProfilePage() {
             className="w-24 h-24 rounded-full bg-gradient-to-b from-gray-200 to-gray-300 flex items-center justify-center shadow-inner mb-4 relative overflow-hidden"
           >
             <span className="text-4xl font-light text-white">{(newNickname || 'U').charAt(0)}</span>
-            {isEditing && <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-white text-[14px] font-bold">변경</div>}
+            {isEditing && <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-white text-[10px] font-bold">변경</div>}
           </motion.div>
-          <div className="min-h-[90px] flex flex-col items-center justify-center w-full">
+          <div className="h-16 flex flex-col items-center justify-center w-full">
             <AnimatePresence mode="wait">
               {isEditing ? (
-                <motion.div key="edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex flex-col items-center gap-3 w-full">
+                <motion.div key="edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex flex-col items-center gap-2 w-full">
                   <input autoFocus value={newNickname} onChange={(e) => setNewNickname(e.target.value)}
-                    className="w-full max-w-[280px] bg-white rounded-2xl px-4 py-4 text-center text-xl font-bold outline-none shadow-sm border border-gray-200"
-                    style={{ fontSize: '16px' }} />
-                  <button onClick={handleUpdateNickname} className="text-[#007AFF] text-[16px] font-bold tracking-tight">저장하기</button>
+                    className="w-2/3 bg-white rounded-xl px-4 py-2 text-center text-xl font-bold outline-none shadow-sm border border-gray-200" />
+                  <button onClick={handleUpdateNickname} className="text-[#007AFF] text-sm font-bold tracking-tight">저장하기</button>
                 </motion.div>
               ) : (
-                <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                  <h2 className="text-2xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setIsTierSheetOpen(true)}
-                      className="text-[16px] font-black px-4 py-1.5 rounded-full text-white flex items-center gap-2 active:scale-95 transition-transform shadow-sm"
-                      style={{ backgroundColor: tier.color }}
-                    >
-                      <tier.icon size={18} /> {tier.name}
-                      <ChevronRight size={16} strokeWidth={3} />
-                    </button>
+                <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <h2 className="text-2xl font-bold text-black tracking-tight">{newNickname || '사용자'}님</h2>
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: tier.color }}>{tier.name}</span>
                   </div>
+                  <p className="text-gray-400 text-xs mt-1 font-medium italic">"논거의 달인" (상위 8%)</p>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
 
-        {/* 대시보드 리스트형 배치 (그리드 제거) */}
-        <div className="space-y-4 mb-6">
+        {/* 대시보드 그리드 */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+
           {/* 총 포인트 카드 */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
-            </div>
-            <div className="text-4xl font-bold text-black mb-5">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <span className="text-[11px] font-bold text-[#8E8E93] uppercase mb-1 block">총 포인트</span>
+            <div className="text-2xl font-bold text-black mb-2">
               <CountUp end={currentScore} />
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <tier.icon size={20} style={{ color: tier.color }} />
-                  <span className="text-[16px] font-black" style={{ color: tier.color }}>{tier.name}</span>
-                </div>
-                {nextTier && (
-                  <div className="flex items-center gap-1.5 text-gray-400">
-                    <nextTier.icon size={18} />
-                    <span className="text-[16px] font-bold">{nextTier.name}</span>
-                  </div>
-                )}
+            <div className="mb-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-black" style={{ color: tier.color }}>{tier.emoji} {tier.name}</span>
+                {nextTier && <span className="text-[9px] text-gray-300 font-bold">{nextTier.emoji} {nextTier.name}</span>}
               </div>
-              <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full rounded-full"
-                  style={{ backgroundColor: tier.color }}
-                />
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progress}%`, backgroundColor: tier.color }} />
               </div>
-              <div className="flex justify-end">
-                {nextTier ? (
-                  <p className="text-[16px] text-gray-400 font-bold">
-                    <span className="text-black">{(nextTier.min - currentScore).toLocaleString()}점</span> 더 모으면 {nextTier.name}
-                  </p>
-                ) : (
-                  <p className="text-[16px] text-[#FF3B30] font-black italic">최고 등급 달성!</p>
-                )}
-              </div>
+              {nextTier && (
+                <p className="text-[9px] text-gray-300 font-bold mt-0.5 text-right">
+                  {(nextTier.min - currentScore).toLocaleString()}점 필요
+                </p>
+              )}
             </div>
+            <button
+              onClick={() => setIsTierSheetOpen(true)}
+              className="w-full mt-1 py-1.5 rounded-xl text-[11px] font-black border transition-all active:scale-95"
+              style={{ color: tier.color, borderColor: tier.color + '40', backgroundColor: tier.bg }}
+            >
+              티어표 보기
+            </button>
           </div>
 
           {/* 전체 승률 카드 */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
-            <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
-            <div className="flex justify-between text-[16px] font-black mb-3 px-1">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <span className="text-[11px] font-bold text-[#8E8E93] uppercase mb-1 block">전체 승률</span>
+            <div className="text-2xl font-bold text-[#007AFF] mb-2">{winRate}%</div>
+            {/* 전적 */}
+            <div className="flex justify-between text-[11px] font-bold mb-2">
               <span className="text-[#007AFF]">{wins}승</span>
-              <span className="text-gray-400">{draws}무</span>
               <span className="text-[#FF3B30]">{losses}패</span>
+              <span className="text-[#8E8E93]">{draws}무</span>
             </div>
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${winRate}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-[#007AFF]"
-              />
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${drawRate}%` }}
-                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-                className="h-full bg-gray-300"
-              />
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${lossRate}%` }}
-                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                className="h-full bg-[#FF3B30]"
-              />
+            {/* 승률 바 */}
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-[#007AFF] rounded-full transition-all duration-700" style={{ width: `${winRate}%` }} />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">
-              총 {totalGames}회 논쟁 참여
-            </p>
           </div>
         </div>
 
-        {/* 메뉴 버튼 섹션 */}
-        <div className="space-y-3 mb-10">
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
-            className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <BarChart3 size={22} className="text-[#007AFF]" />
-              </div>
-              <span className="text-[17px] font-bold text-black">나의 논리 프로필 분석</span>
-            </div>
-            <ChevronRight size={20} className="text-[#C7C7CC]" />
-          </motion.button>
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-3">
+          <span className="text-[15px] font-bold text-black">나의 논리 프로필 분석</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </motion.button>
 
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
-            className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                <Edit3 size={22} className="text-gray-400" />
-              </div>
-              <span className="text-[17px] font-bold text-black">서비스 평가하기</span>
-            </div>
-            <ChevronRight size={20} className="text-[#C7C7CC]" />
-          </motion.button>
-        </div>
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✍️</span>
+            <span className="text-[15px] font-bold text-black">서비스 평가하기</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </motion.button>
 
         {/* 나의 논쟁 리스트 */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4 ml-2">
-            <History size={20} className="text-[#8E8E93]" />
-            <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
-          </div>
+<div className="mb-10">
+  <div className="flex items-center justify-between mb-3 px-1">
+    <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
+      나의 논쟁 리스트
+    </h3>
+    <button 
+      onClick={() => setIsListEditing(!isListEditing)}
+      className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
+    >
+      {isListEditing ? '완료' : '편집'}
+    </button>
+  </div>
 
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+  {loading ? (
+    <div className="flex justify-center py-10">
+      <div className="w-6 h-6 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+    </div>
+  ) : myJudgments.length === 0 ? (
+    <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+      <p className="text-gray-300 text-4xl mb-3">⚖️</p>
+      <p className="text-[14px] font-bold text-gray-400">아직 참여한 논쟁이 없어요</p>
+      <p className="text-[12px] text-gray-300 mt-1">첫 논쟁을 시작해보세요!</p>
+    </div>
+  ) : (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+      {myJudgments.map((debate) => {
+        const result = getDebateResult(debate);
+        const category = categoryMap[debate.category?.toLowerCase()] || debate.category || '기타';
+        
+        return (
+          <motion.div
+            key={debate.id}
+            layout
+            whileTap={{ backgroundColor: "#F9F9F9" }}
+            // 편집 모드일 때는 클릭해도 상세보기 모달이 뜨지 않도록 방어
+            onClick={() => !isListEditing && handleVerdictClick(debate.id)}
+            className="p-4 flex items-center justify-between cursor-pointer"
+          >
+            {/* 왼쪽 & 중앙: 결과 태그와 주제 */}
+            <div className="flex-1 pr-2 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {result && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                    result === '승리' ? 'bg-blue-50 text-[#007AFF]'
+                    : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
+                    : 'bg-gray-100 text-[#8E8E93]'
+                  }`}>
+                    {result}
+                  </span>
+                )}
+                <span className="text-[10px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
+              </div>
+              <h4 className="text-[15px] font-semibold text-black line-clamp-1">{debate.topic}</h4>
             </div>
-          ) : myJudgments.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
-              <MessageSquarePlus size={56} className="mx-auto text-gray-100 mb-4" />
-              <p className="text-[17px] font-bold text-gray-400">참여한 논쟁이 없습니다</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-              {myJudgments.map((debate) => {
-                const result = getDebateResult(debate);
-                const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
 
-                return (
-                  <motion.div
-                    key={debate.id}
-                    whileTap={{ backgroundColor: "#F9F9F9" }}
-                    onClick={() => handleVerdictClick(debate.id)}
-                    className="p-6 flex items-center justify-between cursor-pointer"
+            {/* 오른쪽: 편집 모드에 따라 '카테고리' 또는 '휴지통' 표시 */}
+            <div className="flex items-center flex-shrink-0 ml-2">
+              <AnimatePresence mode="wait">
+                {isListEditing ? (
+                  // 편집 모드: 상세 화살표 대신 휴지통 아이콘 등장
+                  <motion.button
+                    key="delete-action"
+                    initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                    onClick={(e) => handleDeleteDebate(debate.id, e)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-[#FF3B30] active:scale-90 transition-all"
                   >
-                    <div className="flex-1 pr-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        {result && (
-                          <span className={`text-[14px] px-2.5 py-1 rounded-lg font-black ${
-                            result === '승리' ? 'bg-blue-50 text-[#007AFF]'
-                            : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
-                            : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            {result}
-                          </span>
-                        )}
-                        <span className="text-[16px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
-                      </div>
-                      <h4 className="text-[18px] font-bold text-black line-clamp-1 leading-snug">{debate.topic}</h4>
-                    </div>
-                    <div className="flex items-center gap-2 text-[#C7C7CC]">
-                      <span className="text-[16px] font-semibold text-gray-300">{category}</span>
-                      <ChevronRight size={20} strokeWidth={3} />
-                    </div>
+                    <Trash2 size={18} strokeWidth={2.5} />
+                  </motion.button>
+                ) : (
+                  // 일반 모드: 기존 카테고리와 상세 화살표
+                  <motion.div
+                    key="default-view"
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -5 }}
+                    className="flex items-center gap-1 text-[#C7C7CC]"
+                  >
+                    <span className="text-[12px] font-medium text-gray-300">{category}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
                   </motion.div>
-                );
-              })}
+                )}
+              </AnimatePresence>
             </div>
-          )}
-        </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  )}
+</div>
 
-        <div className="flex justify-center gap-8 mb-12 text-center">
-          <Link to="/terms" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">이용약관</Link>
-          <Link to="/privacy" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">개인정보처리방침</Link>
+        <div className="flex justify-center gap-4 mb-6 text-center">
+          <Link to="/terms" className="text-xs text-gray-400 underline">이용약관</Link>
+          <Link to="/privacy" className="text-xs text-gray-400 underline">개인정보처리방침</Link>
         </div>
       </div>
 
-      {/* 바텀시트 UI 동일 유지 (생략 가능하나 전체 코드를 위해 포함) */}
+      {/* 티어표 바텀시트 */}
       <AnimatePresence>
         {isTierSheetOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsTierSheetOpen(false)}
-              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
+              className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
             <motion.div
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[40px] max-h-[90vh] overflow-y-auto pb-16 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] overflow-y-auto pb-12 shadow-2xl"
             >
-              <div className="w-14 h-1.5 bg-gray-300 rounded-full mx-auto my-6" />
-              <div className="px-6">
-                <div className="flex items-center justify-between mb-8">
+              <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto my-4 mb-6" />
+              <div className="px-5">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-[26px] font-black text-black leading-tight">등급 시스템</h3>
-                    <p className="text-[16px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Point Milestones</p>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Point System</p>
+                    <h3 className="text-[22px] font-black text-black">등급 시스템</h3>
                   </div>
-                  <div className="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center min-w-[100px]">
-                    <tier.icon size={32} style={{ color: tier.color }} />
-                    <span className="text-[16px] font-black mt-2" style={{ color: tier.color }}>{tier.name}</span>
+                  <div className="flex flex-col items-center px-3 py-2 rounded-2xl" style={{ backgroundColor: tier.bg }}>
+                    <span className="text-xl">{tier.emoji}</span>
+                    <span className="text-[10px] font-black mt-0.5" style={{ color: tier.color }}>현재 내 등급</span>
+                    <span className="text-[13px] font-black" style={{ color: tier.color }}>{tier.name}</span>
                   </div>
                 </div>
-                <div className="space-y-4 mb-10">
+                <div className="space-y-2.5 mb-8">
                   {[...TIER_LIST].reverse().map((t, i) => {
                     const isCurrent = t.name === tier.name;
                     return (
                       <motion.div key={t.name}
                         initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="rounded-[28px] p-6 flex items-center gap-5 border-2 transition-all shadow-sm"
-                        style={{ backgroundColor: isCurrent ? 'white' : 'rgba(255,255,255,0.6)', borderColor: isCurrent ? t.color : 'transparent' }}
+                        className="rounded-2xl p-4 flex items-center gap-3 border-2 transition-all"
+                        style={{ backgroundColor: isCurrent ? t.bg : 'white', borderColor: isCurrent ? t.color : 'transparent' }}
                       >
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.bg }}>
-                          <t.icon size={32} style={{ color: t.color }} />
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ backgroundColor: t.bg }}>
+                          {t.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[15px] font-black" style={{ color: t.color }}>{t.name}</span>
+                            <span className="text-[10px] text-gray-300 font-bold">{t.en}</span>
                             {isCurrent && (
-                              <span className="text-[12px] font-black px-2 py-1 rounded-full text-white" style={{ backgroundColor: t.color }}>현재</span>
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: t.color }}>현재</span>
                             )}
                           </div>
-                          <p className="text-[16px] text-gray-500 font-bold leading-tight">{t.desc}</p>
+                          <p className="text-[11px] text-gray-400 font-medium">{t.desc}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-[16px] font-black" style={{ color: t.color }}>
-                            {t.min.toLocaleString()}{t.max ? `~` : '+'}
+                          <p className="text-[11px] font-black" style={{ color: t.color }}>
+                            {t.min.toLocaleString()}{t.max ? ` ~ ${t.max.toLocaleString()}` : '+'}
                           </p>
-                          <p className="text-[14px] text-gray-300 font-bold">PTS</p>
+                          <p className="text-[9px] text-gray-300 font-bold">포인트</p>
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
                 <button onClick={() => setIsTierSheetOpen(false)}
-                  className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">
+                  className="w-full py-4 bg-black text-white font-bold rounded-2xl active:scale-95 transition-all">
                   확인
                 </button>
               </div>
@@ -510,51 +487,43 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
+      {/* 논리 프로필 바텀시트 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
+              onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
             <motion.div
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] overflow-y-auto pb-16 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[30px] max-h-[90vh] overflow-y-auto pb-12 shadow-2xl"
             >
-              <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto my-6" />
+              <div className="w-10 h-1.5 bg-gray-200 rounded-full mx-auto my-4" />
               <div className="px-6">
-                <div className="flex justify-between items-end mb-8">
-                  <h3 className="text-[26px] font-black text-black">논리 분석</h3>
-                  <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
+                <div className="flex justify-between items-end mb-4">
+                  <h3 className="text-xl font-bold text-black">나의 논리 프로필</h3>
+                  <span className="text-[11px] text-gray-400 font-medium">업데이트: 2026-03-11</span>
                 </div>
-                <div className="bg-[#F9F9F9] rounded-[32px] mb-8 border border-gray-50 overflow-hidden shadow-inner">
+                <div className="bg-[#F9F9F9] rounded-[24px] mb-6 border border-gray-50">
                   <RadarChart data={[
-                    { label: '논거 구성', val: 92 },
-                    { label: '논리 일관', val: 88 },
-                    { label: '인용 근거', val: 85 },
+                    { label: '논거 구성력', val: 92 },
+                    { label: '논리 일관성', val: 88 },
+                    { label: '인용/근거', val: 85 },
                     { label: '반박력', val: 78 },
                     { label: '감정 제어', val: 71 },
                   ]} />
                 </div>
-                <div className="bg-[#F2F2F7] rounded-[32px] p-8 mb-10">
-                  <h4 className="text-[16px] font-black text-gray-400 uppercase mb-5 tracking-widest">강점 리포트</h4>
-                  <ul className="text-[17px] font-bold text-black/80 space-y-5">
-                    <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <ArrowRight size={14} className="text-[#007AFF]" />
-                      </div>
-                      <span><span className="text-black font-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</span>
-                    </li>
-                    <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <ArrowRight size={14} className="text-[#007AFF]" />
-                      </div>
-                      <span><span className="text-black font-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</span>
-                    </li>
+                <div className="bg-[#F2F2F7] rounded-2xl p-5 mb-8">
+                  <h4 className="text-[12px] font-bold text-gray-400 uppercase mb-3 tracking-tight">강점 분석 (TOP 3)</h4>
+                  <ul className="text-[14px] font-medium text-black/80 space-y-2">
+                    <li>• <span className="font-bold text-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</li>
+                    <li>• <span className="font-bold text-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</li>
+                    <li>• <span className="font-bold text-black">인용/근거:</span> 객관적인 지표를 활용한 설득력이 높습니다.</li>
                   </ul>
                 </div>
-                <button onClick={() => setIsSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">분석 완료</button>
+                <button onClick={() => setIsSheetOpen(false)} className="w-full py-4 bg-black text-white font-bold rounded-2xl active:scale-95 transition-all">확인</button>
               </div>
             </motion.div>
           </>
@@ -573,12 +542,11 @@ export default function ProfilePage() {
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed inset-0 z-[201] flex items-end justify-center"
-              onClick={(e) => { if (e.target === e.currentTarget) setSelectedVerdict(null); }}
+              className="fixed bottom-0 left-0 right-0 z-[201] flex justify-center"
             >
               <div className="w-full max-w-md max-h-[90vh] bg-[#FAFAF5] rounded-t-[30px] overflow-hidden flex flex-col shadow-2xl">
                 {/* 헤더 */}
-                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative z-10 shrink-0">
+                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative shrink-0">
                   <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mb-4" />
                   <button onClick={() => setSelectedVerdict(null)} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
                   <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
@@ -589,12 +557,9 @@ export default function ProfilePage() {
                 {/* 스크롤 콘텐츠 */}
                 <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-4">
                   <VerdictContent verdictData={selectedVerdict} />
-                </div>
-                {/* 하단 고정 닫기 버튼 */}
-                <div className="shrink-0 px-5 pb-5 pt-3 bg-[#FAFAF5] border-t border-primary/5">
                   <button
                     onClick={() => setSelectedVerdict(null)}
-                    className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+                    className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
                   >
                     판결 리포트 닫기
                   </button>
