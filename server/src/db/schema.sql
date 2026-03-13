@@ -98,6 +98,7 @@ CREATE TABLE ai_judgments (
   score_b INTEGER NOT NULL DEFAULT 0,
   score_detail_a JSONB,
   score_detail_b JSONB,
+  verdict_sections JSONB DEFAULT '[]',
   confidence NUMERIC(4,2) DEFAULT 0.0,
   status TEXT NOT NULL DEFAULT 'success',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -157,7 +158,16 @@ CREATE TABLE comment_likes (
   UNIQUE (comment_id, user_id)
 );
 
--- 11. feedbacks (서비스 평가)
+-- 11. debate_likes (논쟁 좋아요)
+CREATE TABLE debate_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (debate_id, user_id)
+);
+
+-- 12. feedbacks (서비스 평가)
 CREATE TABLE feedbacks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -213,6 +223,7 @@ ALTER TABLE content_filter_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xp_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE debate_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 
 -- profiles: 누구나 읽기, 본인만 수정
@@ -253,6 +264,11 @@ CREATE POLICY "comments_insert" ON comments FOR INSERT WITH CHECK (auth.uid() = 
 CREATE POLICY "comment_likes_read" ON comment_likes FOR SELECT USING (true);
 CREATE POLICY "comment_likes_insert" ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "comment_likes_delete" ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- debate_likes: 누구나 읽기, 본인만 좋아요/취소
+CREATE POLICY "debate_likes_read" ON debate_likes FOR SELECT USING (true);
+CREATE POLICY "debate_likes_insert" ON debate_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "debate_likes_delete" ON debate_likes FOR DELETE USING (auth.uid() = user_id);
 
 -- feedbacks: 본인만 작성/읽기
 CREATE POLICY "feedbacks_insert" ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);

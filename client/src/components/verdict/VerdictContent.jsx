@@ -11,7 +11,7 @@ import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-import { IoChevronDown } from "react-icons/io5";
+import { IoChevronDown, IoInformationCircleOutline } from "react-icons/io5";
 
 const CATEGORY_LABELS = {
   daily: '일상', relationship: '연애', food: '음식', culture: '문화',
@@ -32,10 +32,32 @@ const DETAIL_LABELS = {
   expression: '표현력',
 };
 
+// 렌즈 → 평가항목 매핑 (해당 렌즈가 강조하는 criterion)
+const LENS_CRITERION_MAP = {
+  logic: 'logic',
+  emotion: 'persuasion',
+  practical: 'evidence',
+  ethics: 'consistency',
+  general: null,       // 균등 — 특정 강조 없음
+  humor: null,
+  custom: null,
+};
+
+// 각 criterion별 밑줄 색상
+const CRITERION_COLORS = {
+  logic: { border: '#4285F4', bg: 'rgba(66,133,244,0.06)' },
+  evidence: { border: '#10A37F', bg: 'rgba(16,163,127,0.06)' },
+  persuasion: { border: '#D97706', bg: 'rgba(217,119,6,0.06)' },
+  consistency: { border: '#8B5CF6', bg: 'rgba(139,92,246,0.06)' },
+  expression: { border: '#EC4899', bg: 'rgba(236,72,153,0.06)' },
+};
+
 function VerdictContentInner({ verdictData, topic }, ref) {
   const [activeJudge, setActiveJudge] = useState(0);
   const [animated, setAnimated] = useState(false);
   const [showArgs, setShowArgs] = useState(false);
+  const [verdictView, setVerdictView] = useState('detail'); // 'summary' | 'detail'
+  const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
   const verdictTabRef = useRef(null);
 
   // 외부에서 탭 전환 + 스크롤 이동 가능하도록 expose
@@ -73,6 +95,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       score_detail_a: j.score_detail_a || {},
       score_detail_b: j.score_detail_b || {},
       verdict_text: j.verdict_text || '',
+      verdict_sections: j.verdict_sections || [],
       confidence: j.confidence || 0.5,
     };
   }).sort((a, b) => JUDGE_ORDER.indexOf(a.key) - JUDGE_ORDER.indexOf(b.key));
@@ -98,7 +121,9 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const proSide = debateData.pro_side || '찬성';
   const conSide = debateData.con_side || '반대';
   const category = CATEGORY_LABELS[debateData.category] || debateData.category || '';
-  const lens = LENS_LABELS[debateData.lens] || debateData.lens || '';
+  const lensRaw = debateData.lens || 'general';
+  const lens = LENS_LABELS[lensRaw] || lensRaw || '';
+  const highlightCriterion = LENS_CRITERION_MAP[lensRaw] || null;
   const argA = verdictData.arguments?.A || null;
   const argB = verdictData.arguments?.B || null;
   const nicknameA = verdictData.arguments?.nicknameA || null;
@@ -226,40 +251,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           )}
         </div>
       </div>
-
-      {/* ===== 논쟁 요약 (접이식) ===== */}
-      {(argA || argB) && (
-        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
-          <button
-            onClick={() => setShowArgs(!showArgs)}
-            className="w-full flex items-center justify-between p-4 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
-              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary/50 font-medium">{category}</span>}
-              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold/70 font-medium">{lens} 렌즈</span>}
-            </div>
-            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
-          </button>
-
-          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="px-4 pb-4 space-y-3">
-              {argA && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
-                </div>
-              )}
-              {argB && (
-                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ===== 항목별 점수 비교 (레이더 차트) ===== */}
       {judges.length > 0 && (() => {
@@ -487,31 +478,167 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 </div>
               </div>
 
-              {/* 판결문 */}
-              {currentJudge.verdict_text && (
+              {/* 판결문 — 요약/상세 토글 */}
+              {currentJudge.verdict_sections?.length > 0 && currentJudge.verdict_text ? (
+                <>
+                  <div className="flex gap-1 bg-primary/5 rounded-lg p-0.5 mb-3 border border-gold/10">
+                    <button
+                      onClick={() => setVerdictView('summary')}
+                      className={`flex-1 py-1.5 rounded-md text-[11px] font-serif font-bold transition-all ${
+                        verdictView === 'summary'
+                          ? 'bg-white text-primary shadow-sm border border-gold/20'
+                          : 'text-primary/40 hover:text-primary/60'
+                      }`}
+                    >
+                      요약 보기
+                    </button>
+                    <button
+                      onClick={() => setVerdictView('detail')}
+                      className={`flex-1 py-1.5 rounded-md text-[11px] font-serif font-bold transition-all ${
+                        verdictView === 'detail'
+                          ? 'bg-white text-primary shadow-sm border border-gold/20'
+                          : 'text-primary/40 hover:text-primary/60'
+                      }`}
+                    >
+                      상세 보기
+                    </button>
+                  </div>
+
+                  {verdictView === 'summary' ? (
+                    <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10">
+                      {currentJudge.verdict_text}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {currentJudge.verdict_sections.map((sec, i) => {
+                        const isHighlighted = highlightCriterion === sec.criterion;
+                        const colors = CRITERION_COLORS[sec.criterion] || {};
+                        return (
+                          <div
+                            key={i}
+                            className={`text-[13px] leading-[1.8] p-3 rounded-xl transition-all ${isHighlighted ? 'border-l-[3px]' : 'border-l-[3px] border-l-transparent'}`}
+                            style={isHighlighted
+                              ? { borderLeftColor: colors.border, backgroundColor: colors.bg }
+                              : { backgroundColor: 'rgba(27,42,74,0.02)' }
+                            }
+                          >
+                            <span
+                              className="text-[10px] font-bold uppercase tracking-wider mr-1.5 px-1.5 py-0.5 rounded"
+                              style={isHighlighted
+                                ? { color: colors.border, backgroundColor: `${colors.border}15` }
+                                : { color: 'rgba(27,42,74,0.35)' }
+                              }
+                            >
+                              {DETAIL_LABELS[sec.criterion] || sec.criterion}
+                            </span>
+                            <span className="text-primary/70">{sec.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : currentJudge.verdict_sections?.length > 0 ? (
+                <div className="space-y-2">
+                  {currentJudge.verdict_sections.map((sec, i) => {
+                    const isHighlighted = highlightCriterion === sec.criterion;
+                    const colors = CRITERION_COLORS[sec.criterion] || {};
+                    return (
+                      <div
+                        key={i}
+                        className={`text-[13px] leading-[1.8] p-3 rounded-xl transition-all ${isHighlighted ? 'border-l-[3px]' : 'border-l-[3px] border-l-transparent'}`}
+                        style={isHighlighted
+                          ? { borderLeftColor: colors.border, backgroundColor: colors.bg }
+                          : { backgroundColor: 'rgba(27,42,74,0.02)' }
+                        }
+                      >
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider mr-1.5 px-1.5 py-0.5 rounded"
+                          style={isHighlighted
+                            ? { color: colors.border, backgroundColor: `${colors.border}15` }
+                            : { color: 'rgba(27,42,74,0.35)' }
+                          }
+                        >
+                          {DETAIL_LABELS[sec.criterion] || sec.criterion}
+                        </span>
+                        <span className="text-primary/70">{sec.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : currentJudge.verdict_text ? (
                 <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10">
                   {currentJudge.verdict_text}
                 </div>
-              )}
+              ) : null}
 
               {/* 확신도 */}
-              <div className="flex items-center gap-3 mt-4 px-1">
-                <span className="text-[11px] text-primary/40 font-serif font-medium">확신도</span>
-                <div className="flex-1 h-1.5 bg-primary/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: animated ? `${currentJudge.confidence * 100}%` : '0%',
-                      background: `linear-gradient(90deg, ${currentJudge.color}, ${currentJudge.color}90)`,
-                    }}
-                  />
+              <div className="mt-4 px-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] text-primary/40 font-serif font-medium">확신도</span>
+                    <button
+                      onClick={() => setShowConfidenceInfo(!showConfidenceInfo)}
+                      className="text-primary/30 hover:text-primary/50 transition-colors"
+                    >
+                      <IoInformationCircleOutline className="text-[14px]" />
+                    </button>
+                  </div>
+                  <div className="flex-1 h-1.5 bg-primary/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: animated ? `${currentJudge.confidence * 100}%` : '0%',
+                        background: `linear-gradient(90deg, ${currentJudge.color}, ${currentJudge.color}90)`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-serif font-bold" style={{ color: currentJudge.color }}>
+                    {Math.round(currentJudge.confidence * 100)}%
+                  </span>
                 </div>
-                <span className="text-[11px] font-serif font-bold" style={{ color: currentJudge.color }}>
-                  {Math.round(currentJudge.confidence * 100)}%
-                </span>
+                {showConfidenceInfo && (
+                  <p className="text-[11px] text-primary/50 leading-[1.6] mt-2 p-2.5 bg-primary/[0.03] rounded-lg border border-gold/10">
+                    AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 높을수록 양측 차이가 명확하다는 의미입니다.
+                  </p>
+                )}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===== 논쟁 요약 (접이식) ===== */}
+      {(argA || argB) && (
+        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
+          <button
+            onClick={() => setShowArgs(!showArgs)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] font-serif font-bold text-primary">📋 논쟁 요약</span>
+              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
+              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
+            </div>
+            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="px-4 pb-4 space-y-3">
+              {argA && (
+                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                  <p className="text-[11px] font-serif font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
+                </div>
+              )}
+              {argB && (
+                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                  <p className="text-[11px] font-serif font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
+                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
