@@ -647,13 +647,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       )}
 
       {/* ===== 시민 투표 현황 ===== */}
-      {totalVotes > 0 && (
-        <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
-            <span className="text-xs text-primary/40 font-medium">{totalVotes.toLocaleString()}명 참여</span>
-          </div>
-          <div className="mb-3">
+      <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[14px] font-sans font-bold text-primary">🗳️ 시민 투표 현황</h3>
+          <span className="text-xs text-primary/40 font-medium">{totalVotes > 0 ? `${totalVotes.toLocaleString()}명 참여` : '투표 진행 중'}</span>
+        </div>
+        {totalVotes > 0 ? (
+          <>
             <div className="flex justify-between text-sm font-bold mb-1.5">
               <span className="text-emerald-600">찬성 {percentA}%</span>
               <span className="text-red-500">반대 {percentB}%</span>
@@ -664,13 +664,18 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 style={{ width: animated ? `${percentA}%` : '0%' }}
               />
             </div>
+            <div className="flex justify-between text-[11px] text-primary/40 mt-1">
+              <span>{voteA.toLocaleString()}명</span>
+              <span>{voteB.toLocaleString()}명</span>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-[13px] text-primary/40 font-sans">아직 투표가 없습니다</p>
+            <p className="text-[11px] text-primary/25 mt-1">공유하여 시민 투표를 받아보세요</p>
           </div>
-          <div className="flex justify-between text-[11px] text-primary/40">
-            <span>{voteA.toLocaleString()}명</span>
-            <span>{voteB.toLocaleString()}명</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
