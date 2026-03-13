@@ -12,7 +12,8 @@ export default function Step1Topic({
   conSide,
   handleGenerateSides,
   nextStep,
-  prevStep
+  prevStep,
+  aiLoading,
 
 }) {
 
@@ -70,6 +71,14 @@ export default function Step1Topic({
 
       </div>
 
+      {/* AI SIDE GENERATE */}
+      <Button
+        variant="outline"
+        onClick={handleGenerateSides}
+        disabled={aiLoading}
+      >
+        {aiLoading ? "AI 생성중..." : "AI 논쟁 생성 도우미"}
+      </Button>
 
       {/* CATEGORY */}
       <div className="flex flex-col gap-2">
@@ -110,15 +119,6 @@ export default function Step1Topic({
         </select>
 
       </div>
-
-
-      {/* AI SIDE GENERATE */}
-      <Button
-        variant="outline"
-        onClick={handleGenerateSides}
-      >
-        AI 찬반 생성
-      </Button>
 
       {proSide && (
         <div className="bg-green-50 p-3 rounded-xl text-sm">
