@@ -3,7 +3,7 @@ import { useAuth } from '../store/AuthContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion'; 
 import { 
   User, 
   Gavel, 
@@ -112,6 +112,10 @@ export default function ProfilePage() {
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [displayCount, setDisplayCount] = useState(5);
+
+  const tierDragControls = useDragControls();
+  const analysisDragControls = useDragControls();
 
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
@@ -214,7 +218,6 @@ export default function ProfilePage() {
       </nav>
 
       <div className="max-w-md mx-auto px-5 pt-8">
-        {/* 프로필 메인 섹션 */}
         <div className="flex flex-col items-center mb-10">
           <motion.div
             animate={{ scale: isEditing ? 1.05 : 1 }}
@@ -251,9 +254,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 대시보드 리스트형 배치 (그리드 제거) */}
         <div className="space-y-4 mb-6">
-          {/* 총 포인트 카드 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
@@ -295,7 +296,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* 전체 승률 카드 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
             <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
@@ -305,32 +305,14 @@ export default function ProfilePage() {
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-              <motion.div 
-                initial={{ width: 0 }} 
-                animate={{ width: `${winRate}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-[#007AFF]"
-              />
-              <motion.div 
-                initial={{ width: 0 }} 
-                animate={{ width: `${drawRate}%` }}
-                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-                className="h-full bg-gray-300"
-              />
-              <motion.div 
-                initial={{ width: 0 }} 
-                animate={{ width: `${lossRate}%` }}
-                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                className="h-full bg-[#FF3B30]"
-              />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-[#007AFF]" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${drawRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-gray-300" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.2, ease: "easeOut" }} className="h-full bg-[#FF3B30]" />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">
-              총 {totalGames}회 논쟁 참여
-            </p>
+            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
           </div>
         </div>
 
-        {/* 메뉴 버튼 섹션 */}
         <div className="space-y-3 mb-10">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
@@ -355,13 +337,11 @@ export default function ProfilePage() {
           </motion.button>
         </div>
 
-        {/* 나의 논쟁 리스트 */}
         <div className="mb-12">
           <div className="flex items-center gap-2 mb-4 ml-2">
             <History size={20} className="text-[#8E8E93]" />
             <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
           </div>
-
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
@@ -372,41 +352,42 @@ export default function ProfilePage() {
               <p className="text-[17px] font-bold text-gray-400">참여한 논쟁이 없습니다</p>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-              {myJudgments.map((debate) => {
-                const result = getDebateResult(debate);
-                const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
-
-                return (
-                  <motion.div
-                    key={debate.id}
-                    whileTap={{ backgroundColor: "#F9F9F9" }}
-                    onClick={() => setSelectedVerdict(debate)}
-                    className="p-6 flex items-center justify-between cursor-pointer"
-                  >
-                    <div className="flex-1 pr-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        {result && (
-                          <span className={`text-[14px] px-2.5 py-1 rounded-lg font-black ${
-                            result === '승리' ? 'bg-blue-50 text-[#007AFF]'
-                            : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
-                            : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            {result}
-                          </span>
-                        )}
-                        <span className="text-[16px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
+            <>
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+                {myJudgments.slice(0, displayCount).map((debate) => {
+                  const result = getDebateResult(debate);
+                  const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
+                  return (
+                    <motion.div key={debate.id} whileTap={{ backgroundColor: "#F9F9F9" }} onClick={() => setSelectedVerdict(debate)} className="p-6 flex items-center justify-between cursor-pointer">
+                      <div className="flex-1 pr-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          {result && (
+                            <span className={`text-[14px] px-2.5 py-1 rounded-lg font-black ${
+                              result === '승리' ? 'bg-blue-50 text-[#007AFF]'
+                              : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
+                              : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {result}
+                            </span>
+                          )}
+                          <span className="text-[16px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
+                        </div>
+                        <h4 className="text-[18px] font-bold text-black line-clamp-1 leading-snug">{debate.topic}</h4>
                       </div>
-                      <h4 className="text-[18px] font-bold text-black line-clamp-1 leading-snug">{debate.topic}</h4>
-                    </div>
-                    <div className="flex items-center gap-2 text-[#C7C7CC]">
-                      <span className="text-[16px] font-semibold text-gray-300">{category}</span>
-                      <ChevronRight size={20} strokeWidth={3} />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                      <div className="flex items-center gap-2 text-[#C7C7CC]">
+                        <span className="text-[16px] font-semibold text-gray-300">{category}</span>
+                        <ChevronRight size={20} strokeWidth={3} />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              {myJudgments.length > displayCount && (
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full mt-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
+                  더보기 ({myJudgments.length - displayCount}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
+                </motion.button>
+              )}
+            </>
           )}
         </div>
 
@@ -416,7 +397,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 바텀시트 UI 동일 유지 (생략 가능하나 전체 코드를 위해 포함) */}
+      {/* 등급 시스템 바텀시트 */}
       <AnimatePresence>
         {isTierSheetOpen && (
           <>
@@ -424,22 +405,28 @@ export default function ProfilePage() {
               onClick={() => setIsTierSheetOpen(false)}
               className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
             <motion.div
-              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
+              drag="y"
+              dragControls={tierDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[40px] max-h-[90vh] overflow-y-auto pb-16 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              <div className="w-14 h-1.5 bg-gray-300 rounded-full mx-auto my-6" />
-              <div className="px-6">
+              <div 
+                onPointerDown={(e) => tierDragControls.start(e)}
+                className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
+              >
+                <div className="w-14 h-1.5 bg-gray-300 rounded-full mx-auto" />
+              </div>
+
+              <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <h3 className="text-[26px] font-black text-black leading-tight">등급 시스템</h3>
                     <p className="text-[16px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Point Milestones</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center min-w-[100px]">
-                    <tier.icon size={32} style={{ color: tier.color }} />
-                    <span className="text-[16px] font-black mt-2" style={{ color: tier.color }}>{tier.name}</span>
                   </div>
                 </div>
                 <div className="space-y-4 mb-10">
@@ -447,8 +434,6 @@ export default function ProfilePage() {
                     const isCurrent = t.name === tier.name;
                     return (
                       <motion.div key={t.name}
-                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
                         className="rounded-[28px] p-6 flex items-center gap-5 border-2 transition-all shadow-sm"
                         style={{ backgroundColor: isCurrent ? 'white' : 'rgba(255,255,255,0.6)', borderColor: isCurrent ? t.color : 'transparent' }}
                       >
@@ -456,48 +441,47 @@ export default function ProfilePage() {
                           <t.icon size={32} style={{ color: t.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
-                            {isCurrent && (
-                              <span className="text-[12px] font-black px-2 py-1 rounded-full text-white" style={{ backgroundColor: t.color }}>현재</span>
-                            )}
-                          </div>
+                          <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
                           <p className="text-[16px] text-gray-500 font-bold leading-tight">{t.desc}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-[16px] font-black" style={{ color: t.color }}>
-                            {t.min.toLocaleString()}{t.max ? `~` : '+'}
-                          </p>
-                          <p className="text-[14px] text-gray-300 font-bold">PTS</p>
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
-                <button onClick={() => setIsTierSheetOpen(false)}
-                  className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">
-                  확인
-                </button>
+                <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px]">확인</button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
+      {/* 논리 분석 바텀시트 - 스크롤 현상 수정 완료 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
             <motion.div
-              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
+              drag="y"
+              dragControls={analysisDragControls} // 드래그 컨트롤러 연결
+              dragListener={false} // 본문 드래그 비활성화 (스크롤 보호)
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] overflow-y-auto pb-16 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto my-6" />
-              <div className="px-6">
+              {/* 상단 핸들: 여기서만 드래그 가능 */}
+              <div 
+                onPointerDown={(e) => analysisDragControls.start(e)}
+                className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
+              >
+                <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto" />
+              </div>
+
+              {/* 스크롤 가능한 내부 영역 */}
+              <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex justify-between items-end mb-8">
                   <h3 className="text-[26px] font-black text-black">논리 분석</h3>
                   <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
@@ -515,15 +499,11 @@ export default function ProfilePage() {
                   <h4 className="text-[16px] font-black text-gray-400 uppercase mb-5 tracking-widest">강점 리포트</h4>
                   <ul className="text-[17px] font-bold text-black/80 space-y-5">
                     <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <ArrowRight size={14} className="text-[#007AFF]" />
-                      </div>
+                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
                       <span><span className="text-black font-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</span>
                     </li>
                     <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <ArrowRight size={14} className="text-[#007AFF]" />
-                      </div>
+                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
                       <span><span className="text-black font-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</span>
                     </li>
                   </ul>
