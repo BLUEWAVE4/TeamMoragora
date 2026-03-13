@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../common/Button";
 import Modal from "../common/Modal";
+import Input from "../common/Input";
 
 export default function Step3CategoryTime({
 
@@ -20,15 +21,20 @@ export default function Step3CategoryTime({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorTime, setErrorTime] = useState("");
 
+  const timeOptions = [
+    { value: "3", label: "3분" },
+    { value: "5", label: "5분" },
+    { value: "10", label: "10분" }
+  ];
+
   const handleStart = () => {
 
     if (!time) {
-      setErrorTime("토론 시간을 선택해주세요.");
+      setErrorTime("투표 마감 시간을 선택해주세요.");
       return;
     }
 
     setIsModalOpen(true);
-
   };
 
   return (
@@ -52,19 +58,14 @@ export default function Step3CategoryTime({
 
         </div>
 
-        <select
+        <Input
           value={time}
           onChange={(e)=>{
             setTime(e.target.value);
             setErrorTime("");
           }}
-          className="px-4 py-3 rounded-xl border"
-        >
-          <option value="">선택</option>
-          <option value="3">3분</option>
-          <option value="5">5분</option>
-          <option value="10">10분</option>
-        </select>
+          options={timeOptions}
+        />
 
       </div>
 
@@ -100,57 +101,43 @@ export default function Step3CategoryTime({
         <div className="space-y-4 text-sm">
 
           <div>
-            <span className="font-bold text-gold">
-              주제
-            </span>
+            <span className="font-bold text-gold">주제</span>
             {" : "}
             {topic}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              찬성 입장
-            </span>
+            <span className="font-bold text-gold">찬성 입장</span>
             {" : "}
             {proSide}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              반대 입장
-            </span>
+            <span className="font-bold text-gold">반대 입장</span>
             {" : "}
             {conSide}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              목적
-            </span>
+            <span className="font-bold text-gold">목적</span>
             {" : "}
             {purpose}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              렌즈
-            </span>
+            <span className="font-bold text-gold">렌즈</span>
             {" : "}
             {lens}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              카테고리
-            </span>
+            <span className="font-bold text-gold">카테고리</span>
             {" : "}
             {category}
           </div>
 
           <div>
-            <span className="font-bold text-gold">
-              투표 마감 시간
-            </span>
+            <span className="font-bold text-gold">투표 마감 시간</span>
             {" : "}
             {time}분
           </div>

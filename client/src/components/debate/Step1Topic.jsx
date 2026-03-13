@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
+import Card from "../common/Card";
 
 export default function Step1Topic({
 
@@ -19,6 +20,19 @@ export default function Step1Topic({
 
   const [errorTopic, setErrorTopic] = useState("");
   const [errorCategory, setErrorCategory] = useState("");
+
+  const categories = [
+    "일상",
+    "연애",
+    "직장",
+    "교육",
+    "사회",
+    "정치",
+    "기술",
+    "철학",
+    "문화",
+    "기타"
+  ];
 
   const handleNext = () => {
 
@@ -41,7 +55,7 @@ export default function Step1Topic({
 
   return (
 
-    <div className="flex flex-col gap-4 mt-6">
+    <div className="flex flex-col gap-6 mt-6">
 
       {/* TOPIC */}
       <div className="flex flex-col gap-2">
@@ -49,7 +63,7 @@ export default function Step1Topic({
         <div className="flex justify-between">
 
           <h3 className="font-bold text-lg">
-            논쟁 주제 입력
+            논쟁 주제
           </h3>
 
           {errorTopic && (
@@ -71,6 +85,7 @@ export default function Step1Topic({
 
       </div>
 
+
       {/* AI SIDE GENERATE */}
       <Button
         variant="outline"
@@ -79,6 +94,7 @@ export default function Step1Topic({
       >
         {aiLoading ? "AI 생성중..." : "AI 논쟁 생성 도우미"}
       </Button>
+
 
       {/* CATEGORY */}
       <div className="flex flex-col gap-2">
@@ -97,44 +113,71 @@ export default function Step1Topic({
 
         </div>
 
-        <select
+        <Input
           value={category}
           onChange={(e)=>{
             setCategory(e.target.value);
             setErrorCategory("");
           }}
-          className="px-4 py-3 rounded-xl border"
-        >
-            <option value="">선택</option>
-            <option value="일상">일상</option>
-            <option value="연애">연애</option>
-            <option value="직장">직장</option>
-            <option value="교육">교육</option>
-            <option value="사회">사회</option>
-            <option value="정치">정치</option>
-            <option value="기술">기술</option>
-            <option value="철학">철학</option>
-            <option value="문화">문화</option>
-            <option value="기타">기타</option>
-        </select>
+          options={categories}
+        />
 
       </div>
 
-      {proSide && (
-        <div className="bg-green-50 p-3 rounded-xl text-sm">
-          <b>찬성</b> : {proSide}
-        </div>
-      )}
 
-      {conSide && (
-        <div className="bg-red-50 p-3 rounded-xl text-sm">
-          <b>반대</b> : {conSide}
+      {/* AI GENERATED SIDES */}
+      {(proSide || conSide) && (
+
+        <div className="flex flex-col gap-4 mt-4">
+
+          <h3 className="font-serif font-bold text-primary text-lg tracking-tight">
+            AI 찬/반 생성
+          </h3>
+          
+          <p className="text-xs text-primary/50 font-serif">
+          AI가 생성한 초안입니다.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            {/* PRO SIDE */}
+            {proSide && (
+
+              <Card
+                variant="base"
+                title="찬성"
+              >
+                <p className="text-primary/90 leading-relaxed">
+                  {proSide}
+                </p>
+              </Card>
+
+            )}
+
+
+            {/* CON SIDE */}
+            {conSide && (
+
+              <Card
+                variant="base"
+                title="반대"
+              >
+                <p className="text-primary/90 leading-relaxed">
+                  {conSide}
+                </p>
+              </Card>
+
+            )}
+
+          </div>
+
         </div>
+
       )}
 
 
       {/* BUTTON */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 mt-2">
 
         <Button
           variant="accent"
