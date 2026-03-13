@@ -82,6 +82,11 @@ export default function DebateCreatePage() {
 
       const result = await generateDebateSides({ topic });
 
+      if (result.unavailable) {
+        alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+        return;
+      }
+
       setProSide(result.pro);
       setConSide(result.con);
 
@@ -160,7 +165,9 @@ export default function DebateCreatePage() {
                 category={category}
                 setCategory={setCategory}
                 proSide={proSide}
+                setProSide={setProSide} 
                 conSide={conSide}
+                setConSide={setConSide}  
                 aiLoading={aiLoading}
                 handleGenerateSides={handleGenerateSides}
                 nextStep={nextStep}
