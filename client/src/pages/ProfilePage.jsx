@@ -110,6 +110,16 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [verdictLoading, setVerdictLoading] = useState(false);
+
+  // 모달 열릴 때 body 스크롤 잠금
+  useEffect(() => {
+    if (selectedVerdict) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedVerdict]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
@@ -563,11 +573,12 @@ export default function ProfilePage() {
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] flex justify-center"
+              className="fixed inset-0 z-[201] flex items-end justify-center"
+              onClick={(e) => { if (e.target === e.currentTarget) setSelectedVerdict(null); }}
             >
               <div className="w-full max-w-md max-h-[90vh] bg-[#FAFAF5] rounded-t-[30px] overflow-hidden flex flex-col shadow-2xl">
                 {/* 헤더 */}
-                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative shrink-0">
+                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative z-10 shrink-0">
                   <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mb-4" />
                   <button onClick={() => setSelectedVerdict(null)} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
                   <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
@@ -578,9 +589,12 @@ export default function ProfilePage() {
                 {/* 스크롤 콘텐츠 */}
                 <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-4">
                   <VerdictContent verdictData={selectedVerdict} />
+                </div>
+                {/* 하단 고정 닫기 버튼 */}
+                <div className="shrink-0 px-5 pb-5 pt-3 bg-[#FAFAF5] border-t border-primary/5">
                   <button
                     onClick={() => setSelectedVerdict(null)}
-                    className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+                    className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
                   >
                     판결 리포트 닫기
                   </button>

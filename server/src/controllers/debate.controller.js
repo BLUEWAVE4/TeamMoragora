@@ -105,21 +105,38 @@ export async function joinByInvite(req, res, next) {
   try {
     const { inviteCode } = req.params;
 
-    const { data: debate, error: findErr } = await supabaseAdmin
+    // 먼저 invite_code로 논쟁 조회 (상태 무관)
+    const { data: existing, error: existErr } = await supabaseAdmin
       .from('debates')
       .select('*')
       .eq('invite_code', inviteCode)
-      .eq('status', 'waiting')
-      .is('opponent_id', null)
       .single();
 
-    if (findErr || !debate) {
+    if (existErr || !existing) {
       return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' });
     }
 
-    if (debate.creator_id === req.user.id) {
+    // 본인이 만든 논쟁인 경우
+    if (existing.creator_id === req.user.id) {
       return res.status(400).json({ error: '자신의 논쟁에 참여할 수 없습니다.' });
     }
+
+    // 이미 참여한 상대방이 다시 접속한 경우 → 논쟁 페이지로 리다이렉트용 데이터 반환
+    if (existing.opponent_id === req.user.id) {
+      return res.json(existing);
+    }
+
+    // 이미 다른 상대방이 참여한 경우
+    if (existing.opponent_id) {
+      return res.status(409).json({ error: '이미 상대방이 참여한 논쟁입니다.' });
+    }
+
+    // 대기 중이 아닌 경우
+    if (existing.status !== 'waiting') {
+      return res.status(400).json({ error: '이미 진행 중인 논쟁입니다.' });
+    }
+
+    const debate = existing;
 
     const { data, error } = await supabaseAdmin
       .from('debates')

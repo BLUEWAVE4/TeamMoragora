@@ -189,9 +189,11 @@ export function buildSystemPrompt(judge) {
 
 // ========== User Prompt 빌더 ==========
 
-export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB }) {
+export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB, nicknameA, nicknameB }) {
   const purposeDesc = PURPOSE_MAP[purpose] || PURPOSE_MAP.battle;
   const lensDesc = LENS_WEIGHT_DESC[lens] || LENS_WEIGHT_DESC.general;
+  const nameA = nicknameA || 'A측';
+  const nameB = nicknameB || 'B측';
 
   return `아래 논쟁에 대해 판결을 내려주세요.
 
@@ -199,12 +201,16 @@ export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB }) 
 - 주제: ${topic}
 - 판결 목적: ${purposeDesc}
 - 분석 렌즈: ${lensDesc}
+- 찬성측(A): ${nameA}
+- 반대측(B): ${nameB}
 
-## A측 주장
+## ${nameA}(찬성)의 주장
 ${argumentA}
 
-## B측 주장
-${argumentB}`;
+## ${nameB}(반대)의 주장
+${argumentB}
+
+주의: 판결문(verdict_text, verdict_sections)에서 "A측/B측" 대신 반드시 "${nameA}", "${nameB}" 닉네임을 사용하세요.`;
 }
 
 // ========== 하위 호환: 기존 단일 프롬프트 (fallback) ==========

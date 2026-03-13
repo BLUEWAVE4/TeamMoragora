@@ -16,6 +16,23 @@ const labelMap = {
 }
 const toKor = (v) => labelMap[v] || v
 
+// 논쟁 상태에 따라 적절한 페이지로 이동
+const getDebateRoute = (debateId, status) => {
+  switch (status) {
+    case 'waiting':
+    case 'arguing':
+      return `/debate/${debateId}/argument`
+    case 'judging':
+      return `/debate/${debateId}/judging`
+    case 'voting':
+      return `/debate/${debateId}/vote`
+    case 'completed':
+      return `/debate/${debateId}`
+    default:
+      return `/debate/${debateId}`
+  }
+}
+
 export default function InvitePage() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
@@ -59,7 +76,7 @@ export default function InvitePage() {
         try {
           const response = await joinByInvite(inviteCode)
           const targetId = response.id || response._id
-          if (targetId) navigate(`/debate/${targetId}/argument`)
+          if (targetId) navigate(getDebateRoute(targetId, response.status))
         } catch (joinErr) {
           const msg = joinErr.message || ''
 
@@ -190,7 +207,7 @@ export default function InvitePage() {
   try {
     const response = await joinByInvite(inviteCode);
     const targetId = response.id || response._id;
-    if (targetId) navigate(`/debate/${targetId}/argument`);
+    if (targetId) navigate(getDebateRoute(targetId, response.status));
   } catch (err) {
     alert(err.message || '참여 처리 중 오류가 발생했습니다.');
   }
@@ -246,7 +263,7 @@ export default function InvitePage() {
             <button onClick={handleKakaoShare} className="w-full h-[64px] bg-[#FEE500] text-[#3c1e1e] rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all">카카오톡 초대하기</button>
             <button onClick={handleNativeShare} className="w-full h-[64px] bg-[#1a2744] text-white rounded-[24px] font-black text-[17px] shadow-xl active:scale-[0.98] transition-all">링크로 초대하기</button>
             <button
-              onClick={() => isOpponentJoined && navigate(`/debate/${debate?.id}/argument`)}
+              onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
               disabled={!isOpponentJoined}
               className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all
                 ${isOpponentJoined ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}

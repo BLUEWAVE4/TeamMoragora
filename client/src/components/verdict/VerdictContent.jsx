@@ -11,7 +11,11 @@ import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-import { IoChevronDown, IoInformationCircleOutline } from "react-icons/io5";
+import { IoInformationCircleOutline } from "react-icons/io5";
+
+// 이미지 로드 실패 시 이니셜 SVG 폴백
+const fallbackAvatar = (name, color) =>
+  `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="${color}22"/><text x="32" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="${color}">${(name || '?')[0]}</text></svg>`)}`;
 
 const CATEGORY_LABELS = {
   daily: '일상', relationship: '연애', food: '음식', culture: '문화',
@@ -55,8 +59,7 @@ const CRITERION_COLORS = {
 function VerdictContentInner({ verdictData, topic }, ref) {
   const [activeJudge, setActiveJudge] = useState(0);
   const [animated, setAnimated] = useState(false);
-  const [showArgs, setShowArgs] = useState(false);
-  const [verdictView, setVerdictView] = useState('detail'); // 'summary' | 'detail'
+  const [verdictView, setVerdictView] = useState('summary'); // 'summary' | 'detail'
   const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
   const [expandedArg, setExpandedArg] = useState({ A: false, B: false });
   const verdictTabRef = useRef(null);
@@ -129,6 +132,23 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const argB = verdictData.arguments?.B || null;
   const nicknameA = verdictData.arguments?.nicknameA || null;
   const nicknameB = verdictData.arguments?.nicknameB || null;
+
+  // 닉네임을 찬성(초록)/반대(빨강) 색상으로 하이라이트
+  const highlightNicknames = (text) => {
+    if (!text || (!nicknameA && !nicknameB)) return text;
+    const parts = [];
+    const names = [];
+    if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
+    if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
+    // 닉네임으로 정규식 생성
+    const pattern = new RegExp(`(${names.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+    const segments = text.split(pattern);
+    return segments.map((seg, i) => {
+      const match = names.find(n => n.name === seg);
+      if (match) return <span key={i} className={match.cls}>{seg}</span>;
+      return seg;
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -479,8 +499,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 </div>
               </div>
 
-              {/* 판결문 — 요약/상세 토글 */}
-              {currentJudge.verdict_sections?.length > 0 && currentJudge.verdict_text ? (
+              {/* 판결문 — 요약/상세 토글 (항상 표시) */}
+              {(currentJudge.verdict_text || currentJudge.verdict_sections?.length > 0) && (
                 <>
                   <div className="flex gap-1 bg-primary/5 rounded-lg p-0.5 mb-3 border border-gold/10">
                     <button
@@ -506,10 +526,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   </div>
 
                   {verdictView === 'summary' ? (
-                    <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10">
-                      {currentJudge.verdict_text}
+                    <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10 space-y-2">
+                      {currentJudge.verdict_text
+                        ? currentJudge.verdict_text.split('\n').filter(line => line.trim()).map((line, i) => (
+                            <p key={i}>{highlightNicknames(line)}</p>
+                          ))
+                        : '판결 요약이 없습니다.'}
                     </div>
-                  ) : (
+                  ) : currentJudge.verdict_sections?.length > 0 ? (
                     <div className="space-y-2">
                       {currentJudge.verdict_sections.map((sec, i) => {
                         const isHighlighted = highlightCriterion === sec.criterion;
@@ -535,49 +559,18 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                             <span
                               className={`text-primary/70 ${isHighlighted ? 'underline decoration-2 underline-offset-[3px]' : ''}`}
                               style={isHighlighted ? { textDecorationColor: colors.border } : {}}
-                            >{sec.text}</span>
+                            >{highlightNicknames(sec.text)}</span>
                           </div>
                         );
                       })}
                     </div>
+                  ) : (
+                    <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10">
+                      {highlightNicknames(currentJudge.verdict_text) || '상세 판결문이 없습니다.'}
+                    </div>
                   )}
                 </>
-              ) : currentJudge.verdict_sections?.length > 0 ? (
-                <div className="space-y-2">
-                  {currentJudge.verdict_sections.map((sec, i) => {
-                    const isHighlighted = highlightCriterion === sec.criterion;
-                    const colors = CRITERION_COLORS[sec.criterion] || {};
-                    return (
-                      <div
-                        key={i}
-                        className={`text-[13px] leading-[1.8] p-3 rounded-xl transition-all ${isHighlighted ? 'border-l-[3px]' : 'border-l-[3px] border-l-transparent'}`}
-                        style={isHighlighted
-                          ? { borderLeftColor: colors.border, backgroundColor: colors.bg }
-                          : { backgroundColor: 'rgba(27,42,74,0.02)' }
-                        }
-                      >
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-wider mr-1.5 px-1.5 py-0.5 rounded"
-                          style={isHighlighted
-                            ? { color: colors.border, backgroundColor: `${colors.border}15` }
-                            : { color: 'rgba(27,42,74,0.35)' }
-                          }
-                        >
-                          {DETAIL_LABELS[sec.criterion] || sec.criterion}
-                        </span>
-                        <span
-                          className={`text-primary/70 ${isHighlighted ? 'underline decoration-2 underline-offset-[3px]' : ''}`}
-                          style={isHighlighted ? { textDecorationColor: colors.border } : {}}
-                        >{sec.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : currentJudge.verdict_text ? (
-                <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10">
-                  {currentJudge.verdict_text}
-                </div>
-              ) : null}
+              )}
 
               {/* 확신도 */}
               <div className="mt-4 px-1">
@@ -615,29 +608,25 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         </div>
       )}
 
-      {/* ===== 논쟁 요약 (접이식) ===== */}
+      {/* ===== 논쟁 ===== */}
       {(argA || argB) && (
         <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
-          <button
-            onClick={() => setShowArgs(!showArgs)}
-            className="w-full flex items-center justify-between p-4 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] font-sans font-bold text-primary">📋 논쟁 요약</span>
-              {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
-              {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
-            </div>
-            <IoChevronDown className={`text-primary/30 transition-transform duration-300 ${showArgs ? 'rotate-180' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2 p-4 pb-0">
+            <span className="text-[14px] font-sans font-bold text-primary">📋 논쟁</span>
+            {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
+            {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
+          </div>
 
-          <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="px-4 pb-4 space-y-3">
+          <div className="px-4 py-3 space-y-3">
               {argA && (
                 <div
                   className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50 cursor-pointer active:scale-[0.99] transition-transform"
                   onClick={() => setExpandedArg(prev => ({ ...prev, A: !prev.A }))}
                 >
-                  <p className="text-[11px] font-sans font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] font-sans font-bold text-emerald-600">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
+                    <span className="text-[10px] text-emerald-500/60 font-medium">{expandedArg.A ? '접기' : '더보기'}</span>
+                  </div>
                   <p className={`text-[12px] leading-[1.7] text-primary/70 ${expandedArg.A ? '' : 'line-clamp-4'}`}>{argA}</p>
                 </div>
               )}
@@ -646,12 +635,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   className="p-3 rounded-xl bg-red-50/80 border border-red-200/50 cursor-pointer active:scale-[0.99] transition-transform"
                   onClick={() => setExpandedArg(prev => ({ ...prev, B: !prev.B }))}
                 >
-                  <p className="text-[11px] font-sans font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] font-sans font-bold text-red-500">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
+                    <span className="text-[10px] text-red-400/60 font-medium">{expandedArg.B ? '접기' : '더보기'}</span>
+                  </div>
                   <p className={`text-[12px] leading-[1.7] text-primary/70 ${expandedArg.B ? '' : 'line-clamp-4'}`}>{argB}</p>
                 </div>
               )}
             </div>
-          </div>
         </div>
       )}
 

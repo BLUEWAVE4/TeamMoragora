@@ -64,8 +64,8 @@ export default function MoragoraDetailPage() {
     <div className="min-h-screen bg-[#FAFAF5] flex justify-center">
       <div className="w-full max-w-md pb-32">
 
-        {/* 헤더 */}
-        <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-8 pb-10 text-center relative">
+        {/* 헤더 - sticky 고정 */}
+        <div className="sticky top-0 bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-8 pb-10 text-center z-20">
           <button
             onClick={() => navigate(-1)}
             className="absolute top-4 left-4 text-white/60 text-xl"

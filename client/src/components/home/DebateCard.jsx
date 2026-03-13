@@ -221,22 +221,30 @@ export default function DebateCard({ feed, formatTime }) {
       </div>
 
       {/* 3. 투표 버튼 */}
-      <div className="px-6 py-5 flex gap-4">
-        <button
-          onClick={() => handleVote('A')}
-          disabled={isVoting}
-          className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl border-2 transition-all active:scale-[0.98] ${myVote === 'A' ? 'border-blue-500 bg-blue-50' : 'border-blue-100 bg-blue-50/20'}`}
-        >
-          <span className="text-[16px] font-black text-blue-900">{myVote === 'A' ? '✓ 찬성' : '찬성'}</span>
-        </button>
-        <button
-          onClick={() => handleVote('B')}
-          disabled={isVoting}
-          className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl border-2 transition-all active:scale-[0.98] ${myVote === 'B' ? 'border-red-500 bg-red-50' : 'border-red-100 bg-red-50/20'}`}
-        >
-          <span className="text-[16px] font-black text-red-900">{myVote === 'B' ? '✓ 반대' : '반대'}</span>
-        </button>
-      </div>
+      {isVotingStatus ? (
+        <div className="px-6 py-5 flex gap-4">
+          <button
+            onClick={() => handleVote('A')}
+            disabled={isVoting}
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl border-2 transition-all active:scale-[0.98] ${myVote === 'A' ? 'border-blue-500 bg-blue-50' : 'border-blue-100 bg-blue-50/20'}`}
+          >
+            <span className="text-[16px] font-black text-blue-900">{myVote === 'A' ? '✓ 찬성' : '찬성'}</span>
+          </button>
+          <button
+            onClick={() => handleVote('B')}
+            disabled={isVoting}
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl border-2 transition-all active:scale-[0.98] ${myVote === 'B' ? 'border-red-500 bg-red-50' : 'border-red-100 bg-red-50/20'}`}
+          >
+            <span className="text-[16px] font-black text-red-900">{myVote === 'B' ? '✓ 반대' : '반대'}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="px-6 py-3 text-center">
+          <span className="text-[13px] text-gray-400 font-semibold">
+            {debateStatus === 'completed' ? '투표가 마감되었습니다' : debateStatus === 'arguing' ? '주장 작성 중' : '판결 진행 중'}
+          </span>
+        </div>
+      )}
 
       {/* 4. 투표 결과 바 */}
       {myVote !== null && (
@@ -316,7 +324,7 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
 
         <Link
-          to={`/debate/${feed.debate_id}`}
+          to={`/moragora/${feed.debate_id}`}
           className="text-[#0095f6] text-[14px] font-extrabold hover:underline"
         >
           참여하기
