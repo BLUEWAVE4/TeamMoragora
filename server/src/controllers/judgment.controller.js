@@ -133,7 +133,7 @@ export async function getVerdict(req, res, next) {
   try {
     const { data: verdict, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side)')
+      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side, status, vote_deadline)')
       .eq('debate_id', req.params.debateId)
       .maybeSingle();
 
