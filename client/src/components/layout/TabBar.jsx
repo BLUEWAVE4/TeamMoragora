@@ -1,9 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-<<<<<<< HEAD
-=======
 import { useAuth } from "../../store/AuthContext"
->>>>>>> origin/develop
 
 // --- 아이콘 컴포넌트 세트 ---
 
@@ -53,12 +50,9 @@ const UserIcon = ({ active }) => (
 export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
-<<<<<<< HEAD
-=======
   const { user } = useAuth();
 
   const isLoggedIn = !!user;
->>>>>>> origin/develop
   const isCreateActive = location.pathname === '/debate/create';
 
   const handleCreateClick = () => {
@@ -90,22 +84,12 @@ export default function TabBar() {
 
           {menuItems.map((item, idx) => {
             if (item.isButton) {
-<<<<<<< HEAD
-              const activeStatus = isCreateActive;
-              return (
-                <button
-                  key="center-btn"
-                  onClick={() => navigate('/debate/create')}
-                  className={`flex-1 flex justify-center items-center h-full transition-all duration-200 
-                    ${activeStatus ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
-=======
               return (
                 <button
                   key="center-btn"
                   onClick={handleCreateClick}
                   className={`flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
->>>>>>> origin/develop
                 >
                   {item.icon(isCreateActive)}
                 </button>
