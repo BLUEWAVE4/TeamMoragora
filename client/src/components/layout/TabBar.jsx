@@ -1,5 +1,9 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+<<<<<<< HEAD
+=======
+import { useAuth } from "../../store/AuthContext"
+>>>>>>> origin/develop
 
 // --- 아이콘 컴포넌트 세트 ---
 
@@ -49,7 +53,27 @@ const UserIcon = ({ active }) => (
 export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< HEAD
+=======
+  const { user } = useAuth();
+
+  const isLoggedIn = !!user;
+>>>>>>> origin/develop
   const isCreateActive = location.pathname === '/debate/create';
+
+  const handleCreateClick = () => {
+    if (!isLoggedIn) {
+      const confirmMove = window.confirm(
+        "논쟁 생성은 로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?"
+      );
+      if (confirmMove) {
+        sessionStorage.setItem('redirectAfterLogin', '/debate/create');
+        navigate('/login');
+      }
+    } else {
+      navigate('/debate/create');
+    }
+  };
 
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
@@ -63,9 +87,10 @@ export default function TabBar() {
     <>
       <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
         <nav className="w-full max-w-[450px] bg-white/95 backdrop-blur-md border-t border-gray-100 h-[60px] flex items-center justify-around pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
-          
+
           {menuItems.map((item, idx) => {
             if (item.isButton) {
+<<<<<<< HEAD
               const activeStatus = isCreateActive;
               return (
                 <button
@@ -73,8 +98,16 @@ export default function TabBar() {
                   onClick={() => navigate('/debate/create')}
                   className={`flex-1 flex justify-center items-center h-full transition-all duration-200 
                     ${activeStatus ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
+=======
+              return (
+                <button
+                  key="center-btn"
+                  onClick={handleCreateClick}
+                  className={`flex-1 flex justify-center items-center h-full transition-all duration-200
+                    ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
+>>>>>>> origin/develop
                 >
-                  {item.icon(activeStatus)}
+                  {item.icon(isCreateActive)}
                 </button>
               );
             }
@@ -82,9 +115,9 @@ export default function TabBar() {
             // 일반 메뉴 버튼 (NavLink)
             const isActive = location.pathname === item.to;
             return (
-              <NavLink 
+              <NavLink
                 key={item.to}
-                to={item.to} 
+                to={item.to}
                 className="flex-1 flex justify-center items-center h-full"
               >
                 <div className={`transition-all duration-200 ${isActive ? 'text-black scale-110' : 'text-gray-400 hover:text-gray-600'}`}>

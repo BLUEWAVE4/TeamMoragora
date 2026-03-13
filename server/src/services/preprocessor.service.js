@@ -1,6 +1,8 @@
 // 주장 입력 전처리 서비스
 // 프롬프트 인젝션 방어 + 텍스트 정규화 + 유효성 검증
 
+import { ARGUMENT_MIN_LENGTH, ARGUMENT_MAX_LENGTH, SIMILARITY_THRESHOLD } from '../config/constants.js';
+
 // ===== 프롬프트 인젝션 패턴 (영문 + 한국어) =====
 const INJECTION_PATTERNS = [
   // 영문 패턴
@@ -34,8 +36,8 @@ const INJECTION_PATTERNS = [
   /score_[ab]/gi,
 ];
 
-const MAX_LENGTH = 2000;
-const MIN_LENGTH = 50;
+const MAX_LENGTH = ARGUMENT_MAX_LENGTH;
+const MIN_LENGTH = ARGUMENT_MIN_LENGTH;
 
 /**
  * 주장 텍스트 전처리
@@ -88,7 +90,7 @@ export function preprocessArgument(rawText, otherSideText) {
   // 6. 양측 동일 주장 체크 (Jaccard 유사도)
   if (otherSideText) {
     const similarity = calculateTextSimilarity(text, otherSideText);
-    if (similarity > 0.85) {
+    if (similarity > SIMILARITY_THRESHOLD) {
       return {
         text,
         status: 'duplicate',

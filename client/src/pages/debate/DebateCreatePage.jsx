@@ -1,43 +1,42 @@
-// 담당: 서우주 (프론트A) - 32h // 
-// 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// // 담당: 서우주 (프론트A) - 32h // 
+// // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createDebate } from "../../services/api";
-import { trackEvent } from "../../services/analytics";
+import { createDebate, generateDebateSides } from "../../services/api";
 
 import ModeSelector from "../../components/ui/ModeSelector";
 import StepWizard from "../../components/common/StepWizard";
 import Modal from "../../components/common/Modal";
 import Button from "../../components/common/Button";
 
-import Step1BasicInfo from "../../components/debate/Step1BasicInfo";
-import Step2DetailSetting from "../../components/debate/Step2DetailSetting";
-import Step3Confirm from "../../components/debate/Step3Confirm";
+import Step1Topic from "../../components/debate/Step1Topic";
+import Step2PurposeLens from "../../components/debate/Step2PurposeLens";
+import Step3CategoryTime from "../../components/debate/Step3CategoryTime";
 
 export default function DebateCreatePage() {
 
+  const navigate = useNavigate();
+
   const [mode, setMode] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [showBackModal, setShowBackModal] = useState(false);
 
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
-  const [category, setCategory] = useState("");
+
+  const [proSide, setProSide] = useState("");
+  const [conSide, setConSide] = useState("");
+
   const [purpose, setPurpose] = useState("");
   const [lens, setLens] = useState("");
 
-  const navigate = useNavigate();
+  const [category, setCategory] = useState("");
+  const [time, setTime] = useState("");
+
+  const [showBackModal, setShowBackModal] = useState(false);
 
   const nextStep = () => setStep(prev => prev + 1);
-
-  const resetForm = () => {
-    setTopic("");
-    setCategory("");
-    setPurpose("");
-    setLens("");
-  };
 
   const prevStep = () => {
 
@@ -46,17 +45,8 @@ export default function DebateCreatePage() {
       return;
     }
 
-    if (step === 3) {
-      setTopic("");
-      setCategory("");
-    }
-
-    if (step === 2) {
-      setPurpose("");
-      setLens("");
-    }
-
     setStep(prev => prev - 1);
+
   };
 
   const handleModeStart = (selectedMode) => {
@@ -64,58 +54,67 @@ export default function DebateCreatePage() {
     setGameStarted(true);
   };
 
-  const handleSubmit = async () => {
+  // 🔥 AI 찬반 생성
+  const handleGenerateSides = async () => {
 
-  try {
-
-    const data = {
-      topic,
-      category,
-      purpose,
-      lens,
-      mode
-    };
-
-    const result = await createDebate(data);
-    trackEvent('debate_create', { category, purpose, lens, mode });
-
-    console.log("createDebate result:", result);
-
-    const debateId = result?.debate_id || result?.id;
-    const inviteCode = result?.invite_code || result?.inviteCode;
-
-    if (!inviteCode) {
-      console.error("inviteCode 없음", result);
-      alert("초대 코드 생성 실패");
+    if (!topic) {
+      alert("주제를 입력하세요");
       return;
     }
 
-    // alert("논쟁 생성 완료");
-    console.log("inviteCode:", inviteCode);
+    try {
 
-    // InvitePage에서 A측(생성자) 판별용 캐시 저장
-    sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+      const result = await generateDebateSides({ topic });
 
-    // InvitePage 이동
-    navigate(`/invite/${inviteCode}`);
+      setProSide(result.pro);
+      setConSide(result.con);
 
-    resetForm();
-    setStep(1);
-    setGameStarted(false);
-    setMode(null);
+      alert("AI 찬반 생성 완료");
 
-  } catch (err) {
+    } catch (err) {
 
-    console.error(err);
-    alert("생성 실패");
+      console.error(err);
+      alert("AI 생성 실패");
 
-  }
+    }
 
-};
+  };
+
+  const handleSubmit = async () => {
+
+    try {
+
+      const data = {
+        topic,
+        pro_side: proSide,
+        con_side: conSide,
+        category,
+        purpose,
+        lens,
+        time,
+        mode
+      };
+
+      const result = await createDebate(data);
+
+      const inviteCode = result?.invite_code;
+
+      sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+
+      navigate(`/invite/${inviteCode}`);
+
+    } catch (err) {
+
+      console.error(err);
+      alert("생성 실패");
+
+    }
+
+  };
 
   return (
 
-    <div className="min-h-screen flex justify-center items-start px-4 pt-6 pb-28 bg-[#FAFAF5]">
+    <div className="min-h-screen flex justify-center px-4 pt-6 pb-28 bg-[#FAFAF5]">
 
       <div className="w-full max-w-md">
 
@@ -132,16 +131,21 @@ export default function DebateCreatePage() {
             <StepWizard currentStep={step} total={3}/>
 
             {step === 1 && (
-              <Step1BasicInfo
-                purpose={purpose}
-                setPurpose={setPurpose}
+              <Step1Topic
+                topic={topic}
+                setTopic={setTopic}
+                proSide={proSide}
+                conSide={conSide}
+                handleGenerateSides={handleGenerateSides}
                 nextStep={nextStep}
                 prevStep={prevStep}
               />
             )}
 
             {step === 2 && (
-              <Step2DetailSetting
+              <Step2PurposeLens
+                purpose={purpose}
+                setPurpose={setPurpose}
                 lens={lens}
                 setLens={setLens}
                 nextStep={nextStep}
@@ -150,18 +154,16 @@ export default function DebateCreatePage() {
             )}
 
             {step === 3 && (
-              <Step3Confirm
-                mode={mode}
-                purpose={purpose}
-                lens={lens}
-                topic={topic}
-                setTopic={setTopic}
+              <Step3CategoryTime
                 category={category}
                 setCategory={setCategory}
+                time={time}
+                setTime={setTime}
                 prevStep={prevStep}
                 handleSubmit={handleSubmit}
               />
             )}
+
           </>
         )}
 
@@ -170,7 +172,7 @@ export default function DebateCreatePage() {
       <Modal
         isOpen={showBackModal}
         onClose={() => setShowBackModal(false)}
-        title="게임 모드를 다시 선택하시겠습니까?"
+        title="모드를 다시 선택하시겠습니까?"
       >
 
         <div className="flex gap-3 justify-end mt-6">
@@ -184,14 +186,10 @@ export default function DebateCreatePage() {
 
           <Button
             onClick={() => {
-
-              resetForm();
-
               setGameStarted(false);
               setMode(null);
               setStep(1);
               setShowBackModal(false);
-
             }}
           >
             예

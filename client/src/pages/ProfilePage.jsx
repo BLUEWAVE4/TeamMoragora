@@ -2,23 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import api from '../services/api';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'; 
-import { 
-  User, 
-  Gavel, 
-  FileText, 
-  Scale, 
-  Crown, 
-  ChevronRight, 
-  LogOut, 
-  Edit3, 
+import api, { getVerdict } from '../services/api';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import {
+  User,
+  Gavel,
+  FileText,
+  Scale,
+  Crown,
+  ChevronRight,
+  LogOut,
+  Edit3,
   Trophy,
   History,
   MessageSquarePlus,
   ArrowRight,
-  BarChart3
+  BarChart3,
+  Trash2
 } from 'lucide-react';
+import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
 
 const CountUp = ({ end }) => {
@@ -111,6 +113,9 @@ export default function ProfilePage() {
   const [newNickname, setNewNickname] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(5);
+  const [isListEditing, setIsListEditing] = useState(false);
+  const [selectedVerdict, setSelectedVerdict] = useState(null);
+  const [verdictLoading, setVerdictLoading] = useState(false);
 
   const tierDragControls = useDragControls();
   const analysisDragControls = useDragControls();
@@ -178,6 +183,31 @@ export default function ProfilePage() {
       alert('변경 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerdictClick = async (debateId) => {
+    setVerdictLoading(true);
+    try {
+      const data = await getVerdict(debateId);
+      setSelectedVerdict(data);
+    } catch (err) {
+      console.error('판결 데이터 로드 실패:', err);
+      alert('판결 데이터를 불러올 수 없습니다.');
+    } finally {
+      setVerdictLoading(false);
+    }
+  };
+
+  const handleDeleteDebate = async (debateId, e) => {
+    e.stopPropagation();
+    if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
+    try {
+      await api.delete(`/profiles/me/verdicts/${debateId}`);
+      setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
+    } catch (err) {
+      console.error('삭제 실패:', err);
+      alert('삭제 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -336,9 +366,17 @@ export default function ProfilePage() {
         </div>
 
         <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4 ml-2">
-            <History size={20} className="text-[#8E8E93]" />
-            <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
+          <div className="flex items-center justify-between mb-4 ml-2 mr-2">
+            <div className="flex items-center gap-2">
+              <History size={20} className="text-[#8E8E93]" />
+              <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
+            </div>
+            <button
+              onClick={() => setIsListEditing(!isListEditing)}
+              className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
+            >
+              {isListEditing ? '완료' : '편집'}
+            </button>
           </div>
           {loading ? (
             <div className="flex justify-center py-10">
@@ -356,7 +394,10 @@ export default function ProfilePage() {
                   const result = getDebateResult(debate);
                   const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
                   return (
-                    <motion.div key={debate.id} whileTap={{ backgroundColor: "#F9F9F9" }} className="p-6 flex items-center justify-between cursor-pointer">
+                    <motion.div key={debate.id} layout whileTap={{ backgroundColor: "#F9F9F9" }}
+                      onClick={() => !isListEditing && handleVerdictClick(debate.id)}
+                      className="p-6 flex items-center justify-between cursor-pointer"
+                    >
                       <div className="flex-1 pr-4">
                         <div className="flex items-center gap-3 mb-2">
                           {result && (
@@ -372,9 +413,32 @@ export default function ProfilePage() {
                         </div>
                         <h4 className="text-[18px] font-bold text-black line-clamp-1 leading-snug">{debate.topic}</h4>
                       </div>
-                      <div className="flex items-center gap-2 text-[#C7C7CC]">
-                        <span className="text-[16px] font-semibold text-gray-300">{category}</span>
-                        <ChevronRight size={20} strokeWidth={3} />
+                      <div className="flex items-center flex-shrink-0 ml-2">
+                        <AnimatePresence mode="wait">
+                          {isListEditing ? (
+                            <motion.button
+                              key="delete-action"
+                              initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                              animate={{ opacity: 1, scale: 1, x: 0 }}
+                              exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                              onClick={(e) => handleDeleteDebate(debate.id, e)}
+                              className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-[#FF3B30] active:scale-90 transition-all"
+                            >
+                              <Trash2 size={18} strokeWidth={2.5} />
+                            </motion.button>
+                          ) : (
+                            <motion.div
+                              key="default-view"
+                              initial={{ opacity: 0, x: -5 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -5 }}
+                              className="flex items-center gap-2 text-[#C7C7CC]"
+                            >
+                              <span className="text-[16px] font-semibold text-gray-300">{category}</span>
+                              <ChevronRight size={20} strokeWidth={3} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   );
@@ -453,7 +517,7 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-      {/* 논리 분석 바텀시트 */}
+      {/* 논리 분석 바텀시트 - 스크롤 현상 수정 완료 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
@@ -461,8 +525,8 @@ export default function ProfilePage() {
               onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
             <motion.div
               drag="y"
-              dragControls={analysisDragControls}
-              dragListener={false}
+              dragControls={analysisDragControls} // 드래그 컨트롤러 연결
+              dragListener={false} // 본문 드래그 비활성화 (스크롤 보호)
               dragConstraints={{ top: 0 }}
               dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
@@ -470,6 +534,7 @@ export default function ProfilePage() {
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
               className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
+              {/* 상단 핸들: 여기서만 드래그 가능 */}
               <div 
                 onPointerDown={(e) => analysisDragControls.start(e)}
                 className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
@@ -477,6 +542,7 @@ export default function ProfilePage() {
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto" />
               </div>
 
+              {/* 스크롤 가능한 내부 영역 */}
               <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex justify-between items-end mb-8">
                   <h3 className="text-[26px] font-black text-black">논리 분석</h3>
@@ -510,6 +576,51 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* 판결 상세 모달 */}
+      <AnimatePresence>
+        {selectedVerdict && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelectedVerdict(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 z-[201] flex justify-center"
+            >
+              <div className="w-full max-w-md max-h-[90vh] bg-[#FAFAF5] rounded-t-[30px] overflow-hidden flex flex-col shadow-2xl">
+                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative shrink-0">
+                  <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mb-4" />
+                  <button onClick={() => setSelectedVerdict(null)} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
+                  <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
+                  <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
+                    "{selectedVerdict.debate?.topic || selectedVerdict.debates?.topic || '논쟁 주제'}"
+                  </h2>
+                </div>
+                <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-4">
+                  <VerdictContent verdictData={selectedVerdict} />
+                  <button
+                    onClick={() => setSelectedVerdict(null)}
+                    className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+                  >
+                    판결 리포트 닫기
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 판결 로딩 오버레이 */}
+      {verdictLoading && (
+        <div className="fixed inset-0 bg-black/30 z-[199] flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>

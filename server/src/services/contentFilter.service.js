@@ -1,4 +1,4 @@
-import { gemini } from '../config/ai.js';
+import { openai } from '../config/ai.js';
 import { buildContentFilterPrompt, buildGatekeeperPrompt } from './ai/prompts.js';
 
 // ===== Stage 1: 비속어 사전 필터 =====
@@ -44,36 +44,34 @@ export function filterByDictionary(content) {
   return { blocked: false };
 }
 
-// ===== Stage 2: AI 콘텐츠 필터 (Gemini Flash) =====
+// ===== Stage 2: AI 콘텐츠 필터 (GPT-4o) =====
 export async function filterByAI(content) {
   try {
     const prompt = buildContentFilterPrompt(content);
-    const result = await gemini.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.1,
-      },
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
     });
-    return JSON.parse(result.response.text());
+    return JSON.parse(response.choices[0].message.content);
   } catch {
     // AI 필터 실패 시 통과 처리 (가용성 우선)
     return { action: 'pass', reason: 'AI filter unavailable' };
   }
 }
 
-// ===== Stage 3: AI 게이트키퍼 (주제 적합성) =====
+// ===== Stage 3: AI 게이트키퍼 (주제 적합성, GPT-4o) =====
 export async function filterByGatekeeper(content, topic) {
   try {
     const prompt = buildGatekeeperPrompt(content, topic);
-    const result = await gemini.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.1,
-      },
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
     });
-    return JSON.parse(result.response.text());
+    return JSON.parse(response.choices[0].message.content);
   } catch {
     return { action: 'pass', reason: 'Gatekeeper unavailable' };
   }

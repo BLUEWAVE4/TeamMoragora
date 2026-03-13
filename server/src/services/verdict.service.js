@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { grantDebateXP, settleVoteXP } from './xp.service.js';
+import { VERDICT_AI_WEIGHT, VERDICT_CITIZEN_WEIGHT, CITIZEN_VOTE_THRESHOLD } from '../config/constants.js';
 
 // 복합 판결 계산: AI 판결 즉시 저장 (시민 투표는 마감 후 합산)
 export async function calculateCompositeVerdict(debateId, judgments) {
@@ -81,8 +82,8 @@ export async function finalizeVerdict(debateId) {
   let citizenScoreA = null;
   let citizenScoreB = null;
 
-  // 시민 투표 30명 이상이면 합산
-  if (votes && votes.length >= 30) {
+  // 시민 투표 임계값 이상이면 합산
+  if (votes && votes.length >= CITIZEN_VOTE_THRESHOLD) {
     const countA = votes.filter((v) => v.voted_side === 'A').length;
     const countB = votes.filter((v) => v.voted_side === 'B').length;
     const total = votes.length;
@@ -94,11 +95,11 @@ export async function finalizeVerdict(debateId) {
     if (aiJudgments && aiJudgments.length > 0) {
       const aiAvgA = aiJudgments.reduce((sum, j) => sum + j.score_a, 0) / aiJudgments.length;
       const aiAvgB = aiJudgments.reduce((sum, j) => sum + j.score_b, 0) / aiJudgments.length;
-      finalA = Math.round(aiAvgA * 0.75 + citizenScoreA * 0.25);
-      finalB = Math.round(aiAvgB * 0.75 + citizenScoreB * 0.25);
+      finalA = Math.round(aiAvgA * VERDICT_AI_WEIGHT + citizenScoreA * VERDICT_CITIZEN_WEIGHT);
+      finalB = Math.round(aiAvgB * VERDICT_AI_WEIGHT + citizenScoreB * VERDICT_CITIZEN_WEIGHT);
     } else {
-      finalA = Math.round(verdict.ai_score_a * 0.75 + citizenScoreA * 0.25);
-      finalB = Math.round(verdict.ai_score_b * 0.75 + citizenScoreB * 0.25);
+      finalA = Math.round(verdict.ai_score_a * VERDICT_AI_WEIGHT + citizenScoreA * VERDICT_CITIZEN_WEIGHT);
+      finalB = Math.round(verdict.ai_score_b * VERDICT_AI_WEIGHT + citizenScoreB * VERDICT_CITIZEN_WEIGHT);
     }
     citizenApplied = true;
   }

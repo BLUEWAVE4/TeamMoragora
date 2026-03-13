@@ -1,6 +1,16 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function TermsPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="max-w-2xl mx-auto p-6 pb-24 text-sm text-gray-700 leading-relaxed">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1 text-[#2D3350] font-bold text-sm mb-4 hover:opacity-70 transition-opacity"
+      >
+        ← 뒤로가기
+      </button>
       <h1 className="text-xl font-black text-[#2D3350] mb-6">서비스 이용약관</h1>
       <p className="text-xs text-gray-400 mb-6">시행일: 2026년 3월 11일</p>
 

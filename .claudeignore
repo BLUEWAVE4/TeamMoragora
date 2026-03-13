@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.lock
+*.min.js
+__pycache__/
+.next/
+.git/
+*.pdf
+package-lock.json

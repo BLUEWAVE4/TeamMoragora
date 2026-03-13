@@ -1,5 +1,6 @@
 import { filterByDictionary, filterByAI, filterByGatekeeper } from '../services/contentFilter.service.js';
 import { supabaseAdmin } from '../config/supabase.js';
+import { CATEGORY_STAGE1_ONLY, CATEGORY_STAGE1_2 } from '../config/constants.js';
 
 // 3단계 콘텐츠 방어 미들웨어
 // category에 따라 적용 단계가 다름:
@@ -41,9 +42,9 @@ export async function contentFilterMiddleware(req, res, next) {
   }
 
   // 일상/연애 카테고리는 Stage 1만 적용
-  if (['daily', 'romance'].includes(category)) return next();
+  if (CATEGORY_STAGE1_ONLY.includes(category)) return next();
 
-  // Stage 2: AI 콘텐츠 필터 (Gemini Flash)
+  // Stage 2: AI 콘텐츠 필터 (GPT-4o)
   const aiResult = await filterByAI(content);
   if (aiResult.action === 'block') {
     return res.status(400).json({
@@ -54,7 +55,7 @@ export async function contentFilterMiddleware(req, res, next) {
   }
 
   // 직장/교육 카테고리는 Stage 2까지
-  if (['work', 'education'].includes(category)) return next();
+  if (CATEGORY_STAGE1_2.includes(category)) return next();
 
   // Stage 3: AI 게이트키퍼 (주제 적합성)
   const gateResult = await filterByGatekeeper(content, topic);
