@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Card from "../common/Card";
 import Button from "../common/Button";
+import { HelpCircle } from "lucide-react";
 
 export default function Step2PurposeLens({
 
@@ -15,6 +16,9 @@ export default function Step2PurposeLens({
 
   const [errorPurpose, setErrorPurpose] = useState("");
   const [errorLens, setErrorLens] = useState("");
+
+  const [showPurposeHelp, setShowPurposeHelp] = useState(false);
+  const [showLensHelp, setShowLensHelp] = useState(false);
 
   const purposeDesc = {
     승부: "서로의 논리를 겨루어 승자를 가리는 토론 방식입니다.",
@@ -58,9 +62,20 @@ export default function Step2PurposeLens({
 
         <div className="flex justify-between">
 
-          <h3 className="font-bold text-lg">
-            목적 선택
-          </h3>
+          <div className="flex items-center gap-2">
+
+            <h3 className="font-bold text-lg">
+              목적 선택
+            </h3>
+
+            <button
+              onClick={() => setShowPurposeHelp(true)}
+              className="text-primary/40 hover:text-primary transition-colors"
+            >
+              <HelpCircle size={18}/>
+            </button>
+
+          </div>
 
           {errorPurpose && (
             <span className="text-xs text-red-500">
@@ -88,7 +103,6 @@ export default function Step2PurposeLens({
 
                 <div className="relative h-16 w-full">
 
-                  {/* TITLE */}
                   <span
                     className={`
                       absolute font-semibold
@@ -102,7 +116,6 @@ export default function Step2PurposeLens({
                     {key}
                   </span>
 
-                  {/* DESCRIPTION */}
                   <p
                     className={`
                       absolute left-2 right-2
@@ -134,9 +147,20 @@ export default function Step2PurposeLens({
 
         <div className="flex justify-between">
 
-          <h3 className="font-bold text-lg">
-            렌즈 선택
-          </h3>
+          <div className="flex items-center gap-2">
+
+            <h3 className="font-bold text-lg">
+              렌즈 선택
+            </h3>
+
+            <button
+              onClick={() => setShowLensHelp(true)}
+              className="text-primary/40 hover:text-primary transition-colors"
+            >
+              <HelpCircle size={18}/>
+            </button>
+
+          </div>
 
           {errorLens && (
             <span className="text-xs text-red-500">
@@ -164,7 +188,6 @@ export default function Step2PurposeLens({
 
                 <div className="relative h-16 w-full">
 
-                  {/* TITLE */}
                   <span
                     className={`
                       absolute font-semibold
@@ -178,7 +201,6 @@ export default function Step2PurposeLens({
                     {key}
                   </span>
 
-                  {/* DESCRIPTION */}
                   <p
                     className={`
                       absolute left-2 right-2
@@ -224,6 +246,73 @@ export default function Step2PurposeLens({
         </Button>
 
       </div>
+
+
+      {/* PURPOSE HELP MODAL */}
+      {showPurposeHelp && (
+
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-surface-alt rounded-2xl p-8 max-w-md shadow-xl">
+
+            <h3 className="text-lg font-bold font-serif mb-4">
+              목적 선택이란?
+            </h3>
+
+            <p className="text-sm text-primary/80 leading-relaxed">
+              토론의 진행 방향을 결정하는 단계입니다.
+              <br/><br/>
+              • <b>승부</b> : 논리 대결을 통해 승자를 가립니다. 
+              <br/> 
+              • <b>합의</b> : 서로 의견을 조율해 공통 결론을 찾습니다.  
+              <br/>
+              • <b>분석</b> : 논쟁 구조와 논리를 분석하며 이해합니다.
+            </p>
+
+            <button
+              onClick={()=>setShowPurposeHelp(false)}
+              className="mt-6 w-full py-2 rounded-xl bg-gold text-white font-serif hover:opacity-90"
+            >
+              확인
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+      {/* LENS HELP MODAL */}
+      {showLensHelp && (
+
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-surface-alt rounded-2xl p-8 max-w-md shadow-xl">
+
+            <h3 className="text-lg font-bold font-serif mb-4">
+              렌즈 선택이란?
+            </h3>
+
+            <p className="text-sm text-primary/80 leading-relaxed">
+              토론을 바라보는 **관점(프레임)**을 의미합니다.
+              <br/><br/>
+              같은 주제라도 선택한 렌즈에 따라
+              판단 기준과 논거가 달라질 수 있습니다.
+            </p>
+
+            <button
+              onClick={()=>setShowLensHelp(false)}
+              className="mt-6 w-full py-2 rounded-xl bg-gold text-white font-serif hover:opacity-90"
+            >
+              확인
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
 
