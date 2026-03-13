@@ -58,6 +58,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [showArgs, setShowArgs] = useState(false);
   const [verdictView, setVerdictView] = useState('detail'); // 'summary' | 'detail'
   const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
+  const [expandedArg, setExpandedArg] = useState({ A: false, B: false });
   const verdictTabRef = useRef(null);
 
   // 외부에서 탭 전환 + 스크롤 이동 가능하도록 expose
@@ -531,7 +532,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                             >
                               {DETAIL_LABELS[sec.criterion] || sec.criterion}
                             </span>
-                            <span className="text-primary/70">{sec.text}</span>
+                            <span
+                              className={`text-primary/70 ${isHighlighted ? 'underline decoration-2 underline-offset-[3px]' : ''}`}
+                              style={isHighlighted ? { textDecorationColor: colors.border } : {}}
+                            >{sec.text}</span>
                           </div>
                         );
                       })}
@@ -561,7 +565,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                         >
                           {DETAIL_LABELS[sec.criterion] || sec.criterion}
                         </span>
-                        <span className="text-primary/70">{sec.text}</span>
+                        <span
+                          className={`text-primary/70 ${isHighlighted ? 'underline decoration-2 underline-offset-[3px]' : ''}`}
+                          style={isHighlighted ? { textDecorationColor: colors.border } : {}}
+                        >{sec.text}</span>
                       </div>
                     );
                   })}
@@ -626,15 +633,21 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className={`overflow-hidden transition-all duration-300 ${showArgs ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="px-4 pb-4 space-y-3">
               {argA && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                <div
+                  className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50 cursor-pointer active:scale-[0.99] transition-transform"
+                  onClick={() => setExpandedArg(prev => ({ ...prev, A: !prev.A }))}
+                >
                   <p className="text-[11px] font-sans font-bold text-emerald-600 mb-1">{proSide} (찬성{nicknameA ? ` : ${nicknameA}` : ''})</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argA}</p>
+                  <p className={`text-[12px] leading-[1.7] text-primary/70 ${expandedArg.A ? '' : 'line-clamp-4'}`}>{argA}</p>
                 </div>
               )}
               {argB && (
-                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                <div
+                  className="p-3 rounded-xl bg-red-50/80 border border-red-200/50 cursor-pointer active:scale-[0.99] transition-transform"
+                  onClick={() => setExpandedArg(prev => ({ ...prev, B: !prev.B }))}
+                >
                   <p className="text-[11px] font-sans font-bold text-red-500 mb-1">{conSide} (반대{nicknameB ? ` : ${nicknameB}` : ''})</p>
-                  <p className="text-[12px] leading-[1.7] text-primary/70 line-clamp-4">{argB}</p>
+                  <p className={`text-[12px] leading-[1.7] text-primary/70 ${expandedArg.B ? '' : 'line-clamp-4'}`}>{argB}</p>
                 </div>
               )}
             </div>
