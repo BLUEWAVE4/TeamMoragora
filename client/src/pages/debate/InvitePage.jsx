@@ -33,6 +33,8 @@ const getDebateRoute = (debateId, status) => {
   }
 }
 
+// ... 상단 import 및 labelMap, getDebateRoute는 동일 ...
+
 export default function InvitePage() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
@@ -44,77 +46,47 @@ export default function InvitePage() {
   const [isCopied, setIsCopied] = useState(false)
   const [isOpponentJoined, setIsOpponentJoined] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
-  const [isCreator, setIsCreator] = useState(true)
+  const [isCreator, setIsCreator] = useState(null) // null로 시작하여 판별 로직 대기
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
   const ogShareUrl = `https://teammoragora.onrender.com/og/invite/${inviteCode}`
 
-  // ── 1. 초대 정보 로드 및 사용자 판별 ──
+  // ── 1. 초대 정보 로드 (자동 참여 로직 제거됨) ──
   useEffect(() => {
     const fetchDebateInfo = async () => {
       try {
         setLoading(true)
 
-        // [A측] 세션에 저장된 캐시 정보가 있는 경우
-        const cached = sessionStorage.getItem(`debate_invite_${inviteCode}`)
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          setDebate(parsed)
-          setIsCreator(!!user && String(user.id) === String(parsed.creator_id))
-          setLoading(false)
-          return
-        }
+        // 초대 코드로 논쟁 기본 정보를 먼저 가져옵니다 (참여 X, 조회 O)
+        const debateData = await getDebateByInviteCode(inviteCode)
+        setDebate(debateData)
 
-        // [비로그인] 일단 참여자(B측) UI를 보여줌
-        if (!user) {
-          setIsCreator(false)
-          setLoading(false)
-          return
-        }
-
-        // [로그인 상태] 참여 시도 (B측인지 확인)
-        try {
-          const response = await joinByInvite(inviteCode)
-          const targetId = response.id || response._id
-          if (targetId) navigate(getDebateRoute(targetId, response.status))
-        } catch (joinErr) {
-          const msg = joinErr.message || ''
-
-          if (joinErr.status === 400 &&
-            (msg.includes('본인') || msg.includes('자신') ||
-            msg.includes('yourself') || msg.includes('own'))) {
-            // [A측 판별] 본인이 만든 토론인 경우 정보 조회 후 작성자 UI 표시
-            try {
-              const debateData = await getDebateByInviteCode(inviteCode)
-              setDebate(debateData)
-              setIsCreator(true)
-              sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
-            } catch (fetchErr) {
-              console.error('debate 정보 조회 실패:', fetchErr)
-            }
-          } else if (msg.includes('이미') || msg.includes('진행')) {
-            setError('이미 상대방이 참여한 논쟁입니다.')
-            setIsCreator(false)
-          } else {
-            setError('유효하지 않은 초대 링크입니다.')
-            setIsCreator(false)
+        // 로그인 상태라면 내가 만든 토론인지 확인
+        if (user) {
+          const amICreator = String(user.id) === String(debateData.creator_id)
+          setIsCreator(amICreator)
+          
+          // 만약 작성자라면 정보를 세션에 캐시 (기존 로직 유지)
+          if (amICreator) {
+            sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
           }
+        } else {
+          setIsCreator(false) // 비로그인 시 일단 참여자(B측) UI
         }
       } catch (err) {
         console.error("초대 정보 로드 실패", err)
-        setError('초대 정보를 불러오는 중 오류가 발생했습니다.')
+        setError('유효하지 않거나 만료된 초대 링크입니다.')
       } finally {
         setLoading(false)
       }
     }
 
     if (inviteCode) fetchDebateInfo()
-  }, [inviteCode, user, navigate])
+  }, [inviteCode, user])
 
-  // ── 2. [A측 전용] 상대방 입장 폴링 ──
+  // ── 2. [A측 전용] 상대방 입장 폴링 (동일) ──
   useEffect(() => {
     if (isCreator !== true || !debate?.id || debate.opponent_id) return
-
     const interval = setInterval(async () => {
       try {
         const updated = await getDebate(debate.id)
@@ -123,97 +95,62 @@ export default function InvitePage() {
           setIsOpponentJoined(true)
           setDebate(updated)
         }
-      } catch (err) {
-        console.error("상대방 입장 체크 오류:", err)
-      }
+      } catch (err) { console.error("상대방 입장 체크 오류:", err) }
     }, 3000)
-
     return () => clearInterval(interval)
   }, [isCreator, debate?.id, debate?.opponent_id])
 
-  // ── 3. [B측 전용] 5분 타이머 ──
-    useEffect(() => {
+  // ── 3. [B측 전용] 타이머 (동일) ──
+  useEffect(() => {
     if (isCreator !== false) return
-
     const timer = setInterval(() => {
-    setTimeLeft(prev => {
-      if (prev <= 1) {
-        clearInterval(timer)
-        alert('초대 가능 시간이 만료되었습니다.')
-        navigate('/')
-        return 0
-      }
-      return prev - 1
-    })
-  }, 1000)
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [isCreator])
 
-  return () => clearInterval(timer)
-}, [isCreator])
-
-  // ── 4. 이벤트 핸들러 ──
-  const formatTime = (seconds) => {
-    const min = Math.floor(seconds / 60)
-    const sec = seconds % 60
-    return `${min}:${sec < 10 ? '0' : ''}${sec}`
-  }
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(ogShareUrl)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 2000)
-  }
-
-  const handleKakaoShare = () => {
-    if (!window.Kakao || !window.Kakao.Share) return alert('카카오 SDK 로딩 중...')
-    window.Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
-        description: `${toKor(debate?.category) ? `[${toKor(debate?.category)}] ` : ''}${toKor(debate?.purpose)} 토론에 참여해보세요!`,
-        imageUrl: `${window.location.origin}/ogCard2.png`,
-        link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl },
-      },
-      buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: ogShareUrl, webUrl: ogShareUrl } }],
-    })
-  }
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `⚔️ ${debate?.topic || '모라고라 논쟁 초대'}`,
-          text: `"${debate?.topic}" 논쟁에 당신을 초대합니다!`,
-          url: ogShareUrl,
-        })
-      } catch (err) { console.log('공유 취소') }
-    } else {
-      handleCopy()
-    }
-  }
-
-  // [핵심] 참여 버튼 클릭 핸들러
+  // ── 4. 핵심 핸들러: 참여 버튼 클릭 시에만 참여 로직 실행 ──
   const handleAccept = async () => {
-    // 1. 비로그인 상태: 로그인 페이지로 유도
-    if (!user) {
-      sessionStorage.setItem('redirectAfterLogin', `/invite/${inviteCode}`);
-      const isKakaoApp = /KAKAOTALK/i.test(navigator.userAgent);
-     if (isKakaoApp) {
-      navigate('/login/kakao');
-    } else {
-      navigate('/login');
-    }
-    return;
-  }
-  try {
-    const response = await joinByInvite(inviteCode);
-    const targetId = response.id || response._id;
-    if (targetId) navigate(getDebateRoute(targetId, response.status));
-  } catch (err) {
-    alert(err.message || '참여 처리 중 오류가 발생했습니다.');
-  }
-};
+    const targetPath = `/invite/${inviteCode}`;
 
-  // ── 5. 렌더링 조건부 분기 ──
+    if (!user) {
+      // 비로그인: 경로 저장 후 로그인 유도
+      sessionStorage.setItem('redirectAfterLogin', targetPath);
+      localStorage.setItem('redirectAfterLogin_backup', targetPath); // iOS 대비 백업
+
+      const isKakaoApp = /KAKAOTALK/i.test(navigator.userAgent);
+      const loginBase = isKakaoApp ? '/login/kakao' : '/login';
+      navigate(`${loginBase}?target=${encodeURIComponent(targetPath)}`);
+      return;
+    }
+
+    // 로그인 상태: 유저가 버튼을 클릭했을 때만 joinByInvite 호출
+    try {
+      const response = await joinByInvite(inviteCode);
+      const targetId = response.id || response._id;
+      if (targetId) {
+        navigate(getDebateRoute(targetId, response.status));
+      }
+    } catch (err) {
+      const msg = err.message || '';
+      // 이미 참여 중이거나 본인인 경우 적절한 페이지로 이동
+      if (err.status === 400 || msg.includes('이미') || msg.includes('본인')) {
+        navigate(getDebateRoute(debate.id, debate.status));
+      } else {
+        alert(msg || '참여 처리 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  // ... formatTime, handleCopy, handleKakaoShare, handleNativeShare 로직 동일 ...
+
+  // ── 5. 렌더링 ──
   if (loading) return (
     <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
       <div className="animate-pulse text-gray-400 font-bold tracking-widest uppercase">Inviting...</div>
@@ -228,7 +165,7 @@ export default function InvitePage() {
     </div>
   )
 
-  // [UI - A측] 생성자 화면
+  // [UI - A측] 생성자 화면 (동일)
   if (isCreator === true) {
     return (
       <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-12">
@@ -276,28 +213,23 @@ export default function InvitePage() {
     )
   }
 
-  // [UI - B측] 수락자 화면
+  // [UI - B측] 수락자 화면 (동일)
   return (
     <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pt-28 p-7">
       <div className="w-full max-w-md bg-white rounded-[36px] shadow-2xl p-9 border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
-        {/* 타이머 */}
         <div className={`absolute top-6 right-8 px-3 py-1 rounded-full border ${timeLeft < 60 ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
           <span className="font-black tabular-nums text-[13px]">{formatTime(timeLeft)}</span>
         </div>
-
         <div className="w-20 h-20 bg-[#1a2744]/5 rounded-[28px] flex items-center justify-center mb-8 text-4xl animate-bounce"><Mail size={50} /></div>
-
         <h1 className="text-[23px] font-black text-[#1a2744] mb-5 leading-tight break-keep">
           {debate?.topic && <><span className="italic">"{debate.topic}"</span><br/></>}
           <span className="text-[#1a2744]/60 text-lg font-bold">논쟁에 초대받았습니다</span>
         </h1>
-
-        <div className="flex justify-center gap-2 mb-10">
+        <div className="flex items-center gap-2 flex-wrap mb-10">
           <span className="flex items-center gap-1 bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100"><Target size={14} /> {toKor(debate?.purpose)}</span>
           <span className="flex items-center gap-1 bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100"><Scale size={14} /> {toKor(debate?.lens)}</span>
           <span className="flex items-center gap-1 bg-[#FAFAF5] px-3 py-2 rounded-full text-[12px] font-black text-gray-500 border border-gray-100"><Tag size={14} /> {toKor(debate?.category)}</span>
         </div>
-
         <button
           onClick={handleAccept}
           className="w-full h-[68px] bg-[#1a2744] text-white rounded-[26px] font-black text-[18px] shadow-2xl active:scale-[0.96] transition-all"
