@@ -92,13 +92,24 @@ export default function NicknamePage() {
       if (error) throw error;
       trackEvent('signup_complete', { gender, age: parseInt(age) });
 
-      navigate('/moragora', { replace: true });
-    } catch (error) {
-      alert('프로필 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // ✅ target 우선순위: URL쿼리 > localStorage백업 > 기본경로
+    const params = new URLSearchParams(window.location.search);
+    const target = 
+      params.get('target') ||
+      localStorage.getItem('redirectAfterLogin_backup') ||
+      '/moragora';
+
+    // ✅ 사용 후 정리
+    localStorage.removeItem('redirectAfterLogin_backup');
+    sessionStorage.removeItem('redirectAfterLogin');
+
+    navigate(target, { replace: true });
+  } catch (error) {
+    alert('프로필 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center pt-10 px-8 pb-12">

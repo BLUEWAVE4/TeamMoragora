@@ -34,9 +34,8 @@ export default function ArgumentPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (isInvalid) return
-
     try {
-      const side = debate.creator_id === user?.id ? 'A' : 'B'
+      const side = debate.creator_id === user?.id ? '찬성' : '반대'
       await submitArgument(debateId, { content, side })
       navigate(`/debate/${debateId}/judging`)
     } catch (err) {
@@ -60,18 +59,9 @@ export default function ArgumentPage() {
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
         
         <div className="flex flex-wrap gap-2 mb-4">
-          {/* 목적(Purpose) 출력 */}
-          <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
-            <TargetIcon size={14} /> {debate?.purpose || ''}
-          </span>
-          {/* 렌즈(Lens) 출력 */}
-          <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
-            <ScaleIcon size={14} /> {debate?.lens || ''}
-          </span>
-          {/* 카테고리(category) 출력 */}
-          <span className="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight backdrop-blur-md">
-            <TagIcon size={14} /> {debate?.category || ''}
-          </span>
+          <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Target size={14} /> {toKor(debate?.purpose)}</span>
+          <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Scale size={14} /> {toKor(debate?.lens)}</span>
+          <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Tag size={14} /> {toKor(debate?.category)}</span>
         </div>
 
         {/* 주제(Topic) 출력: CreateDebatePage의 topic 필드와 매칭 */}
