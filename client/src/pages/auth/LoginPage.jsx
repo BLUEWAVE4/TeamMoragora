@@ -8,36 +8,7 @@ export default function LoginPage({ isKakaoOnly = false }) {
   const { user, signInWithKakao, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  // 1. 카카오톡 인앱 브라우저 안드로이드 대응
-  useEffect(() => {
-    const userAgent = navigator.userAgent.toLowerCase();
-    if (userAgent.includes('kakao') && userAgent.includes('android')) {
-      window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=http;package=com.android.chrome;end`;
-    }
-  }, []);
-
-  // 2. 로그인 상태 리다이렉트 로직
-  useEffect(() => {
-    if (user) {
-      const hasNickname = user.user_metadata?.nickname || user.user_metadata?.full_name;
-      if (!hasNickname) {
-        navigate('/auth/nickname', { replace: true });
-        return;
-      }
-
-      const redirect = sessionStorage.getItem('redirectAfterLogin');
-
-      if (redirect) {
-        sessionStorage.removeItem('redirectAfterLogin');
-        navigate(redirect, { replace: true });
-      } else {
-        navigate('/moragora', { replace: true });
-      }
-    }
-  }, [user, navigate]);
-
-  if (user) return null;
-
+  // 환경 판별 변수들
   const ua = navigator.userAgent.toLowerCase();
   const isKakaoTalk = ua.includes('kakao');
   const isAndroid = ua.includes('android');
@@ -160,8 +131,8 @@ export default function LoginPage({ isKakaoOnly = false }) {
               <span className="text-[15px]">카카오로 시작하기</span>
             </button>
 
-            {/* 구글 버튼: 카톡/인앱이 아닐 때만 노출 */}
-            {!isKakaoOnly && !isKakaoTalk && (
+            {/* 구글 버튼 */}
+            {!isKakaoOnly && (
               <button
                 onClick={handleGoogleLogin}
                 className="flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-4 cursor-pointer font-bold text-gray-700 hover:bg-gray-50 active:scale-[0.97] transition-all w-full shadow-sm"

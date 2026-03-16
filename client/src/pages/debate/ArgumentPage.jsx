@@ -32,6 +32,7 @@ export default function ArgumentPage() {
         const data = await getDebate(debateId)
         setDebate(data)
       } catch (err) {
+        console.error("데이터 로드 에러:", err)
         alert(err.message || '논쟁 정보를 불러올 수 없습니다.')
       } finally {
         setLoading(false)
@@ -42,11 +43,11 @@ export default function ArgumentPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (isInvalid || isSubmitting) return
+    if (!debate || isInvalid || isSubmitting) return
 
     setIsSubmitting(true)
     try {
-      const side = debate.creator_id === user?.id ? 'A' : 'B'
+      const side = debate?.creator_id === user?.id ? 'A' : 'B'
       await submitArgument(debateId, { content, side })
       navigate(`/debate/${debateId}/judging`)
     } catch (err) {
@@ -55,7 +56,8 @@ export default function ArgumentPage() {
     }
   }
 
-  if (loading) return (
+  // 로딩 중이거나 데이터가 아직 없을 때의 처리
+  if (loading || !debate) return (
     <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
       <div className="animate-pulse text-gray-400 font-medium">논쟁 데이터 분석 중...</div>
     </div>
@@ -86,11 +88,11 @@ export default function ArgumentPage() {
           <div className="mt-5 space-y-2">
             <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
               <span className="text-[11px] font-black text-emerald-400 shrink-0">A측</span>
-              <span className="text-[12px] text-emerald-300/80 font-medium">{debate.pro_side || '미정'}</span>
+              <span className="text-[12px] text-emerald-300/80 font-medium">{debate?.pro_side || '미정'}</span>
             </div>
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
               <span className="text-[11px] font-black text-red-400 shrink-0">B측</span>
-              <span className="text-[12px] text-red-300/80 font-medium">{debate.con_side || '미정'}</span>
+              <span className="text-[12px] text-red-300/80 font-medium">{debate?.con_side || '미정'}</span>
             </div>
           </div>
         )}
