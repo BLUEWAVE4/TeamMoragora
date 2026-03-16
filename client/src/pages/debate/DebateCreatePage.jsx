@@ -42,15 +42,18 @@ export default function DebateCreatePage() {
 
   const nextStep = () => {
 
-    const saved = aiResults[topic];
+    // ⭐ 현재 수정된 내용 저장 (핵심 수정)
+    if (topic) {
 
-    if (saved) {
-      setProSide(saved.pro);
-      setConSide(saved.con);
+      setAiResults(prev => ({
+        ...prev,
+        [topic]: {
+          pro: proSide,
+          con: conSide,
+          category: category
+        }
+      }));
 
-      if (saved.category) {
-        setCategory(saved.category);
-      }
     }
 
     setStep((prev) => prev + 1);

@@ -31,7 +31,6 @@ export default function Step1Topic({
     "정치","기술","철학","문화","기타",
   ];
 
-  /* ⭐ Step2 → Step1 돌아올 때만 AI 화면 유지 */
   useEffect(() => {
 
     if (topic && aiResults[topic] && proSide && conSide) {
@@ -126,14 +125,13 @@ export default function Step1Topic({
 
       {/* TOPIC INPUT */}
       {showTopicInput && (
-
         <>
           <div className="flex flex-col gap-2">
 
             <div className="flex justify-between">
 
               <h3 className="font-bold text-lg">
-                논쟁 주제
+                AI 논쟁 주제 생성
               </h3>
 
               {error.topic && (
@@ -152,8 +150,6 @@ export default function Step1Topic({
 
                 setTopic(newTopic);
                 setError(prev => ({ ...prev, topic: "" }));
-
-                // 항상 입력 화면 유지
                 setShowTopicInput(true);
 
               }}
@@ -180,7 +176,6 @@ export default function Step1Topic({
             </button>
 
           </div>
-
         </>
       )}
 
@@ -188,7 +183,6 @@ export default function Step1Topic({
       {!showTopicInput && (
 
         <>
-
           <div className="flex flex-col gap-1">
 
             <span className="text-xs text-primary/50">
@@ -209,19 +203,118 @@ export default function Step1Topic({
 
             <div className="flex flex-col gap-5">
 
+              {/* 찬성 */}
               {proSide && (
                 <Card variant="base" title="찬성 측 주장">
-                  <p className="text-primary/90 leading-relaxed">
-                    {proSide}
-                  </p>
+
+                  {editingSide === "pro" ? (
+
+                    <>
+                      <textarea
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        className="w-full border rounded-lg p-3 text-sm"
+                        rows={4}
+                      />
+
+                      <div className="flex gap-2 mt-3 justify-end">
+
+                        <Button
+                          variant="outline"
+                          onClick={cancelEdit}
+                        >
+                          취소
+                        </Button>
+
+                        <Button
+                          onClick={confirmEdit}
+                        >
+                          저장
+                        </Button>
+
+                      </div>
+
+                    </>
+
+                  ) : (
+
+                    <>
+                      <p className="text-primary/90 leading-relaxed">
+                        {proSide}
+                      </p>
+
+                      <div className="flex justify-end mt-3">
+
+                        <Button
+                          variant="outline"
+                          onClick={() => startEdit("pro")}
+                        >
+                          수정
+                        </Button>
+
+                      </div>
+                    </>
+
+                  )}
+
                 </Card>
               )}
 
+              {/* 반대 */}
               {conSide && (
                 <Card variant="base" title="반대 측 주장">
-                  <p className="text-primary/90 leading-relaxed">
-                    {conSide}
-                  </p>
+
+                  {editingSide === "con" ? (
+
+                    <>
+                      <textarea
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        className="w-full border rounded-lg p-3 text-sm"
+                        rows={4}
+                      />
+
+                      <div className="flex gap-2 mt-3 justify-end">
+
+                        <Button
+                          variant="outline"
+                          onClick={cancelEdit}
+                        >
+                          취소
+                        </Button>
+
+                        <Button
+                          onClick={confirmEdit}
+                        >
+                          저장
+                        </Button>
+
+                      </div>
+
+                    </>
+
+                  ) : (
+
+                    <>
+                      <p className="text-primary/90 leading-relaxed">
+                        {conSide}
+                      </p>
+
+                      <div className="flex justify-end mt-3">
+
+                        <Button
+                          variant="outline"
+                          onClick={() => startEdit("con")}
+                        >
+                          수정
+                        </Button>
+
+                      </div>
+
+                    </>
+
+                  )}
+
                 </Card>
               )}
 
