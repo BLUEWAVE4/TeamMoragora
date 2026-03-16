@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
 import Card from "../common/Card";
@@ -17,13 +17,12 @@ export default function Step1Topic({
   nextStep,
   prevStep,
   aiLoading,
+  aiResults,
 }) {
 
   const [error, setError] = useState({ topic: "", category: "" });
-
   const [editingSide, setEditingSide] = useState(null);
   const [tempText, setTempText] = useState("");
-
   const [showTopicInput, setShowTopicInput] = useState(true);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
@@ -32,6 +31,15 @@ export default function Step1Topic({
     "정치","기술","철학","문화","기타",
   ];
 
+  /* ⭐ Step2 → Step1 돌아올 때만 AI 화면 유지 */
+  useEffect(() => {
+
+    if (topic && aiResults[topic] && proSide && conSide) {
+      setShowTopicInput(false);
+    }
+
+  }, [topic, aiResults, proSide, conSide]);
+
   const handleNext = () => {
 
     if (editingSide) {
@@ -39,19 +47,20 @@ export default function Step1Topic({
       return;
     }
 
-    let valid = true;
-
     if (!topic.trim()) {
       setError(prev => ({ ...prev, topic: "논쟁 주제를 입력해주세요." }));
-      valid = false;
+      return;
     }
 
     if (!category || category.trim() === "") {
       setError(prev => ({ ...prev, category: "카테고리를 선택해주세요." }));
-      valid = false;
+      return;
     }
 
-    if (!valid) return;
+    if (showTopicInput || !aiResults[topic]) {
+      alert("AI 논쟁을 먼저 생성해주세요.");
+      return;
+    }
 
     nextStep();
   };
@@ -65,7 +74,11 @@ export default function Step1Topic({
 
     const result = await handleGenerateSides();
 
-    // AI가 category 반환하면 자동 설정
+    if (!result) return;
+
+    setProSide(result.pro);
+    setConSide(result.con);
+
     if (result?.category) {
       setCategory(result.category);
     }
@@ -111,7 +124,7 @@ export default function Step1Topic({
 
     <div className="flex flex-col gap-6 mt-6">
 
-      {/* TOPIC INPUT 화면 */}
+      {/* TOPIC INPUT */}
       {showTopicInput && (
 
         <>
@@ -134,8 +147,15 @@ export default function Step1Topic({
             <Input
               value={topic}
               onChange={(e) => {
-                setTopic(e.target.value);
+
+                const newTopic = e.target.value;
+
+                setTopic(newTopic);
                 setError(prev => ({ ...prev, topic: "" }));
+
+                // 항상 입력 화면 유지
+                setShowTopicInput(true);
+
               }}
               placeholder="예: AI가 인간 일자리를 대체해야 하는가?"
             />
@@ -164,12 +184,11 @@ export default function Step1Topic({
         </>
       )}
 
-      {/* AI RESULT 화면 */}
+      {/* AI RESULT */}
       {!showTopicInput && (
 
         <>
 
-          {/* 사용자 입력 주제 표시 */}
           <div className="flex flex-col gap-1">
 
             <span className="text-xs text-primary/50">
@@ -182,7 +201,6 @@ export default function Step1Topic({
 
           </div>
 
-
           <div className="flex flex-col gap-4">
 
             <h3 className="font-serif font-bold text-primary text-lg tracking-tight">
@@ -193,115 +211,17 @@ export default function Step1Topic({
 
               {proSide && (
                 <Card variant="base" title="찬성 측 주장">
-
-                  {editingSide === "pro" ? (
-
-                    <div className="flex flex-col gap-3">
-
-                      <Input
-                        value={tempText}
-                        onChange={(e) => setTempText(e.target.value)}
-                        multiline
-                        rows={5}
-                      />
-
-                      <div className="flex gap-2">
-
-                        <Button
-                          className="w-full text-sm py-2"
-                          onClick={confirmEdit}
-                        >
-                          확인
-                        </Button>
-
-                        <Button
-                          variant="accent"
-                          className="w-full text-sm py-2"
-                          onClick={cancelEdit}
-                        >
-                          취소
-                        </Button>
-
-                      </div>
-
-                    </div>
-
-                  ) : (
-
-                    <div className="flex flex-col gap-3">
-
-                      <p className="text-primary/90 leading-relaxed">
-                        {proSide}
-                      </p>
-
-                      <button
-                        onClick={() => startEdit("pro")}
-                        className="self-end text-xs text-primary/40 underline"
-                      >
-                        수정하기
-                      </button>
-
-                    </div>
-
-                  )}
-
+                  <p className="text-primary/90 leading-relaxed">
+                    {proSide}
+                  </p>
                 </Card>
               )}
 
               {conSide && (
                 <Card variant="base" title="반대 측 주장">
-
-                  {editingSide === "con" ? (
-
-                    <div className="flex flex-col gap-3">
-
-                      <Input
-                        value={tempText}
-                        onChange={(e) => setTempText(e.target.value)}
-                        multiline
-                        rows={5}
-                      />
-
-                      <div className="flex gap-2">
-
-                        <Button
-                          className="w-full text-sm py-2"
-                          onClick={confirmEdit}
-                        >
-                          확인
-                        </Button>
-
-                        <Button
-                          variant="accent"
-                          className="w-full text-sm py-2"
-                          onClick={cancelEdit}
-                        >
-                          취소
-                        </Button>
-
-                      </div>
-
-                    </div>
-
-                  ) : (
-
-                    <div className="flex flex-col gap-3">
-
-                      <p className="text-primary/90 leading-relaxed">
-                        {conSide}
-                      </p>
-
-                      <button
-                        onClick={() => startEdit("con")}
-                        className="self-end text-xs text-primary/40 underline"
-                      >
-                        수정하기
-                      </button>
-
-                    </div>
-
-                  )}
-
+                  <p className="text-primary/90 leading-relaxed">
+                    {conSide}
+                  </p>
                 </Card>
               )}
 
@@ -309,35 +229,20 @@ export default function Step1Topic({
 
           </div>
 
-          {/* CATEGORY */}
           <div className="flex flex-col gap-2">
 
-            <div className="flex justify-between">
-
-              <h3 className="font-bold text-lg">
-                카테고리
-              </h3>
-
-              {error.category && (
-                <span className="text-xs text-red-500">
-                  {error.category}
-                </span>
-              )}
-
-            </div>
+            <h3 className="font-bold text-lg">
+              카테고리
+            </h3>
 
             <Input
               value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setError(prev => ({ ...prev, category: "" }));
-              }}
+              onChange={(e) => setCategory(e.target.value)}
               options={categories}
             />
 
           </div>
 
-          {/* 주제 다시 입력 버튼 */}
           <Button
             variant="outline"
             onClick={resetTopic}
@@ -348,7 +253,6 @@ export default function Step1Topic({
         </>
       )}
 
-      {/* NAV */}
       <div className="flex gap-3">
 
         <Button
@@ -368,11 +272,8 @@ export default function Step1Topic({
 
       </div>
 
-      {/* HELP MODAL */}
       {showHelpModal && (
-
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
           <div className="bg-surface-alt rounded-2xl p-8 max-w-md shadow-xl">
 
             <h3 className="text-lg font-bold font-serif mb-4">
@@ -383,8 +284,6 @@ export default function Step1Topic({
               AI가 입력한 논쟁 주제를 기반으로
               <b> 찬성 / 반대 주장</b>과 <b>카테고리</b>를
               자동으로 생성합니다.
-              <br/><br/>
-              생성된 내용은 초안이며 자유롭게 수정할 수 있습니다.
             </p>
 
             <button
@@ -395,9 +294,7 @@ export default function Step1Topic({
             </button>
 
           </div>
-
         </div>
-
       )}
 
     </div>

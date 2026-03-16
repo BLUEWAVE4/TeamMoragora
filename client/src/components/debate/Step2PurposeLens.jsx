@@ -295,7 +295,7 @@ export default function Step2PurposeLens({
             </h3>
 
             <p className="text-sm text-primary/80 leading-relaxed">
-              토론을 바라보는 **관점(프레임)**을 의미합니다.
+              토론을 바라보는 관점(프레임)을 의미합니다.
               <br/><br/>
               같은 주제라도 선택한 렌즈에 따라
               판단 기준과 논거가 달라질 수 있습니다.

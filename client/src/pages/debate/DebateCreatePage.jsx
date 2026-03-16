@@ -1,5 +1,5 @@
-// // // // 담당: 서우주 (프론트A) - 32h // 
-// // // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// // 담당: 서우주 (프론트A) - 32h
+// // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +24,7 @@ export default function DebateCreatePage() {
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
+
   const [proSide, setProSide] = useState("");
   const [conSide, setConSide] = useState("");
 
@@ -34,11 +35,24 @@ export default function DebateCreatePage() {
   const [time, setTime] = useState("");
 
   const [showBackModal, setShowBackModal] = useState(false);
-
-  // 🔥 AI 로딩 상태
   const [aiLoading, setAiLoading] = useState(false);
 
+  // ⭐ topic별 AI 결과 저장
+  const [aiResults, setAiResults] = useState({});
+
   const nextStep = () => {
+
+    const saved = aiResults[topic];
+
+    if (saved) {
+      setProSide(saved.pro);
+      setConSide(saved.con);
+
+      if (saved.category) {
+        setCategory(saved.category);
+      }
+    }
+
     setStep((prev) => prev + 1);
   };
 
@@ -53,6 +67,7 @@ export default function DebateCreatePage() {
   };
 
   const resetDebateState = () => {
+
     setTopic("");
     setProSide("");
     setConSide("");
@@ -60,6 +75,7 @@ export default function DebateCreatePage() {
     setLens("");
     setCategory("");
     setTime("");
+    setAiResults({});
     setStep(1);
   };
 
@@ -68,46 +84,72 @@ export default function DebateCreatePage() {
     setGameStarted(true);
   };
 
-  // 🔥 AI 찬반 생성 + 카테고리 자동 설정
   const handleGenerateSides = async () => {
 
-  if (!topic.trim()) {
-    alert("주제를 입력하세요");
-    return null;
-  }
-
-  try {
-
-    setAiLoading(true);
-
-    const result = await generateDebateSides({ topic });
-
-    if (result.unavailable) {
-      alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+    if (!topic.trim()) {
+      alert("주제를 입력하세요");
       return null;
     }
 
-    setProSide(result.pro);
-    setConSide(result.con);
+    // ⭐ 이미 생성된 topic이면 재사용
+    if (aiResults[topic]) {
 
-    if (result.category) {
-      setCategory(result.category);
+      const saved = aiResults[topic];
+
+      setProSide(saved.pro);
+      setConSide(saved.con);
+
+      if (saved.category) {
+        setCategory(saved.category);
+      }
+
+      return saved;
     }
 
-    return result;   // ⭐⭐⭐ 핵심
+    try {
 
-  } catch (err) {
+      setAiLoading(true);
 
-    console.error(err);
-    alert("AI 생성 실패");
-    return null;
+      const result = await generateDebateSides({ topic });
 
-  } finally {
+      if (result.unavailable) {
+        alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+        return null;
+      }
 
-    setAiLoading(false);
+      const newResult = {
+        pro: result.pro,
+        con: result.con,
+        category: result.category
+      };
 
-  }
-};
+      setProSide(result.pro);
+      setConSide(result.con);
+
+      if (result.category) {
+        setCategory(result.category);
+      }
+
+      // ⭐ topic 기준 저장
+      setAiResults(prev => ({
+        ...prev,
+        [topic]: newResult
+      }));
+
+      return newResult;
+
+    } catch (err) {
+
+      console.error(err);
+      alert("AI 생성 실패");
+      return null;
+
+    } finally {
+
+      setAiLoading(false);
+
+    }
+  };
 
   const handleSubmit = async () => {
 
@@ -168,10 +210,11 @@ export default function DebateCreatePage() {
                 category={category}
                 setCategory={setCategory}
                 proSide={proSide}
-                setProSide={setProSide} 
+                setProSide={setProSide}
                 conSide={conSide}
-                setConSide={setConSide}  
+                setConSide={setConSide}
                 aiLoading={aiLoading}
+                aiResults={aiResults}
                 handleGenerateSides={handleGenerateSides}
                 nextStep={nextStep}
                 prevStep={prevStep}
@@ -227,10 +270,8 @@ export default function DebateCreatePage() {
             onClick={() => {
 
               resetDebateState();
-
               setGameStarted(false);
               setMode(null);
-
               setShowBackModal(false);
 
             }}
