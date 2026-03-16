@@ -1,56 +1,71 @@
-# Handoff — 2026-03-13 세션 인계서
+# Handoff — 2026-03-13 (목)
 
-## 작업 요약
+## 오늘 작업 요약
 
-JudgingPage + VerdictContent AI 판결 UI 전면 리디자인
+### 1. AI 판결 UI 리디자인
+- 그리스 현자풍 아바타, 1행 레이아웃, 찬성/반대 용어 통일
+- 스코어보드 승패 강조, 아바타 정리, 테마 통일
+- AI 판사 표정 애니메이션 + 논쟁 요약 접이식 카드
+- 판결 상세보기/요약보기 토글 + `verdict_sections` 구조화
+- 렌즈 매칭 평가항목 밑줄 하이라이트
+- 폰트 font-serif → font-sans 전환
 
-## 변경 파일
+### 2. 논쟁 기능 개선
+- 논쟁 요약에 사용자 닉네임 표시 (찬성 : 닉네임)
+- 투표 시간 설정 기능 추가
+- AI 입장 생성 간소화
+- 논쟁 삭제 API 추가 (`DELETE /api/debates/:id`, DB CASCADE)
+- 초대링크 재진입 수정, 홈피드 라우팅 개선
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `client/src/pages/debate/JudgingPage.jsx` | ModelCard 1행 가로 배치, 프로그레스바→찬성/반대 뱃지, 공유 버튼(클립보드 복사+시각 피드백) |
-| `client/src/components/verdict/VerdictContent.jsx` | A측/B측→찬성/반대 전체 변경, 아바타 borderColor 반영, 다수결 칩 테두리 반영 |
-| `client/package.json` | react-icons 라이브러리 추가 |
+### 3. frontA/B/C 브랜치 통합
+- frontA: AI 카테고리 자동생성, 목적/렌즈 설명, UI개선
+- frontB: 설명모달, AI카드 디자인, 논쟁삭제 버튼
+- frontC: 좋댓조공, 랭킹, 마이페이지, iOS 투표UI
+- ProfilePage 빌드에러 수정 후 통합 완료
 
-## 주요 변경 상세
+### 4. 시민투표 표시 버그 수정 (핵심)
+- **문제**: 판결 상세 모달에서 시민투표 결과가 안 보임
+- **원인**: 프론트에서 `vote_count_a/b` 참조 → DB에는 `citizen_score_a/b, citizen_vote_count`
+- **수정 파일**:
+  - `client/src/components/verdict/VerdictContent.jsx` — 필드명 수정 + 0건일 때도 섹션 표시
+  - `client/src/pages/debate/JudgingPage.jsx` — 필드명 수정 + 중복 시민투표 섹션 제거
+  - `server/src/controllers/judgment.controller.js` — getVerdict에 실시간 투표 수 조회 추가, debates.winner_side 제거
+- **상태 분기**: 투표 진행 중 / 투표 마감 / 투표 대기
 
-### 1. AI 판사 아바타 — 그리스 현자풍 커스터마이징
-dicebear 7.x avataaars API 사용. 각 판사별 피부색/헤어/수염/의상 완전 차별화.
+### 5. 서버 에러 수정
+- **logout JWT 에러**: `req.user.id`(UUID) → `req.accessToken`(JWT) 수정
+- **getDebate 크래시**: `.single()` → `.maybeSingle()` (삭제된 논쟁 폴링 대응)
+- **에러 로그 개선**: errorHandler에 `req.method` + `req.originalUrl` 경로 추가
+
+### 6. Render 배포
+- master 브랜치까지 푸시 완료
+- Manual Deploy `9aaed94` 트리거 → 배포 성공 확인
+
+## 주요 커밋 (시간순)
 
 ```
-GPT (지피티): shortFlat 갈색머리 + 풍성한 수염 + 검정 블레이저 + 검정 테두리
-Gemini (제미나이): dreads01 흑발 + 가벼운 수염 + 칼라 스웨터 + 파란 테두리
-Claude (클로드): bigHair 적갈색 + 수염 없음 + 후드티 + 주황 테두리
+e12c420 feat: AI 판결 UI 리디자인 - 그리스 현자풍 아바타, 1행 레이아웃
+030a4f9 feat: 판결 UI UX 개선 - 스코어보드 승패 강조
+bb398a6 feat: AI 판사 표정 애니메이션 + 논쟁 요약 접이식 카드
+3b58bf1 feat: 논쟁 요약 위치 조정 + 투표 시간 설정
+66d9f41 feat: AI 판결 상세보기/요약보기 토글 + verdict_sections 구조화
+c2beb1f feat: 논쟁 삭제 API 추가 (DB CASCADE)
+3d8727d fix: 시민투표 미표시 수정 + logout JWT 에러 수정
+56ec8c6 feat: getVerdict에 실시간 시민투표 수 조회 추가
+5452165 fix: 시민투표 상태 표시 개선 - 투표중/마감/대기 분기 처리
+9aaed94 fix: getDebate .single()→.maybeSingle() + JudgingPage 시민투표 중복 제거
 ```
 
-**주의:** skinColor 파라미터는 반드시 hex 코드 사용 (`ffdbb4`, `614335` 등). 영어 이름(`light`, `darkBrown`)은 400 에러 발생.
+## 현재 상태
 
-### 2. AI 판사 desc — 프롬프트 캐릭터 기반
-`server/src/services/ai/prompts.js`의 캐릭터 설정에서 가져옴:
-- 지피티 (Judge M): "다각적 시각의 통찰가"
-- 제미나이 (Judge G): "분석적이고 정중한 판사"
-- 클로드 (Judge C): "신중하고 공정한 판사"
+- **develop / master**: 동기화 완료, 최신 커밋 `9aaed94`
+- **Render 프로덕션**: 배포 완료, 정상 동작 확인
+- **로컬 서버**: 꺼져 있음
+- **미해결 이슈**: 없음
 
-### 3. ModelCard 레이아웃 변경
-- 기존: 세로 3행, 각 카드에 프로그레스바+점수
-- 변경: **가로 1행 3열**, 아바타+이름+desc 세로 중앙정렬, 하단에 찬성/반대/무승부 뱃지 (색상 구분)
+## 참고사항
 
-### 4. 용어 통일: A측/B측 → 찬성/반대
-VerdictContent.jsx 전체 적용:
-- 복합 판결 헤더, AI 다수결 칩, 최종 점수 라벨, AI 판결문 승리 뱃지, 점수 비교 카드, 시민 투표
-
-### 5. 판결 공유하기 버튼
-- "투표 참여하기" → "판결 공유하기"
-- 클릭 시 클립보드에 URL 즉시 복사
-- 버튼 초록색 전환 + "✓ 링크가 복사되었습니다!" 텍스트 → 2초 후 복귀
-
-## 미커밋 상태
-현재 변경사항은 **커밋되지 않은 상태**. 커밋 필요 시 아래 파일 포함:
-- `client/src/pages/debate/JudgingPage.jsx`
-- `client/src/components/verdict/VerdictContent.jsx`
-- `client/package.json` (react-icons 추가)
-
-## 알려진 이슈 / 다음 작업 후보
-- AI 판사 설정이 JudgingPage(`AI_JUDGES`)와 VerdictContent(`JUDGE_INFO`)에 **중복 정의**되어 있음 → 공통 상수로 추출 검토
-- `react-icons` 사용처: VerdictContent의 `GoLaw` 아이콘 1곳
-- DebateDetailPage의 "A측 찬성" / "B측 반대" 텍스트는 논쟁 참여 맥락이라 미변경
+- Render 무료 플랜: 비활성 시 인스턴스 sleep → 첫 요청 50초+ 지연
+- 시민투표 최종 반영(`finalizeVerdict`)은 vote_deadline 이후 실행 — 그 전에는 votes 테이블에서 실시간 카운트
+- frontA/B/C 팀원들은 `git merge origin/develop`으로 최신 변경 pull 필요
+- AI 판사 설정이 JudgingPage(`AI_JUDGES`)와 VerdictContent(`JUDGE_INFO`)에 중복 정의 → 공통 상수 추출 검토
