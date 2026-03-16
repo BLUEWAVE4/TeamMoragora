@@ -80,6 +80,24 @@ export async function getVoteTally(req, res, next) {
   }
 }
 
+// 내 투표 조회
+export async function getMyVote(req, res, next) {
+  try {
+    const { debateId } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from('votes')
+      .select('voted_side')
+      .eq('debate_id', debateId)
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    res.json({ voted_side: data?.voted_side || null });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // 투표 취소
 export async function cancelVote(req, res, next) {
   try {

@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { castVote, getVoteTally, cancelVote, finalizeExpiredVotes } from '../controllers/vote.controller.js';
+import { castVote, getVoteTally, getMyVote, cancelVote, finalizeExpiredVotes } from '../controllers/vote.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
 router.post('/finalize', requireAuth, finalizeExpiredVotes);
+router.get('/:debateId/my', requireAuth, getMyVote);
 router.get('/:debateId', getVoteTally);
 router.post('/:debateId', requireAuth, castVote);
 router.delete('/:debateId', requireAuth, cancelVote);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDebate, getDebateByInviteCode, joinByInvite } from '../../services/api'
+import { getDebate, getDebateByInviteCode, joinByInvite, getArguments } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { Target, Tag, Scale, ShieldBan, Gavel, Mail } from 'lucide-react';
 
@@ -45,6 +45,7 @@ export default function InvitePage() {
   const [error, setError] = useState(null)
   const [isCopied, setIsCopied] = useState(false)
   const [isOpponentJoined, setIsOpponentJoined] = useState(false)
+  const [opponentWriting, setOpponentWriting] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
   const [isCreator, setIsCreator] = useState(null) // null로 시작하여 판별 로직 대기
 
@@ -84,21 +85,30 @@ export default function InvitePage() {
     if (inviteCode) fetchDebateInfo()
   }, [inviteCode, user])
 
-  // ── 2. [A측 전용] 상대방 입장 폴링 (동일) ──
+  // ── 2. [A측 전용] 상대방 입장 + 주장 작성 폴링 ──
   useEffect(() => {
-    if (isCreator !== true || !debate?.id || debate.opponent_id) return
+    if (isCreator !== true || !debate?.id) return
     const interval = setInterval(async () => {
       try {
         const updated = await getDebate(debate.id)
-        if (updated?.opponent_id) {
-          clearInterval(interval)
+        if (updated?.opponent_id && !isOpponentJoined) {
           setIsOpponentJoined(true)
           setDebate(updated)
+        }
+        // 상대가 수락했으면 주장 작성 여부 확인
+        if (updated?.opponent_id && updated?.status === 'arguing') {
+          try {
+            const args = await getArguments(updated.id)
+            const hasB = args?.some(a => a.side === 'B')
+            if (hasB && !opponentWriting) {
+              setOpponentWriting(true)
+            }
+          } catch (_) {}
         }
       } catch (err) { console.error("상대방 입장 체크 오류:", err) }
     }, 3000)
     return () => clearInterval(interval)
-  }, [isCreator, debate?.id, debate?.opponent_id])
+  }, [isCreator, debate?.id, isOpponentJoined, opponentWriting])
 
   // ── 3. [B측 전용] 타이머 (동일) ──
   useEffect(() => {
@@ -241,10 +251,16 @@ export default function InvitePage() {
             <button
               onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
               disabled={!isOpponentJoined}
-              className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all
+              className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-500
                 ${isOpponentJoined ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
-              {isOpponentJoined ? '논쟁 시작하기' : '상대방의 입장을 기다리는 중...'}
+              <span key={opponentWriting ? 'writing' : isOpponentJoined ? 'joined' : 'waiting'} className="inline-block animate-fade-in-up">
+                {opponentWriting
+                  ? '상대방이 주장을 작성하는 중...'
+                  : isOpponentJoined
+                    ? '논쟁 시작하기'
+                    : '상대방의 수락을 기다리는 중...'}
+              </span>
             </button>
           </div>
         </div>

@@ -35,13 +35,35 @@ export async function submitArgument(req, res, next) {
       return res.status(400).json({ error: dictResult.reason });
     }
 
-    // === 콘텐츠 필터링 (Stage 2: AI 유해성 - 사회/정치 카테고리) ===
+    // === 논쟁 조회 및 권한/중복 검증 ===
     const { data: debate } = await supabaseAdmin
       .from('debates')
-      .select('category')
+      .select('category, creator_id, opponent_id, status')
       .eq('id', debateId)
       .single();
 
+    if (!debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
+    if (debate.status !== 'arguing') throw new ValidationError('주장 제출 단계가 아닙니다.');
+
+    // side 검증: creator는 A, opponent는 B만 가능
+    if (side === 'A' && debate.creator_id !== userId) {
+      throw new ForbiddenError('찬성 주장은 논쟁 생성자만 제출할 수 있습니다.');
+    }
+    if (side === 'B' && debate.opponent_id !== userId) {
+      throw new ForbiddenError('반대 주장은 초대받은 사용자만 제출할 수 있습니다.');
+    }
+
+    // 같은 side 중복 제출 방지
+    const { data: existingArg } = await supabaseAdmin
+      .from('arguments')
+      .select('id')
+      .eq('debate_id', debateId)
+      .eq('side', side)
+      .maybeSingle();
+
+    if (existingArg) throw new ConflictError('이미 해당 진영의 주장이 제출되었습니다.');
+
+    // === 콘텐츠 필터링 (Stage 2: AI 유해성 - 사회/정치 카테고리) ===
     if (debate && CATEGORY_ALL_STAGES.includes(debate.category)) {
       const aiResult = await filterByAI(content);
       if (aiResult.action === 'block') {

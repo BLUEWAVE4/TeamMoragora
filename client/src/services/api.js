@@ -50,7 +50,8 @@ export const getVerdictFeed = (page = 1, limit = 5) => api.get(`/judgments/feed?
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
-export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`); // 추가
+export const getMyVote = (debateId) => api.get(`/votes/${debateId}/my`);
+export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`);
 
 
 // ===== 댓글 (Comments) =====

@@ -8,7 +8,18 @@ import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
-import { getComments, createComment, deleteComment, toggleCommentLike } from "../../services/api";
+
+// 유튜브 스타일 상대 시간
+const timeAgo = (dateStr) => {
+  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+  if (diff < 60) return '방금';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+  if (diff < 31536000) return `${Math.floor(diff / 2592000)}개월 전`;
+  return `${Math.floor(diff / 31536000)}년 전`;
+};
+import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally } from "../../services/api";
 import { useAuth } from "../../store/AuthContext";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
@@ -125,6 +136,64 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     }
   };
 
+  // ===== 투표 상태 =====
+  const [myVote, setMyVote] = useState(null); // 'A' | 'B' | null
+  const [isVoting, setIsVoting] = useState(false);
+  const [liveVoteA, setLiveVoteA] = useState(null);
+  const [liveVoteB, setLiveVoteB] = useState(null);
+
+  // 내 투표 + 실시간 집계 로드
+  useEffect(() => {
+    if (!debateId) return;
+    if (user) {
+      getMyVote(debateId).then(res => setMyVote(res.voted_side)).catch(() => {});
+    }
+    getVoteTally(debateId).then(res => {
+      setLiveVoteA(res.A || 0);
+      setLiveVoteB(res.B || 0);
+    }).catch(() => {});
+  }, [debateId, user]);
+
+  const handleVote = async (side) => {
+    if (!user || isVoting) return;
+    setIsVoting(true);
+    const prevVote = myVote;
+    const prevA = liveVoteA;
+    const prevB = liveVoteB;
+    // 같은 쪽 다시 클릭 → 취소
+    if (myVote === side) {
+      setMyVote(null);
+      if (side === 'A') setLiveVoteA(v => Math.max((v ?? 0) - 1, 0));
+      else setLiveVoteB(v => Math.max((v ?? 0) - 1, 0));
+      try {
+        await cancelVote(debateId);
+      } catch (_) {
+        setMyVote(prevVote);
+        setLiveVoteA(prevA);
+        setLiveVoteB(prevB);
+      }
+    } else {
+      // 변경 또는 신규 투표
+      setMyVote(side);
+      if (prevVote) {
+        // 변경: 이전 쪽 -1, 새 쪽 +1
+        if (prevVote === 'A') setLiveVoteA(v => Math.max((v ?? 0) - 1, 0));
+        else setLiveVoteB(v => Math.max((v ?? 0) - 1, 0));
+      }
+      if (side === 'A') setLiveVoteA(v => (v ?? 0) + 1);
+      else setLiveVoteB(v => (v ?? 0) + 1);
+      try {
+        await castVote(debateId, side);
+      } catch (err) {
+        setMyVote(prevVote);
+        setLiveVoteA(prevA);
+        setLiveVoteB(prevB);
+        alert(err.message || '투표에 실패했습니다.');
+      }
+    }
+    setIsVoting(false);
+  };
+
   const [likingSet, setLikingSet] = useState(new Set());
   const handleToggleLike = async (commentId) => {
     if (!user || likingSet.has(commentId)) return;
@@ -188,8 +257,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
 
   // 논쟁 정보
   const debateTopic = topic || debateData.topic || '';
-  const proSide = debateData.pro_side || '찬성';
-  const conSide = debateData.con_side || '반대';
+  const proSide = debateData.pro_side || 'A측';
+  const conSide = debateData.con_side || 'B측';
   const category = CATEGORY_LABELS[debateData.category] || debateData.category || '';
   const lensRaw = debateData.lens || 'general';
   const lens = LENS_LABELS[lensRaw] || lensRaw || '';
@@ -201,7 +270,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const userIdA = verdictData.arguments?.userIdA || null;
   const userIdB = verdictData.arguments?.userIdB || null;
 
-  // 닉네임을 찬성(초록)/반대(빨강) 색상으로 하이라이트
+  // 닉네임을 A측(초록)/B측(빨강) 색상으로 하이라이트
   const highlightNicknames = (text) => {
     if (!text || (!nicknameA && !nicknameB)) return text;
     const parts = [];
@@ -229,7 +298,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <GoLaw className="mx-auto text-4xl text-gold mb-2" />
             <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-[3px] mb-1">복합 판결</p>
             <p className="text-2xl font-sans font-extrabold text-primary">
-              {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? '찬성측 승리' : '반대측 승리'}
+              {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? 'A측 승리' : 'B측 승리'}
             </p>
           </div>
 
@@ -240,13 +309,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               <p className="text-[10px] text-gold/60 uppercase tracking-[4px] mb-4 font-sans font-bold text-center">최종 점수</p>
 
               <div className="flex items-stretch">
-                {/* 찬성 */}
+                {/* A측 */}
                 <div className="flex-1 text-center">
-                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreA >= finalScoreB ? 'text-emerald-400/70' : 'text-emerald-400/40'}`}>찬성</p>
+                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreA >= finalScoreB ? 'text-emerald-400/70' : 'text-emerald-400/40'}`}>A측</p>
                   <p className={`text-4xl font-black font-sans leading-none transition-all ${finalScoreA >= finalScoreB ? 'text-emerald-400' : 'text-emerald-400/40'}`}
                     style={finalScoreA > finalScoreB ? { textShadow: '0 0 16px rgba(5,150,105,0.3)' } : {}}
                   >{finalScoreA}</p>
-                  {/* 찬성 측 아바타 1행 (AI + 시민) */}
+                  {/* A측 아바타 1행 (AI + 시민) */}
                   <div className="flex justify-center items-center gap-1 mt-2">
                     {judges.filter(j => j.winner_side === 'A').map((j, i) => (
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
@@ -279,13 +348,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   )}
                 </div>
 
-                {/* 반대 */}
+                {/* B측 */}
                 <div className="flex-1 text-center">
-                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreB >= finalScoreA ? 'text-red-400/70' : 'text-red-400/40'}`}>반대</p>
+                  <p className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-1 ${finalScoreB >= finalScoreA ? 'text-red-400/70' : 'text-red-400/40'}`}>B측</p>
                   <p className={`text-4xl font-black font-sans leading-none transition-all ${finalScoreB >= finalScoreA ? 'text-red-400' : 'text-red-400/40'}`}
                     style={finalScoreB > finalScoreA ? { textShadow: '0 0 16px rgba(230,57,70,0.3)' } : {}}
                   >{finalScoreB}</p>
-                  {/* 반대 측 아바타 1행 (AI + 시민) */}
+                  {/* B측 아바타 1행 (AI + 시민) */}
                   <div className="flex justify-center items-center gap-1 mt-2">
                     {judges.filter(j => j.winner_side === 'B').map((j, i) => (
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
@@ -322,8 +391,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       </div>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[9px] text-emerald-400/50 font-sans font-bold">찬성 {pctA}%</span>
-                      <span className="text-[9px] text-red-400/50 font-sans font-bold">반대 {pctB}%</span>
+                      <span className="text-[9px] text-emerald-400/50 font-sans font-bold">A측 {pctA}%</span>
+                      <span className="text-[9px] text-red-400/50 font-sans font-bold">B측 {pctB}%</span>
                     </div>
                   </>
                 );
@@ -408,7 +477,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           labels,
           datasets: [
             {
-              label: '찬성',
+              label: 'A측',
               data: scoresA,
               backgroundColor: 'rgba(5, 150, 105, 0.18)',
               borderColor: '#059669',
@@ -420,7 +489,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               fill: true,
             },
             {
-              label: '반대',
+              label: 'B측',
               data: scoresB,
               backgroundColor: 'rgba(230, 57, 70, 0.14)',
               borderColor: '#E63946',
@@ -531,12 +600,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 <div className="flex items-center justify-center gap-5 mt-2">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-[12px] font-bold text-emerald-600">찬성 합계 {totalA}점</span>
+                    <span className="text-[12px] font-bold text-emerald-600">A측 합계 {totalA}점</span>
                   </div>
                   <div className="w-px h-3 bg-primary/10" />
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                    <span className="text-[12px] font-bold text-red-500">반대 합계 {totalB}점</span>
+                    <span className="text-[12px] font-bold text-red-500">B측 합계 {totalB}점</span>
                   </div>
                 </div>
               </div>
@@ -568,7 +637,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <img
                         src={j.avatar}
                         alt={j.name}
-                        className={`w-5 h-5 rounded-full ${activeJudge === i ? '' : 'opacity-40 grayscale'}`}
+                        className={`w-6 h-6 rounded-full border-2 ${activeJudge === i ? '' : 'opacity-40 grayscale'}`}
+                        style={{ borderColor: activeJudge === i ? (j.borderColor || j.color) : 'transparent' }}
                       />
                       {j.name}
                     </div>
@@ -578,7 +648,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                         color: j.winner_side === 'A' ? '#059669' : j.winner_side === 'B' ? '#E63946' : '#D4AF37',
                       }}
                     >
-                      {j.winner_side === 'draw' ? '무승부' : j.winner_side === 'A' ? '찬성' : '반대'}
+                      {j.winner_side === 'draw' ? '무승부' : j.winner_side === 'A' ? 'A측' : 'B측'}
                     </span>
                   </div>
                 </button>
@@ -589,20 +659,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           {/* 선택된 판사 카드 */}
           {currentJudge && (
             <div className="p-4">
-              {/* 판사 정보 헤더 */}
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-10 h-10 rounded-full overflow-hidden border-2"
-                  style={{ borderColor: currentJudge.borderColor || currentJudge.color, boxShadow: `0 4px 12px ${currentJudge.borderColor || currentJudge.color}30` }}
-                >
-                  <img src={currentJudge.avatar} alt={currentJudge.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-sans font-bold text-primary">{currentJudge.name}</p>
-                  <p className="text-[11px] text-primary/40">{currentJudge.desc}</p>
-                </div>
-              </div>
-
               {/* 점수 비교 — 우세한 쪽 강조 */}
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <div className={`text-center p-3 rounded-xl border-2 transition-all ${
@@ -610,7 +666,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     ? 'bg-emerald-50 border-emerald-500 shadow-sm shadow-emerald-200'
                     : 'bg-emerald-50/50 border-emerald-100'
                 }`}>
-                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>찬성</p>
+                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>A측</p>
                   <p className={`text-xl font-black font-sans ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600' : 'text-emerald-600/30'}`}>{currentJudge.score_a}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
                 </div>
                 <div className={`text-center p-3 rounded-xl border-2 transition-all ${
@@ -618,7 +674,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     ? 'bg-red-50 border-red-500 shadow-sm shadow-red-200'
                     : 'bg-red-50/50 border-red-100'
                 }`}>
-                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>반대</p>
+                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>B측</p>
                   <p className={`text-xl font-black font-sans ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500' : 'text-red-500/30'}`}>{currentJudge.score_b}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
                 </div>
               </div>
@@ -750,7 +806,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
           </div>
 
-          {/* 찬성/반대 토글 */}
+          {/* A측/B측 토글 */}
           <div className="flex gap-1 mx-4 mt-3 bg-primary/5 rounded-lg p-0.5 border border-gold/10">
             <button
               onClick={() => setArgSide('A')}
@@ -760,7 +816,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   : 'text-primary/40 hover:text-primary/60'
               }`}
             >
-              찬성 : {proSide}
+              A측 : {proSide}
             </button>
             <button
               onClick={() => setArgSide('B')}
@@ -770,7 +826,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   : 'text-primary/40 hover:text-primary/60'
               }`}
             >
-              반대 : {conSide}
+              B측 : {conSide}
             </button>
           </div>
 
@@ -778,7 +834,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               {activeArgSide === 'A' && argA && (
                 <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
                   <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || '찬성'}의 주장</p>
+                    <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
                   </div>
                   <p className="text-[12px] leading-[1.7] text-primary/70">{argA}</p>
                 </div>
@@ -786,7 +842,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               {activeArgSide === 'B' && argB && (
                 <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
                   <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || '반대'}의 주장</p>
+                    <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
                   </div>
                   <p className="text-[12px] leading-[1.7] text-primary/70">{argB}</p>
                 </div>
@@ -799,16 +855,32 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       {(() => {
         const debateStatus = debateData.status;
         const voteDeadline = debateData.vote_deadline;
-        const isVoting = debateStatus === 'voting';
-        const isCompleted = debateStatus === 'completed';
+        const canVote = debateStatus === 'voting' && !(voteDeadline && new Date(voteDeadline) < new Date());
+        const isCompletedStatus = debateStatus === 'completed';
         const deadlinePassed = voteDeadline && new Date(voteDeadline) < new Date();
+        // 논쟁 당사자(A측/B측 작성자)는 투표 불가
+        const isAuthor = user && (String(user.id) === String(userIdA) || String(user.id) === String(userIdB));
+        const voteDisabled = isVoting || !canVote || isAuthor || !user;
+
+        // 실시간 집계 우선, 없으면 verdict 데이터 사용
+        const displayA = liveVoteA !== null ? liveVoteA : voteA;
+        const displayB = liveVoteB !== null ? liveVoteB : voteB;
+        const displayTotal = displayA + displayB;
+        const pctA = displayTotal > 0 ? Math.round((displayA / displayTotal) * 100) : 50;
+        const pctB = displayTotal > 0 ? 100 - pctA : 50;
 
         // 상태 텍스트
         let statusText = '';
-        if (totalVotes > 0) statusText = `${totalVotes.toLocaleString()}명 참여`;
-        else if (isVoting && !deadlinePassed) statusText = '투표 진행 중';
-        else if (isCompleted || deadlinePassed) statusText = '투표 마감';
+        if (displayTotal > 0) statusText = `${displayTotal.toLocaleString()}명 참여`;
+        else if (canVote) statusText = '투표 진행 중';
+        else if (isCompletedStatus || deadlinePassed) statusText = '투표 마감';
         else statusText = '투표 대기';
+
+        // 비활성 사유 메시지
+        let disabledMsg = '';
+        if (isAuthor) disabledMsg = '논쟁 당사자는 투표할 수 없습니다';
+        else if (!user) disabledMsg = '로그인 후 투표할 수 있습니다';
+        else if (!canVote) disabledMsg = '투표가 마감되었습니다';
 
         return (
           <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
@@ -816,33 +888,74 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
               <span className="text-xs text-primary/40 font-medium">{statusText}</span>
             </div>
-            {totalVotes > 0 ? (
+
+            {/* 투표 버튼 — 항상 표시, 조건부 비활성 */}
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => !voteDisabled && handleVote('A')}
+                disabled={voteDisabled && myVote !== 'A'}
+                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                  myVote === 'A'
+                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-200'
+                    : voteDisabled
+                      ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 active:scale-[0.97]'
+                }`}
+              >
+                {myVote === 'A' ? '✓ ' : ''}A측 투표
+              </button>
+              <button
+                onClick={() => !voteDisabled && handleVote('B')}
+                disabled={voteDisabled && myVote !== 'B'}
+                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                  myVote === 'B'
+                    ? 'bg-red-500 text-white border-red-600 shadow-lg shadow-red-200'
+                    : voteDisabled
+                      ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
+                      : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100 active:scale-[0.97]'
+                }`}
+              >
+                {myVote === 'B' ? '✓ ' : ''}B측 투표
+              </button>
+            </div>
+            {disabledMsg && !myVote && (
+              <p className="text-center text-[11px] text-primary/30 mb-3">{disabledMsg}</p>
+            )}
+
+            {displayTotal > 0 ? (
               <>
                 <div className="flex justify-between text-sm font-bold mb-1.5">
-                  <span className="text-emerald-600">찬성 {percentA}%</span>
-                  <span className="text-red-500">반대 {percentB}%</span>
+                  <span className="text-emerald-600">A측 {pctA}%</span>
+                  <span className="text-red-500">B측 {pctB}%</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
                   <div
                     className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentA}%` : '0%' }}
+                    style={{ width: animated ? `${pctA}%` : '0%' }}
                   />
                   <div
                     className="h-full bg-red-500 rounded-r-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentB}%` : '0%' }}
+                    style={{ width: animated ? `${pctB}%` : '0%' }}
                   />
                 </div>
                 <div className="flex justify-between text-[11px] text-primary/40 mt-1">
-                  <span>{voteA.toLocaleString()}명</span>
-                  <span>{voteB.toLocaleString()}명</span>
+                  <span>{displayA.toLocaleString()}명</span>
+                  <span>{displayB.toLocaleString()}명</span>
                 </div>
               </>
             ) : (
               <div className="text-center py-4">
                 <p className="text-[13px] text-primary/40 font-sans">
-                  {isVoting && !deadlinePassed ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
+                  {canVote ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
                 </p>
               </div>
+            )}
+
+            {/* 내 투표 상태 안내 (마감 후) */}
+            {myVote && !canVote && (
+              <p className="text-center text-[11px] text-primary/30 mt-2">
+                나의 투표: {myVote === 'A' ? 'A측' : 'B측'}
+              </p>
             )}
           </div>
         );
@@ -862,51 +975,58 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               <p className="text-[13px] text-primary/30 font-sans">아직 의견이 없습니다</p>
               <p className="text-[11px] text-primary/20 mt-1">이 판결에 대한 의견을 남겨보세요</p>
             </div>
-          ) : comments.map(c => (
-            <div key={c.id} className="flex gap-2.5">
-              {/* 아바타 */}
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
-                <img
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* 내용 */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[12px] font-bold text-primary">{c.user?.nickname || '익명'}</span>
-                  {c.user_id === userIdA && (
-                    <span className="text-[9px] text-white bg-emerald-500 px-1.5 py-0.5 rounded-full font-bold">찬성 작성자</span>
-                  )}
-                  {c.user_id === userIdB && (
-                    <span className="text-[9px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold">반대 작성자</span>
-                  )}
-                  {c.user?.tier && c.user.tier !== '시민' && c.user_id !== userIdA && c.user_id !== userIdB && (
-                    <span className="text-[9px] text-gold bg-gold/10 px-1.5 py-0.5 rounded-full font-bold">{c.user.tier}</span>
-                  )}
-                  <span className="text-[10px] text-primary/25">{new Date(c.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          ) : comments.map(c => {
+            const isMine = user?.id === c.user_id;
+            return (
+              <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+                {/* 아바타 */}
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <p className="text-[12px] text-primary/70 leading-[1.6] mt-0.5 break-words">{c.content}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <button
-                    onClick={() => handleToggleLike(c.id)}
-                    className={`flex items-center gap-1 text-[11px] transition-colors ${c.is_liked ? 'text-red-500' : 'text-primary/25 hover:text-primary/40'}`}
-                  >
-                    {c.is_liked ? '♥' : '♡'} {c.likes_count > 0 && c.likes_count}
-                  </button>
-                  {user?.id === c.user_id && (
-                    <button
-                      onClick={() => handleDeleteComment(c.id)}
-                      className="text-[11px] text-primary/25 hover:text-red-400 transition-colors"
-                    >
-                      삭제
-                    </button>
-                  )}
+                {/* 내용 */}
+                <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
+                  <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
+                    <span className="text-[12px] font-bold text-primary">{c.user?.nickname || '익명'}</span>
+                    {c.user_id === userIdA && (
+                      <span className="text-[9px] text-white bg-emerald-500 px-1.5 py-0.5 rounded-full font-bold">A측</span>
+                    )}
+                    {c.user_id === userIdB && (
+                      <span className="text-[9px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold">B측</span>
+                    )}
+                    {c.user?.tier && c.user.tier !== '시민' && c.user_id !== userIdA && c.user_id !== userIdB && (
+                      <span className="text-[9px] text-gold bg-gold/10 px-1.5 py-0.5 rounded-full font-bold">{c.user.tier}</span>
+                    )}
+                    <span className="text-[10px] text-primary/25">{timeAgo(c.created_at)}</span>
+                  </div>
+                  <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+                    <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-primary/8 rounded-tr-sm' : 'bg-primary/5 rounded-tl-sm'}`}>
+                      <p className="text-[12px] text-primary/70 leading-[1.6] break-words text-left">{c.content}</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5 shrink-0 pb-0.5">
+                      <button
+                        onClick={() => handleToggleLike(c.id)}
+                        className={`text-[10px] transition-colors ${c.is_liked ? 'text-red-500' : 'text-primary/20 hover:text-primary/40'}`}
+                      >
+                        {c.is_liked ? '♥' : '♡'}{c.likes_count > 0 && ` ${c.likes_count}`}
+                      </button>
+                      {isMine && (
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          className="text-[9px] text-primary/15 hover:text-red-400 transition-colors"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 댓글 입력창 */}
