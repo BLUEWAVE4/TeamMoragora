@@ -41,6 +41,7 @@ export const generateDebateSides = (data) =>
 
 // ===== 주장 (Arguments) =====
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
+export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
@@ -51,6 +52,12 @@ export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`,
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
 export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`); // 추가
 
+
+// ===== 댓글 (Comments) =====
+export const getComments = (debateId) => api.get(`/comments/${debateId}`);
+export const createComment = (debateId, content) => api.post(`/comments/${debateId}`, { content });
+export const deleteComment = (commentId) => api.delete(`/comments/${commentId}`);
+export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}/like`);
 
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/auth/me');

@@ -3,76 +3,62 @@
  * 담당자: 프론트 B 채유진
  * 인라인 판결 결과 표시 (VerdictContent 공통 컴포넌트 사용)
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { getDebate, getVoteTally, getVerdict } from '../../services/api';
+import { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
 import { AI_JUDGES, MODEL_MAP } from '../../constants/judges';
 import confetti from 'canvas-confetti';
 
-// ===== 판결 중 랜덤 메시지 =====
-const JUDGING_MESSAGES = [
-  "각 AI가 논쟁에 대한 판단을 진행중입니다...",
-  "누군가 언성을 높이는 것 같습니다...",
-  "고요한 침묵 속에서 표정이 심각해지고 있습니다...",
-  "판사들이 서류를 넘기며 깊이 고민하고 있습니다...",
-  "치열한 논쟁의 여운이 법정에 감돌고 있습니다...",
-  "AI 판사들이 메모를 주고받는 것 같습니다...",
-  "결정적인 논점을 발견한 듯 눈빛이 바뀌었습니다...",
-  "양측의 주장을 한 줄 한 줄 되짚고 있습니다...",
-  "판결문 초안을 작성하기 시작했습니다...",
-  "최종 점수를 산정하는 중입니다...",
+// ===== 분석 중 랜덤 메시지 (ModelCard 내부용) =====
+const ANALYSIS_MESSAGES = [
+  "심각한 표정을 짓는 중..",
+  "고민에 빠지는 중..",
+  "서류를 넘기는 중..",
+  "메모를 끄적이는 중..",
+  "눈빛이 날카로워지는 중..",
+  "깊은 생각에 잠기는 중..",
+  "양측 주장을 되짚는 중..",
+  "결정적 논점을 찾는 중..",
+  "판결문 초안을 쓰는 중..",
+  "점수를 매기는 중..",
+  "한숨을 내쉬는 중..",
+  "표정이 굳어지는 중..",
 ];
 
-// ===== 타이핑 애니메이션 컴포넌트 =====
-const TypingMessage = ({ messages }) => {
-  const [currentIndex, setCurrentIndex] = useState(() => Math.floor(Math.random() * messages.length));
-  const [displayText, setDisplayText] = useState('');
-  const [phase, setPhase] = useState('typing'); // typing | pause | erasing
-  const timeoutRef = useRef(null);
-
-  const currentMessage = messages[currentIndex];
-
-  const clearTimer = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }, []);
+// 타이핑 애니메이션 훅 (한 글자씩 출력 → 지움 → 다음 메시지)
+const useTypingMessage = (messages, typingSpeed = 60, pauseMs = 1800, erasingSpeed = 30) => {
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * messages.length));
+  const [text, setText] = useState('');
+  const [phase, setPhase] = useState('typing');
+  const timerRef = useRef(null);
+  const msg = messages[index];
 
   useEffect(() => {
-    clearTimer();
+    if (timerRef.current) clearTimeout(timerRef.current);
 
     if (phase === 'typing') {
-      if (displayText.length < currentMessage.length) {
-        timeoutRef.current = setTimeout(() => {
-          setDisplayText(currentMessage.slice(0, displayText.length + 1));
-        }, 40);
+      if (text.length < msg.length) {
+        timerRef.current = setTimeout(() => setText(msg.slice(0, text.length + 1)), typingSpeed);
       } else {
-        timeoutRef.current = setTimeout(() => setPhase('erasing'), 2500);
+        timerRef.current = setTimeout(() => setPhase('erasing'), pauseMs);
       }
     } else if (phase === 'erasing') {
-      if (displayText.length > 0) {
-        timeoutRef.current = setTimeout(() => {
-          setDisplayText(displayText.slice(0, -1));
-        }, 25);
+      if (text.length > 0) {
+        timerRef.current = setTimeout(() => setText(text.slice(0, -1)), erasingSpeed);
       } else {
-        let nextIndex;
-        do {
-          nextIndex = Math.floor(Math.random() * messages.length);
-        } while (nextIndex === currentIndex && messages.length > 1);
-        setCurrentIndex(nextIndex);
+        let next;
+        do { next = Math.floor(Math.random() * messages.length); } while (next === index && messages.length > 1);
+        setIndex(next);
         setPhase('typing');
       }
     }
 
-    return clearTimer;
-  }, [displayText, phase, currentMessage, currentIndex, messages, clearTimer]);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [text, phase, msg, index, messages, typingSpeed, pauseMs, erasingSpeed]);
 
-  return (
-    <p className="text-white/60 text-[15px] italic font-medium tracking-tight h-6">
-      {displayText}
-      <span className="inline-block w-[2px] h-[14px] bg-white/50 ml-[2px] align-middle animate-pulse" />
-    </p>
-  );
+  return text;
 };
 
 // AI_JUDGES, MODEL_MAP → constants/judges.js에서 import
@@ -110,6 +96,7 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
   const isActive = status === 'active';
   const displayA = useCountUp(isDone && score ? score.a : null);
   const displayB = useCountUp(isDone && score ? score.b : null);
+  const analysisMsg = useTypingMessage(ANALYSIS_MESSAGES);
 
   // 상태별 아바타 선택
   const avatarSrc = isFailed ? judge.avatarFailed
@@ -128,7 +115,7 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
     }`}>
       <div className="p-3 flex flex-col items-center text-center">
         <div
-          className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg shrink-0 transition-all duration-500 ${isActive ? 'animate-pulse' : ''}`}
+          className="w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg shrink-0 transition-all duration-500"
           style={{
             borderColor: isDone ? (judge.borderColor || judge.color) : `${judge.borderColor || judge.color}40`,
             boxShadow: isDone
@@ -150,12 +137,9 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
               <span className={displayB >= displayA ? 'text-red-400' : 'text-red-400/40'}>{String(displayB).padStart(2, '0')}</span>
             </span>
           ) : isActive ? (
-            <span className="flex items-center justify-center gap-1 text-[11px] text-blue-400 font-semibold">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-              </span>
-              분석 중
+            <span className="text-[10px] text-white/40 font-medium h-4 flex items-center">
+              {analysisMsg}
+              <span className="inline-block w-[1px] h-[10px] bg-white/40 ml-[1px] animate-pulse" />
             </span>
           ) : isFailed ? (
             <span className="text-[11px] text-red-400/80 font-semibold">실패</span>
@@ -179,6 +163,7 @@ export default function JudgingPage() {
   const [conSide, setConSide] = useState(null);
   const [verdictData, setVerdictData] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [debateArgs, setDebateArgs] = useState([]);
   const verdictRef = useRef(null);
 
   const confettiFiredRef = useRef(false);
@@ -209,6 +194,11 @@ export default function JudgingPage() {
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
+        // 양측 주장 가져오기
+        try {
+          const args = await getArguments(debateId);
+          setDebateArgs(args || []);
+        } catch (_) {}
       } catch (e) {
         console.error(e);
         setDebateTitle("논쟁 주제를 찾을 수 없습니다.");
@@ -283,15 +273,17 @@ export default function JudgingPage() {
 
           {/* ===== 헤더 영역 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
-            <h2 className="text-white text-2xl font-sans font-black tracking-tight">
-              {isAllDone ? "판결이 완료되었습니다!" : "AI가 판결 중입니다"}
-            </h2>
-            {isAllDone ? (
-              <p className="text-white/60 text-[15px] font-sans italic font-medium tracking-tight">
-                결과가 도착했습니다. 아래에서 확인하세요!
-              </p>
-            ) : (
-              <TypingMessage messages={JUDGING_MESSAGES} />
+            {!isAllDone && (
+              <h2 className="text-white/80 text-lg font-sans font-bold tracking-tight">
+                배심원단이 아고라에 모두 모였습니다.
+              </h2>
+            )}
+            {isAllDone && (
+              <>
+                <h2 className="text-white text-2xl font-sans font-black tracking-tight">
+                  모든 배심원이 석판을 내려놓았습니다!
+                </h2>
+              </>
             )}
             <p className="text-[13px] text-white/60 font-sans font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
@@ -312,23 +304,73 @@ export default function JudgingPage() {
             <ModelCard judgeKey="claude" status={judgeStatus.claude} score={judgeScores.claude} onClick={() => verdictRef.current?.scrollToJudge('claude')} />
           </div>
 
-          {/* ===== 시민 투표 현황 (진행 중) ===== */}
+          {/* ===== 양측 주장 미리보기 (진행 중) ===== */}
+          {!isAllDone && debateArgs.length > 0 && (
+            <div className="mt-8 shrink-0 space-y-2">
+              {debateArgs.filter(a => a.side === 'A').map((arg, i) => (
+                <div key={`a-${i}`} className="bg-white/5 border border-emerald-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-[11px] font-bold text-emerald-400">찬성{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+                  </div>
+                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-3">{arg.content}</p>
+                </div>
+              ))}
+              {debateArgs.filter(a => a.side === 'B').map((arg, i) => (
+                <div key={`b-${i}`} className="bg-white/5 border border-red-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-[11px] font-bold text-red-400">반대{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+                  </div>
+                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-3">{arg.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ===== 판결 프로세스 안내 (진행 중) ===== */}
           {!isAllDone && (
-            <div className="mt-10 shrink-0">
-              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col items-center gap-1 backdrop-blur-sm">
-                <p className="text-[13px] font-bold text-yellow-500/90 tracking-wider">실시간 시민 투표 현황</p>
-                <p className="text-3xl font-black text-white tabular-nums">
-                  {displayCount.toLocaleString()} / 500명
-                </p>
+            <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center gap-1.5 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center">
+                    <span className="text-gold text-[12px] font-black">1</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-gold">주장 분석</span>
+                  <span className="text-[9px] text-white/30">진행 중</span>
+                </div>
+                <div className="w-8 h-px bg-white/10" />
+                {/* Step 2 */}
+                <div className="flex flex-col items-center gap-1.5 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
+                    <span className="text-white/30 text-[12px] font-black">2</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-white/30">시민 투표</span>
+                  <span className="text-[9px] text-white/20">24시간</span>
+                </div>
+                <div className="w-8 h-px bg-white/10" />
+                {/* Step 3 */}
+                <div className="flex flex-col items-center gap-1.5 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
+                    <span className="text-white/30 text-[12px] font-black">3</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-white/30">최종 판결</span>
+                  <span className="text-[9px] text-white/20">확정</span>
+                </div>
               </div>
-              <div className="mt-6">
-                <button
-                  disabled
-                  className="w-full h-[60px] rounded-[18px] font-black text-lg bg-white/10 text-white/20 border border-white/5 cursor-not-allowed"
-                >
-                  최종 분석 중...
-                </button>
-              </div>
+            </div>
+          )}
+
+          {/* ===== 판결 대기 버튼 (진행 중) ===== */}
+          {!isAllDone && (
+            <div className="mt-6 shrink-0">
+              <button
+                disabled
+                className="w-full h-[60px] rounded-[18px] font-black text-lg bg-white/10 text-white/30 border border-white/5 cursor-not-allowed flex items-center justify-center"
+              >
+                <span className="animate-pulse">판결문 작성이 진행중...</span>
+              </button>
             </div>
           )}
 

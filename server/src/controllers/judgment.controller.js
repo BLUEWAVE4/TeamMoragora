@@ -145,7 +145,7 @@ export async function getVerdict(req, res, next) {
     // 양측 주장도 함께 반환
     const { data: args } = await supabaseAdmin
       .from('arguments')
-      .select('side, content, user:profiles!user_id(nickname)')
+      .select('side, content, user_id, user:profiles!user_id(nickname)')
       .eq('debate_id', req.params.debateId);
 
     const argA = args?.find(a => a.side === 'A');
@@ -155,6 +155,8 @@ export async function getVerdict(req, res, next) {
       B: argB?.content || null,
       nicknameA: argA?.user?.nickname || null,
       nicknameB: argB?.user?.nickname || null,
+      userIdA: argA?.user_id || null,
+      userIdB: argB?.user_id || null,
     };
 
     // 실시간 시민 투표 수 조회 (finalizeVerdict 전에도 표시되도록)

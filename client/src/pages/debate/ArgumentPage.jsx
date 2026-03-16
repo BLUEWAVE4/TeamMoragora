@@ -12,6 +12,7 @@ export default function ArgumentPage() {
   const [debate, setDebate] = useState(null)
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const MIN_CHAR = 50
   const MAX_CHAR = 2000
@@ -33,14 +34,16 @@ export default function ArgumentPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (isInvalid) return
+    if (isInvalid || isSubmitting) return
 
+    setIsSubmitting(true)
     try {
       const side = debate.creator_id === user?.id ? 'A' : 'B'
       await submitArgument(debateId, { content, side })
       navigate(`/debate/${debateId}/judging`)
     } catch (err) {
       alert(err.message || '제출에 실패했습니다.')
+      setIsSubmitting(false)
     }
   }
 
@@ -122,14 +125,22 @@ export default function ArgumentPage() {
         {/* 제출 버튼 */}
         <button
           type="submit"
-          disabled={isInvalid}
-          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl ${
-            isInvalid
+          disabled={isInvalid || isSubmitting}
+          className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${
+            isInvalid || isSubmitting
               ? 'bg-gray-100 text-gray-300 shadow-none cursor-not-allowed'
               : 'bg-[#1a2744] text-white shadow-[#1a2744]/20 hover:bg-[#151f36] transform active:scale-[0.97] cursor-pointer '
           }`}
         >
-          주장 제출하기
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>제출 중...</span>
+            </>
+          ) : '주장 제출하기'}
         </button>
         
         <p className="text-center text-gray-300 text-[11px] font-medium leading-relaxed px-4">
