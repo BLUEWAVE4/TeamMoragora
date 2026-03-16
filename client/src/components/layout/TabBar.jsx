@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from "../../store/AuthContext";
-import { getMyActiveDebates } from "../../services/api";
+import { getMyActiveDebates, deleteDebate } from "../../services/api";
 
 // --- 아이콘 컴포넌트 세트 ---
 
@@ -151,52 +151,84 @@ export default function TabBar() {
     <>
       {/* ===== 바텀시트 오버레이 ===== */}
       {showSheet && (
-        <div className="fixed inset-0 z-[60] bg-black/30 flex items-end justify-center">
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center">
           <div
             ref={sheetRef}
-            className="w-full max-w-[450px] bg-white rounded-t-2xl shadow-xl animate-slide-up pb-[env(safe-area-inset-bottom,0px)]"
+            className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl shadow-xl animate-slide-up pb-[env(safe-area-inset-bottom,0px)]"
           >
             {/* 핸들 */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#1B2A4A]/15" />
+            </div>
+
+            {/* 헤더 */}
+            <div className="px-5 pt-2 pb-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
             </div>
 
             {/* 진행중 논쟁 목록 */}
-            <div className="px-4 pb-2">
-              <p className="text-sm font-semibold text-gray-500 mb-2">진행중인 논쟁</p>
+            <div className="px-5 pb-3 space-y-2 max-h-[40vh] overflow-y-auto">
               {activeDebates.map((debate) => {
                 const info = STATUS_MAP[debate.status] || STATUS_MAP.waiting;
                 return (
-                  <button
-                    key={debate.id}
-                    onClick={() => handleSelectDebate(debate)}
-                    className="w-full flex items-center justify-between p-3 mb-1.5 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{debate.topic}</p>
-                      <span className={`text-xs font-medium ${info.color}`}>{info.label}</span>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 shrink-0 ml-2">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
+                  <div key={debate.id} className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleSelectDebate(debate)}
+                      className="flex-1 flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 hover:border-[#D4AF37]/30 active:scale-[0.98] transition-all duration-300 text-left shadow-inner"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
+                        <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]/40 shrink-0 ml-2">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </button>
+                    {/* 삭제 버튼 */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
+                        try {
+                          await deleteDebate(debate.id);
+                          setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
+                        } catch (err) {
+                          alert(err.message || '삭제에 실패했습니다.');
+                        }
+                      }}
+                      className="shrink-0 w-9 h-9 rounded-xl bg-white border-2 border-[#E63946]/15 flex items-center justify-center hover:bg-[#E63946]/5 active:scale-90 transition-all"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
+                        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                      </svg>
+                    </button>
+                  </div>
                 );
               })}
+              {activeDebates.length === 0 && (
+                <p className="text-center text-[#1B2A4A]/20 text-[13px] py-4">진행중인 논쟁이 없습니다.</p>
+              )}
             </div>
 
             {/* 구분선 */}
-            <div className="mx-4 border-t border-gray-100" />
+            <div className="mx-5 border-t border-[#1B2A4A]/5" />
 
-            {/* 새 논쟁 만들기 */}
-            <div className="px-4 py-3">
+            {/* 새 논쟁 + 닫기 */}
+            <div className="px-5 py-3 flex gap-2">
               <button
                 onClick={handleNewDebate}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#1B2A4A] text-white font-medium text-sm hover:bg-[#243658] active:bg-[#0f1a2e] transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-serif font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] border-2 border-[#D4AF37]/30 hover:bg-[#D4AF37] hover:text-[#1B2A4A] active:scale-95 transition-all duration-300 shadow-md"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/>
                 </svg>
-                새 논쟁 만들기
+                새 논쟁
+              </button>
+              <button
+                onClick={() => setShowSheet(false)}
+                className="flex-1 py-3 rounded-xl font-serif font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 hover:border-[#1B2A4A]/20 active:scale-95 transition-all duration-300"
+              >
+                닫기
               </button>
             </div>
           </div>
