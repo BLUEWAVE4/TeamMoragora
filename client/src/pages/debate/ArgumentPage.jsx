@@ -80,6 +80,19 @@ export default function ArgumentPage() {
         <h1 className="text-[19px] font-black leading-[1.4] tracking-tight italic">
           "{debate?.topic || debate?.title || '주제를 불러오는 중...'}"
         </h1>
+
+        {/* 찬성/반대 입장 표시 */}
+        {(debate?.pro_side || debate?.con_side) && (
+          <div className="flex flex-col items-center gap-1.5 mt-4 text-[13px] font-bold w-full">
+            <span className="w-[70%] text-center bg-emerald-500/20 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/30">
+              찬성: {debate.pro_side || '미정'}
+            </span>
+            <span className="text-white/30 text-[11px]">vs</span>
+            <span className="w-[70%] text-center bg-red-500/20 text-red-300 px-4 py-1.5 rounded-full border border-red-500/30">
+              반대: {debate.con_side || '미정'}
+            </span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col p-6 pt-12 gap-6">
@@ -87,7 +100,7 @@ export default function ArgumentPage() {
         {/* 진영 안내 */}
         <div className="flex justify-between items-end px-1">
           <p className="text-gray-500 text-[13px] font-bold">
-            당신의 논리적인 주장 <span className="text-[#1a2744] text-sm">({sideLabel})</span>
+            당신의 논리적인 주장 <span className={`text-sm font-black ${sideLabel === '찬성' ? 'text-emerald-600' : 'text-red-500'}`}>({sideLabel}{user?.user_metadata?.nickname ? `: ${user.user_metadata.nickname}` : ''})</span>
           </p>
           <span className="text-[11px] text-gray-400 italic font-medium">공백 포함 50자 이상</span>
         </div>
