@@ -426,11 +426,10 @@ export default function JudgingPage() {
         try {
           const args = await getArguments(debateId);
           setDebateArgs(args || []);
-          // 주장 기반 상태 업데이트
-          const hasA = args?.some(a => a.side === 'A');
-          const hasB = args?.some(a => a.side === 'B');
-          if (hasA && hasB) setOpponentStatus('ready');
-          else if (data.opponent_id && (hasA || hasB)) setOpponentStatus('writing');
+          // 주장 기반 상태 업데이트 (4개 주장 = 2라운드 완료)
+          const argCount = args?.length || 0;
+          if (argCount >= 4) setOpponentStatus('ready');
+          else if (argCount > 0) setOpponentStatus('writing');
         } catch (_) {}
 
       } catch (e) {
@@ -460,10 +459,9 @@ export default function JudgingPage() {
           try {
             const args = await getArguments(debateId);
             setDebateArgs(args || []);
-            const hasA = args?.some(a => a.side === 'A');
-            const hasB = args?.some(a => a.side === 'B');
-            if (hasA && hasB) setOpponentStatus('ready');
-            else if (debateData.opponent_id && (hasA || hasB)) setOpponentStatus('writing');
+            const argCount = args?.length || 0;
+            if (argCount >= 4) setOpponentStatus('ready');
+            else if (argCount > 0) setOpponentStatus('writing');
           } catch (_) {}
           return;
         }
@@ -522,9 +520,9 @@ export default function JudgingPage() {
           {/* ===== 헤더 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (
-              <h2 className="text-white/80 text-lg font-sans font-bold tracking-tight">
-                {opponentStatus === 'not_invited' && '상대방이 아직 초대를 받지 않았습니다'}
-                {opponentStatus === 'writing' && '상대방이 주장을 작성하고 있습니다...'}
+              <h2 className="text-white/80 text-lg font-serif font-bold tracking-tight">
+                {opponentStatus === 'not_invited' && '상대방을 기다리고 있습니다...'}
+                {opponentStatus === 'writing' && '양측의 주장을 수집하고 있습니다...'}
                 {opponentStatus === 'ready' && '배심원단이 아고라에 모였습니다.'}
                 {opponentStatus === 'unknown' && '배심원단이 아고라에 모였습니다.'}
               </h2>
@@ -539,9 +537,9 @@ export default function JudgingPage() {
             </p>
             {(proSide || conSide) && (
               <div className="flex items-center gap-2 text-xs font-sans font-bold mt-1">
-                <span className="text-emerald-400">{proSide || 'A측'} <span className="text-emerald-400/50">(A측)</span></span>
+                <span className="text-emerald-400">{proSide || '찬성'} <span className="text-emerald-400/50">(찬성)</span></span>
                 <span className="text-white/30">vs</span>
-                <span className="text-red-300">{conSide || 'B측'} <span className="text-red-300/50">(B측)</span></span>
+                <span className="text-red-300">{conSide || '반대'} <span className="text-red-300/50">(반대)</span></span>
               </div>
             )}
           </div>
@@ -566,29 +564,41 @@ export default function JudgingPage() {
             />
           )}
 
-          {/* ===== 양측 주장 미리보기 ===== */}
-          {!isAllDone && debateArgs.length > 0 && (
-            <div className="mt-8 shrink-0 space-y-2">
-              {debateArgs.filter(a => a.side === 'A').map((arg, i) => (
-                <div key={`a-${i}`} className="bg-white/5 border border-emerald-500/20 rounded-2xl p-4">
+          {/* ===== 양측 주장 미리보기 (라운드별) ===== */}
+          {!isAllDone && debateArgs.length > 0 && (() => {
+            const r1Args = debateArgs.filter(a => (a.round || 1) === 1);
+            const r2Args = debateArgs.filter(a => a.round === 2);
+            const renderArg = (arg, idx) => {
+              const isA = arg.side === 'A';
+              return (
+                <div key={idx} className={`bg-white/5 border rounded-2xl p-4 ${isA ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
                   <div className="flex items-center gap-1.5 mb-2">
-                    <ThumbsUp size={12} className="text-emerald-400" />
-                    <span className="text-[11px] font-bold text-emerald-400">A측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+                    {isA ? <ThumbsUp size={12} className="text-emerald-400" /> : <ThumbsDown size={12} className="text-red-400" />}
+                    <span className={`text-[11px] font-bold ${isA ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {isA ? '찬성' : '반대'}{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
+                    </span>
                   </div>
-                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
+                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-3">{arg.content}</p>
                 </div>
-              ))}
-              {debateArgs.filter(a => a.side === 'B').map((arg, i) => (
-                <div key={`b-${i}`} className="bg-white/5 border border-red-500/20 rounded-2xl p-4">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <ThumbsDown size={12} className="text-red-400" />
-                    <span className="text-[11px] font-bold text-red-400">B측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+              );
+            };
+            return (
+              <div className="mt-8 shrink-0 space-y-4">
+                {r1Args.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/25 px-1">Round 1 — 주장</p>
+                    {r1Args.map((a, i) => renderArg(a, `r1-${i}`))}
                   </div>
-                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+                {r2Args.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/25 px-1">Round 2 — 반박</p>
+                    {r2Args.map((a, i) => renderArg(a, `r2-${i}`))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ===== 판결 프로세스 안내 ===== */}
           {!isAllDone && (

@@ -32,6 +32,7 @@ export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
+export const getMyActiveDebates = () => api.get('/debates/my/active');
 
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);

@@ -64,9 +64,10 @@ CREATE TABLE arguments (
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   side TEXT NOT NULL CHECK (side IN ('A', 'B')),
-  content TEXT NOT NULL CHECK (char_length(content) BETWEEN 50 AND 2000),
+  round INTEGER NOT NULL DEFAULT 1 CHECK (round IN (1, 2)),
+  content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 2000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (debate_id, user_id)
+  UNIQUE (debate_id, side, round)
 );
 
 -- 4. verdicts

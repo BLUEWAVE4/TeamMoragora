@@ -293,9 +293,11 @@
 // // 담당: 서우주 (프론트A) - 32h
 // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDebate, generateDebateSides } from "../../services/api";
+
+const DRAFT_KEY = 'debate_create_draft';
 
 import ModeSelector from "../../components/ui/ModeSelector";
 import StepWizard from "../../components/common/StepWizard";
@@ -328,6 +330,32 @@ export default function DebateCreatePage() {
 
   const [aiResults, setAiResults] = useState({});
 
+  // ===== 임시저장 복원 =====
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+      if (!draft) return;
+      if (draft.topic) setTopic(draft.topic);
+      if (draft.proSide) setProSide(draft.proSide);
+      if (draft.conSide) setConSide(draft.conSide);
+      if (draft.purpose) setPurpose(draft.purpose);
+      if (draft.lens) setLens(draft.lens);
+      if (draft.category) setCategory(draft.category);
+      if (draft.time) setTime(draft.time);
+      if (draft.mode) { setMode(draft.mode); setGameStarted(true); }
+      if (draft.step) setStep(draft.step);
+    } catch { /* ignore */ }
+  }, []);
+
+  // ===== 임시저장 (상태 변경 시) =====
+  const saveDraft = useCallback(() => {
+    if (!gameStarted) return;
+    const draft = { topic, proSide, conSide, purpose, lens, category, time, mode, step };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [topic, proSide, conSide, purpose, lens, category, time, mode, step, gameStarted]);
+
+  useEffect(() => { saveDraft(); }, [saveDraft]);
+
   const nextStep = () => {
     if (topic) {
       setAiResults(prev => ({
@@ -356,6 +384,7 @@ export default function DebateCreatePage() {
     setTime("");
     setAiResults({});
     setStep(1);
+    localStorage.removeItem(DRAFT_KEY);
   };
 
   const handleModeStart = (selectedMode) => {
@@ -425,6 +454,7 @@ export default function DebateCreatePage() {
       };
 
       const result = await createDebate(data);
+      localStorage.removeItem(DRAFT_KEY); // 임시저장 삭제
       const inviteCode = result?.invite_code;
 
       sessionStorage.setItem(

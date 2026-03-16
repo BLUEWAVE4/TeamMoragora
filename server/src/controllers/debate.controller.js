@@ -66,6 +66,27 @@ export async function getDebate(req, res, next) {
   }
 }
 
+// ===== 내 진행중인 논쟁 목록 =====
+export async function getMyActiveDebates(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const activeStatuses = ['waiting', 'both_joined', 'arguing', 'judging', 'voting'];
+
+    const { data, error } = await supabaseAdmin
+      .from('debates')
+      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at')
+      .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
+      .in('status', activeStatuses)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function listDebates(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
