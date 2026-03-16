@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, submitArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
-import { Target as TargetIcon, Tag as TagIcon, Scale as ScaleIcon} from 'lucide-react';
+import { Target, Tag, Scale } from 'lucide-react';
+
+const labelMap = {
+  battle: '승부', consensus: '합의', analysis: '분석',
+  logic: '논리', emotion: '감정', practical: '현실', ethics: '윤리', general: '일반',
+  society: '사회', technology: '기술', politics: '정치', philosophy: '철학',
+  daily: '일상', culture: '문화', sports: '스포츠', entertainment: '연예',
+}
+const toKor = (v) => labelMap[v] || v
 
 export default function ArgumentPage() {
   const { debateId } = useParams()

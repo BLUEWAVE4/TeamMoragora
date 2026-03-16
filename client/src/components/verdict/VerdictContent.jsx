@@ -103,6 +103,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     setIsSubmittingComment(true);
     try {
       const newComment = await createComment(debateId, commentInput.trim());
+      // dicebear avataaars 아바타 설정 (닉네임 기반)
+      if (newComment.user) {
+        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || user?.user_metadata?.nickname || 'anon'}`;
+      }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
     } catch (err) {
@@ -121,16 +125,25 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     }
   };
 
+  const [likingSet, setLikingSet] = useState(new Set());
   const handleToggleLike = async (commentId) => {
-    if (!user) return;
+    if (!user || likingSet.has(commentId)) return;
+    setLikingSet(prev => new Set(prev).add(commentId));
+    // 낙관적 업데이트
+    const prevComments = comments;
+    setComments(prev => prev.map(c =>
+      c.id === commentId
+        ? { ...c, is_liked: !c.is_liked, likes_count: Math.max((c.likes_count || 0) + (c.is_liked ? -1 : 1), 0) }
+        : c
+    ));
     try {
-      const result = await toggleCommentLike(commentId);
-      setComments(prev => prev.map(c =>
-        c.id === commentId
-          ? { ...c, is_liked: result.liked, likes_count: c.likes_count + (result.liked ? 1 : -1) }
-          : c
-      ));
-    } catch (_) {}
+      await toggleCommentLike(commentId);
+    } catch (_) {
+      // 실패 시 롤백
+      setComments(prevComments);
+    } finally {
+      setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; });
+    }
   };
 
   if (!verdictData) return null;
@@ -853,13 +866,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <div key={c.id} className="flex gap-2.5">
               {/* 아바타 */}
               <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
-                {c.user?.avatar_url ? (
-                  <img src={c.user.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[11px] text-primary/40 font-bold">
-                    {(c.user?.nickname || '?')[0]}
-                  </div>
-                )}
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
               </div>
               {/* 내용 */}
               <div className="flex-1 min-w-0">
@@ -902,13 +913,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         {user ? (
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
-              {user.user_metadata?.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[11px] text-primary/40 font-bold">
-                  {(user.user_metadata?.name || user.email || '?')[0]}
-                </div>
-              )}
+              <img
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             </div>
             <input
               type="text"
