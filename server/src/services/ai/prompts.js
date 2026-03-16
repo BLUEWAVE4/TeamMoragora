@@ -70,6 +70,7 @@ const SHARED_GUIDELINES = `
 - score_a / score_b는 반드시 5개 항목 점수의 합과 일치해야 합니다.
 - winner_side는 총점이 높은 쪽입니다. 총점이 동일하면 "draw"입니다.
 - verdict_text는 한국어로 작성하며, 승패 판정 근거를 2~3문장으로 구체적으로 서술합니다.
+- verdict_sections는 5개 평가 항목별로 한 줄씩, 양측 비교 분석을 작성합니다. criterion은 반드시 logic/evidence/persuasion/consistency/expression 중 하나입니다.
 
 ## confidence 기준표
 | 구간 | 의미 | 기준 |
@@ -99,6 +100,13 @@ const SHARED_GUIDELINES = `
   "score_detail_a": { "logic": 0-20, "evidence": 0-20, "persuasion": 0-20, "consistency": 0-20, "expression": 0-20 },
   "score_detail_b": { "logic": 0-20, "evidence": 0-20, "persuasion": 0-20, "consistency": 0-20, "expression": 0-20 },
   "verdict_text": "판결 근거를 2~3문장으로 작성",
+  "verdict_sections": [
+    { "criterion": "logic", "text": "논리 구조 측면에서 A측은 ~, B측은 ~" },
+    { "criterion": "evidence", "text": "근거 품질 측면에서 ~" },
+    { "criterion": "persuasion", "text": "설득력 측면에서 ~" },
+    { "criterion": "consistency", "text": "일관성 측면에서 ~" },
+    { "criterion": "expression", "text": "표현 적절성 측면에서 ~" }
+  ],
   "confidence": 0.0-1.0
 }`;
 
@@ -181,9 +189,11 @@ export function buildSystemPrompt(judge) {
 
 // ========== User Prompt 빌더 ==========
 
-export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB }) {
+export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB, nicknameA, nicknameB }) {
   const purposeDesc = PURPOSE_MAP[purpose] || PURPOSE_MAP.battle;
   const lensDesc = LENS_WEIGHT_DESC[lens] || LENS_WEIGHT_DESC.general;
+  const nameA = nicknameA || 'A측';
+  const nameB = nicknameB || 'B측';
 
   return `아래 논쟁에 대해 판결을 내려주세요.
 
@@ -191,12 +201,16 @@ export function buildUserPrompt({ topic, purpose, lens, argumentA, argumentB }) 
 - 주제: ${topic}
 - 판결 목적: ${purposeDesc}
 - 분석 렌즈: ${lensDesc}
+- 찬성측(A): ${nameA}
+- 반대측(B): ${nameB}
 
-## A측 주장
+## ${nameA}(찬성)의 주장
 ${argumentA}
 
-## B측 주장
-${argumentB}`;
+## ${nameB}(반대)의 주장
+${argumentB}
+
+주의: 판결문(verdict_text, verdict_sections)에서 "A측/B측" 대신 반드시 "${nameA}", "${nameB}" 닉네임을 사용하세요.`;
 }
 
 // ========== 하위 호환: 기존 단일 프롬프트 (fallback) ==========

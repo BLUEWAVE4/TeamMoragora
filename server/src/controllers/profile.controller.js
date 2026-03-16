@@ -49,6 +49,40 @@ export async function getMyXPLogs(req, res, next) {
   }
 }
 
+// 논쟁 삭제 (본인이 creator 또는 opponent인 경우만)
+export async function deleteMyDebate(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { debateId } = req.params;
+
+    // 본인 참여 논쟁인지 확인
+    const { data: debate, error: findErr } = await supabaseAdmin
+      .from('debates')
+      .select('id, creator_id, opponent_id')
+      .eq('id', debateId)
+      .single();
+
+    if (findErr || !debate) {
+      return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
+    }
+
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    // CASCADE로 verdicts, arguments, votes 등 자동 삭제
+    const { error: delErr } = await supabaseAdmin
+      .from('debates')
+      .delete()
+      .eq('id', debateId);
+
+    if (delErr) throw delErr;
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getRanking(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin

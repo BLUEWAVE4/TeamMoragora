@@ -5,7 +5,7 @@ import { ValidationError } from '../errors/index.js';
 
 export async function createDebate(req, res, next) {
   try {
-    const { topic, description, category, purpose, lens, mode, pro_side, con_side } = req.body;
+    const { topic, description, category, purpose, lens, mode, pro_side, con_side, time } = req.body;
 
     if (!topic?.trim()) throw new ValidationError('주제를 입력해주세요.');
 
@@ -33,6 +33,7 @@ export async function createDebate(req, res, next) {
         mode: debateMode,
         pro_side: pro_side || null,
         con_side: con_side || null,
+        vote_duration: time ? parseInt(time, 10) : null,
         invite_code: inviteCode,
         status: debateMode === 'solo' ? 'arguing' : 'waiting',
       })
@@ -55,9 +56,10 @@ export async function getDebate(req, res, next) {
       .from('debates')
       .select('*, creator:profiles!creator_id(*), opponent:profiles!opponent_id(*)')
       .eq('id', req.params.id)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
     res.json(data);
   } catch (err) {
     next(err);
@@ -104,21 +106,38 @@ export async function joinByInvite(req, res, next) {
   try {
     const { inviteCode } = req.params;
 
-    const { data: debate, error: findErr } = await supabaseAdmin
+    // 먼저 invite_code로 논쟁 조회 (상태 무관)
+    const { data: existing, error: existErr } = await supabaseAdmin
       .from('debates')
       .select('*')
       .eq('invite_code', inviteCode)
-      .eq('status', 'waiting')
-      .is('opponent_id', null)
       .single();
 
-    if (findErr || !debate) {
+    if (existErr || !existing) {
       return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' });
     }
 
-    if (debate.creator_id === req.user.id) {
+    // 본인이 만든 논쟁인 경우
+    if (existing.creator_id === req.user.id) {
       return res.status(400).json({ error: '자신의 논쟁에 참여할 수 없습니다.' });
     }
+
+    // 이미 참여한 상대방이 다시 접속한 경우 → 논쟁 페이지로 리다이렉트용 데이터 반환
+    if (existing.opponent_id === req.user.id) {
+      return res.json(existing);
+    }
+
+    // 이미 다른 상대방이 참여한 경우
+    if (existing.opponent_id) {
+      return res.status(409).json({ error: '이미 상대방이 참여한 논쟁입니다.' });
+    }
+
+    // 대기 중이 아닌 경우
+    if (existing.status !== 'waiting') {
+      return res.status(400).json({ error: '이미 진행 중인 논쟁입니다.' });
+    }
+
+    const debate = existing;
 
     const { data, error } = await supabaseAdmin
       .from('debates')

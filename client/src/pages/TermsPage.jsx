@@ -1,16 +1,23 @@
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TermsPage() {
   const navigate = useNavigate();
+  const [showBtn, setShowBtn] = useState(true);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowBtn(y < 50 || y < lastY.current);
+      lastY.current = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto p-6 pb-24 text-sm text-gray-700 leading-relaxed">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-[#2D3350] font-bold text-sm mb-4 hover:opacity-70 transition-opacity"
-      >
-        ← 뒤로가기
-      </button>
       <h1 className="text-xl font-black text-[#2D3350] mb-6">서비스 이용약관</h1>
       <p className="text-xs text-gray-400 mb-6">시행일: 2026년 3월 11일</p>
 
@@ -118,6 +125,14 @@ export default function TermsPage() {
         <h2 className="font-bold text-[#2D3350] mb-2">제13조 (준거법 및 관할)</h2>
         <p>본 약관의 해석 및 적용에 관하여는 대한민국 법령을 적용하며, 서비스 이용과 관련한 분쟁은 민사소송법에 따른 관할 법원에서 해결합니다.</p>
       </section>
+
+      {/* 플로팅 뒤로가기 */}
+      <button
+        onClick={() => navigate(-1)}
+        className={`fixed bottom-20 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-[#1B2A4A] text-white text-sm font-bold rounded-full shadow-lg hover:bg-[#2D3350] active:scale-95 transition-all duration-300 z-50 ${showBtn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+      >
+        ← 뒤로가기
+      </button>
     </div>
   );
 }

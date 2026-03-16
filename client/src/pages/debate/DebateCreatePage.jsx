@@ -1,5 +1,5 @@
-// // 담당: 서우주 (프론트A) - 32h // 
-// // 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// // // // 담당: 서우주 (프론트A) - 32h // 
+// // // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +24,6 @@ export default function DebateCreatePage() {
   const [step, setStep] = useState(1);
 
   const [topic, setTopic] = useState("");
-
   const [proSide, setProSide] = useState("");
   const [conSide, setConSide] = useState("");
 
@@ -36,7 +35,12 @@ export default function DebateCreatePage() {
 
   const [showBackModal, setShowBackModal] = useState(false);
 
-  const nextStep = () => setStep(prev => prev + 1);
+  // 🔥 AI 로딩 상태
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const nextStep = () => {
+    setStep((prev) => prev + 1);
+  };
 
   const prevStep = () => {
 
@@ -45,8 +49,18 @@ export default function DebateCreatePage() {
       return;
     }
 
-    setStep(prev => prev - 1);
+    setStep((prev) => prev - 1);
+  };
 
+  const resetDebateState = () => {
+    setTopic("");
+    setProSide("");
+    setConSide("");
+    setPurpose("");
+    setLens("");
+    setCategory("");
+    setTime("");
+    setStep(1);
   };
 
   const handleModeStart = (selectedMode) => {
@@ -54,30 +68,42 @@ export default function DebateCreatePage() {
     setGameStarted(true);
   };
 
-  // 🔥 AI 찬반 생성
+  // 🔥 AI 찬반 생성 + 카테고리 자동 설정
   const handleGenerateSides = async () => {
 
-    if (!topic) {
+    if (!topic.trim()) {
       alert("주제를 입력하세요");
       return;
     }
 
     try {
 
+      setAiLoading(true);
+
       const result = await generateDebateSides({ topic });
+
+      if (result.unavailable) {
+        alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+        return;
+      }
 
       setProSide(result.pro);
       setConSide(result.con);
 
-      alert("AI 찬반 생성 완료");
+      if (result.category) {
+        setCategory(result.category);
+      }
 
     } catch (err) {
 
       console.error(err);
       alert("AI 생성 실패");
 
-    }
+    } finally {
 
+      setAiLoading(false);
+
+    }
   };
 
   const handleSubmit = async () => {
@@ -99,7 +125,10 @@ export default function DebateCreatePage() {
 
       const inviteCode = result?.invite_code;
 
-      sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+      sessionStorage.setItem(
+        `debate_invite_${inviteCode}`,
+        JSON.stringify(result)
+      );
 
       navigate(`/invite/${inviteCode}`);
 
@@ -109,7 +138,6 @@ export default function DebateCreatePage() {
       alert("생성 실패");
 
     }
-
   };
 
   return (
@@ -123,19 +151,24 @@ export default function DebateCreatePage() {
         </h2>
 
         {!gameStarted && (
-          <ModeSelector onStart={handleModeStart}/>
+          <ModeSelector onStart={handleModeStart} />
         )}
 
         {gameStarted && mode === "battle" && (
           <>
-            <StepWizard currentStep={step} total={3}/>
+            <StepWizard currentStep={step} total={3} />
 
             {step === 1 && (
               <Step1Topic
                 topic={topic}
                 setTopic={setTopic}
+                category={category}
+                setCategory={setCategory}
                 proSide={proSide}
+                setProSide={setProSide} 
                 conSide={conSide}
+                setConSide={setConSide}  
+                aiLoading={aiLoading}
                 handleGenerateSides={handleGenerateSides}
                 nextStep={nextStep}
                 prevStep={prevStep}
@@ -155,15 +188,18 @@ export default function DebateCreatePage() {
 
             {step === 3 && (
               <Step3CategoryTime
+                topic={topic}
+                proSide={proSide}
+                conSide={conSide}
+                purpose={purpose}
+                lens={lens}
                 category={category}
-                setCategory={setCategory}
                 time={time}
                 setTime={setTime}
                 prevStep={prevStep}
                 handleSubmit={handleSubmit}
               />
             )}
-
           </>
         )}
 
@@ -186,10 +222,14 @@ export default function DebateCreatePage() {
 
           <Button
             onClick={() => {
+
+              resetDebateState();
+
               setGameStarted(false);
               setMode(null);
-              setStep(1);
+
               setShowBackModal(false);
+
             }}
           >
             예

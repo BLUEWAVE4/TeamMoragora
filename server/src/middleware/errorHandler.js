@@ -1,13 +1,13 @@
 import { AppError } from '../errors/index.js';
 
-export function errorHandler(err, _req, res, _next) {
+export function errorHandler(err, req, res, _next) {
   const isAppError = err instanceof AppError;
   const status = err.status || 500;
 
   if (!isAppError) {
-    console.error('[Error]', err.stack || err.message);
+    console.error(`[Error] ${req.method} ${req.originalUrl} →`, err.message);
   } else {
-    console.warn(`[${err.name}]`, err.message);
+    console.warn(`[${err.name}] ${req.method} ${req.originalUrl} →`, err.message);
   }
 
   res.status(status).json({

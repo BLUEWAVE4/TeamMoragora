@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getDebateByInviteCode, joinByInvite } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
+import { Target, Tag, Scale, ShieldBan, Gavel, Mail } from 'lucide-react';
 
 const INVITE_TIMEOUT = 300 // 5분
 
@@ -15,6 +16,23 @@ const labelMap = {
 }
 const toKor = (v) => labelMap[v] || v
 
+// 논쟁 상태에 따라 적절한 페이지로 이동
+const getDebateRoute = (debateId, status) => {
+  switch (status) {
+    case 'waiting':
+    case 'arguing':
+      return `/debate/${debateId}/argument`
+    case 'judging':
+      return `/debate/${debateId}/judging`
+    case 'voting':
+      return `/debate/${debateId}/vote`
+    case 'completed':
+      return `/debate/${debateId}`
+    default:
+      return `/debate/${debateId}`
+  }
+}
+
 export default function InvitePage() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
@@ -26,7 +44,7 @@ export default function InvitePage() {
   const [isCopied, setIsCopied] = useState(false)
   const [isOpponentJoined, setIsOpponentJoined] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
-  const [isCreator, setIsCreator] = useState(true) 
+  const [isCreator, setIsCreator] = useState(true)
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
   const ogShareUrl = `https://teammoragora.onrender.com/og/invite/${inviteCode}`
@@ -58,12 +76,12 @@ export default function InvitePage() {
         try {
           const response = await joinByInvite(inviteCode)
           const targetId = response.id || response._id
-          if (targetId) navigate(`/debate/${targetId}/argument`)
+          if (targetId) navigate(getDebateRoute(targetId, response.status))
         } catch (joinErr) {
           const msg = joinErr.message || ''
-          
-          if (joinErr.status === 400 && 
-            (msg.includes('본인') || msg.includes('자신') || 
+
+          if (joinErr.status === 400 &&
+            (msg.includes('본인') || msg.includes('자신') ||
             msg.includes('yourself') || msg.includes('own'))) {
             // [A측 판별] 본인이 만든 토론인 경우 정보 조회 후 작성자 UI 표시
             try {
@@ -121,7 +139,6 @@ export default function InvitePage() {
     setTimeLeft(prev => {
       if (prev <= 1) {
         clearInterval(timer)
-        // 🔥 타이머 종료 시 자동 이동 추가
         alert('초대 가능 시간이 만료되었습니다.')
         navigate('/')
         return 0
@@ -181,7 +198,7 @@ export default function InvitePage() {
       sessionStorage.setItem('redirectAfterLogin', `/invite/${inviteCode}`);
       const isKakaoApp = /KAKAOTALK/i.test(navigator.userAgent);
      if (isKakaoApp) {
-      navigate('/login/kakao'); 
+      navigate('/login/kakao');
     } else {
       navigate('/login');
     }
@@ -190,7 +207,7 @@ export default function InvitePage() {
   try {
     const response = await joinByInvite(inviteCode);
     const targetId = response.id || response._id;
-    if (targetId) navigate(`/debate/${targetId}/argument`);
+    if (targetId) navigate(getDebateRoute(targetId, response.status));
   } catch (err) {
     alert(err.message || '참여 처리 중 오류가 발생했습니다.');
   }
@@ -205,7 +222,7 @@ export default function InvitePage() {
 
   if (error && !debate) return (
     <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
-      <div className="text-5xl mb-6">😅</div>
+      <div className="text-5xl mb-6"><ShieldBan size={60} /></div>
       <h1 className="text-[20px] font-black text-[#1a2744] mb-3">{error}</h1>
       <button onClick={() => navigate('/')} className="mt-6 px-8 py-3 bg-[#1a2744] text-white rounded-[20px] font-black shadow-lg">홈으로 돌아가기</button>
     </div>
@@ -216,7 +233,7 @@ export default function InvitePage() {
     return (
       <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-12">
         <div className="w-full bg-[#1a2744] text-white pt-16 pb-14 rounded-b-[50px] flex flex-col items-center shadow-2xl text-center relative overflow-hidden">
-          <div className="text-5xl mb-5 drop-shadow-lg">⚔️</div>
+          <div className="text-5xl mb-5 drop-shadow-lg"><Gavel size={50} /></div>
           <h1 className="text-[22px] font-black mb-1 tracking-tight">논쟁 준비 완료!</h1>
           <p className="text-blue-300/70 text-[14px] font-medium tracking-wide">상대방의 반론을 기다려보세요</p>
         </div>
@@ -225,8 +242,9 @@ export default function InvitePage() {
           <p className="text-gray-300 text-[11px] font-black mb-3 uppercase tracking-widest">Debate Topic</p>
           <h2 className="text-[18px] font-black text-[#1a2744] mb-4 leading-relaxed italic">"{debate?.topic}"</h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🎯 {toKor(debate?.purpose)}</span>
-            <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100">🔍 {toKor(debate?.lens)}</span>
+            <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Target size={14} /> {toKor(debate?.purpose)}</span>
+            <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Scale size={14} /> {toKor(debate?.lens)}</span>
+            <span className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full text-[12px] font-bold text-gray-500 border border-gray-100"><Tag size={14} /> {toKor(debate?.category)}</span>
           </div>
         </div>
 
@@ -245,12 +263,12 @@ export default function InvitePage() {
             <button onClick={handleKakaoShare} className="w-full h-[64px] bg-[#FEE500] text-[#3c1e1e] rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all">카카오톡 초대하기</button>
             <button onClick={handleNativeShare} className="w-full h-[64px] bg-[#1a2744] text-white rounded-[24px] font-black text-[17px] shadow-xl active:scale-[0.98] transition-all">링크로 초대하기</button>
             <button
-              onClick={() => isOpponentJoined && navigate(`/debate/${debate?.id}/argument`)}
+              onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
               disabled={!isOpponentJoined}
               className={`w-full h-[64px] rounded-[24px] font-black text-[17px] transition-all
                 ${isOpponentJoined ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
-              {isOpponentJoined ? '⚔️ 논쟁 시작하기' : '상대방의 입장을 기다리는 중...'}
+              {isOpponentJoined ? '논쟁 시작하기' : '상대방의 입장을 기다리는 중...'}
             </button>
           </div>
         </div>
@@ -267,7 +285,7 @@ export default function InvitePage() {
           <span className="font-black tabular-nums text-[13px]">{formatTime(timeLeft)}</span>
         </div>
 
-        <div className="w-20 h-20 bg-[#1a2744]/5 rounded-[28px] flex items-center justify-center mb-8 text-4xl animate-bounce">✉️</div>
+        <div className="w-20 h-20 bg-[#1a2744]/5 rounded-[28px] flex items-center justify-center mb-8 text-4xl animate-bounce"><Mail size={50} /></div>
 
         <h1 className="text-[23px] font-black text-[#1a2744] mb-5 leading-tight break-keep">
           {debate?.topic && <><span className="italic">"{debate.topic}"</span><br/></>}
@@ -275,8 +293,9 @@ export default function InvitePage() {
         </h1>
 
         <div className="flex justify-center gap-2 mb-10">
-          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🎯 {toKor(debate?.purpose)}</span>
-          <span className="bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100">🔍 {toKor(debate?.lens)}</span>
+          <span className="flex items-center gap-1 bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100"><Target size={14} /> {toKor(debate?.purpose)}</span>
+          <span className="flex items-center gap-1 bg-[#FAFAF5] px-4 py-2 rounded-full text-[12px] font-black text-gray-400 border border-gray-100"><Scale size={14} /> {toKor(debate?.lens)}</span>
+          <span className="flex items-center gap-1 bg-[#FAFAF5] px-3 py-2 rounded-full text-[12px] font-black text-gray-500 border border-gray-100"><Tag size={14} /> {toKor(debate?.category)}</span>
         </div>
 
         <button

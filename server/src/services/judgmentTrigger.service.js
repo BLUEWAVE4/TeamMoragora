@@ -36,6 +36,15 @@ export async function triggerJudgment(debateId) {
 
   if (!sideA || !sideB) return;
 
+  // 2-1. 닉네임 조회
+  const { data: profiles } = await supabaseAdmin
+    .from('profiles')
+    .select('id, nickname')
+    .in('id', [debate.creator_id, debate.opponent_id]);
+
+  const nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || '찬성측';
+  const nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || '반대측';
+
   // 3. 원자적 상태 전환 (arguing → judging)
   const { data: updated, error: updateErr } = await supabaseAdmin
     .from('debates')
@@ -85,6 +94,8 @@ export async function triggerJudgment(debateId) {
       lens: debate.lens,
       argumentA: sideA.content,
       argumentB: sideB.content,
+      nicknameA,
+      nicknameB,
     }, verdictId);
   } catch (aiErr) {
     // AI 전체 실패 시 verdict 삭제 + status 롤백
@@ -101,8 +112,11 @@ export async function triggerJudgment(debateId) {
   // 6. 복합 판결 업데이트 (빈 verdict를 최종 점수로 갱신)
   await updateCompositeVerdict(verdictId, judgments);
 
-  // 7. voting 상태 + 투표 마감시간 설정
-  const voteDeadline = new Date(Date.now() + env.VOTE_DURATION_HOURS * 60 * 60 * 1000);
+  // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 분 단위, 없으면 기본값)
+  const durationMs = debate.vote_duration
+    ? debate.vote_duration * 60 * 1000
+    : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
+  const voteDeadline = new Date(Date.now() + durationMs);
 
   await supabaseAdmin
     .from('debates')

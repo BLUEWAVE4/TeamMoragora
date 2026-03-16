@@ -43,7 +43,7 @@ const StepWizard = ({ currentStep = 1 }) => {
                 absolute -bottom-8 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap
                 ${isActive ? "text-primary opacity-100" : "text-primary/40"}
               `}>
-                {step === 1 ? "논쟁 목적" : step === 2 ? "렌즈 선택" : "주제 입력"}
+                {step === 1 ? "주제 & 카테고리" : step === 2 ? "목적 & 렌즈" : "시간"}
               </span>
             </div>
           );

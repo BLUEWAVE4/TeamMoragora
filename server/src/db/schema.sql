@@ -36,12 +36,13 @@ CREATE TRIGGER on_auth_user_created
 -- 2. debates
 CREATE TABLE debates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  creator_id UUID NOT NULL REFERENCES profiles(id),
-  opponent_id UUID REFERENCES profiles(id),
+  creator_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  opponent_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   topic TEXT NOT NULL,
   description TEXT,
   pro_side TEXT,                          -- A측(찬성) 입장 제목
   con_side TEXT,                          -- B측(반대) 입장 제목
+  vote_duration INTEGER,                  -- 시민 투표 제한시간 (분 단위, NULL이면 기본 24시간)
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
@@ -61,7 +62,7 @@ CREATE INDEX idx_debates_invite ON debates(invite_code);
 CREATE TABLE arguments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   side TEXT NOT NULL CHECK (side IN ('A', 'B')),
   content TEXT NOT NULL CHECK (char_length(content) BETWEEN 50 AND 2000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -97,6 +98,7 @@ CREATE TABLE ai_judgments (
   score_b INTEGER NOT NULL DEFAULT 0,
   score_detail_a JSONB,
   score_detail_b JSONB,
+  verdict_sections JSONB DEFAULT '[]',
   confidence NUMERIC(4,2) DEFAULT 0.0,
   status TEXT NOT NULL DEFAULT 'success',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -106,7 +108,7 @@ CREATE TABLE ai_judgments (
 CREATE TABLE votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   voted_side TEXT NOT NULL CHECK (voted_side IN ('A', 'B')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (debate_id, user_id)
@@ -115,7 +117,7 @@ CREATE TABLE votes (
 -- 7. content_filter_logs
 CREATE TABLE content_filter_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   debate_id UUID REFERENCES debates(id),
   content_type TEXT NOT NULL,
   filter_stage INTEGER NOT NULL CHECK (filter_stage IN (1, 2, 3)),
@@ -141,7 +143,7 @@ CREATE INDEX idx_xp_logs_created ON xp_logs(created_at);
 CREATE TABLE comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   likes_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -151,15 +153,24 @@ CREATE TABLE comments (
 CREATE TABLE comment_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (comment_id, user_id)
 );
 
--- 11. feedbacks (서비스 평가)
+-- 11. debate_likes (논쟁 좋아요)
+CREATE TABLE debate_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (debate_id, user_id)
+);
+
+-- 12. feedbacks (서비스 평가)
 CREATE TABLE feedbacks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   satisfaction INTEGER NOT NULL CHECK (satisfaction BETWEEN 1 AND 5),
   ai_accuracy INTEGER NOT NULL CHECK (ai_accuracy BETWEEN 1 AND 5),
   ui_ease INTEGER NOT NULL CHECK (ui_ease BETWEEN 1 AND 5),
@@ -176,7 +187,7 @@ CREATE TABLE page_views (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   path TEXT NOT NULL,
   session_id TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   referrer TEXT,
   user_agent TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -191,7 +202,7 @@ CREATE TABLE analytics_events (
   event_name TEXT NOT NULL,
   metadata JSONB DEFAULT '{}',
   session_id TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   path TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -212,6 +223,7 @@ ALTER TABLE content_filter_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xp_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE debate_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 
 -- profiles: 누구나 읽기, 본인만 수정
@@ -252,6 +264,11 @@ CREATE POLICY "comments_insert" ON comments FOR INSERT WITH CHECK (auth.uid() = 
 CREATE POLICY "comment_likes_read" ON comment_likes FOR SELECT USING (true);
 CREATE POLICY "comment_likes_insert" ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "comment_likes_delete" ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- debate_likes: 누구나 읽기, 본인만 좋아요/취소
+CREATE POLICY "debate_likes_read" ON debate_likes FOR SELECT USING (true);
+CREATE POLICY "debate_likes_insert" ON debate_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "debate_likes_delete" ON debate_likes FOR DELETE USING (auth.uid() = user_id);
 
 -- feedbacks: 본인만 작성/읽기
 CREATE POLICY "feedbacks_insert" ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);

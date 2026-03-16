@@ -5,8 +5,9 @@ import { AI_TEMPERATURE_SOLO } from '../config/constants.js';
 
 const router = Router();
 
-// 논쟁 주제에 대한 찬성/반대 입장 자동 생성
+// 논쟁 주제에 대한 찬성/반대 입장 + 카테고리 자동 생성
 router.post('/generate-sides', async (req, res) => {
+
   const { topic } = req.body;
 
   if (!topic || topic.trim().length < 2) {
@@ -14,37 +15,90 @@ router.post('/generate-sides', async (req, res) => {
   }
 
   try {
+
     const parsed = await callAI(
       'GPT-4o (generate-sides)',
       () => openai.chat.completions.create({
+
         model: 'gpt-4o',
+
         messages: [
           {
             role: 'system',
-            content: '당신은 논쟁 주제에 대해 찬성(A측)과 반대(B측) 입장을 생성하는 AI입니다. 각 입장은 2~3문장으로 핵심 논거를 포함해야 합니다. 반드시 JSON 형식으로만 응답하세요.',
+            content:
+              `당신은 논쟁 주제를 분석하는 AI입니다.
+
+주제가 찬성/반대로 나눌 수 있는지 판단하세요.
+문장 형태이거나 비교/주장이 포함된 경우는 논쟁 가능으로 판단하세요.
+(예: "칙촉이 쿠키보다 맛있다", "아침에 운동이 더 좋다" → 논쟁 가능)
+
+논쟁이 불가능한 경우는 의미 없는 단어 1~2개만 입력된 경우입니다.
+(예: "떡볶이", "김밥", "ㅋㅋ" → 불가능)
+{ "unavailable": true }
+
+논쟁이 가능한 경우 다음 3가지를 생성하세요.
+1. 찬성 입장 (주어 포함, 15자 이내. 예: "칙촉이 더 맛있다")
+2. 반대 입장 (주어 포함, 15자 이내. 예: "쿠키가 당연히 맛있다")
+3. 가장 적절한 카테고리
+
+카테고리는 반드시 아래 중 하나만 선택하세요.
+
+일상
+연애
+직장
+교육
+사회
+정치
+기술
+철학
+문화
+기타
+
+반드시 JSON 형식으로만 응답하세요.`,
           },
           {
             role: 'user',
-            content: `다음 논쟁 주제에 대해 찬성(pro)과 반대(con) 입장을 각각 생성해주세요.\n\n주제: "${topic.trim()}"\n\nJSON 형식: { "pro": "찬성 입장 텍스트", "con": "반대 입장 텍스트" }`,
+            content:
+              `다음 논쟁 주제를 분석해주세요.
+
+주제: "${topic.trim()}"
+
+JSON 형식:
+{
+ "pro": "찬성 입장",
+ "con": "반대 입장",
+ "category": "카테고리"
+}`,
           },
         ],
+
         response_format: { type: 'json_object' },
         temperature: AI_TEMPERATURE_SOLO,
       }),
       (r) => r.choices[0].message.content,
     );
 
+    if (parsed.unavailable) {
+      return res.json({ unavailable: true });
+    }
+
     res.json({
-      pro: parsed.pro || `${topic}에 대해 긍정적인 입장`,
-      con: parsed.con || `${topic}에 대해 부정적인 입장`,
+      pro: parsed.pro || `${topic} 찬성`,
+      con: parsed.con || `${topic} 반대`,
+      category: parsed.category || "기타",
     });
+
   } catch (err) {
+
     console.error('[AI] generate-sides 실패:', err.message);
+
     res.json({
-      pro: `${topic}에 대해 긍정적인 입장`,
-      con: `${topic}에 대해 부정적인 입장`,
+      pro: `${topic} 찬성`,
+      con: `${topic} 반대`,
+      category: "기타",
     });
   }
+
 });
 
 export default router;

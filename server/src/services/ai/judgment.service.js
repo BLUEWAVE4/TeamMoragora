@@ -14,6 +14,7 @@ import { env } from '../../config/env.js';
 // ===== AI 응답 유효성 검증 =====
 
 const REQUIRED_FIELDS = ['winner_side', 'score_a', 'score_b', 'score_detail_a', 'score_detail_b', 'verdict_text', 'confidence'];
+const VALID_CRITERIA = ['logic', 'evidence', 'persuasion', 'consistency', 'expression'];
 const DETAIL_KEYS = ['logic', 'evidence', 'persuasion', 'consistency', 'expression'];
 
 /**
@@ -61,6 +62,15 @@ export function validateAndCorrectVerdict(raw) {
     raw.verdict_text = raw.verdict_text.slice(0, VERDICT_TEXT_MAX_LENGTH);
   }
 
+  // verdict_sections 검증/보정 (없으면 빈 배열)
+  if (Array.isArray(raw.verdict_sections)) {
+    raw.verdict_sections = raw.verdict_sections
+      .filter(s => s && VALID_CRITERIA.includes(s.criterion) && typeof s.text === 'string')
+      .map(s => ({ criterion: s.criterion, text: s.text.slice(0, 500) }));
+  } else {
+    raw.verdict_sections = [];
+  }
+
   return raw;
 }
 
@@ -91,6 +101,7 @@ async function saveJudgmentImmediately(verdictId, judgment) {
       ai_model: judgment.ai_model,
       winner_side: judgment.winner_side,
       verdict_text: judgment.verdict_text,
+      verdict_sections: judgment.verdict_sections || [],
       score_a: judgment.score_a,
       score_b: judgment.score_b,
       score_detail_a: judgment.score_detail_a,

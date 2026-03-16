@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { getDebate } from "../../services/api";
 
 export default function DebateDetailPage() {
-  const { id } = useParams();
+  const { debateId: id } = useParams();
   const [debate, setDebate] = useState(null);
 
   useEffect(() => {

@@ -1,15 +1,22 @@
+import { useState } from "react";
 import Button from "../common/Button";
 
 export default function Step3CategoryTime({
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> develop
   // mode,
   purpose,
   lens,
   topic,
   setTopic,
+<<<<<<< HEAD
 =======
 >>>>>>> origin/develop
+=======
+>>>>>>> develop
   category,
   setCategory,
   time,
@@ -20,6 +27,9 @@ export default function Step3CategoryTime({
 }) {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> develop
   const purposeMap = {
     battle: "승부",
     consensus: "합의",
@@ -68,8 +78,11 @@ export default function Step3CategoryTime({
     setIsModalOpen(true);
   };
 
+<<<<<<< HEAD
 =======
 >>>>>>> origin/develop
+=======
+>>>>>>> develop
   return (
 
     <div className="flex flex-col gap-5 mt-6">
@@ -78,7 +91,10 @@ export default function Step3CategoryTime({
 
       <select
         value={category}
-        onChange={(e)=>setCategory(e.target.value)}
+        onChange={(e) => {
+          setCategory(e.target.value);
+          setErrorCategory("");
+        }}
         className="px-4 py-3 rounded-xl border"
       >
         <option value="">선택</option>
@@ -94,6 +110,10 @@ export default function Step3CategoryTime({
         <option value="기타">기타</option>
       </select>
 
+      {errorCategory && (
+        <span className="text-xs text-red-500">{errorCategory}</span>
+      )}
+
       <h3 className="font-bold text-lg">토론 시간</h3>
 
       <select
@@ -107,6 +127,7 @@ export default function Step3CategoryTime({
         <option value="10">10분</option>
       </select>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
         </div>
 
@@ -166,6 +187,8 @@ export default function Step3CategoryTime({
       {/* BUTTON */}
 =======
 >>>>>>> origin/develop
+=======
+>>>>>>> develop
       <div className="flex gap-3">
 
         <Button

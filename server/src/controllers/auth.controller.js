@@ -55,12 +55,12 @@ export async function updateProfile(req, res, next) {
 
 export async function logout(req, res, next) {
   try {
-    // Supabase Admin API로 해당 유저의 모든 세션 무효화
-    const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id, 'global');
+    // req.accessToken에 실제 JWT가 있음 (auth 미들웨어에서 저장)
+    const { error } = await supabaseAdmin.auth.admin.signOut(req.accessToken, 'global');
     if (error) throw error;
-
     res.json({ message: '로그아웃 되었습니다.' });
   } catch (err) {
-    next(err);
+    // 서버 세션 무효화 실패해도 클라이언트 signOut은 진행되므로 성공 처리
+    res.json({ message: '로그아웃 되었습니다.' });
   }
 }
