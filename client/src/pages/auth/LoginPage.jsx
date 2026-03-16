@@ -8,9 +8,6 @@ export default function LoginPage({ isKakaoOnly = false }) {
   const { user, signInWithKakao, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  // 리다이렉트 여부 상태 확인
-  const isFromDebateCreate = sessionStorage.getItem('redirectAfterLogin') === '/debate/create';
-
   // 1. 카카오톡 인앱 브라우저 안드로이드 대응
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
