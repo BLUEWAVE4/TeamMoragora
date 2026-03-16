@@ -148,7 +148,46 @@ export default function InvitePage() {
     }
   };
 
-  // ... formatTime, handleCopy, handleKakaoShare, handleNativeShare 로직 동일 ...
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  const handleKakaoShare = () => {
+    if (window.Kakao?.Share) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: debate?.topic || '모라고라 논쟁 초대',
+          description: '논쟁에 참여해주세요!',
+          imageUrl: '',
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        },
+        buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+      });
+    } else {
+      handleCopy();
+      alert('카카오톡 공유가 불가하여 링크가 복사되었습니다.');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: debate?.topic || '모라고라 논쟁 초대', url: shareUrl });
+      } catch (_) { /* 사용자 취소 */ }
+    } else {
+      handleCopy();
+    }
+  };
 
   // ── 5. 렌더링 ──
   if (loading) return (
