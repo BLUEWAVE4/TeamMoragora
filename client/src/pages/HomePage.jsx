@@ -1,8 +1,43 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getVerdictFeed } from '../services/api';
+import { supabase } from '../services/supabase';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
+
+// 댓글 + 좋아요 카운트 일괄 fetch 헬퍼
+const fetchCounts = async (feedList) => {
+  const debateIds = feedList.map(f => f.debate_id).filter(Boolean);
+  if (!debateIds.length) return feedList;
+
+  try {
+    // 댓글 수 + 좋아요 수 동시에 fetch
+    const [{ data: commentData }, { data: likeData }] = await Promise.all([
+      supabase.from('comments').select('debate_id').in('debate_id', debateIds),
+      supabase.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+    ]);
+
+    // debate_id별 카운트 집계
+    const commentCountMap = {};
+    (commentData || []).forEach(row => {
+      commentCountMap[row.debate_id] = (commentCountMap[row.debate_id] || 0) + 1;
+    });
+
+    const likeCountMap = {};
+    (likeData || []).forEach(row => {
+      likeCountMap[row.debate_id] = (likeCountMap[row.debate_id] || 0) + 1;
+    });
+
+    return feedList.map(f => ({
+      ...f,
+      comments_count: commentCountMap[f.debate_id] ?? 0,
+      likes_count: likeCountMap[f.debate_id] ?? 0,
+    }));
+  } catch (e) {
+    console.error('카운트 일괄 fetch 실패:', e);
+    return feedList.map(f => ({ ...f, comments_count: 0, likes_count: 0 }));
+  }
+};
 
 export default function HomePage() {
   const [filter, setFilter] = useState('전체');
@@ -23,7 +58,11 @@ export default function HomePage() {
       setLoading(true);
       const res = await getVerdictFeed(1, 5);
       console.log('피드 응답 전체:', res);
-      setFeeds(res?.data ?? []);
+
+      // 댓글 + 좋아요 카운트 일괄 주입
+      const feedsWithCount = await fetchCounts(res?.data ?? []);
+
+      setFeeds(feedsWithCount);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -43,7 +82,11 @@ export default function HomePage() {
       const nextPage = pageRef.current + 1;
       const res = await getVerdictFeed(nextPage, 5);
       console.log(`${nextPage}페이지 응답:`, res);
-      setFeeds(prev => [...prev, ...(res?.data ?? [])]);
+
+      // 댓글 + 좋아요 카운트 일괄 주입
+      const feedsWithCount = await fetchCounts(res?.data ?? []);
+
+      setFeeds(prev => [...prev, ...feedsWithCount]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
@@ -60,15 +103,13 @@ export default function HomePage() {
     loadInitialData();
   }, []);
 
-  // 스크롤 이벤트 방식으로 변경
+  // 스크롤 이벤트
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const windowHeight = window.innerHeight;
       const docHeight = document.documentElement.scrollHeight;
       const distanceFromBottom = docHeight - scrollTop - windowHeight;
-
-
 
       if (distanceFromBottom < 200 && hasNextRef.current && !loadingMoreRef.current) {
         loadMore();
@@ -81,10 +122,9 @@ export default function HomePage() {
 
   const sortOptions = [
     { name: '최신순', description: '최근 작성된 글' },
-    { name: '추천순', description: '좋아요가 많은 글' },
+    { name: '좋아요순', description: '좋아요가 많은 글' },
     { name: '댓글순', description: '댓글이 많은 글' },
     { name: '조회순', description: '조회수가 높은 글' },
-    { name: '인기순', description: '종합 인기글' },
   ];
 
   const getProcessedFeeds = () => {
@@ -96,8 +136,9 @@ export default function HomePage() {
       const aData = a.debate || {};
       const bData = b.debate || {};
       switch (sortBy) {
-        case '추천순': return (bData.likes_count || 0) - (aData.likes_count || 0);
-        case '댓글순': return (bData.comments_count || 0) - (aData.comments_count || 0);
+        case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
+        // ✅ 핵심 수정: feed 최상위에 주입된 comments_count 사용
+        case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
         case '조회순': return (bData.views_count || 0) - (aData.views_count || 0);
         case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
       }
