@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
-
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -38,7 +37,6 @@ const CountUp = ({ end }) => {
   }, [end]);
   return <span>{count.toLocaleString()}</span>;
 };
-
 const RadarChart = ({ data }) => {
   const size = 300; 
   const center = size / 2;
@@ -73,7 +71,6 @@ const RadarChart = ({ data }) => {
     </div>
   );
 };
-
 const TIER_LIST = [
   { name: '시민', en: 'Citizen', min: 0, max: 299, color: '#8E8E93', bg: '#F5F5F7', icon: User, desc: '논쟁의 첫 발걸음' },
   { name: '배심원', en: 'Juror', min: 300, max: 1000, color: '#007AFF', bg: '#EBF5FF', icon: Gavel, desc: '공정한 시각으로 논쟁을 바라보는 자' },
@@ -81,27 +78,23 @@ const TIER_LIST = [
   { name: '판사', en: 'Judge', min: 2001, max: 5000, color: '#FF9500', bg: '#FFF5EB', icon: Scale, desc: '논리와 이성으로 판단을 내리는 자' },
   { name: '대법관', en: 'Supreme', min: 5001, max: null, color: '#FF3B30', bg: '#FFF0EF', icon: Crown, desc: '서버 최강의 논쟁 지배자' },
 ];
-
 const getTier = (pts) => {
   for (let i = TIER_LIST.length - 1; i >= 0; i--) {
     if (pts >= TIER_LIST[i].min) return TIER_LIST[i];
   }
   return TIER_LIST[0];
 };
-
 const categoryMap = {
   daily: '일상', romance: '연애', work: '직장', education: '교육',
   social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
   culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
   사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
-
 const formatDate = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
-
 export default function ProfilePage() {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState(null);
@@ -116,25 +109,24 @@ export default function ProfilePage() {
   const [isListEditing, setIsListEditing] = useState(false);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [verdictLoading, setVerdictLoading] = useState(false);
-
   const tierDragControls = useDragControls();
   const analysisDragControls = useDragControls();
-
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
+
+  // ✅ 승률 계산 — 무승부 제외, 승+패만으로 계산
+  const decidedGames = wins + losses;
   const totalGames = wins + losses + draws;
-  
-  const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-  const drawRate = totalGames > 0 ? (draws / totalGames) * 100 : 0;
-  const lossRate = totalGames > 0 ? (losses / totalGames) * 100 : 0;
+  const winRate = decidedGames > 0 ? (wins / decidedGames) * 100 : 0;
+  const lossRate = decidedGames > 0 ? (losses / decidedGames) * 100 : 0;
+
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
   const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
   const progress = nextTier
     ? Math.min(100, Math.max(0, ((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
     : 100;
-
   useEffect(() => {
     const fetchAllData = async () => {
       if (!user) return;
@@ -144,16 +136,13 @@ export default function ProfilePage() {
         const profile = pRes.data || pRes;
         setProfileData(profile);
         setNewNickname(profile.nickname || '');
-
         const { data: debates, error } = await supabase
           .from('debates')
           .select(`*, verdicts (*)`)
           .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
-
         if (error) throw error;
         setMyJudgments(debates || []);
-
       } catch (error) {
         console.error('fetchAllData error:', error);
       } finally {
@@ -162,7 +151,6 @@ export default function ProfilePage() {
     };
     fetchAllData();
   }, [user]);
-
   const getDebateResult = (debate) => {
     const verdict = debate.verdicts?.[0];
     if (!verdict) return null;
@@ -171,7 +159,6 @@ export default function ProfilePage() {
     if (verdict.winner_side === 'draw') return '무승부';
     return verdict.winner_side === mySide ? '승리' : '패배';
   };
-
   const handleUpdateNickname = async () => {
     if (!newNickname.trim()) return;
     setLoading(true);
@@ -185,7 +172,6 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
-
   const handleVerdictClick = async (debateId) => {
     setVerdictLoading(true);
     try {
@@ -198,7 +184,6 @@ export default function ProfilePage() {
       setVerdictLoading(false);
     }
   };
-
   const handleDeleteDebate = async (debateId, e) => {
     e.stopPropagation();
     if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
@@ -210,7 +195,6 @@ export default function ProfilePage() {
       alert('삭제 처리 중 오류가 발생했습니다.');
     }
   };
-
   const handleLogout = async () => {
     if (!window.confirm("로그아웃 하시겠습니까?")) return;
     try {
@@ -222,13 +206,11 @@ export default function ProfilePage() {
       window.location.href = '/';
     }
   };
-
   if (!user) return (
     <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7] text-[16px]">
       로그인이 필요합니다.
     </div>
   );
-
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
       <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-16 flex items-center justify-between border-b border-gray-200/50">
@@ -244,7 +226,6 @@ export default function ProfilePage() {
           )}
         </div>
       </nav>
-
       <div className="max-w-md mx-auto px-5 pt-8">
         <div className="flex flex-col items-center mb-10">
           <motion.div
@@ -281,7 +262,6 @@ export default function ProfilePage() {
             </AnimatePresence>
           </div>
         </div>
-
         <div className="space-y-4 mb-6">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2">
@@ -324,23 +304,36 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* ✅ 전체 승률 카드 — 무승부 제외 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
             <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
               <span className="text-[#007AFF]">{wins}승</span>
-              <span className="text-gray-400">{draws}무</span>
+              {draws > 0 && <span className="text-gray-400">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
+            {/* ✅ 막대그래프 — 승/패만 표시, 무승부 제외 */}
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-[#007AFF]" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${drawRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-gray-300" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.2, ease: "easeOut" }} className="h-full bg-[#FF3B30]" />
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${winRate}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="h-full bg-[#007AFF] rounded-l-full"
+              />
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${lossRate}%` }}
+                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
+                className="h-full bg-[#FF3B30] rounded-r-full"
+              />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
+            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">
+              총 {totalGames}회 논쟁 참여
+              {draws > 0 && <span className="text-gray-300"> (무승부 {draws}회 제외)</span>}
+            </p>
           </div>
         </div>
-
         <div className="space-y-3 mb-10">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
@@ -352,7 +345,6 @@ export default function ProfilePage() {
             </div>
             <ChevronRight size={20} className="text-[#C7C7CC]" />
           </motion.button>
-
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -364,7 +356,6 @@ export default function ProfilePage() {
             <ChevronRight size={20} className="text-[#C7C7CC]" />
           </motion.button>
         </div>
-
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4 ml-2 mr-2">
             <div className="flex items-center gap-2">
@@ -452,13 +443,11 @@ export default function ProfilePage() {
             </>
           )}
         </div>
-
         <div className="flex justify-center gap-8 mb-12 text-center">
           <Link to="/terms" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">이용약관</Link>
           <Link to="/privacy" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">개인정보처리방침</Link>
         </div>
       </div>
-
       {/* 등급 시스템 바텀시트 */}
       <AnimatePresence>
         {isTierSheetOpen && (
@@ -483,7 +472,6 @@ export default function ProfilePage() {
               >
                 <div className="w-14 h-1.5 bg-gray-300 rounded-full mx-auto" />
               </div>
-
               <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex items-center justify-between mb-8">
                   <div>
@@ -516,8 +504,7 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
-
-      {/* 논리 분석 바텀시트 - 스크롤 현상 수정 완료 */}
+      {/* 논리 분석 바텀시트 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
@@ -525,8 +512,8 @@ export default function ProfilePage() {
               onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
             <motion.div
               drag="y"
-              dragControls={analysisDragControls} // 드래그 컨트롤러 연결
-              dragListener={false} // 본문 드래그 비활성화 (스크롤 보호)
+              dragControls={analysisDragControls}
+              dragListener={false}
               dragConstraints={{ top: 0 }}
               dragElastic={0.2}
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
@@ -534,15 +521,12 @@ export default function ProfilePage() {
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
               className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              {/* 상단 핸들: 여기서만 드래그 가능 */}
               <div 
                 onPointerDown={(e) => analysisDragControls.start(e)}
                 className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
               >
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto" />
               </div>
-
-              {/* 스크롤 가능한 내부 영역 */}
               <div className="px-6 overflow-y-auto flex-1 pb-16">
                 <div className="flex justify-between items-end mb-8">
                   <h3 className="text-[26px] font-black text-black">논리 분석</h3>
@@ -576,7 +560,6 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
-
       {/* 판결 상세 모달 */}
       <AnimatePresence>
         {selectedVerdict && (
@@ -614,14 +597,11 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
-
-      {/* 판결 로딩 오버레이 */}
       {verdictLoading && (
         <div className="fixed inset-0 bg-black/30 z-[199] flex items-center justify-center">
           <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );

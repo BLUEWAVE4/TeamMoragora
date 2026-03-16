@@ -89,7 +89,7 @@ export default function DebateCard({ feed, formatTime }) {
         const { count } = await supabase
           .from('page_views')
           .select('*', { count: 'exact', head: true })
-          .eq('debate_id', debateId);
+          .eq('path', `/moragora/${debateId}`);
         setViewCount(count ?? 0);
       } catch (e) { console.log('조회수 fetch 실패:', e); }
     };
@@ -242,28 +242,28 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (e) { alert('실패'); } finally { setIsSendingComment(false); }
   };
 
-  // ✅ 상세보기 클릭 시 조회수 +1
+  // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
   const handleDetailClick = async () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
 
-    // UI 즉시 낙관적 반영
-    setViewCount(prev => prev + 1);
+    // 같은 세션에서 이미 조회한 경우 중복 insert 방지
+    const viewKey = `viewed_${debateId}`;
+    const alreadyViewed = sessionStorage.getItem(viewKey);
 
-    try {
-      // page_views insert
-      await supabase.from('page_views').insert({
-        debate_id: debateId,
-        user_id: user?.id ?? null,
-      });
-      // insert 후 정확한 카운트 재fetch해서 동기화
-      const { count } = await supabase
-        .from('page_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('debate_id', debateId);
-      if (count !== null) setViewCount(count);
-    } catch (e) {
-      console.log('조회수 기록 실패:', e);
+    if (!alreadyViewed) {
+      sessionStorage.setItem(viewKey, 'true');
+      setViewCount(prev => prev + 1);
+      try {
+        await supabase.from('page_views').insert({
+          path: `/moragora/${debateId}`,
+          user_id: user?.id ?? null,
+          session_id: crypto.randomUUID(),
+        });
+      } catch (e) {
+        console.error('❌ 조회수 기록 실패:', e);
+        sessionStorage.removeItem(viewKey);
+      }
     }
 
     navigate(`/moragora/${debateId}`, {
