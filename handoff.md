@@ -1,71 +1,87 @@
-# Handoff — 2026-03-13 (목)
+# Handoff — 2026-03-16 (일)
 
 ## 오늘 작업 요약
 
-### 1. AI 판결 UI 리디자인
-- 그리스 현자풍 아바타, 1행 레이아웃, 찬성/반대 용어 통일
-- 스코어보드 승패 강조, 아바타 정리, 테마 통일
-- AI 판사 표정 애니메이션 + 논쟁 요약 접이식 카드
-- 판결 상세보기/요약보기 토글 + `verdict_sections` 구조화
-- 렌즈 매칭 평가항목 밑줄 하이라이트
-- 폰트 font-serif → font-sans 전환
+### 1. 2라운드 반박 시스템 (핵심)
+- **DB**: arguments 테이블에 `round` 컬럼 추가 (1 or 2)
+- **UNIQUE 제약**: `(debate_id, user_id)` → `(debate_id, side, round)` 변경
+- **R1 주장**: 최대 2,000자 / **R2 반박**: 최대 300자
+- **공정성 보호**: 양측 R1 제출 완료 전까지 상대 주장 숨김
+  - 서버: `getArguments`에서 `optionalAuth`로 사용자 식별 → 미제출 라운드의 상대 `content: null` 반환
+  - 프론트: `r1BothDone` 체크 → WaitingCard("제출 완료 ✓") 표시
+- **판결 트리거**: 2개 → **4개** 주장 완료 시 발동
+- **자동 페이지 이동**: 양측 모두 R2 제출 시 + 폴링에서 4개 감지 시 → judging 페이지 이동
+- **최소 글자수**: 50자 → 1자로 완화 (constants.js + schema.sql)
 
-### 2. 논쟁 기능 개선
-- 논쟁 요약에 사용자 닉네임 표시 (찬성 : 닉네임)
-- 투표 시간 설정 기능 추가
-- AI 입장 생성 간소화
-- 논쟁 삭제 API 추가 (`DELETE /api/debates/:id`, DB CASCADE)
-- 초대링크 재진입 수정, 홈피드 라우팅 개선
+### 2. 진행중 논쟁 이어하기
+- **서버**: `GET /debates/my/active` API 추가 (진행중 5개 조회)
+- **TabBar**: 진행중 논쟁 있으면 + 버튼에 금색 펄스 애니메이션
+- **바텀시트**: + 클릭 시 "진행중 논쟁 목록 + 새 논쟁 만들기" 선택지
+- **상태별 라우팅**: waiting→초대, arguing→주장작성, judging/voting→판결 페이지
+- **생성 위자드 임시저장**: localStorage에 step/topic/proSide 등 자동 저장, 생성 완료/리셋 시 삭제
 
-### 3. frontA/B/C 브랜치 통합
-- frontA: AI 카테고리 자동생성, 목적/렌즈 설명, UI개선
-- frontB: 설명모달, AI카드 디자인, 논쟁삭제 버튼
-- frontC: 좋댓조공, 랭킹, 마이페이지, iOS 투표UI
-- ProfilePage 빌드에러 수정 후 통합 완료
+### 3. ArgumentPage 전면 리디자인
+- 공통 디자인 시스템 적용: font-serif, gold 테마, surface 배경, rounded-2xl
+- RoundHeader/SubmittedCard/WaitingCard/RoundForm 컴포넌트 분리
+- 대기 중 타이핑 애니메이션 (7종 메시지 로테이션)
+- 라운드 구분선, 상태별 헤더 스타일 (active/done/locked)
+- A측/B측 → 찬성/반대 색상 유지 (상단 카드에서만), textarea는 금색 통일
 
-### 4. 시민투표 표시 버그 수정 (핵심)
-- **문제**: 판결 상세 모달에서 시민투표 결과가 안 보임
-- **원인**: 프론트에서 `vote_count_a/b` 참조 → DB에는 `citizen_score_a/b, citizen_vote_count`
-- **수정 파일**:
-  - `client/src/components/verdict/VerdictContent.jsx` — 필드명 수정 + 0건일 때도 섹션 표시
-  - `client/src/pages/debate/JudgingPage.jsx` — 필드명 수정 + 중복 시민투표 섹션 제거
-  - `server/src/controllers/judgment.controller.js` — getVerdict에 실시간 투표 수 조회 추가, debates.winner_side 제거
-- **상태 분기**: 투표 진행 중 / 투표 마감 / 투표 대기
+### 4. JudgingPage 수정
+- 주장 미리보기 라운드별 구분 (Round 1 — 주장 / Round 2 — 반박)
+- A측/B측 → 찬성/반대 용어 통일
+- 상태 메시지 업데이트 (2라운드 기반)
+- font-serif 적용
 
-### 5. 서버 에러 수정
-- **logout JWT 에러**: `req.user.id`(UUID) → `req.accessToken`(JWT) 수정
-- **getDebate 크래시**: `.single()` → `.maybeSingle()` (삭제된 논쟁 폴링 대응)
-- **에러 로그 개선**: errorHandler에 `req.method` + `req.originalUrl` 경로 추가
+### 5. 기타 수정
+- 초대링크 `getDebateByInviteCode`에서 `requireAuth` 제거 (비로그인 접근 허용)
+- `optionalAuth` 미들웨어 추가 (auth.middleware.js)
+- `decision-log.md` 추가 (의사결정 패턴 기록)
 
-### 6. Render 배포
-- master 브랜치까지 푸시 완료
-- Manual Deploy `9aaed94` 트리거 → 배포 성공 확인
-
-## 주요 커밋 (시간순)
+## 주요 커밋
 
 ```
-e12c420 feat: AI 판결 UI 리디자인 - 그리스 현자풍 아바타, 1행 레이아웃
-030a4f9 feat: 판결 UI UX 개선 - 스코어보드 승패 강조
-bb398a6 feat: AI 판사 표정 애니메이션 + 논쟁 요약 접이식 카드
-3b58bf1 feat: 논쟁 요약 위치 조정 + 투표 시간 설정
-66d9f41 feat: AI 판결 상세보기/요약보기 토글 + verdict_sections 구조화
-c2beb1f feat: 논쟁 삭제 API 추가 (DB CASCADE)
-3d8727d fix: 시민투표 미표시 수정 + logout JWT 에러 수정
-56ec8c6 feat: getVerdict에 실시간 시민투표 수 조회 추가
-5452165 fix: 시민투표 상태 표시 개선 - 투표중/마감/대기 분기 처리
-9aaed94 fix: getDebate .single()→.maybeSingle() + JudgingPage 시민투표 중복 제거
+938b7ae feat: 2라운드 반박 시스템 + 진행중 논쟁 이어하기 + UI 개선
+```
+
+## DB 마이그레이션 필요
+
+기존 Supabase DB에 아래 SQL 실행 필요:
+
+```sql
+ALTER TABLE arguments ADD COLUMN round INTEGER NOT NULL DEFAULT 1 CHECK (round IN (1, 2));
+ALTER TABLE arguments DROP CONSTRAINT arguments_debate_id_user_id_key;
+ALTER TABLE arguments ADD CONSTRAINT arguments_debate_id_side_round_key UNIQUE (debate_id, side, round);
+ALTER TABLE arguments DROP CONSTRAINT arguments_content_check;
+ALTER TABLE arguments ADD CONSTRAINT arguments_content_check CHECK (char_length(content) BETWEEN 1 AND 2000);
 ```
 
 ## 현재 상태
 
-- **develop / master**: 동기화 완료, 최신 커밋 `9aaed94`
-- **Render 프로덕션**: 배포 완료, 정상 동작 확인
-- **로컬 서버**: 꺼져 있음
-- **미해결 이슈**: 없음
+- **develop / master**: 동기화 완료, 최신 커밋 `938b7ae`
+- **Render 프로덕션**: 코드 푸시 완료, DB 마이그레이션 후 배포 필요
+- **미해결 이슈**: DB 마이그레이션 미적용 (위 SQL 실행 필요)
+
+## 수정된 파일 목록
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `client/src/components/layout/TabBar.jsx` | 금색 펄스 + 바텀시트 + 진행중 논쟁 라우팅 |
+| `client/src/pages/debate/ArgumentPage.jsx` | 2라운드 시스템 + 공통 디자인 전면 리디자인 |
+| `client/src/pages/debate/DebateCreatePage.jsx` | localStorage 임시저장/복원 |
+| `client/src/pages/debate/JudgingPage.jsx` | 라운드별 주장 표시 + 용어 통일 |
+| `client/src/services/api.js` | `getMyActiveDebates` 추가 |
+| `client/src/index.css` | `animate-blink` 키프레임 추가 |
+| `server/src/controllers/argument.controller.js` | round 지원 + R2 300자 제한 + 상대 주장 마스킹 |
+| `server/src/controllers/debate.controller.js` | `getMyActiveDebates` 추가 |
+| `server/src/middleware/auth.middleware.js` | `optionalAuth` 추가 |
+| `server/src/routes/argument.routes.js` | optionalAuth 적용 |
+| `server/src/routes/debate.routes.js` | `/my/active` 라우트 + 초대 requireAuth 제거 |
+| `server/src/config/constants.js` | ARGUMENT_MIN_LENGTH 50→1 |
+| `server/src/db/schema.sql` | round 컬럼, UNIQUE 제약 변경 |
 
 ## 참고사항
 
-- Render 무료 플랜: 비활성 시 인스턴스 sleep → 첫 요청 50초+ 지연
-- 시민투표 최종 반영(`finalizeVerdict`)은 vote_deadline 이후 실행 — 그 전에는 votes 테이블에서 실시간 카운트
-- frontA/B/C 팀원들은 `git merge origin/develop`으로 최신 변경 pull 필요
-- AI 판사 설정이 JudgingPage(`AI_JUDGES`)와 VerdictContent(`JUDGE_INFO`)에 중복 정의 → 공통 상수 추출 검토
+- 기존 논쟁은 round=1(기본값)로 자동 매핑되므로 하위 호환됨
+- 2라운드 미진행 시(기존 논쟁) 판결 트리거 조건이 4개로 바뀌었으므로, 기존 2개 주장 논쟁은 수동 트리거 필요할 수 있음
+- AI 프롬프트에 반박 라운드 섹션 추가는 미구현 (doc/03-ai-prompts.md 참조)
