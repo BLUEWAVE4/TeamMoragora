@@ -4,7 +4,7 @@
  * 인라인 판결 결과 표시 (VerdictContent 공통 컴포넌트 사용)
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
@@ -152,6 +152,7 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
 
 export default function JudgingPage() {
   const { debateId } = useParams();
+  const navigate = useNavigate();
 
   const [judgeStatus, setJudgeStatus] = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores] = useState({ gpt: null, gemini: null, claude: null });
@@ -275,13 +276,13 @@ export default function JudgingPage() {
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (
               <h2 className="text-white/80 text-lg font-sans font-bold tracking-tight">
-                배심원단이 아고라에 모두 모였습니다.
+                세 현자가 아고라에 모였습니다.
               </h2>
             )}
             {isAllDone && (
               <>
                 <h2 className="text-white text-2xl font-sans font-black tracking-tight">
-                  모든 배심원이 석판을 내려놓았습니다!
+                  현자들이 석판을 내려놓았습니다!
                 </h2>
               </>
             )}
@@ -313,7 +314,7 @@ export default function JudgingPage() {
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-[11px] font-bold text-emerald-400">찬성{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
                   </div>
-                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-3">{arg.content}</p>
+                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
                 </div>
               ))}
               {debateArgs.filter(a => a.side === 'B').map((arg, i) => (
@@ -322,7 +323,7 @@ export default function JudgingPage() {
                     <span className="w-2 h-2 rounded-full bg-red-500" />
                     <span className="text-[11px] font-bold text-red-400">반대{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
                   </div>
-                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-3">{arg.content}</p>
+                  <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
                 </div>
               ))}
             </div>
@@ -346,7 +347,7 @@ export default function JudgingPage() {
                   <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
                     <span className="text-white/30 text-[12px] font-black">2</span>
                   </div>
-                  <span className="text-[10px] font-bold text-white/30">시민 투표</span>
+                  <span className="text-[10px] font-bold text-white/30 text-center leading-tight">현자 판결<br/>+ 시민 투표</span>
                   <span className="text-[9px] text-white/20">24시간</span>
                 </div>
                 <div className="w-8 h-px bg-white/10" />
@@ -394,6 +395,12 @@ export default function JudgingPage() {
                 }`}
               >
                 {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="w-full mt-3 py-4 rounded-xl font-sans font-bold text-base border-2 border-white/20 text-white/50 hover:border-white/40 hover:text-white/70 active:scale-95 transition-all duration-300"
+              >
+                판결 닫기
               </button>
             </div>
           )}
