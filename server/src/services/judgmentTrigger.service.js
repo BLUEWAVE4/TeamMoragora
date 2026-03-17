@@ -139,10 +139,19 @@ async function updateCompositeVerdict(verdictId, judgments) {
   const aiScoreA = avg(judgments.map((j) => j.score_a));
   const aiScoreB = avg(judgments.map((j) => j.score_b));
 
+  // 다수결 + 점수 기반 보정
   const winnerVotes = { A: 0, B: 0, draw: 0 };
-  judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
-  const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
-    : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+  judgments.forEach((j) => {
+    // AI가 winner_side를 잘못 반환한 경우 점수 기반으로 보정
+    const corrected = j.score_a > j.score_b ? 'A'
+      : j.score_b > j.score_a ? 'B' : 'draw';
+    winnerVotes[corrected]++;
+  });
+  // 다수결로 결정, 동률이면 평균 점수로 결정
+  let aiWinner;
+  if (winnerVotes.A > winnerVotes.B) aiWinner = 'A';
+  else if (winnerVotes.B > winnerVotes.A) aiWinner = 'B';
+  else aiWinner = aiScoreA > aiScoreB ? 'A' : aiScoreB > aiScoreA ? 'B' : 'draw';
 
   const summary = judgments[0]?.verdict_text || '';
 

@@ -93,10 +93,17 @@ export async function requestJudgment(req, res, next) {
     const avg = (arr) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
     const aiScoreA = avg(judgments.map((j) => j.score_a));
     const aiScoreB = avg(judgments.map((j) => j.score_b));
+    // 다수결 + 점수 기반 보정
     const winnerVotes = { A: 0, B: 0, draw: 0 };
-    judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
-    const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
-      : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+    judgments.forEach((j) => {
+      const corrected = j.score_a > j.score_b ? 'A'
+        : j.score_b > j.score_a ? 'B' : 'draw';
+      winnerVotes[corrected]++;
+    });
+    let aiWinner;
+    if (winnerVotes.A > winnerVotes.B) aiWinner = 'A';
+    else if (winnerVotes.B > winnerVotes.A) aiWinner = 'B';
+    else aiWinner = aiScoreA > aiScoreB ? 'A' : aiScoreB > aiScoreA ? 'B' : 'draw';
 
     await supabaseAdmin
       .from('verdicts')
