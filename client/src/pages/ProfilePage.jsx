@@ -3,7 +3,7 @@ import { useAuth } from '../store/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
-import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, ACCESSORIES_OPTIONS } from '../utils/avatar';
+import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../utils/avatar';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import {
   User,
@@ -162,7 +162,7 @@ export default function ProfilePage() {
   const [setupSaving, setSetupSaving] = useState(false);
   const [showAvatarEdit, setShowAvatarEdit] = useState(false);
   const [avatarOptions, setAvatarOptions] = useState({
-    top: '', skinColor: '', hairColor: '', clothing: '', accessories: '',
+    top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '',
   });
 
   const tierDragControls = useDragControls();
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <>
                       <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
-                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
+                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
                     </>
                   ) : profileData && (
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
@@ -703,7 +703,7 @@ export default function ProfilePage() {
         {showAvatarEdit && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="fixed inset-0 bg-black/40 z-[300]" />
+              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="fixed inset-0 bg-black/40 z-[300]" />
             <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -714,7 +714,7 @@ export default function ProfilePage() {
                   <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
                   <div className="flex items-center justify-between">
                     <h3 className="text-[16px] font-black text-[#1B2A4A]">아바타 꾸미기</h3>
-                    <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
+                    <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
                   </div>
                 </div>
 
@@ -792,6 +792,102 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* 눈 모양 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {EYES_OPTIONS.map(e => (
+                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, eyes: e })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 눈썹 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {EYEBROWS_OPTIONS.map(e => (
+                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, eyebrows: e })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 입 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {MOUTH_OPTIONS.map(m => (
+                        <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, mouth: m })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 수염 (남성만) */}
+                  {profileData?.gender === 'male' && (
+                    <div>
+                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <button onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: '' }))}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                          없음
+                        </button>
+                        {FACIAL_HAIR_OPTIONS.map(f => (
+                          <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
+                            className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                            <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, facialHair: f })} alt="" className="w-full h-full" />
+                          </button>
+                        ))}
+                      </div>
+                      {avatarOptions.facialHair && (
+                        <div className="mt-2">
+                          <p className="text-[11px] text-[#1B2A4A]/30 mb-1">수염 색상</p>
+                          <div className="flex gap-2">
+                            {FACIAL_HAIR_COLORS.map(c => (
+                              <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHairColor: c }))}
+                                className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                                style={{ backgroundColor: `#${c}` }} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 의상 색상 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {CLOTHES_COLORS.map(c => (
+                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothesColor: c }))}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                          style={{ backgroundColor: `#${c}` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 액세서리 색상 */}
+                  {avatarOptions.accessories && (
+                    <div>
+                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
+                      <div className="flex gap-2">
+                        {ACCESSORIES_COLORS.map(c => (
+                          <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, accessoriesColor: c }))}
+                            className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                            style={{ backgroundColor: `#${c}` }} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 저장 */}
                   <button
