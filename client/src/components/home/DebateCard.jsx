@@ -268,17 +268,9 @@ export default function DebateCard({ feed, formatTime }) {
     <>
       <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
 
-        {/* 주제 + 상태 뱃지 */}
+        {/* 주제 */}
         <div className="px-4 pt-5 pb-2">
-          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight inline">
-            {topic}
-          </h3>
-          {isVotingStatus && timeLeft && (
-            <span className="inline-flex ml-2 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37] whitespace-nowrap">{timeLeft}</span>
-          )}
-          {isCompleted && (
-            <span className="inline-flex ml-2 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/30 whitespace-nowrap">마감</span>
-          )}
+          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
@@ -313,7 +305,10 @@ export default function DebateCard({ feed, formatTime }) {
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'}`}>A측</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    isCompleted ? 'bg-[#1B2A4A]/8 text-[#1B2A4A]/30' :
+                    myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'
+                  }`}>{isCompleted ? '마감' : 'A측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/50'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted) && (
@@ -338,7 +333,10 @@ export default function DebateCard({ feed, formatTime }) {
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'}`}>B측</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    isCompleted ? 'bg-[#1B2A4A]/8 text-[#1B2A4A]/30' :
+                    myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'
+                  }`}>{isCompleted ? '마감' : 'B측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/50'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted) && (
