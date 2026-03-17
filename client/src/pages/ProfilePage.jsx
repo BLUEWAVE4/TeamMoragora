@@ -389,9 +389,21 @@ export default function ProfilePage() {
               {draws > 0 && <span className="text-gray-400">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-emerald-500 rounded-l-full" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-[#FF3B30] rounded-r-full" />
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
+              {/* 승 — 왼쪽에서 출발 */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${winRate}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
+              />
+              {/* 패 — 오른쪽에서 출발 */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${lossRate}%` }}
+                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
+                className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
+              />
             </div>
             <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
           </div>
