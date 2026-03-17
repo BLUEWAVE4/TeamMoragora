@@ -122,7 +122,7 @@ function VerdictModal({ verdict, onClose }) {
           transition={{ type: 'spring', damping: 28, stiffness: 220 }}
           className="w-full max-w-[440px] max-h-[92vh] bg-[#FAFAF5] rounded-t-2xl overflow-hidden flex flex-col shadow-2xl pointer-events-auto"
         >
-          <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-5 pb-7 text-center relative shrink-0">
+          <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-5 pb-7 text-center relative shrink-0 z-10">
             <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-3" />
             <button onClick={onClose} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
             <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
