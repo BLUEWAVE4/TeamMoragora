@@ -44,7 +44,7 @@ export default function InvitePage() {
   // ✅ 팀장님 API 응답 기준: debate.creator.nickname
   const creatorNickname = debate?.creator?.nickname || '논쟁 생성자'
   const creatorAvatar = debate?.creator?.avatar_url
-    || `https://api.dicebear.com/7.x/avataaars/svg?seed=${debate?.creator?.nickname || 'default'}`
+    || `https://api.dicebear.com/9.x/avataaars/svg?seed=${debate?.creator?.nickname || 'default'}`
 
   // ── 1. 초대 정보 로드 ──
   useEffect(() => {

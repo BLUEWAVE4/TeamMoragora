@@ -28,7 +28,7 @@ export function getAvatarUrl(userId, gender) {
     accessoriesProbability: '20',
   });
 
-  return `https://api.dicebear.com/7.x/avataaars/svg?${params.toString()}`;
+  return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
 }
 
 // 성별 없을 때 사용할 기본 아이콘 SVG (data URI)

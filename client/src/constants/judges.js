@@ -2,9 +2,9 @@
 // JudgingPage, VerdictContent 등에서 공유
 
 // 상태별 아바타 (dicebear avataaars 표정 변화)
-const gptBase = 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortCurly&hairColor=724133&facialHairProbability=0&clothing=shirtCrewNeck&clothesColor=3c4f5c&accessoriesProbability=0';
-const geminiBase = 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&clothing=collarAndSweater&clothesColor=25557c&accessories=round&accessoriesProbability=100&accessoriesColor=000000';
-const claudeBase = 'https://api.dicebear.com/7.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&clothing=hoodie&clothesColor=e6e6e6';
+const gptBase = 'https://api.dicebear.com/9.x/avataaars/svg?seed=JudgeGPT&skinColor=ffdbb4&top=shortCurly&hairColor=724133&facialHairProbability=0&clothing=shirtCrewNeck&clothesColor=3c4f5c&accessoriesProbability=0';
+const geminiBase = 'https://api.dicebear.com/9.x/avataaars/svg?seed=JudgeGemini&skinColor=d08b5b&top=dreads01&hairColor=2c1b18&facialHair=beardLight&facialHairProbability=100&facialHairColor=2c1b18&clothing=collarAndSweater&clothesColor=25557c&accessories=round&accessoriesProbability=100&accessoriesColor=000000';
+const claudeBase = 'https://api.dicebear.com/9.x/avataaars/svg?seed=JudgeClaude&skinColor=edb98a&top=bigHair&hairColor=c93305&facialHairProbability=0&clothing=hoodie&clothesColor=e6e6e6';
 
 export const AI_JUDGES = {
   gpt: {
