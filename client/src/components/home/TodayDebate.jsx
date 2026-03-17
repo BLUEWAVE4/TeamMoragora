@@ -111,11 +111,8 @@ function DebateBannerCard({ item }) {
       <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#D4AF37]/3 rounded-full blur-2xl" />
 
       {/* 헤더 */}
-      <div className="z-10 mb-1 flex items-center gap-2">
+      <div className="z-10 mb-1">
         <span className="text-[11px] font-serif font-bold text-[#D4AF37]/70 uppercase tracking-[0.15em]">오늘의 논쟁</span>
-        {!isClosed && (
-          <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-pulse" />
-        )}
       </div>
 
       {/* 주제 */}

@@ -291,12 +291,12 @@ export default function DebateCard({ feed, formatTime }) {
           {isVotingStatus && timeLeft && (
             <div className="flex items-center gap-2 mb-3">
               <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-pulse" />
-              <span className="text-[11px] font-serif font-bold text-[#D4AF37]">{timeLeft}</span>
+              <span className="text-[11px] font-sans font-bold text-[#D4AF37]">{timeLeft}</span>
             </div>
           )}
           {isCompleted && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] font-serif font-bold text-[#1B2A4A]/25">투표 마감</span>
+              <span className="text-[11px] font-sans font-bold text-[#1B2A4A]/25">투표 마감</span>
             </div>
           )}
 
@@ -376,7 +376,7 @@ export default function DebateCard({ feed, formatTime }) {
               <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
             </div>
           </div>
-          <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-serif font-bold hover:opacity-70 transition-opacity">
+          <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-sans font-bold hover:opacity-70 transition-opacity">
             상세보기
           </button>
         </div>

@@ -93,12 +93,13 @@ export default function CategoryFilter({ filter, setFilter }) {
 
   return (
     <div className="relative py-2">
-      {/* 좌측 화살표 */}
+      {/* 좌측 그라데이션 + 화살표 */}
+      <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#F3F1EC] to-transparent z-10 pointer-events-none" />
       <button
         onClick={() => scroll(-1)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white/80 border border-[#1B2A4A]/10 flex items-center justify-center shadow-sm hover:bg-white active:scale-90 transition-all"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white border border-[#1B2A4A]/8 flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#D4AF37]/30 active:scale-90 transition-all"
       >
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="3" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
 
       <div
@@ -109,7 +110,7 @@ export default function CategoryFilter({ filter, setFilter }) {
           <button
             key={cat.key}
             onClick={() => setFilter(cat.key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-serif font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-sans font-bold whitespace-nowrap transition-all flex-shrink-0 ${
               filter === cat.key
                 ? 'bg-[#1B2A4A] text-[#D4AF37] shadow-sm'
                 : 'bg-white/60 text-[#1B2A4A]/35 hover:text-[#1B2A4A]/50'
@@ -124,12 +125,13 @@ export default function CategoryFilter({ filter, setFilter }) {
         <div className="min-w-[8px] h-1 flex-shrink-0" />
       </div>
 
-      {/* 우측 화살표 */}
+      {/* 우측 그라데이션 + 화살표 */}
+      <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#F3F1EC] to-transparent z-10 pointer-events-none" />
       <button
         onClick={() => scroll(1)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white/80 border border-[#1B2A4A]/10 flex items-center justify-center shadow-sm hover:bg-white active:scale-90 transition-all"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white border border-[#1B2A4A]/8 flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#D4AF37]/30 active:scale-90 transition-all"
       >
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="3" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
       </button>
     </div>
   );

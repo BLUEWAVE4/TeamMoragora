@@ -177,7 +177,7 @@ export default function HomePage() {
         <CategoryFilter filter={filter} setFilter={setFilter} />
         <div className="flex justify-end items-center mt-1 mb-2 relative">
           <div className="relative">
-            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#D4AF37] font-serif font-bold text-[12px] cursor-pointer">{sortBy} ▼</div>
+            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#D4AF37] font-sans font-bold text-[12px] cursor-pointer">{sortBy} ▼</div>
             {showSortMenu && (
               <div className="absolute right-0 top-7 w-32 bg-white shadow-xl rounded-xl p-1.5 z-[100] border border-[#D4AF37]/15">
                 {sortOptions.map((opt) => (
