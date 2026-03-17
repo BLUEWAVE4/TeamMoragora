@@ -3,6 +3,7 @@ import { useAuth } from '../../store/AuthContext';
 import { castVote, getVoteTally, cancelVote } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
 
 // 개별 카드 컴포넌트
@@ -132,6 +133,45 @@ function DebateBannerCard({ item }) {
     } catch { setLiked(prev); setLikeCount(prevCount); }
   };
 
+  // 댓글 바텀시트
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const commentInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!isCommentOpen || !debateId) return;
+    const fetch = async () => {
+      const { data } = await supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', debateId).order('created_at', { ascending: true });
+      setComments(data || []);
+      setCommentCount(data?.length ?? 0);
+    };
+    fetch();
+    setTimeout(() => commentInputRef.current?.focus(), 300);
+  }, [isCommentOpen, debateId]);
+
+  const handleSendComment = async () => {
+    if (!user || !commentText.trim() || isSending) return;
+    setIsSending(true);
+    try {
+      const { data } = await supabase.from('comments').insert({ debate_id: debateId, user_id: user.id, content: commentText.trim() }).select('*, profiles(nickname)').single();
+      setComments(prev => [...prev, data]);
+      setCommentText('');
+      setCommentCount(prev => prev + 1);
+    } catch {} finally { setIsSending(false); }
+  };
+
+  const formatCommentTime = (iso) => {
+    if (!iso) return '';
+    const diff = Math.floor((new Date() - new Date(iso)) / 60000);
+    if (diff < 1) return '방금';
+    if (diff < 60) return `${diff}분 전`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`;
+    const d = new Date(iso);
+    return `${d.getMonth() + 1}.${d.getDate()}`;
+  };
+
   if (!item) return null;
 
   const isParticipant = user && (item.debate?.creator_id === user.id || item.debate?.opponent_id === user.id);
@@ -144,6 +184,7 @@ function DebateBannerCard({ item }) {
   const conSide = item.debate?.con_side || '반대';
 
   return (
+    <>
     <div className="relative w-full bg-gradient-to-b from-[#1B2A4A] to-[#0f1a30] rounded-2xl p-6 shadow-lg overflow-hidden flex flex-col min-h-[280px] border border-[#D4AF37]/15">
       {/* 배경 장식 */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
@@ -262,7 +303,7 @@ function DebateBannerCard({ item }) {
               <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : 'white'} strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity={liked ? 1 : 0.4}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               <span className="text-[10px] font-bold text-white/40">{likeCount}</span>
             </button>
-            <button onClick={() => navigate(`/moragora/${debateId}`)} className="flex items-center gap-1 active:scale-90 transition-transform">
+            <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1 active:scale-90 transition-transform">
               <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
               <span className="text-[10px] font-bold text-white/40">{commentCount}</span>
             </button>
@@ -277,6 +318,96 @@ function DebateBannerCard({ item }) {
         </div>
       </div>
     </div>
+
+    {/* 시민 의견 바텀시트 */}
+    <AnimatePresence>
+      {isCommentOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200]" />
+          <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto"
+            >
+              <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-[#D4AF37]/10">
+                <div className="w-10 h-1 bg-[#1B2A4A]/10 rounded-full mx-auto mb-3" />
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[14px] font-bold text-[#1B2A4A]">시민 의견</h3>
+                  <button onClick={() => setIsCommentOpen(false)} className="text-[#1B2A4A]/30 text-[12px] font-bold">닫기</button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+                {comments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-[13px] text-[#1B2A4A]/30">아직 의견이 없습니다</p>
+                    <p className="text-[11px] text-[#1B2A4A]/20 mt-1">이 논쟁에 대한 의견을 남겨보세요</p>
+                  </div>
+                ) : comments.map((c) => {
+                  const nickname = c.profiles?.nickname || '익명';
+                  const isMine = user?.id === c.user_id;
+                  return (
+                    <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${nickname}`} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
+                        <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
+                          <span className="text-[12px] font-bold text-[#1B2A4A]">{nickname}</span>
+                          <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
+                        </div>
+                        <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+                          <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
+                            <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
+                          </div>
+                          {isMine && (
+                            <button
+                              onClick={async () => {
+                                await supabase.from('comments').delete().eq('id', c.id);
+                                setComments(prev => prev.filter(x => x.id !== c.id));
+                                setCommentCount(prev => prev - 1);
+                              }}
+                              className="text-[9px] text-[#1B2A4A]/15 active:text-red-400 transition-colors shrink-0 pb-0.5"
+                            >삭제</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
+                {user && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || 'me'}`} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <input
+                  ref={commentInputRef}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }}
+                  placeholder={user ? "의견을 입력하세요..." : "로그인 후 의견을 남길 수 있어요"}
+                  disabled={!user}
+                  maxLength={500}
+                  className="flex-1 h-9 bg-[#1B2A4A]/5 rounded-full px-4 text-[12px] text-[#1B2A4A] placeholder:text-[#1B2A4A]/25 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
+                />
+                <button
+                  onClick={handleSendComment}
+                  disabled={!commentText.trim() || isSending || !user}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    commentText.trim() ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37]/20 text-[#D4AF37]/40'
+                  }`}
+                >
+                  {isSending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <span className="text-[14px] font-bold">↑</span>}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
 
