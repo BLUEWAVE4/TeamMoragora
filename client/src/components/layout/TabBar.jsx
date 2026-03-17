@@ -231,7 +231,40 @@ export default function TabBar() {
                 const isMuted = localStorage.getItem(muteKey) === '1';
                 return (
                   <div key={debate.id} className="flex items-center gap-2">
-                    {/* 알림 체크박스 */}
+                    {/* 삭제 버튼 (왼쪽) */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
+                        try {
+                          await deleteDebate(debate.id);
+                          setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
+                        } catch (err) {
+                          alert(err.message || '삭제에 실패했습니다.');
+                        }
+                      }}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 active:scale-90 transition-all"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round" opacity="0.5">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+
+                    {/* 논쟁 카드 (상세보기 포함) */}
+                    <button
+                      onClick={() => handleSelectDebate(debate)}
+                      className="flex-1 min-w-0 flex items-center justify-between p-3 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 active:scale-[0.98] transition-all text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
+                        <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
+                      </div>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 ml-2">
+                        <polyline points="9 6 15 12 9 18"/>
+                      </svg>
+                    </button>
+
+                    {/* 알림 토글 (오른쪽) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -239,52 +272,18 @@ export default function TabBar() {
                         else localStorage.setItem(muteKey, '1');
                         setActiveDebates(prev => [...prev]);
                       }}
-                      className="shrink-0"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 active:scale-90 transition-all"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                        isMuted ? 'bg-[#1B2A4A]/10 border-[#1B2A4A]/15' : 'border-[#D4AF37] bg-[#D4AF37]/10'
-                      }`}>
-                        {!isMuted && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                      </div>
-                    </button>
-
-                    {/* 논쟁 내용 */}
-                    <button
-                      onClick={() => handleSelectDebate(debate)}
-                      className="flex-1 min-w-0 p-3 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 active:scale-[0.98] transition-all text-left"
-                    >
-                      <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
-                      <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
-                    </button>
-
-                    {/* 삭제 / 상세보기 (세로 1열) */}
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
-                          try {
-                            await deleteDebate(debate.id);
-                            setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
-                          } catch (err) {
-                            alert(err.message || '삭제에 실패했습니다.');
-                          }
-                        }}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-50 border border-red-100 active:scale-90 transition-all"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      {isMuted ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.25">
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/>
                         </svg>
-                      </button>
-                      <button
-                        onClick={() => handleSelectDebate(debate)}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#D4AF37]/10 border border-[#D4AF37]/20 active:scale-90 transition-all"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
-                          <polyline points="9 6 15 12 9 18"/>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                         </svg>
-                      </button>
-                    </div>
+                      )}
+                    </button>
                   </div>
                 );
               })}
