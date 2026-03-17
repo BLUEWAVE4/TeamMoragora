@@ -27,7 +27,7 @@ const SEARCH_CONFIG = {
 };
 
 // 헤더 숨김 경로
-const HIDE_PATHS = ['/debate/create'];
+const HIDE_PATHS = ['/debate/create', '/moragora/'];
 
 export default function Header() {
   const navigate = useNavigate();
