@@ -164,7 +164,7 @@ export default function TabBar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showSheet]);
 
-  const hasActive = activeDebates.length > 0;
+  const hasActive = activeDebates.some(d => localStorage.getItem(`mute_debate_${d.id}`) !== '1');
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
@@ -227,19 +227,39 @@ export default function TabBar() {
             <div ref={listRef} onScroll={handleScroll} className="px-5 pb-3 space-y-2 max-h-[40vh] overflow-y-auto">
               {activeDebates.map((debate) => {
                 const info = getStatusLabel(debate);
+                const muteKey = `mute_debate_${debate.id}`;
+                const isMuted = localStorage.getItem(muteKey) === '1';
                 return (
-                  <button
-                    key={debate.id}
-                    onClick={() => handleSelectDebate(debate)}
-                    className="group w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 hover:border-[#D4AF37]/30 active:scale-[0.98] transition-all duration-300 text-left shadow-inner"
-                  >
-                    <div className="flex-1 min-w-0">
+                  <div key={debate.id} className="flex items-center gap-2">
+                    {/* 알림 체크박스 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isMuted) localStorage.removeItem(muteKey);
+                        else localStorage.setItem(muteKey, '1');
+                        setActiveDebates(prev => [...prev]);
+                      }}
+                      className="shrink-0"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                        isMuted ? 'bg-[#1B2A4A]/10 border-[#1B2A4A]/15' : 'border-[#D4AF37] bg-[#D4AF37]/10'
+                      }`}>
+                        {!isMuted && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                      </div>
+                    </button>
+
+                    {/* 논쟁 내용 */}
+                    <button
+                      onClick={() => handleSelectDebate(debate)}
+                      className="flex-1 min-w-0 p-3 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 active:scale-[0.98] transition-all text-left"
+                    >
                       <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
                       <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      {/* 삭제 버튼 — hover 시에만 표시 */}
-                      <span
+                    </button>
+
+                    {/* 삭제 / 상세보기 (세로 1열) */}
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
@@ -250,17 +270,22 @@ export default function TabBar() {
                             alert(err.message || '삭제에 실패했습니다.');
                           }
                         }}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center opacity-30 group-hover:opacity-100 hover:bg-[#E63946]/10 active:scale-90 transition-all"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-50 border border-red-100 active:scale-90 transition-all"
                       >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
                           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
-                      </span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]/40">
-                        <polyline points="9 18 15 12 9 6"/>
-                      </svg>
+                      </button>
+                      <button
+                        onClick={() => handleSelectDebate(debate)}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#D4AF37]/10 border border-[#D4AF37]/20 active:scale-90 transition-all"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
+                          <polyline points="9 6 15 12 9 18"/>
+                        </svg>
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
               {loadingMore && (
