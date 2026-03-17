@@ -24,7 +24,7 @@ import { useAuth } from "../../store/AuthContext";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-import { IoInformationCircleOutline } from "react-icons/io5";
+
 
 // 이미지 로드 실패 시 이니셜 SVG 폴백
 const fallbackAvatar = (name, color) =>
@@ -75,7 +75,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [chartMode, setChartMode] = useState('auto'); // 'auto' = 선택된 AI, 'avg' = 종합 평균
   const [animated, setAnimated] = useState(false);
   const [verdictView, setVerdictView] = useState('summary'); // 'summary' | 'detail'
-  const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
+
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null); // winnerSide 기반 초기화
   const [showVoteInfo, setShowVoteInfo] = useState(false);
@@ -765,37 +765,21 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 </>
               )}
 
-              {/* 확신도 */}
-              <div className="mt-4 px-1">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-primary/40 font-sans font-medium">확신도</span>
-                    <button
-                      onClick={() => setShowConfidenceInfo(!showConfidenceInfo)}
-                      className="text-primary/30 hover:text-primary/50 transition-colors"
-                    >
-                      <IoInformationCircleOutline className="text-[14px]" />
-                    </button>
+              {/* 확신도 — 5단계 텍스트 */}
+              {(() => {
+                const pct = Math.round(currentJudge.confidence * 100);
+                const level = pct >= 90 ? { text: '매우 높음', color: '#059669' }
+                  : pct >= 80 ? { text: '높음', color: '#10B981' }
+                  : pct >= 70 ? { text: '보통', color: '#D4AF37' }
+                  : pct >= 55 ? { text: '낮음', color: '#F59E0B' }
+                  : { text: '매우 낮음', color: '#8E8E93' };
+                return (
+                  <div className="mt-3 px-1 flex items-center gap-1.5">
+                    <span className="text-[11px] text-primary/40">확신도</span>
+                    <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}</span>
                   </div>
-                  <div className="flex-1 h-1.5 bg-primary/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: animated ? `${currentJudge.confidence * 100}%` : '0%',
-                        background: `linear-gradient(90deg, ${currentJudge.color}, ${currentJudge.color}90)`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-sans font-bold" style={{ color: currentJudge.color }}>
-                    {Math.round(currentJudge.confidence * 100)}%
-                  </span>
-                </div>
-                {showConfidenceInfo && (
-                  <p className="text-[11px] text-primary/50 leading-[1.6] mt-2 p-2.5 bg-primary/[0.03] rounded-lg border border-gold/10">
-                    AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 높을수록 양측 차이가 명확하다는 의미입니다.
-                  </p>
-                )}
-              </div>
+                );
+              })()}
             </div>
           )}
         </div>
