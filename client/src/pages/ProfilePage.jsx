@@ -167,10 +167,9 @@ export default function ProfilePage() {
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
-  const totalGames = wins + losses + draws;
-  
+  const totalGames = wins + losses; // 무승부 제외
+
   const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-  const drawRate = totalGames > 0 ? (draws / totalGames) * 100 : 0;
   const lossRate = totalGames > 0 ? (losses / totalGames) * 100 : 0;
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
@@ -387,13 +386,11 @@ export default function ProfilePage() {
             <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
               <span className="text-[#007AFF]">{wins}승</span>
-              <span className="text-gray-400">{draws}무</span>
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-[#007AFF]" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${drawRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-gray-300" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.2, ease: "easeOut" }} className="h-full bg-[#FF3B30]" />
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-[#007AFF] rounded-l-full" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-[#FF3B30] rounded-r-full" />
             </div>
             <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
           </div>
