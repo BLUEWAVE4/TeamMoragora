@@ -42,7 +42,7 @@ CREATE TABLE debates (
   description TEXT,
   pro_side TEXT,                          -- A측(찬성) 입장 제목
   con_side TEXT,                          -- B측(반대) 입장 제목
-  vote_duration INTEGER,                  -- 시민 투표 제한시간 (분 단위, NULL이면 기본 24시간)
+  vote_duration INTEGER,                  -- 시민 투표 제한시간 (일 단위, NULL이면 기본 24시간)
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',

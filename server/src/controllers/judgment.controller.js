@@ -112,9 +112,9 @@ export async function requestJudgment(req, res, next) {
 
     const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
-    // Update status to voting + set vote deadline (debate.vote_duration 분 단위, 없으면 기본값)
+    // Update status to voting + set vote deadline (debate.vote_duration 일 단위, 없으면 기본값)
     const durationMs = debate.vote_duration
-      ? debate.vote_duration * 60 * 1000
+      ? debate.vote_duration * 24 * 60 * 60 * 1000
       : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
     const voteDeadline = new Date(Date.now() + durationMs);
 

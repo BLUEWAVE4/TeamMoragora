@@ -112,9 +112,9 @@ export async function triggerJudgment(debateId) {
   // 6. 복합 판결 업데이트 (빈 verdict를 최종 점수로 갱신)
   await updateCompositeVerdict(verdictId, judgments);
 
-  // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 분 단위, 없으면 기본값)
+  // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 일 단위, 없으면 기본값)
   const durationMs = debate.vote_duration
-    ? debate.vote_duration * 60 * 1000
+    ? debate.vote_duration * 24 * 60 * 60 * 1000
     : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
   const voteDeadline = new Date(Date.now() + durationMs);
 

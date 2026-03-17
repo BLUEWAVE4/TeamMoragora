@@ -123,6 +123,38 @@ export async function getDebateByInviteCode(req, res, next) {
   }
 }
 
+// ===== 논쟁 삭제 (생성자 또는 참여자) =====
+export async function deleteDebate(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const debateId = req.params.id;
+
+    const { data: debate, error: fetchErr } = await supabaseAdmin
+      .from('debates')
+      .select('id, creator_id, opponent_id, status')
+      .eq('id', debateId)
+      .maybeSingle();
+
+    if (fetchErr) throw fetchErr;
+    if (!debate) return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
+
+    // 생성자 또는 참여자만 삭제 가능
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('debates')
+      .delete()
+      .eq('id', debateId);
+
+    if (error) throw error;
+    res.json({ message: '논쟁이 삭제되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function joinByInvite(req, res, next) {
   try {
     const { inviteCode } = req.params;
