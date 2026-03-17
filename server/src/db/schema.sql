@@ -52,6 +52,7 @@ CREATE TABLE debates (
   status TEXT NOT NULL DEFAULT 'waiting'
     CHECK (status IN ('waiting', 'both_joined', 'arguing', 'judging', 'voting', 'completed')),
   vote_deadline TIMESTAMPTZ,
+  view_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

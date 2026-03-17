@@ -135,6 +135,32 @@ export async function getDebateByInviteCode(req, res, next) {
   }
 }
 
+// ===== 조회수 증가 =====
+export async function incrementView(req, res, next) {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('increment_view_count', {
+      debate_id_input: req.params.id,
+    });
+    if (error) {
+      // RPC 없으면 직접 update
+      const { data: debate } = await supabaseAdmin
+        .from('debates')
+        .select('view_count')
+        .eq('id', req.params.id)
+        .single();
+      const current = debate?.view_count || 0;
+      await supabaseAdmin
+        .from('debates')
+        .update({ view_count: current + 1 })
+        .eq('id', req.params.id);
+      return res.json({ view_count: current + 1 });
+    }
+    res.json({ view_count: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ===== 논쟁 삭제 (생성자 또는 참여자) =====
 export async function deleteDebate(req, res, next) {
   try {

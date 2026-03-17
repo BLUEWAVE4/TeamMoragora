@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import { castVote, getVoteTally, cancelVote } from '../../services/api';
+import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -79,23 +79,7 @@ export default function DebateCard({ feed, formatTime }) {
   const [sideUsers, setSideUsers] = useState({ A: null, B: null });
   const commentInputRef = useRef(null);
 
-  // ✅ 조회수 state — page_views 테이블에서 직접 fetch
-  const [viewCount, setViewCount] = useState(0);
-
-  useEffect(() => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchViewCount = async () => {
-      try {
-        const { count } = await supabase
-          .from('page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('debate_id', debateId);
-        setViewCount(count ?? 0);
-      } catch (e) { console.log('조회수 fetch 실패:', e); }
-    };
-    fetchViewCount();
-  }, [feed?.debate_id, debateData?.id]);
+  const [viewCount, setViewCount] = useState(debateData?.view_count || 0);
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -257,29 +241,12 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (e) { alert('실패'); } finally { setIsSendingComment(false); }
   };
 
-  // ✅ 상세보기 클릭 시 조회수 +1
   const handleDetailClick = async () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
 
-    // UI 즉시 낙관적 반영
     setViewCount(prev => prev + 1);
-
-    try {
-      // page_views insert
-      await supabase.from('page_views').insert({
-        debate_id: debateId,
-        user_id: user?.id ?? null,
-      });
-      // insert 후 정확한 카운트 재fetch해서 동기화
-      const { count } = await supabase
-        .from('page_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('debate_id', debateId);
-      if (count !== null) setViewCount(count);
-    } catch (e) {
-      console.log('조회수 기록 실패:', e);
-    }
+    incrementDebateView(debateId).catch(() => {});
 
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }

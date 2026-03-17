@@ -248,7 +248,7 @@ export async function getVerdictFeed(req, res, next) {
     const fetchLimit = to + 20; // 여유분 확보
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, creator:profiles!creator_id(nickname))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname))')
       .order('created_at', { ascending: false })
       .range(0, fetchLimit);
 

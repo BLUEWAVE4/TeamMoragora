@@ -34,6 +34,7 @@ export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode
 export const acceptInvitation = joinByInvite;
 export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 10, ...(cursor ? { cursor } : {}) } });
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
+export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
 
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
