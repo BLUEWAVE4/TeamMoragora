@@ -851,12 +851,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="px-4 py-3 space-y-3">
               {activeArgSide === 'A' && argA && (
                 <div>
-                  {hasRound2 && <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>}
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>
                   <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
                     <div className="mb-1">
                       <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
                     </div>
-                    <p className="text-[12px] leading-[1.7] text-primary/70">{argA}</p>
+                    <p className="text-[12px] leading-[1.7] text-primary/70 whitespace-pre-line">{argA}</p>
                   </div>
                 </div>
               )}
@@ -867,18 +867,21 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     <div className="mb-1">
                       <p className="text-[11px] font-sans font-bold text-emerald-500">{nicknameA || 'A측'}의 반박</p>
                     </div>
-                    <p className="text-[12px] leading-[1.7] text-primary/60">{rebuttalA}</p>
+                    <p className="text-[12px] leading-[1.7] text-primary/60 whitespace-pre-line">{rebuttalA}</p>
                   </div>
                 </div>
               )}
+              {activeArgSide === 'A' && !rebuttalA && argA && (
+                <p className="text-[11px] text-primary/20 text-center py-2">반박이 작성되지 않았습니다</p>
+              )}
               {activeArgSide === 'B' && argB && (
                 <div>
-                  {hasRound2 && <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>}
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>
                   <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
                     <div className="mb-1">
                       <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
                     </div>
-                    <p className="text-[12px] leading-[1.7] text-primary/70">{argB}</p>
+                    <p className="text-[12px] leading-[1.7] text-primary/70 whitespace-pre-line">{argB}</p>
                   </div>
                 </div>
               )}
@@ -889,9 +892,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     <div className="mb-1">
                       <p className="text-[11px] font-sans font-bold text-red-400">{nicknameB || 'B측'}의 반박</p>
                     </div>
-                    <p className="text-[12px] leading-[1.7] text-primary/60">{rebuttalB}</p>
+                    <p className="text-[12px] leading-[1.7] text-primary/60 whitespace-pre-line">{rebuttalB}</p>
                   </div>
                 </div>
+              )}
+              {activeArgSide === 'B' && !rebuttalB && argB && (
+                <p className="text-[11px] text-primary/20 text-center py-2">반박이 작성되지 않았습니다</p>
               )}
             </div>
         </div>
