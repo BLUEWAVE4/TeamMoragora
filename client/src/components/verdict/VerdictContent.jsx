@@ -246,10 +246,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const finalScoreA = verdictData.final_score_a || verdictData.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
   const finalScoreB = verdictData.final_score_b || verdictData.score_b || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_b, 0) / judges.length) : 0);
 
-  // 시민 투표 (verdicts 테이블: citizen_score_a/b, citizen_vote_count)
-  const voteA = verdictData.citizen_score_a || 0;
-  const voteB = verdictData.citizen_score_b || 0;
-  const totalVotes = verdictData.citizen_vote_count || (voteA + voteB) || 0;
+  // 시민 투표 — 실시간 데이터 우선, 없으면 verdict 데이터
+  const voteA = liveVoteA !== null ? liveVoteA : (verdictData.citizen_score_a || 0);
+  const voteB = liveVoteB !== null ? liveVoteB : (verdictData.citizen_score_b || 0);
+  const totalVotes = voteA + voteB;
   const percentA = totalVotes > 0 ? Math.round((voteA / totalVotes) * 100) : 50;
   const percentB = totalVotes > 0 ? 100 - percentA : 50;
 
@@ -922,12 +922,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         const isAuthor = user && (String(user.id) === String(userIdA) || String(user.id) === String(userIdB));
         const voteDisabled = isVoting || !canVote || isAuthor || !user;
 
-        // 실시간 집계 우선, 없으면 verdict 데이터 사용
-        const displayA = liveVoteA !== null ? liveVoteA : voteA;
-        const displayB = liveVoteB !== null ? liveVoteB : voteB;
-        const displayTotal = displayA + displayB;
-        const pctA = displayTotal > 0 ? Math.round((displayA / displayTotal) * 100) : 50;
-        const pctB = displayTotal > 0 ? 100 - pctA : 50;
+        // 상단 복합 판결과 동일한 voteA/voteB 사용
+        const displayA = voteA;
+        const displayB = voteB;
+        const displayTotal = totalVotes;
+        const pctA = percentA;
+        const pctB = percentB;
 
         // 상태 텍스트
         let statusText = '';
