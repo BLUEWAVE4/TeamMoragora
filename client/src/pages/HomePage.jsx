@@ -47,7 +47,6 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasNext, setHasNext] = useState(true);
   const [page, setPage] = useState(1);
-  const [showSortMenu, setShowSortMenu] = useState(false);
   const [dailyItems, setDailyItems] = useState([]);
 
   const hasNextRef = useRef(true);
@@ -125,13 +124,6 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const sortOptions = [
-    { name: '최신순', description: '최근 작성된 글' },
-    { name: '좋아요순', description: '좋아요가 많은 글' },
-    { name: '댓글순', description: '댓글이 많은 글' },
-    { name: '조회순', description: '조회수가 높은 글' },
-  ];
-
   const getProcessedFeeds = () => {
     let result = filter === '전체'
       ? [...feeds]
@@ -174,21 +166,9 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
       <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-6 px-5">
-        <CategoryFilter filter={filter} setFilter={setFilter} />
-        <div className="flex justify-end items-center mt-1 mb-2 relative">
-          <div className="relative">
-            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#1B2A4A] font-sans font-bold text-[12px] cursor-pointer">{sortBy} ▼</div>
-            {showSortMenu && (
-              <div className="absolute right-0 top-7 w-32 bg-white shadow-xl rounded-xl p-1.5 z-[100] border border-[#D4AF37]/15">
-                {sortOptions.map((opt) => (
-                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${sortBy === opt.name ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 hover:text-[#1B2A4A]/60'}`}>{opt.name}</button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
 
-        <section className="mt-3 flex flex-col gap-3">
+        <section className="mt-2 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
             <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
           ))}
