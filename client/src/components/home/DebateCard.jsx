@@ -311,6 +311,7 @@ export default function DebateCard({ feed, formatTime }) {
           <span className="text-[11px] text-gray-400 font-bold">{creatorNickname}</span>
           <span className="text-gray-200">·</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-bold">{categoryName}</span>
+          {purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] font-bold border border-[#D4AF37]/20">{lens} 렌즈</span>}
           <span className="ml-auto text-[10px] text-gray-300 font-bold">
             {formatTime ? formatTime(feed.created_at) : ''}
