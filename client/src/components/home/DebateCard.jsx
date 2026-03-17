@@ -270,7 +270,7 @@ export default function DebateCard({ feed, formatTime }) {
 
         {/* 주제 (메인) — 크고 두껍게 */}
         <div className="px-4 pt-5 pb-2">
-          <h3 className="text-[19px] font-serif font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
+          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
