@@ -151,10 +151,19 @@ export async function createDailyDebate() {
   if (debateErr) throw debateErr;
   console.log(`[DailyDebate] debate 생성: ${debate.id}`);
 
-  // 5) AI 판사가 각각 주장 생성 (병렬)
+  // 5) AI 판사가 각각 주장 생성 (병렬, 실패 시 폴백)
+  const generateWithFallback = async (judge, side, sideLabel) => {
+    try {
+      return await generateArgumentByJudge(judge, topicData.topic, side, sideLabel, topicData.category);
+    } catch (err) {
+      console.warn(`[DailyDebate] ${judge.name} 실패, GPT로 폴백: ${err.message}`);
+      const fallback = AI_JUDGES.find(j => j.type === 'openai');
+      return await generateArgumentByJudge(fallback, topicData.topic, side, sideLabel, topicData.category);
+    }
+  };
   const [argA, argB] = await Promise.all([
-    generateArgumentByJudge(judgeA, topicData.topic, 'A', topicData.pro_side, topicData.category),
-    generateArgumentByJudge(judgeB, topicData.topic, 'B', topicData.con_side, topicData.category),
+    generateWithFallback(judgeA, 'A', topicData.pro_side),
+    generateWithFallback(judgeB, 'B', topicData.con_side),
   ]);
 
   // 6) arguments 레코드 삽입 (DB 제약: 최대 2000자)
