@@ -8,6 +8,7 @@ import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
+import { supabase } from "../../services/supabase";
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
