@@ -47,6 +47,10 @@ export default function Step3CategoryTime({
     if (timerType === "none") {
       setTime("");
     }
+
+    console.log("Step3 선택 시간:", time);
+  console.log("timerType:", timerType);
+
     setIsModalOpen(true);
   };
 

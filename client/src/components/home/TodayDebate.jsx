@@ -2,19 +2,91 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { castVote, getVoteTally, cancelVote } from '../../services/api';
 
-// 개별 카드 컴포넌트
+// ===== vote_duration + created_at → 남은 시간 계산 훅 =====
+// item 구조가 item.debate.xxx 일 수도, item.xxx 일 수도 있어서 양쪽 모두 시도
+function useVoteCountdown(item) {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    // ── 데이터 경로 fallback ──
+    // 1순위: item.debate 안의 필드
+    // 2순위: item 직접 필드 (구버전 데이터 구조 대비)
+    const createdAt   = item?.debate?.created_at   ?? item?.created_at;
+    const duration    = item?.debate?.vote_duration ?? item?.vote_duration;
+
+    console.log('[TodayDebate] createdAt:', createdAt, '| vote_duration:', duration);
+
+    if (!createdAt || !duration) {
+      console.warn('[TodayDebate] 타이머 데이터 없음 → 카운트다운 미표시');
+      return;
+    }
+
+    const totalMs  = Number(duration) * 24 * 60 * 60 * 1000;
+    const deadline = new Date(new Date(createdAt).getTime() + totalMs);
+
+    console.log('[TodayDebate] deadline:', deadline.toLocaleString());
+
+    const pad = (n) => String(n).padStart(2, '0');
+
+    const update = () => {
+      const diff = deadline.getTime() - Date.now();
+
+      if (diff <= 0) {
+        setTimeLeft({ expired: true, progressRatio: 0, label: '00:00:00' });
+        return;
+      }
+
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      setTimeLeft({
+        expired:       false,
+        progressRatio: Math.min(diff / totalMs, 1),
+        label:         `${pad(h)}:${pad(m)}:${pad(s)}`,
+      });
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+
+  // item 전체를 dep으로 두면 불필요한 재실행이 생기므로 필요한 값만 추출
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    item?.debate?.created_at   ?? item?.created_at,
+    item?.debate?.vote_duration ?? item?.vote_duration,
+  ]);
+
+  return timeLeft;
+}
+
+// ===== 개별 카드 컴포넌트 =====
 function DebateBannerCard({ item }) {
   const { user } = useAuth();
 
-  const debateId = item?.debate_id;
+  const debateId      = item?.debate_id;
   const isVotingStatus = item?.debate?.status === 'voting';
-  const storageKey = `today_vote_${debateId}_${user?.id}`;
-  const savedVote = localStorage.getItem(storageKey);
+  const storageKey    = `today_vote_${debateId}_${user?.id}`;
+  const savedVote     = localStorage.getItem(storageKey);
 
-  const [myVote, setMyVote] = useState(savedVote || null);
+  const [myVote,     setMyVote]     = useState(savedVote || null);
   const [voteCounts, setVoteCounts] = useState({ A: 0, B: 0 });
-  const [isVoting, setIsVoting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState('');
+  const [isVoting,   setIsVoting]   = useState(false);
+
+  // ===== 카운트다운 =====
+  const timeLeft = useVoteCountdown(item);
+
+  // vote_duration이 있으면 타이머 표시 (fallback 경로도 확인)
+  const duration = item?.debate?.vote_duration ?? item?.vote_duration;
+  const hasTimer = !!duration;
+  const isClosed = !isVotingStatus || timeLeft?.expired === true;
+
+  // 남은 비율에 따라 색상 변경
+  const barColor =
+    !timeLeft || timeLeft.progressRatio > 0.5 ? '#10b981'   // 초록
+    : timeLeft.progressRatio > 0.2            ? '#f59e0b'   // 주황
+    :                                           '#ef4444';  // 빨강
 
   // 투표 현황 조회
   useEffect(() => {
@@ -23,54 +95,27 @@ function DebateBannerCard({ item }) {
       try {
         const res = await getVoteTally(debateId);
         setVoteCounts({ A: res?.A ?? 0, B: res?.B ?? 0 });
-      } catch (err) {
-        console.log('투표 현황 에러:', err);
-      }
+      } catch (err) { console.log('투표 현황 에러:', err); }
     };
     fetchVoteCounts();
   }, [debateId]);
-
-  // 카운트다운
-  useEffect(() => {
-    const getTarget = () => {
-      if (item?.vote_deadline) return new Date(item.vote_deadline);
-      if (item?.created_at) {
-        const t = new Date(item.created_at);
-        t.setHours(t.getHours() + 24);
-        return t;
-      }
-      const t = new Date(); t.setHours(23, 59, 59, 999); return t;
-    };
-
-    const tick = () => {
-      const diff = getTarget() - new Date();
-      if (diff <= 0) { setTimeLeft('00:00:00'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-    };
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, [item?.vote_deadline]);
 
   const handleVote = async (side) => {
     if (!user) { alert('로그인이 필요합니다.'); return; }
     if (isVoting || !isVotingStatus) return;
 
     const isCanceling = myVote === side;
-    const prevVote = myVote;
-    const prevCounts = { ...voteCounts };
+    const prevVote    = myVote;
+    const prevCounts  = { ...voteCounts };
+    const nextVote    = isCanceling ? null : side;
 
-    const nextVote = isCanceling ? null : side;
     setMyVote(nextVote);
     nextVote ? localStorage.setItem(storageKey, nextVote) : localStorage.removeItem(storageKey);
 
     setVoteCounts(prev => {
       const next = { ...prev };
-      if (isCanceling) { next[side] -= 1; }
-      else if (!prevVote) { next[side] += 1; }
+      if (isCanceling)     { next[side] -= 1; }
+      else if (!prevVote)  { next[side] += 1; }
       else { next[prevVote] -= 1; next[side] += 1; }
       return next;
     });
@@ -78,53 +123,43 @@ function DebateBannerCard({ item }) {
     setIsVoting(true);
     try {
       if (isCanceling) { await cancelVote(debateId); }
-      else { await castVote(debateId, side); }
+      else             { await castVote(debateId, side); }
     } catch (err) {
       setMyVote(prevVote);
       prevVote ? localStorage.setItem(storageKey, prevVote) : localStorage.removeItem(storageKey);
       setVoteCounts(prevCounts);
       alert(err?.message || '투표 처리에 실패했습니다.');
-    } finally {
-      setIsVoting(false);
-    }
+    } finally { setIsVoting(false); }
   };
 
-  // 공유하기 기능 (수정된 부분)
   const handleShare = async () => {
     const shareData = {
       title: '모라고라 - 오늘의 논쟁',
-      text: `"${item.debate?.topic || '오늘의 논쟁'}"\n지금 모라고라에서 당신의 판결을 내려주세요!`,
-      url: window.location.href,
+      text:  `"${item?.debate?.topic || '오늘의 논쟁'}"\n지금 모라고라에서 당신의 판결을 내려주세요!`,
+      url:   window.location.href,
     };
-
     try {
-      // 모바일 등 네이티브 공유 API 지원 여부 확인
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // 미지원 시 클립보드 복사
+      if (navigator.share) { await navigator.share(shareData); }
+      else {
         await navigator.clipboard.writeText(window.location.href);
         alert('링크가 복사되었습니다!');
       }
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('공유 실패:', err);
-      }
+      if (err.name !== 'AbortError') console.error('공유 실패:', err);
     }
   };
 
   if (!item) return null;
 
-  const isClosed = !isVotingStatus || timeLeft === '00:00:00';
-  const totalVotes = voteCounts.A + voteCounts.B;
-  const percentA = totalVotes === 0 ? 50 : Math.round((voteCounts.A / totalVotes) * 100);
-  const percentB = 100 - percentA;
-  const showResult = myVote !== null || isClosed;
+  const totalVotes  = voteCounts.A + voteCounts.B;
+  const percentA    = totalVotes === 0 ? 50 : Math.round((voteCounts.A / totalVotes) * 100);
+  const percentB    = 100 - percentA;
+  const showResult  = myVote !== null || isClosed;
 
   return (
     <div className="relative w-full bg-gradient-to-br from-[#2D3350] to-[#1a1f35] rounded-[32px] p-7 shadow-xl overflow-hidden flex flex-col min-h-[260px]">
 
-      {/* 헤더 */}
+      {/* ── 헤더 ── */}
       <div className="flex justify-between items-center z-10 mb-4">
         <div>
           {!isClosed ? (
@@ -146,14 +181,14 @@ function DebateBannerCard({ item }) {
         </button>
       </div>
 
-      {/* 주제 */}
+      {/* ── 주제 ── */}
       <div className="mb-6 z-10 flex-1">
         <h2 className="text-[18px] font-bold text-white leading-[1.4] break-keep">
-          "{item.debate?.topic || '주제를 불러올 수 없습니다'}"
+          "{item?.debate?.topic || '주제를 불러올 수 없습니다'}"
         </h2>
       </div>
 
-      {/* 투표 영역 */}
+      {/* ── 투표 영역 ── */}
       <div className="z-10 space-y-4">
         {!showResult ? (
           <div className="flex gap-3">
@@ -203,22 +238,66 @@ function DebateBannerCard({ item }) {
           </div>
         )}
 
-        <div className="flex justify-between items-center pt-4 border-t border-white/5">
-          <span className="text-[10px] font-bold text-white/40">총 참여 {totalVotes.toLocaleString()}</span>
-          <span className={`text-[11px] font-black font-mono ${isClosed ? 'text-gray-500' : 'text-[#FFBD43]'}`}>
-            {isClosed ? 'EXPIRED' : timeLeft}
-          </span>
+        {/* ──────────────────────────────────────────────────
+            ⭐ 원래 위치(하단 border-t 영역) 카운트다운 타이머
+            - 구버전과 동일한 위치 유지
+            - hasTimer 있으면 줄어드는 진행 바도 함께 표시
+        ────────────────────────────────────────────────── */}
+        <div className="pt-4 border-t border-white/5 space-y-2">
+
+          {/* 숫자 타이머 + 참여자 수 */}
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-white/40">
+              총 참여 {totalVotes.toLocaleString()}
+            </span>
+
+            {hasTimer ? (
+              isClosed ? (
+                <span className="text-[11px] font-black text-gray-500">EXPIRED</span>
+              ) : (
+                <span
+                  className="text-[13px] font-black font-mono tabular-nums transition-colors duration-500"
+                  style={{ color: barColor }}
+                >
+                  {timeLeft?.label ?? '--:--:--'}
+                </span>
+              )
+            ) : (
+              // vote_duration 없음 → 타이머 표시 안 함
+              null
+            )}
+          </div>
+
+          {/* 줄어드는 진행 바 (hasTimer 있을 때만) */}
+          {hasTimer && (
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              {isClosed ? (
+                <div className="h-full w-full bg-white/10 rounded-full" />
+              ) : (
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    width:           `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                    backgroundColor: barColor,
+                    boxShadow:       `0 0 5px ${barColor}80`,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
   );
 }
 
-// 배너 래퍼 컴포넌트
+// ===== 배너 래퍼 컴포넌트 =====
 export default function TodayDebate({ items = [] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const startXRef = useRef(null);
-  const containerRef = useRef(null);
+  const startXRef      = useRef(null);
+  const containerRef   = useRef(null);
+  const mouseStartXRef = useRef(null);
 
   const validItems = items.filter(Boolean);
   if (validItems.length === 0) return null;
@@ -228,29 +307,22 @@ export default function TodayDebate({ items = [] }) {
     setCurrentIndex(index);
   };
 
-  const handleTouchStart = (e) => {
-    startXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
+  const handleTouchStart = (e) => { startXRef.current = e.touches[0].clientX; };
+  const handleTouchEnd   = (e) => {
     if (startXRef.current === null) return;
     const diff = startXRef.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) goTo(currentIndex + 1); // 왼쪽 스와이프 → 다음
-      else goTo(currentIndex - 1);           // 오른쪽 스와이프 → 이전
+      diff > 0 ? goTo(currentIndex + 1) : goTo(currentIndex - 1);
     }
     startXRef.current = null;
   };
 
-  // 마우스 드래그 (PC 지원)
-  const mouseStartXRef = useRef(null);
   const handleMouseDown = (e) => { mouseStartXRef.current = e.clientX; };
-  const handleMouseUp = (e) => {
+  const handleMouseUp   = (e) => {
     if (mouseStartXRef.current === null) return;
     const diff = mouseStartXRef.current - e.clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) goTo(currentIndex + 1);
-      else goTo(currentIndex - 1);
+      diff > 0 ? goTo(currentIndex + 1) : goTo(currentIndex - 1);
     }
     mouseStartXRef.current = null;
   };
@@ -266,7 +338,6 @@ export default function TodayDebate({ items = [] }) {
         )}
       </div>
 
-      {/* 스와이프 영역 */}
       <div
         ref={containerRef}
         className="overflow-hidden cursor-grab active:cursor-grabbing select-none"
@@ -287,7 +358,6 @@ export default function TodayDebate({ items = [] }) {
         </div>
       </div>
 
-      {/* 인디케이터 dots */}
       {validItems.length > 1 && (
         <div className="flex justify-center gap-1.5 mt-3">
           {validItems.map((_, i) => (
@@ -296,8 +366,8 @@ export default function TodayDebate({ items = [] }) {
               onClick={() => goTo(i)}
               className="rounded-full transition-all duration-300"
               style={{
-                width: i === currentIndex ? '20px' : '6px',
-                height: '6px',
+                width:           i === currentIndex ? '20px' : '6px',
+                height:          '6px',
                 backgroundColor: i === currentIndex ? '#2D3350' : '#D1D5DB',
               }}
             />

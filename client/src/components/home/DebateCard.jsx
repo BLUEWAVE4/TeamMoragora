@@ -1,41 +1,136 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import { castVote, getVoteTally, cancelVote } from '../../services/api';
+import { castVote, getVoteTally, cancelVote, getDebate } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// ===== vote_duration + created_at → 남은 시간 계산 훅 =====
+function useVoteCountdown(createdAt, voteDuration) {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+
+  console.log("useVoteCountdown 실행", createdAt, voteDuration);
+
+  if (!createdAt || !voteDuration) {
+    console.log("타이머 실행 안됨");
+    return;
+  }
+
+  const totalMs = Number(voteDuration) * 24 * 60 * 60 * 1000;
+
+  const deadline = new Date(new Date(createdAt).getTime() + totalMs);
+
+  console.log("deadline:", deadline);
+    const pad = (n) => String(n).padStart(2, '0');
+
+    const update = () => {
+      const diff = deadline.getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ expired: true, progressRatio: 0, label: '00:00:00' });
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft({
+        expired: false,
+        progressRatio: Math.min(diff / totalMs, 1),
+        label: `${pad(h)}:${pad(m)}:${pad(s)}`,
+      });
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [createdAt, voteDuration]);
+
+  return timeLeft;
+}
+
 export default function DebateCard({ feed, formatTime }) {
+  console.log("DebateCard feed:", feed);
+  console.log("debate data:", feed?.debate);
+
   const { user } = useAuth();
 
   const debateStatus = feed?.debate?.status;
+
+  // ⭐ 투표 가능 여부: 'voting' 상태 + 타이머 미만료 모두 충족해야 함
   const isVotingStatus = debateStatus === 'voting';
 
   const storageKey = `my_vote_${feed?.debate_id}_${user?.id}`;
-  const savedVote = localStorage.getItem(storageKey);
+  const savedVote  = localStorage.getItem(storageKey);
 
-  const [myVote, setMyVote] = useState(savedVote || null);
+  const [myVote,     setMyVote]     = useState(savedVote || null);
   const [voteCounts, setVoteCounts] = useState({
-    agree: feed?.citizen_score_a ?? 0,
+    agree:    feed?.citizen_score_a ?? 0,
     disagree: feed?.citizen_score_b ?? 0,
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  // 좋아요 및 댓글 상태
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [isSendingComment, setIsSendingComment] = useState(false);
+  const [liked,             setLiked]             = useState(false);
+  const [likeCount,         setLikeCount]         = useState(0);
+  const [isLiking,          setIsLiking]          = useState(false);
+  const [isCommentOpen,     setIsCommentOpen]     = useState(false);
+  const [comments,          setComments]          = useState([]);
+  const [commentText,       setCommentText]       = useState('');
+  const [isSendingComment,  setIsSendingComment]  = useState(false);
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const commentInputRef = useRef(null);
 
-  // 공유 및 기타 상태
-  const [isShareOpen, setIsShareOpen] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
   const viewCount = feed?.debate?.views_count || 0;
+
+  const debate = feed?.debate || {};
+
+  // ⭐ vote_duration: feed에 이미 있으면 사용, 없으면 getDebate로 보완
+  const [voteDuration, setVoteDuration] = useState(
+    debate?.vote_duration ?? null
+  );
+
+  useEffect(() => {
+  if (voteDuration || !feed?.debate_id) return;
+
+  console.log("voteDuration 없음 → getDebate 호출", feed.debate_id);
+
+  const fetchMissing = async () => {
+    try {
+      const data = await getDebate(feed.debate_id);
+
+      console.log("getDebate 결과:", data);
+
+      if (data?.vote_duration) {
+        console.log("voteDuration 설정:", data.vote_duration);
+        setVoteDuration(data.vote_duration);
+      }
+
+    } catch (e) {
+      console.warn('[DebateCard] vote_duration 보완 실패:', e);
+    }
+  };
+
+  fetchMissing();
+}, [feed?.debate_id, voteDuration]);
+
+  // ===== 카운트다운 =====
+  const timeLeft = useVoteCountdown(feed?.created_at, voteDuration);
+
+  console.log("timeLeft 결과:", timeLeft);
+
+  const hasTimer   = !!voteDuration;
+  // 타이머 만료 여부만 (status와 분리)
+  const timerExpired = timeLeft?.expired === true;
+  // 화면 표시용 마감 여부 (status OR 타이머 만료)
+  const isClosed   = !isVotingStatus || timerExpired;
+  // 실제 투표 버튼 disable 조건: status가 voting이고 타이머도 안 끝났어야 함
+  const canVote    = isVotingStatus && !timerExpired;
+
+  const barColor =
+    !timeLeft || timeLeft.progressRatio > 0.5 ? '#10b981'
+    : timeLeft.progressRatio > 0.2            ? '#f59e0b'
+    :                                           '#ef4444';
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -62,10 +157,14 @@ export default function DebateCard({ feed, formatTime }) {
     if (!feed?.debate_id) return;
     const fetchLikeData = async () => {
       try {
-        const { count } = await supabase.from('debate_likes').select('*', { count: 'exact', head: true }).eq('debate_id', feed.debate_id);
+        const { count } = await supabase
+          .from('debate_likes').select('*', { count: 'exact', head: true })
+          .eq('debate_id', feed.debate_id);
         setLikeCount(count ?? 0);
         if (user) {
-          const { data } = await supabase.from('debate_likes').select('id').eq('debate_id', feed.debate_id).eq('user_id', user.id).maybeSingle();
+          const { data } = await supabase
+            .from('debate_likes').select('id')
+            .eq('debate_id', feed.debate_id).eq('user_id', user.id).maybeSingle();
           setLiked(!!data);
         }
       } catch (e) { console.log('좋아요 fetch 실패:', e); }
@@ -77,7 +176,9 @@ export default function DebateCard({ feed, formatTime }) {
     if (!feed?.debate_id) return;
     const fetchCommentCount = async () => {
       try {
-        const { count } = await supabase.from('comments').select('*', { count: 'exact', head: true }).eq('debate_id', feed.debate_id);
+        const { count } = await supabase
+          .from('comments').select('*', { count: 'exact', head: true })
+          .eq('debate_id', feed.debate_id);
         setLocalCommentCount(count ?? 0);
       } catch (e) { console.log('댓글 카운트 fetch 실패:', e); }
     };
@@ -88,7 +189,9 @@ export default function DebateCard({ feed, formatTime }) {
     if (!isCommentOpen || !feed?.debate_id) return;
     const fetchComments = async () => {
       try {
-        const { data } = await supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', feed.debate_id).order('created_at', { ascending: true });
+        const { data } = await supabase
+          .from('comments').select('*, profiles(nickname)')
+          .eq('debate_id', feed.debate_id).order('created_at', { ascending: true });
         setComments(data || []);
         setLocalCommentCount(data?.length ?? 0);
       } catch (e) { console.log('댓글 fetch 실패:', e); }
@@ -99,10 +202,11 @@ export default function DebateCard({ feed, formatTime }) {
 
   if (!feed) return null;
 
-  const debate = feed.debate || {};
-  const topic = debate.topic || "제목 없는 논쟁";
-  const isMe = user && (debate.creator_id === user.id);
-  const creatorNickname = isMe ? (user.user_metadata?.nickname || "나") : (debate.creator?.nickname || "익명");
+  const topic           = debate.topic || "제목 없는 논쟁";
+  const isMe            = user && (debate.creator_id === user.id);
+  const creatorNickname = isMe
+    ? (user.user_metadata?.nickname || "나")
+    : (debate.creator?.nickname || "익명");
 
   const categoryMap = {
     'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'ROMANCE': '연애', 'LOVE': '연애',
@@ -111,19 +215,18 @@ export default function DebateCard({ feed, formatTime }) {
   };
   const categoryName = categoryMap[debate.category?.toUpperCase()] || debate.category || '일상';
   const categoryIcon = categoryIconMap[categoryName] || categoryIconMap['기타'];
-  const debateUrl = `${window.location.origin}/debate/${feed.debate_id}`;
 
-  const totalVotes = voteCounts.agree + voteCounts.disagree;
-  const agreePercent = totalVotes === 0 ? 50 : Math.round((voteCounts.agree / totalVotes) * 100);
+  const totalVotes      = voteCounts.agree + voteCounts.disagree;
+  const agreePercent    = totalVotes === 0 ? 50 : Math.round((voteCounts.agree / totalVotes) * 100);
   const disagreePercent = 100 - agreePercent;
 
   const handleVote = async (side) => {
     if (!user) { alert('로그인이 필요합니다.'); return; }
-    if (isVoting) return;
+    if (isVoting || !canVote) return; // ⭐ canVote 기준으로 변경
     const isCanceling = myVote === side;
-    const prevVote = myVote;
-    const prevCounts = { ...voteCounts };
-    const nextVote = isCanceling ? null : side;
+    const prevVote    = myVote;
+    const prevCounts  = { ...voteCounts };
+    const nextVote    = isCanceling ? null : side;
     setMyVote(nextVote);
     if (nextVote) localStorage.setItem(storageKey, nextVote);
     else localStorage.removeItem(storageKey);
@@ -158,7 +261,8 @@ export default function DebateCard({ feed, formatTime }) {
     setIsLiking(true);
     try {
       if (prevLiked) {
-        await supabase.from('debate_likes').delete().eq('debate_id', feed.debate_id).eq('user_id', user.id);
+        await supabase.from('debate_likes').delete()
+          .eq('debate_id', feed.debate_id).eq('user_id', user.id);
       } else {
         await supabase.from('debate_likes').insert({ debate_id: feed.debate_id, user_id: user.id });
       }
@@ -175,23 +279,24 @@ export default function DebateCard({ feed, formatTime }) {
     try {
       const { data, error } = await supabase.from('comments').insert({
         debate_id: feed.debate_id,
-        user_id: user.id,
-        content: commentText.trim(),
+        user_id:   user.id,
+        content:   commentText.trim(),
       }).select('*, profiles(nickname)').single();
       if (error) throw error;
       setComments(prev => [...prev, data]);
       setCommentText('');
       setLocalCommentCount(prev => prev + 1);
-    } catch (e) { alert('댓글 전송에 실패했습니다.'); } finally { setIsSendingComment(false); }
+    } catch (e) { alert('댓글 전송에 실패했습니다.'); }
+    finally { setIsSendingComment(false); }
   };
 
   const formatCommentTime = (iso) => {
     if (!iso) return '';
-    const d = new Date(iso);
-    const now = new Date();
+    const d    = new Date(iso);
+    const now  = new Date();
     const diff = Math.floor((now - d) / 60000);
-    if (diff < 1) return '방금';
-    if (diff < 60) return `${diff}분 전`;
+    if (diff < 1)    return '방금';
+    if (diff < 60)   return `${diff}분 전`;
     if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`;
     return `${d.getMonth() + 1}.${d.getDate()}`;
   };
@@ -199,7 +304,7 @@ export default function DebateCard({ feed, formatTime }) {
   return (
     <>
       <div className="w-full bg-white border border-gray-100 rounded-[32px] mb-6 overflow-hidden shadow-sm font-sans">
-        
+
         {/* 1. 헤더 */}
         <div className="flex items-center justify-between px-6 py-5">
           <div className="flex items-center gap-3.5">
@@ -214,9 +319,28 @@ export default function DebateCard({ feed, formatTime }) {
               <span className="text-[12px] text-gray-400 font-semibold">{categoryName}</span>
             </div>
           </div>
-          <p className="text-[11px] text-gray-300 font-bold tracking-widest uppercase">
-            {formatTime ? formatTime(feed.created_at) : 'JUST NOW'}
-          </p>
+
+          {/* 헤더 우측: 타이머 없음→작성시각 / 마감→ / 진행중→카운트다운 */}
+          {!hasTimer ? (
+            <p className="text-[11px] text-gray-300 font-bold tracking-widest uppercase">
+              {formatTime ? formatTime(feed.created_at) : 'JUST NOW'}
+            </p>
+          ) : timerExpired ? (
+            <span className="text-[11px] font-black text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+              마감
+            </span>
+          ) : (
+            <span
+              className="text-[11px] font-black font-mono px-2.5 py-1 rounded-full border transition-colors duration-500"
+              style={{
+                color:           barColor,
+                backgroundColor: `${barColor}15`,
+                borderColor:     `${barColor}40`,
+              }}
+            >
+              {timeLeft?.label ?? '--:--:--'}
+            </span>
+          )}
         </div>
 
         {/* 2. 본문 */}
@@ -224,12 +348,49 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[20px] font-bold text-[#1C1C1E] leading-tight break-keep">{topic}</h3>
         </div>
 
-        {/* 3. 투표 버튼 - 인스타그램 세로형 스타일 */}
+        {/* ⭐ 투표 진행 바 (타이머 있을 때만) */}
+        {hasTimer && (
+          <div className="px-6 pb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                {timerExpired ? '투표 마감' : '투표 진행 중'}
+              </span>
+              {!timerExpired && timeLeft && (
+                <span
+                  className="text-[10px] font-bold transition-colors duration-500"
+                  style={{ color: barColor }}
+                >
+                  {voteDuration}일 중 · {timeLeft.label} 남음
+                </span>
+              )}
+            </div>
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              {timerExpired ? (
+                <div className="h-full w-full bg-gray-200 rounded-full" />
+              ) : (
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    width:           `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                    backgroundColor: barColor,
+                    boxShadow:       `0 0 6px ${barColor}60`,
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 3. 투표 버튼 */}
         <div className="px-6 pb-6 pt-2">
-          {!isVotingStatus && (
+          {/* ⭐ 상태 배너: canVote가 false일 때만 표시 */}
+          {!canVote && (
             <div className="flex items-center justify-center gap-2 py-2 mb-4 bg-gray-50/80 rounded-xl border border-gray-100">
               <span className="text-[12px] text-slate-500 font-bold">
-                {debateStatus === 'completed' ? '🔒 투표가 종료되었습니다' : debateStatus === 'arguing' ? '✍️ 주장 작성 중' : '⚖️ AI 판결 진행 중'}
+                {timerExpired          ? '🔒 투표가 종료되었습니다'
+                  : debateStatus === 'completed' ? '🔒 투표가 종료되었습니다'
+                  : debateStatus === 'arguing'   ? '✍️ 주장 작성 중'
+                  :                               '⚖️ AI 판결 진행 중'}
               </span>
             </div>
           )}
@@ -238,20 +399,18 @@ export default function DebateCard({ feed, formatTime }) {
             {/* 찬성 버튼 */}
             <button
               onClick={() => handleVote('A')}
-              disabled={isVoting || !isVotingStatus}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2 
+              disabled={isVoting || !canVote} // ⭐ canVote 사용
+              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
                 ${myVote === 'A' ? 'border-[#34C759]' : 'border-slate-100'}
-                ${!isVotingStatus ? 'opacity-50' : ''}`}
+                ${!canVote ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {/* 투표 후 퍼센트 배경 */}
               {myVote && (
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${agreePercent}%` }} 
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${agreePercent}%` }}
                   className="absolute inset-y-0 left-0 bg-[#34C759]/10"
                 />
               )}
-              
               <div className="relative h-full px-5 flex items-center justify-between z-10">
                 <span className={`text-[16px] font-bold ${myVote === 'A' ? 'text-[#34C759]' : 'text-slate-700'}`}>찬성</span>
                 {myVote && (
@@ -266,20 +425,18 @@ export default function DebateCard({ feed, formatTime }) {
             {/* 반대 버튼 */}
             <button
               onClick={() => handleVote('B')}
-              disabled={isVoting || !isVotingStatus}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2 
+              disabled={isVoting || !canVote} // ⭐ canVote 사용
+              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
                 ${myVote === 'B' ? 'border-[#FF3B30]' : 'border-slate-100'}
-                ${!isVotingStatus ? 'opacity-50' : ''}`}
+                ${!canVote ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {/* 투표 후 퍼센트 배경 */}
               {myVote && (
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${disagreePercent}%` }} 
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${disagreePercent}%` }}
                   className="absolute inset-y-0 left-0 bg-[#FF3B30]/10"
                 />
               )}
-              
               <div className="relative h-full px-5 flex items-center justify-between z-10">
                 <span className={`text-[16px] font-bold ${myVote === 'B' ? 'text-[#FF3B30]' : 'text-slate-700'}`}>반대</span>
                 {myVote && (
@@ -324,7 +481,7 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
       </div>
 
-      {/* 댓글 시트 (기존 로직 동일) */}
+      {/* 댓글 시트 */}
       <AnimatePresence>
         {isCommentOpen && (
           <>
@@ -371,7 +528,10 @@ export default function DebateCard({ feed, formatTime }) {
                     className="flex-1 bg-transparent py-2 text-[15px] outline-none placeholder-gray-400"
                   />
                   <button onClick={handleSendComment} disabled={!commentText.trim() || isSendingComment || !user} className="w-9 h-9 rounded-xl bg-[#007AFF] flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-200 disabled:opacity-30 active:scale-90">
-                    {isSendingComment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg fill="white" height="16" viewBox="0 0 24 24" width="16"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>}
+                    {isSendingComment
+                      ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <svg fill="white" height="16" viewBox="0 0 24 24" width="16"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                    }
                   </button>
                 </div>
               </div>

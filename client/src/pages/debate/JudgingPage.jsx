@@ -373,17 +373,26 @@ export default function JudgingPage() {
     const initFetch = async () => {
       try {
         const data = await getDebate(debateId);
+
+        console.log("Debate 데이터 전체:", data);
+        console.log("vote_duration:", data.vote_duration);
+        console.log("vote_deadline:", data.vote_deadline);
+        console.log("created_at:", data.created_at);
+
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
 
-        // ── 마감 시각 계산 ──
         // Step3에서 설정한 time 값("1" | "3" | "7" | "")
         // ── 마감 시각 계산 ──
-const rawTime = data.time;
+
+const rawTime = data.vote_duration;
 const days = rawTime ? parseInt(rawTime, 10) : 0;
 
 if (days > 0) {
+
+  console.log("투표 기간(days):", days);
+
   setVoteTotalDays(days);
 
   const totalMs = days * 24 * 60 * 60 * 1000;
@@ -391,34 +400,31 @@ if (days > 0) {
 
   let deadlineDate = null;
 
-  // 1️⃣ 서버에서 deadline 제공
-  if (data.deadline) {
+  // 1️⃣ DB에 deadline이 있는 경우
+  if (data.vote_deadline) {
 
-    deadlineDate = new Date(data.deadline);
+    deadlineDate = new Date(data.vote_deadline);
+    console.log("DB deadline 사용:", deadlineDate);
 
   }
 
   // 2️⃣ created_at 기반 계산
   else if (data.created_at) {
 
-    deadlineDate = new Date(data.created_at);
-    deadlineDate.setDate(deadlineDate.getDate() + days);
+    const created = new Date(data.created_at);
 
-  }
-
-  // ⭐ 3️⃣ fallback (이게 추가된 부분)
-  else {
-
-    const now = new Date();
     deadlineDate = new Date(
-      now.getTime() + days * 24 * 60 * 60 * 1000
+      created.getTime() + days * 24 * 60 * 60 * 1000
     );
+
+    console.log("created_at 기반 deadline 계산:", deadlineDate);
 
   }
 
   if (deadlineDate && !isNaN(deadlineDate.getTime())) {
     setVoteDeadline(deadlineDate);
   }
+
 }
 
         try {
@@ -432,6 +438,7 @@ if (days > 0) {
       }
     };
     initFetch();
+    
 
     const pollInterval = setInterval(async () => {
       try {
@@ -475,6 +482,10 @@ if (days > 0) {
           setJudgeScores(newScores);
 
           if (isVotingOrDone && aiJudgments.length > 0) {
+
+            console.log("AI 판결 완료 → isAllDone true로 변경");
+            console.log("현재 voteDeadline:", voteDeadline);
+
             setVerdictData(verdictResponse);
             setIsAllDone(true);
             clearInterval(pollInterval);
@@ -533,14 +544,12 @@ if (days > 0) {
               - 진행 중 → 카운트다운 타이머 + 현재 참여자 수
               - 마감 후 → "N명 참여" 결과 표시
               - 시간 미설정(voteDeadline null) → 렌더링 안 함          */}
-          {!isAllDone && (
-            <VoteStatusPanel
-              deadline={voteDeadline}
-              totalMs={voteTotalMs}
-              totalDays={voteTotalDays}
-              voteCount={displayCount}
-            />
-          )}
+          <VoteStatusPanel
+            deadline={voteDeadline}
+            totalMs={voteTotalMs}
+            totalDays={voteTotalDays}
+            voteCount={displayCount}
+          />
 
           {/* ===== 양측 주장 미리보기 ===== */}
           {!isAllDone && debateArgs.length > 0 && (

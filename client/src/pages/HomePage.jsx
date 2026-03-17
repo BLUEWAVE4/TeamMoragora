@@ -11,13 +11,11 @@ const fetchCounts = async (feedList) => {
   if (!debateIds.length) return feedList;
 
   try {
-    // 댓글 수 + 좋아요 수 동시에 fetch
     const [{ data: commentData }, { data: likeData }] = await Promise.all([
       supabase.from('comments').select('debate_id').in('debate_id', debateIds),
       supabase.from('debate_likes').select('debate_id').in('debate_id', debateIds),
     ]);
 
-    // debate_id별 카운트 집계
     const commentCountMap = {};
     (commentData || []).forEach(row => {
       commentCountMap[row.debate_id] = (commentCountMap[row.debate_id] || 0) + 1;
@@ -36,6 +34,41 @@ const fetchCounts = async (feedList) => {
   } catch (e) {
     console.error('카운트 일괄 fetch 실패:', e);
     return feedList.map(f => ({ ...f, comments_count: 0, likes_count: 0 }));
+  }
+};
+
+// ⭐ vote_duration 일괄 보완 헬퍼
+// getVerdictFeed가 vote_duration을 내려주지 않을 때 Supabase에서 직접 보완
+const enrichVoteDuration = async (feedList) => {
+  const debateIds = feedList.map(f => f.debate_id).filter(Boolean);
+  if (!debateIds.length) return feedList;
+
+  try {
+    const { data, error } = await supabase
+      .from('debates')
+      .select('id, vote_duration')
+      .in('id', debateIds);
+
+    if (error) throw error;
+
+    const durationMap = {};
+    (data || []).forEach(d => {
+      durationMap[d.id] = d.vote_duration;
+    });
+
+    console.log('[HomePage] vote_duration 보완 결과:', durationMap);
+
+    return feedList.map(f => ({
+      ...f,
+      debate: {
+        ...f.debate,
+        // 이미 값이 있으면 유지, 없으면 Supabase에서 가져온 값으로 보완
+        vote_duration: f.debate?.vote_duration ?? durationMap[f.debate_id] ?? null,
+      },
+    }));
+  } catch (e) {
+    console.error('[HomePage] vote_duration 보완 실패:', e);
+    return feedList;
   }
 };
 
@@ -59,10 +92,11 @@ export default function HomePage() {
       const res = await getVerdictFeed(1, 5);
       console.log('피드 응답 전체:', res);
 
-      // 댓글 + 좋아요 카운트 일괄 주입
-      const feedsWithCount = await fetchCounts(res?.data ?? []);
+      // 댓글 + 좋아요 카운트 + vote_duration 일괄 주입
+      const feedsWithCount    = await fetchCounts(res?.data ?? []);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
 
-      setFeeds(feedsWithCount);
+      setFeeds(feedsWithDuration);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -83,10 +117,11 @@ export default function HomePage() {
       const res = await getVerdictFeed(nextPage, 5);
       console.log(`${nextPage}페이지 응답:`, res);
 
-      // 댓글 + 좋아요 카운트 일괄 주입
-      const feedsWithCount = await fetchCounts(res?.data ?? []);
+      // 댓글 + 좋아요 카운트 + vote_duration 일괄 주입
+      const feedsWithCount    = await fetchCounts(res?.data ?? []);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
 
-      setFeeds(prev => [...prev, ...feedsWithCount]);
+      setFeeds(prev => [...prev, ...feedsWithDuration]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
@@ -103,7 +138,6 @@ export default function HomePage() {
     loadInitialData();
   }, []);
 
-  // 스크롤 이벤트
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
@@ -137,10 +171,10 @@ export default function HomePage() {
       const bData = b.debate || {};
       switch (sortBy) {
         case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
-        // ✅ 핵심 수정: feed 최상위에 주입된 comments_count 사용
-        case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
-        case '조회순': return (bData.views_count || 0) - (aData.views_count || 0);
-        case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
+        case '댓글순':   return (b.comments_count || 0) - (a.comments_count || 0);
+        case '조회순':   return (bData.views_count || 0) - (aData.views_count || 0);
+        case '최신순':
+        default:         return new Date(b.created_at) - new Date(a.created_at);
       }
     });
   };
@@ -187,14 +221,12 @@ export default function HomePage() {
           ))}
         </section>
 
-        {/* 로딩 스피너 */}
         {loadingMore && (
           <div className="flex justify-center py-6">
             <div className="w-6 h-6 border-4 border-[#FF6B6B] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* 더 이상 없을 때 */}
         {!hasNext && feeds.length > 0 && (
           <p className="text-center text-[13px] text-gray-300 font-bold py-6">
             모든 논쟁을 다 봤어요 🎉
