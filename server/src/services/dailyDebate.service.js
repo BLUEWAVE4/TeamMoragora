@@ -11,9 +11,9 @@ const CATEGORIES = ['daily', 'society', 'philosophy', 'culture', 'politics', 'ec
 
 // AI 판사 풀 (그록 제외)
 const AI_JUDGES = [
-  { id: 'gpt', name: '지피티 현자', model: 'gpt-4o', type: 'openai' },
-  { id: 'gemini', name: '제미나이 현자', model: 'gemini-2.5-flash', type: 'gemini' },
-  { id: 'claude', name: '클로드 현자', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
+  { id: 'gpt', name: '지피티', model: 'gpt-4o', type: 'openai' },
+  { id: 'gemini', name: '제미나이', model: 'gemini-2.5-flash', type: 'gemini' },
+  { id: 'claude', name: '클로드', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
 ];
 
 // 랜덤으로 2개 선택 (A측, B측 각각 다른 판사)
