@@ -279,7 +279,7 @@ export default function DebateCard({ feed, formatTime }) {
           </div>
           <div className="flex-1 min-w-0 leading-tight">
             <span className="text-[13px] font-bold text-[#1B2A4A] block truncate leading-none">{creatorNickname}</span>
-            <span className="text-[10px] text-[#1B2A4A]/40 font-bold leading-none mt-0.5 block">{debateData?.creator?.tier || '시민'}</span>
+            <span className="text-[10px] text-[#1B2A4A]/40 font-bold leading-none mt-1 block">{debateData?.creator?.tier || '시민'}</span>
           </div>
           <button onClick={handleDetailClick} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
