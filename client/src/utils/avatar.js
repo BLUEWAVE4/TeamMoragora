@@ -2,13 +2,13 @@
 // gender가 없으면 null 반환 → 기본 아이콘 표시
 
 const MALE_STYLES = [
-  'shortHairShortFlat', 'shortHairShortWaved', 'shortHairShortCurly',
-  'shortHairDreads01', 'shortHairTheCaesar', 'shortHairShortRound',
+  'shortFlat', 'shortWaved', 'shortCurly',
+  'dreads01', 'theCaesar', 'shortRound',
 ];
 
 const FEMALE_STYLES = [
-  'longHairStraight', 'longHairStraight2', 'longHairCurly',
-  'longHairBob', 'longHairBun', 'longHairCurvy',
+  'straight01', 'straight02', 'curly',
+  'bob', 'bun', 'curvy',
 ];
 
 export function getAvatarUrl(userId, gender) {
