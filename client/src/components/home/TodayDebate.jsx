@@ -123,7 +123,7 @@ function DebateBannerCard({ item }) {
         return (
           <div className="z-10 mb-3 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jA.color }}>
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jA.borderColor || jA.color }}>
                 <img src={jA.avatar} alt="" className="w-full h-full" />
               </div>
               <span className="text-[12px] font-bold text-white/80">{nameA}</span>
@@ -131,7 +131,7 @@ function DebateBannerCard({ item }) {
             <span className="text-[11px] font-black text-[#D4AF37]/60">VS</span>
             <div className="flex items-center gap-1.5">
               <span className="text-[12px] font-bold text-white/80">{nameB}</span>
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jB.color }}>
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jB.borderColor || jB.color }}>
                 <img src={jB.avatar} alt="" className="w-full h-full" />
               </div>
             </div>
