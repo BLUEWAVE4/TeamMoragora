@@ -318,6 +318,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <p className="text-2xl font-sans font-extrabold text-primary">
               {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? 'A측 승리' : 'B측 승리'}
             </p>
+            {winnerSide !== 'draw' && (
+              <p className="text-[13px] font-bold mt-1.5 px-3 py-1 rounded-full inline-block" style={{
+                color: winnerSide === 'A' ? '#059669' : '#E63946',
+                backgroundColor: winnerSide === 'A' ? 'rgba(5,150,105,0.08)' : 'rgba(230,57,70,0.08)',
+              }}>
+                "{winnerSide === 'A' ? proSide : conSide}"
+              </p>
+            )}
           </div>
 
           {/* 최종 점수 — 스코어보드 */}
