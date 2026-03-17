@@ -9,6 +9,7 @@ import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 import { supabase } from "../../services/supabase";
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
@@ -86,6 +87,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [myProfileNickname, setMyProfileNickname] = useState(null);
+  const [myGender, setMyGender] = useState(null);
   const debateId = verdictData?.debate_id || verdictData?.debateId;
   const verdictTabRef = useRef(null);
 
@@ -106,11 +108,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     return () => clearTimeout(t);
   }, []);
 
-  // ===== 내 profiles 닉네임 로드 =====
+  // ===== 내 profiles 닉네임 + 성별 로드 =====
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('nickname').eq('id', user.id).single()
-      .then(({ data }) => { if (data?.nickname) setMyProfileNickname(data.nickname); });
+    supabase.from('profiles').select('nickname, gender').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.nickname) setMyProfileNickname(data.nickname);
+        if (data?.gender) setMyGender(data.gender);
+      });
   }, [user]);
 
   // ===== 댓글 로드 =====
@@ -126,7 +131,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       const newComment = await createComment(debateId, commentInput.trim());
       // dicebear avataaars 아바타 설정 (닉네임 기반)
       if (newComment.user) {
-        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`;
+        newComment.user.avatar_url = getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON;
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -981,7 +986,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 {/* 아바타 */}
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user_id || 'anon'}`}
+                    src={getAvatarUrl(c.user_id, c.user?.gender) || DEFAULT_AVATAR_ICON}
                     alt=""
                     className="w-full h-full object-cover"
                   />
@@ -1033,7 +1038,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+                src={getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
                 alt=""
                 className="w-full h-full object-cover"
               />

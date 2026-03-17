@@ -3,6 +3,7 @@ import { useAuth } from '../store/AuthContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../utils/avatar';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import {
   User,
@@ -249,7 +250,7 @@ export default function ProfilePage() {
           {/* 아바타 */}
           <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+              src={getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON}
               alt="avatar"
               className="w-full h-full object-cover"
             />

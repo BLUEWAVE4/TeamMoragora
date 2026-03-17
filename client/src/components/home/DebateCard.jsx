@@ -4,6 +4,7 @@ import { useAuth } from '../../store/AuthContext.jsx';
 import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
@@ -272,7 +273,7 @@ export default function DebateCard({ feed, formatTime }) {
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${debateData?.creator_id || creatorNickname}`}
+              src={getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -433,7 +434,7 @@ export default function DebateCard({ feed, formatTime }) {
                         <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                             <img
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user_id || nickname}`}
+                              src={getAvatarUrl(c.user_id, null) || DEFAULT_AVATAR_ICON}
                               alt=""
                               className="w-full h-full object-cover"
                             />
@@ -482,7 +483,7 @@ export default function DebateCard({ feed, formatTime }) {
                   {user && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                       <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+                        src={getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON}
                         alt=""
                         className="w-full h-full object-cover"
                       />
