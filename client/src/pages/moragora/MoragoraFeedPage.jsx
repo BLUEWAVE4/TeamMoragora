@@ -20,10 +20,13 @@ export default function MoragoraFeedPage() {
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(false);
 
-  const fetchVerdicts = async (p = 1, append = false) => {
+  // 이달의 최고 논쟁 (검색 무관, 최초 1회 로드)
+  const [featured, setFeatured] = useState(null);
+
+  const fetchVerdicts = async (p = 1, append = false, query = null) => {
     try {
       if (!append) setLoading(true);
-      const res = await getVerdictFeed(p, 10);
+      const res = await getVerdictFeed(p, 10, null, query || undefined);
       const items = res?.data || [];
       if (append) setVerdicts(prev => [...prev, ...items]);
       else setVerdicts(items);
@@ -36,20 +39,23 @@ export default function MoragoraFeedPage() {
     }
   };
 
-  useEffect(() => { fetchVerdicts(); }, []);
+  // 최초 로드: 이달의 최고 논쟁 + 전체 목록
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await getVerdictFeed(1, 1);
+        if (res?.data?.[0]) setFeatured(res.data[0]);
+      } catch {}
+    };
+    init();
+  }, []);
 
-  // 이달의 최고 논쟁 — 항상 첫 번째 (검색과 무관)
-  const featured = verdicts[0];
+  // 검색어 변경 시 목록 새로 로드
+  useEffect(() => {
+    fetchVerdicts(1, false, searchQuery || null);
+  }, [searchQuery]);
 
-  // 나머지에만 검색 필터 적용
-  const rest = verdicts.slice(1);
-  const restVerdicts = searchQuery
-    ? rest.filter(v => {
-        const topic = (v.debate?.topic || '').toLowerCase();
-        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
-        return topic.includes(searchQuery) || creator.includes(searchQuery);
-      })
-    : rest;
+  const restVerdicts = verdicts;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

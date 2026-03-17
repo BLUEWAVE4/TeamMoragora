@@ -49,7 +49,7 @@ export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
-export const getVerdictFeed = (page = 1, limit = 5, category) => api.get(`/judgments/feed`, { params: { page, limit, ...(category ? { category } : {}) } });
+export const getVerdictFeed = (page = 1, limit = 5, category, q) => api.get(`/judgments/feed`, { params: { page, limit, ...(category ? { category } : {}), ...(q ? { q } : {}) } });
 export const getDailyVerdicts = (limit = 5) => api.get(`/judgments/daily?limit=${limit}`);
 
 // ===== 투표 (Votes) =====

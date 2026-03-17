@@ -248,12 +248,13 @@ export async function getVerdictFeed(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
-    const category = req.query.category || null; // 카테고리 필터
+    const category = req.query.category || null;
+    const search = req.query.q || null;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // 넉넉하게 가져와서 daily 제외 + 카테고리 필터
-    const fetchLimit = to + 50;
+    // 넉넉하게 가져와서 필터
+    const fetchLimit = search ? 200 : to + 50;
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
       .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender))')
@@ -262,10 +263,18 @@ export async function getVerdictFeed(req, res, next) {
 
     if (error) throw error;
 
-    // daily 모드 제외 + 카테고리 필터
+    // daily 모드 제외 + 카테고리 + 검색 필터
     let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
     if (category) {
       filtered = filtered.filter(v => v.debate?.category === category);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(q) || creator.includes(q);
+      });
     }
     const data = filtered.slice(from, to + 1);
     const count = filtered.length;

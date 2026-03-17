@@ -64,11 +64,11 @@ export default function HomePage() {
     '기술': '기술', '철학': '철학', '문화': '문화',
   };
 
-  const loadFeeds = useCallback(async (cat, isInitial = false) => {
+  const loadFeeds = useCallback(async (cat, isInitial = false, query = null) => {
     try {
       if (isInitial) setLoading(true);
       const apiCategory = categoryToApi[cat] || null;
-      const res = await getVerdictFeed(1, 5, apiCategory);
+      const res = await getVerdictFeed(1, 5, apiCategory, query || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
       setFeeds(feedsWithCount);
       pageRef.current = 1;
@@ -89,7 +89,7 @@ export default function HomePage() {
       setLoadingMore(true);
       const nextPage = pageRef.current + 1;
       const apiCategory = categoryToApi[filter] || null;
-      const res = await getVerdictFeed(nextPage, 5, apiCategory);
+      const res = await getVerdictFeed(nextPage, 5, apiCategory, searchQuery || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
       setFeeds(prev => [...prev, ...feedsWithCount]);
       pageRef.current = nextPage;
@@ -118,10 +118,10 @@ export default function HomePage() {
     init();
   }, []);
 
-  // 카테고리 변경 시 새로 로드
+  // 카테고리 또는 검색어 변경 시 새로 로드
   useEffect(() => {
-    loadFeeds(filter);
-  }, [filter, loadFeeds]);
+    loadFeeds(filter, false, searchQuery || null);
+  }, [filter, searchQuery, loadFeeds]);
 
   // 스크롤 이벤트
   useEffect(() => {
@@ -142,14 +142,6 @@ export default function HomePage() {
 
   const getProcessedFeeds = () => {
     let result = [...feeds];
-    // 검색어 필터
-    if (searchQuery) {
-      result = result.filter(f => {
-        const topic = (f.debate?.topic || '').toLowerCase();
-        const creator = (f.debate?.creator?.nickname || '').toLowerCase();
-        return topic.includes(searchQuery) || creator.includes(searchQuery);
-      });
-    }
     return result.sort((a, b) => {
       const aData = a.debate || {};
       const bData = b.debate || {};
