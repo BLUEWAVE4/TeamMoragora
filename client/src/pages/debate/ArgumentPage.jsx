@@ -21,20 +21,14 @@ function JusticeBadge() {
       {/* 배경 광채 효과 */}
       <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
       
-      {/* 뱃지 본체 */}
+      {/* 뱃지 */}
       <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
         <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
-          {/* ⚖️ 이미지의 저울 실루엣을 반영한 SVG */}
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* 저울 받침대 */}
             <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-            {/* 저울 수평대 (이미지처럼 살짝 두께감 있는 느낌) */}
             <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-            {/* 왼쪽 접시 */}
             <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-            {/* 오른쪽 접시 */}
             <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-            {/* 중앙 포인트 */}
             <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
           </svg>
         </div>
