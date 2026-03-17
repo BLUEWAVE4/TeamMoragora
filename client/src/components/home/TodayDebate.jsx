@@ -119,7 +119,7 @@ function DebateBannerCard({ item }) {
 
       {/* 주제 */}
       <div className="mb-5 z-10 flex-1">
-        <h2 className="text-[18px] font-serif font-bold text-white leading-[1.5] break-keep">
+        <h2 className="text-[18px] font-sans font-bold text-white leading-[1.5] break-keep">
           "{item.debate?.topic || '주제를 불러올 수 없습니다'}"
         </h2>
       </div>
