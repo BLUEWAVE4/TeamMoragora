@@ -257,35 +257,38 @@ export default function ProfilePage() {
 
           {/* 닉네임 + 편집 */}
           <div className="flex flex-col items-center w-full">
-            <AnimatePresence mode="wait">
-              {isEditing ? (
-                <motion.div key="edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex flex-col items-center gap-3 w-full">
-                  <input autoFocus value={newNickname} onChange={(e) => setNewNickname(e.target.value)}
-                    className="w-full max-w-[280px] bg-white rounded-xl px-4 py-3 text-center text-[16px] font-bold outline-none border border-gray-200" />
-                  <div className="flex gap-3">
-                    <button onClick={() => setIsEditing(false)} className="text-[14px] text-gray-400 font-bold">취소</button>
-                    <button onClick={handleUpdateNickname} className="text-[14px] text-[#007AFF] font-bold">저장</button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                  <div className="flex items-center gap-1.5">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-1.5">
+                {isEditing ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={newNickname}
+                      onChange={(e) => setNewNickname(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateNickname()}
+                      className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
+                    />
+                    <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[12px] font-bold">저장</button>
+                    <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[12px] font-bold">취소</button>
+                  </>
+                ) : (
+                  <>
                     <h2 className="text-xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors">
                       <Edit3 size={16} />
                     </button>
-                  </div>
-                  <button
-                    onClick={() => setIsTierSheetOpen(true)}
-                    className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform"
-                    style={{ backgroundColor: tier.color }}
-                  >
-                    <tier.icon size={14} /> {tier.name}
-                    <ChevronRight size={14} strokeWidth={3} />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => setIsTierSheetOpen(true)}
+                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform"
+                style={{ backgroundColor: tier.color }}
+              >
+                <tier.icon size={14} /> {tier.name}
+                <ChevronRight size={14} strokeWidth={3} />
+              </button>
+            </div>
           </div>
         </div>
 
