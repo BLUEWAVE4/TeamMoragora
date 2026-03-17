@@ -40,6 +40,35 @@ const fetchCounts = async (feedList) => {
   }
 };
 
+// vote_duration 일괄 보완 헬퍼
+// getVerdictFeed가 vote_duration을 포함하지 않을 때 Supabase에서 직접 보완
+const enrichVoteDuration = async (feedList) => {
+  const debateIds = feedList.map(f => f.debate_id).filter(Boolean);
+  if (!debateIds.length) return feedList;
+  try {
+    const { data, error } = await supabase
+      .from('debates')
+      .select('id, vote_duration, created_at')
+      .in('id', debateIds);
+    if (error) throw error;
+
+    const map = {};
+    (data || []).forEach(d => { map[d.id] = d; });
+
+    return feedList.map(f => ({
+      ...f,
+      debate: {
+        ...f.debate,
+        vote_duration: f.debate?.vote_duration ?? map[f.debate_id]?.vote_duration ?? null,
+        created_at: f.debate?.created_at ?? map[f.debate_id]?.created_at ?? null,
+      },
+    }));
+  } catch (e) {
+    console.error('[HomePage] vote_duration 보완 실패:', e);
+    return feedList;
+  }
+};
+
 export default function HomePage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
@@ -70,7 +99,8 @@ export default function HomePage() {
       const apiCategory = categoryToApi[cat] || null;
       const res = await getVerdictFeed(1, 5, apiCategory, query || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-      setFeeds(feedsWithCount);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
+      setFeeds(feedsWithDuration);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -91,7 +121,8 @@ export default function HomePage() {
       const apiCategory = categoryToApi[filter] || null;
       const res = await getVerdictFeed(nextPage, 5, apiCategory, searchQuery || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-      setFeeds(prev => [...prev, ...feedsWithCount]);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
+      setFeeds(prev => [...prev, ...feedsWithDuration]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
