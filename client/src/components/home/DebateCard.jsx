@@ -290,8 +290,10 @@ export default function DebateCard({ feed, formatTime }) {
           </button>
         </div>
 
+        <div className="mx-4 border-b border-[#1B2A4A]/5" />
+
         {/* 주제 */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pt-3 pb-2">
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
