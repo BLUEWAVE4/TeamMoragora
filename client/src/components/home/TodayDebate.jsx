@@ -121,7 +121,8 @@ function DebateBannerCard({ item }) {
         const jA = findJudge(nameA);
         const jB = findJudge(nameB);
         return (
-          <div className="z-10 mb-3 flex items-center justify-between">
+          <div className="z-10 mb-3 flex items-center">
+            <div className="flex-1" />
             <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jA.borderColor || jA.color }}>
@@ -137,12 +138,14 @@ function DebateBannerCard({ item }) {
               </div>
             </div>
             </div>
-            <button
-              onClick={() => navigate(`/moragora/${debateId}`)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-[#D4AF37]/60 active:bg-white/10 active:scale-90 transition-all"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-            </button>
+            <div className="flex-1 flex justify-end">
+              <button
+                onClick={() => navigate(`/moragora/${debateId}`)}
+                className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10 active:scale-90 transition-all"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
           </div>
         );
       })()}
