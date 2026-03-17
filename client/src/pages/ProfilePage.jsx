@@ -383,13 +383,14 @@ export default function ProfilePage() {
 
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
-            <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
+            <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
-              <span className="text-[#007AFF]">{wins}승</span>
+              <span className="text-emerald-600">{wins}승</span>
+              {draws > 0 && <span className="text-gray-400">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-[#007AFF] rounded-l-full" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${winRate}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-emerald-500 rounded-l-full" />
               <motion.div initial={{ width: 0 }} animate={{ width: `${lossRate}%` }} transition={{ duration: 1, delay: 0.1, ease: "easeOut" }} className="h-full bg-[#FF3B30] rounded-r-full" />
             </div>
             <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
