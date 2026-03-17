@@ -412,10 +412,12 @@ export default function ProfilePage() {
           ) : (
             <>
               <div className="bg-white rounded-t-2xl rounded-b-none shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                {(searchQuery
-                  ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
-                  : myJudgments
-                ).slice(0, displayCount).map((debate) => {
+                {(() => {
+                  const filteredJudgments = searchQuery
+                    ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
+                    : myJudgments;
+                  return filteredJudgments.slice(0, displayCount);
+                })().map((debate) => {
                   const result = getDebateResult(debate);
                   const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
                   return (
@@ -469,11 +471,18 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
-              {myJudgments.length > displayCount && (
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full py-4 bg-white rounded-b-2xl border-x border-b border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
-                  5개 더보기 ({myJudgments.length - displayCount}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
-                </motion.button>
-              )}
+              {(() => {
+                const filteredLen = (searchQuery
+                  ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
+                  : myJudgments
+                ).length;
+                const remaining = filteredLen - displayCount;
+                return remaining > 0 ? (
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full py-4 bg-white rounded-b-2xl border-x border-b border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
+                    5개 더보기 ({remaining}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
+                  </motion.button>
+                ) : null;
+              })()}
               <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout} className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
                 로그아웃
               </motion.button>

@@ -38,18 +38,18 @@ export default function MoragoraFeedPage() {
 
   useEffect(() => { fetchVerdicts(); }, []);
 
-  // 검색 필터
-  const filtered = searchQuery
-    ? verdicts.filter(v => {
+  // 이달의 최고 논쟁 — 항상 첫 번째 (검색과 무관)
+  const featured = verdicts[0];
+
+  // 나머지에만 검색 필터 적용
+  const rest = verdicts.slice(1);
+  const restVerdicts = searchQuery
+    ? rest.filter(v => {
         const topic = (v.debate?.topic || '').toLowerCase();
         const creator = (v.debate?.creator?.nickname || '').toLowerCase();
         return topic.includes(searchQuery) || creator.includes(searchQuery);
       })
-    : verdicts;
-
-  // 이달의 최고 논쟁 (첫 번째)
-  const featured = filtered[0];
-  const restVerdicts = filtered.slice(1);
+    : rest;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
