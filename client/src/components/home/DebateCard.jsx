@@ -299,27 +299,27 @@ export default function DebateCard({ feed, formatTime }) {
 
   return (
     <>
-      <div className="w-full bg-white border border-gray-100 rounded-[32px] mb-6 overflow-hidden shadow-sm font-sans">
+      <div className="w-full font-sans pb-4 mb-2 border-b border-gray-100">
 
         {/* 주제 (메인) */}
-        <div className="px-6 pt-5 pb-2">
-          <h3 className="text-[19px] font-black text-[#1C1C1E] leading-snug break-keep">{topic}</h3>
+        <div className="px-4 pt-4 pb-1.5">
+          <h3 className="text-[17px] font-black text-[#1C1C1E] leading-snug break-keep">{topic}</h3>
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
-        <div className="px-6 pb-3 flex items-center gap-2 flex-wrap">
+        <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] text-gray-400 font-bold">{creatorNickname}</span>
           <span className="text-gray-200">·</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-bold">{categoryName}</span>
-          {purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{purpose}</span>}
-          {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] font-bold border border-[#D4AF37]/20">{lens} 렌즈</span>}
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-bold">{categoryName}</span>
+          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/6 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
+          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
           <span className="ml-auto text-[10px] text-gray-300 font-bold">
             {formatTime ? formatTime(feed.created_at) : ''}
           </span>
         </div>
 
         {/* 투표 섹션 */}
-        <div className="px-6 pb-6 pt-1">
+        <div className="px-4 pb-4 pt-1">
           {/* 투표 타이머 (마감 뱃지 대신) */}
           {isVotingStatus && timeLeft && (
             <div className="flex items-center gap-2 mb-3">
@@ -391,7 +391,7 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
 
         {/* 하단 액션 바 */}
-        <div className="px-6 py-4 flex justify-between items-center border-t border-gray-50 bg-gray-50/30">
+        <div className="px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-5">
             {/* 좋아요 */}
             <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
