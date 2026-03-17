@@ -2,10 +2,34 @@
  * MoragoraDetailPage.jsx — 홈피드에서 페이지 이동으로 판결 상세 표시
  * VerdictContent 공통 컴포넌트 사용
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getVerdict, getDebate } from "../../services/api";
 import VerdictContent from "../../components/verdict/VerdictContent";
+
+function ShareButton({ debateId }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(() => {
+    const url = `${window.location.origin}/moragora/${debateId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [debateId]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`w-full mt-5 py-4 rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-all ${
+        copied
+          ? 'bg-emerald-500 text-white'
+          : 'bg-[#1B2A4A] text-[#D4AF37]'
+      }`}
+    >
+      {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
+    </button>
+  );
+}
 
 export default function MoragoraDetailPage() {
   const { debateId } = useParams();
@@ -82,12 +106,7 @@ export default function MoragoraDetailPage() {
         <div className="px-5 -mt-5 pb-6">
           <VerdictContent verdictData={verdict} topic={topic} />
 
-          <button
-            onClick={() => navigate(-1)}
-            className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
-          >
-            돌아가기
-          </button>
+          <ShareButton debateId={debateId} />
         </div>
 
       </div>

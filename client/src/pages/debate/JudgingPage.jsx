@@ -4,7 +4,7 @@
  * 인라인 판결 결과 표시 (VerdictContent 공통 컴포넌트 사용)
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
@@ -330,7 +330,6 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
 
 export default function JudgingPage() {
   const { debateId } = useParams();
-  const navigate = useNavigate();
 
   const [judgeStatus, setJudgeStatus]   = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores]   = useState({ gpt: null, gemini: null, claude: null });
@@ -666,12 +665,6 @@ export default function JudgingPage() {
                 }`}
               >
                 {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="w-full mt-3 py-4 rounded-xl font-sans font-bold text-base border-2 border-white/20 text-white/50 hover:border-white/40 hover:text-white/70 active:scale-95 transition-all duration-300"
-              >
-                판결 닫기
               </button>
             </div>
           )}
