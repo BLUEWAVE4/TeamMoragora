@@ -112,6 +112,9 @@ export async function submitArgument(req, res, next) {
     if (result.status === 'duplicate') {
       return res.status(400).json({ error: '상대측과 동일한 주장은 제출할 수 없습니다.' });
     }
+    if (result.status === 'repetitive') {
+      return res.status(400).json({ error: result.warnings[result.warnings.length - 1] || '동일한 내용이 과도하게 반복되었습니다.' });
+    }
 
     const { data, error } = await supabaseAdmin
       .from('arguments')
