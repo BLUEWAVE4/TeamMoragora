@@ -260,7 +260,6 @@ export default function RankingPage() {
   const [selectedPlayer, setSelectedPlayer] = useState(null); 
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -291,7 +290,10 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  const listRankers = rankings.slice(3, visibleCount + 3);
+  // 4~10위 표시 (최대 7명)
+  const top10List = rankings.slice(3, 10);
+  // 내가 10위 밖인 경우
+  const myIsOutsideTop10 = myRankIndex >= 10;
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -393,49 +395,73 @@ export default function RankingPage() {
               <h3 className="text-[16px] font-black text-[#1B2A4A]">전체 랭킹</h3>
             </div>
 
-            <div className="space-y-4">
-              <AnimatePresence mode='popLayout'>
-                {listRankers.map((player, idx) => {
-                  const isListMe = user && player.id === user.id;
-                  const playerTier = findTierByScore(player.total_score);
-                  return (
-                    <motion.div
-                      key={player.id} layout
-                      onClick={() => setSelectedPlayer({ player, rank: idx + 4 })}
-                      className={`rounded-[26px] p-5 flex items-center transition-all relative cursor-pointer active:scale-[0.98]
-                        ${isListMe ? 'z-10 border-2 shadow-xl scale-[1.03] ring-[8px] ring-white' : 'bg-white border border-white shadow-sm'}`}
-                      style={{ borderColor: isListMe ? playerTier.color : 'transparent', backgroundColor: isListMe ? `${playerTier.color}05` : 'white' }}
-                    >
-                      {isListMe && (
-                        <div className="absolute -top-4 left-6 bg-[#007AFF] text-white text-[16px] font-black px-4 py-1.5 rounded-full shadow-lg animate-bounce flex items-center gap-2">
-                          <User size={14} fill="white" /> YOU ARE HERE!
-                        </div>
-                      )}
-                      <div className="w-12 flex flex-col items-center mr-3">
-                        <span className={`text-[24px] font-black italic ${isListMe ? 'text-black' : 'text-black/15'}`}>{idx + 4}</span>
+            <div className="space-y-3">
+              {top10List.map((player, idx) => {
+                const rank = idx + 4;
+                const isListMe = user && player.id === user.id;
+                const playerTier = findTierByScore(player.total_score);
+                return (
+                  <motion.div
+                    key={player.id}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() => setSelectedPlayer({ player, rank })}
+                    className={`rounded-2xl p-4 flex items-center transition-all cursor-pointer active:scale-[0.98]
+                      ${isListMe ? 'border-2 shadow-md' : 'bg-white border border-gray-100 shadow-sm'}`}
+                    style={{ borderColor: isListMe ? playerTier.color : undefined, backgroundColor: isListMe ? `${playerTier.color}08` : 'white' }}
+                  >
+                    <div className="w-9 flex items-center justify-center mr-3">
+                      <span className={`text-[18px] font-black italic ${isListMe ? '' : 'text-black/15'}`} style={isListMe ? { color: playerTier.color } : {}}>{rank}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
+                      <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
                       </div>
-                      <div className="w-16 h-16 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner flex-shrink-0">
-                        <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-[18px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
-                          <span className="text-[14px] font-black px-2 py-0.5 rounded-md text-white uppercase flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
-                        </div>
-                        <div className="text-[14px] font-bold text-gray-400">{player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP</div>
-                      </div>
-                      <ChevronRight className={`w-6 h-6 flex-shrink-0 ${isListMe ? 'text-black' : 'text-gray-200'}`} />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+                      <div className="text-[12px] font-bold text-gray-400">{player.wins}승 {player.losses}패 · {player.total_score?.toLocaleString()} XP</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-gray-200" />
+                  </motion.div>
+                );
+              })}
 
-            {visibleCount + 3 < rankings.length && (
-              <button onClick={() => setVisibleCount(v => v + 10)} className="w-full py-6 mt-10 bg-white rounded-[26px] border-2 border-dashed border-gray-200 text-[18px] font-black text-gray-400 active:scale-95 transition-all">
-                VIEW MORE RANKERS
-              </button>
-            )}
+              {/* 내가 10위 밖이면 ... + 내 순위 표시 */}
+              {myIsOutsideTop10 && myData && (
+                <>
+                  <div className="flex items-center justify-center py-2">
+                    <div className="flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                    </div>
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setSelectedPlayer({ player: myData, rank: myRankIndex + 1 })}
+                    className="rounded-2xl p-4 flex items-center cursor-pointer active:scale-[0.98] border-2 shadow-md"
+                    style={{ borderColor: currentTier.color, backgroundColor: `${currentTier.color}08` }}
+                  >
+                    <div className="w-9 flex items-center justify-center mr-3">
+                      <span className="text-[18px] font-black italic" style={{ color: currentTier.color }}>{myRankIndex + 1}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
+                      <img src={myData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-bold truncate" style={{ color: currentTier.color }}>{myData.nickname}</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white flex-shrink-0" style={{ backgroundColor: currentTier.color }}>{currentTier.name}</span>
+                      </div>
+                      <div className="text-[12px] font-bold text-gray-400">{myData.wins}승 {myData.losses}패 · {myData.total_score?.toLocaleString()} XP</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-gray-200" />
+                  </motion.div>
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
