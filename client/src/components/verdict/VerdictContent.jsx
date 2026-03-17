@@ -126,7 +126,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       const newComment = await createComment(debateId, commentInput.trim());
       // dicebear avataaars 아바타 설정 (닉네임 기반)
       if (newComment.user) {
-        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || myProfileNickname || user?.user_metadata?.nickname || 'anon'}`;
+        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`;
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -981,7 +981,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 {/* 아바타 */}
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user_id || 'anon'}`}
                     alt=""
                     className="w-full h-full object-cover"
                   />
@@ -1033,7 +1033,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${myProfileNickname || user.user_metadata?.nickname || user.email || 'me'}`}
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
                 alt=""
                 className="w-full h-full object-cover"
               />

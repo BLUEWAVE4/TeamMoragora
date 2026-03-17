@@ -350,7 +350,7 @@ function DebateBannerCard({ item }) {
                   return (
                     <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${nickname}`} alt="" className="w-full h-full object-cover" />
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user_id || nickname}`} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
                         <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
@@ -380,7 +380,7 @@ function DebateBannerCard({ item }) {
               <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                 {user && (
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || 'me'}`} alt="" className="w-full h-full object-cover" />
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <input
