@@ -806,20 +806,20 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex gap-1 mx-4 mt-3 bg-primary/5 rounded-lg p-0.5 border border-gold/10">
             <button
               onClick={() => setArgSide('A')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'A'
                   ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               A측 : {proSide}
             </button>
             <button
               onClick={() => setArgSide('B')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'B'
                   ? 'bg-red-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               B측 : {conSide}
