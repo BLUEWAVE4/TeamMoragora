@@ -301,7 +301,7 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
 
         {/* 투표 섹션 */}
-        <div className="px-4 pb-4 pt-1">
+        <div className="pr-4 pl-6 pb-4 pt-1">
 
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
