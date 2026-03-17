@@ -84,6 +84,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [myProfileNickname, setMyProfileNickname] = useState(null);
   const debateId = verdictData?.debate_id || verdictData?.debateId;
   const verdictTabRef = useRef(null);
 
@@ -104,6 +105,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     return () => clearTimeout(t);
   }, []);
 
+  // ===== 내 profiles 닉네임 로드 =====
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('nickname').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.nickname) setMyProfileNickname(data.nickname); });
+  }, [user]);
+
   // ===== 댓글 로드 =====
   useEffect(() => {
     if (!debateId) return;
@@ -117,7 +125,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       const newComment = await createComment(debateId, commentInput.trim());
       // dicebear avataaars 아바타 설정 (닉네임 기반)
       if (newComment.user) {
-        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || user?.user_metadata?.nickname || 'anon'}`;
+        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || myProfileNickname || user?.user_metadata?.nickname || 'anon'}`;
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -1024,7 +1032,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${myProfileNickname || user.user_metadata?.nickname || user.email || 'me'}`}
                 alt=""
                 className="w-full h-full object-cover"
               />
