@@ -116,6 +116,11 @@ export default function ProfilePage() {
   const [isListEditing, setIsListEditing] = useState(false);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [verdictLoading, setVerdictLoading] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [setupGender, setSetupGender] = useState('');
+  const [setupAge, setSetupAge] = useState('');
+  const [setupNickname, setSetupNickname] = useState('');
+  const [setupSaving, setSetupSaving] = useState(false);
 
   const tierDragControls = useDragControls();
   const analysisDragControls = useDragControls();
@@ -144,6 +149,14 @@ export default function ProfilePage() {
         const profile = pRes.data || pRes;
         setProfileData(profile);
         setNewNickname(profile.nickname || '');
+
+        // 닉네임/성별/나이 미입력 시 설정 바텀시트 자동 오픈
+        if (!profile.gender || !profile.age || !profile.nickname) {
+          setSetupNickname(profile.nickname || '');
+          setSetupGender(profile.gender || '');
+          setSetupAge(profile.age ? String(profile.age) : '');
+          setShowProfileSetup(true);
+        }
 
         const { data: debates, error } = await supabase
           .from('debates')
@@ -623,6 +636,124 @@ export default function ProfilePage() {
       )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+
+      {/* ===== 프로필 미완성 설정 바텀시트 ===== */}
+      <AnimatePresence>
+        {showProfileSetup && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-[300]" />
+            <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                className="w-full max-w-[440px] bg-white rounded-t-2xl shadow-xl pointer-events-auto"
+              >
+                <div className="px-5 pt-4 pb-2">
+                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+                  <h3 className="text-[18px] font-black text-[#1B2A4A] mb-1">프로필을 완성해주세요</h3>
+                  <p className="text-[12px] text-[#1B2A4A]/40 mb-4">더 나은 서비스를 위해 기본 정보를 입력해주세요</p>
+                </div>
+
+                <div className="px-5 pb-6 space-y-4">
+                  {/* 닉네임 */}
+                  {!profileData?.nickname && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">닉네임</label>
+                      <input
+                        value={setupNickname}
+                        onChange={(e) => setSetupNickname(e.target.value)}
+                        placeholder="2자 이상 입력"
+                        maxLength={20}
+                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+                      />
+                    </div>
+                  )}
+
+                  {/* 성별 */}
+                  {!profileData?.gender && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">성별</label>
+                      <div className="flex gap-2">
+                        {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }, { key: 'other', label: '기타' }].map(g => (
+                          <button
+                            key={g.key}
+                            onClick={() => setSetupGender(g.key)}
+                            className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
+                              setupGender === g.key
+                                ? 'bg-[#1B2A4A] text-[#D4AF37] border-[#1B2A4A]'
+                                : 'bg-white text-[#1B2A4A]/40 border-[#1B2A4A]/10'
+                            }`}
+                          >{g.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 나이 */}
+                  {!profileData?.age && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">나이</label>
+                      <input
+                        value={setupAge}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, '');
+                          if (v.length <= 2) setSetupAge(v);
+                        }}
+                        placeholder="예: 25"
+                        maxLength={2}
+                        inputMode="numeric"
+                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+                      />
+                    </div>
+                  )}
+
+                  {/* 저장 버튼 */}
+                  <button
+                    onClick={async () => {
+                      setSetupSaving(true);
+                      try {
+                        const updates = {};
+                        if (setupNickname.trim() && !profileData?.nickname) updates.nickname = setupNickname.trim();
+                        if (setupGender && !profileData?.gender) updates.gender = setupGender;
+                        if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
+
+                        if (Object.keys(updates).length > 0) {
+                          await supabase.from('profiles').update(updates).eq('id', user.id);
+                          // user_metadata도 동기화
+                          if (updates.nickname) {
+                            await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
+                          }
+                        }
+                        setShowProfileSetup(false);
+                        window.location.reload();
+                      } catch (e) {
+                        alert('저장 중 오류가 발생했습니다.');
+                      } finally {
+                        setSetupSaving(false);
+                      }
+                    }}
+                    disabled={setupSaving || (
+                      (!profileData?.nickname && setupNickname.trim().length < 2) ||
+                      (!profileData?.gender && !setupGender) ||
+                      (!profileData?.age && setupAge.length < 1)
+                    )}
+                    className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] disabled:opacity-30 active:scale-[0.97] transition-all"
+                  >
+                    {setupSaving ? '저장 중...' : '프로필 저장'}
+                  </button>
+
+                  <button
+                    onClick={() => setShowProfileSetup(false)}
+                    className="w-full py-2 text-[12px] text-[#1B2A4A]/30 font-bold"
+                  >
+                    나중에 하기
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
