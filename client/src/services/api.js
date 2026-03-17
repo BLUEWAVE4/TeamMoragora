@@ -36,6 +36,7 @@ export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { pa
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
 export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
 
+
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
 // ===== AI =====
