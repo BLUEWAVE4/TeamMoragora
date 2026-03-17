@@ -266,11 +266,11 @@ export default function DebateCard({ feed, formatTime }) {
 
   return (
     <>
-      <div className="w-full font-sans pb-4 mb-2 border-b border-[#1B2A4A]/5">
+      <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
 
-        {/* 주제 (메인) */}
-        <div className="px-4 pt-4 pb-1.5">
-          <h3 className="text-[17px] font-serif font-black text-[#1B2A4A] leading-snug break-keep">{topic}</h3>
+        {/* 주제 (메인) — 크고 두껍게 */}
+        <div className="px-4 pt-5 pb-2">
+          <h3 className="text-[19px] font-serif font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
@@ -300,56 +300,55 @@ export default function DebateCard({ feed, formatTime }) {
             </div>
           )}
 
-          <div className="flex flex-col gap-3">
-            {/* 논쟁 당사자 안내 */}
+          <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
-              <p className="text-[11px] text-center text-[#1B2A4A]/30 font-serif font-bold mb-2">논쟁 당사자는 투표할 수 없습니다</p>
+              <p className="text-[10px] text-center text-[#1B2A4A]/25 font-bold">논쟁 당사자는 투표할 수 없습니다</p>
             )}
-            {/* A측 버튼 */}
+            {/* A측 */}
             <button
               onClick={() => handleVote('A')}
               disabled={isVoting || !isVotingStatus || isParticipant}
-              className={`relative h-14 w-full rounded-xl overflow-hidden transition-all active:scale-[0.98] border
-                ${myVote === 'A' ? 'border-emerald-500 bg-emerald-500/5' : 'border-[#1B2A4A]/8 bg-white'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-60' : ''}`}
+              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
+                ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/6'}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
-                <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/10" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
               )}
-              <div className="relative h-full px-5 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2.5">
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'A' ? 'bg-emerald-600 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/40'}`}>A측</span>
-                  <span className={`text-[15px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
+              <div className="relative h-full px-3.5 flex items-center justify-between z-10">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'}`}>A측</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/50'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted) && (
-                  <div className="flex flex-col items-end">
-                    <span className="text-[15px] font-black text-[#1B2A4A]">{agreePercent}%</span>
-                    <span className="text-[10px] font-bold text-[#1B2A4A]/30">{voteCounts.agree.toLocaleString()}표</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/60">{agreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/25">{voteCounts.agree}표</span>
                   </div>
                 )}
               </div>
             </button>
 
-            {/* B측 버튼 */}
+            {/* B측 */}
             <button
               onClick={() => handleVote('B')}
               disabled={isVoting || !isVotingStatus || isParticipant}
-              className={`relative h-14 w-full rounded-xl overflow-hidden transition-all active:scale-[0.98] border
-                ${myVote === 'B' ? 'border-red-500 bg-red-500/5' : 'border-[#1B2A4A]/8 bg-white'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-60' : ''}`}
+              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
+                ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/6'}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
-                <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/10" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
               )}
-              <div className="relative h-full px-5 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2.5">
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/40'}`}>B측</span>
-                  <span className={`text-[15px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
+              <div className="relative h-full px-3.5 flex items-center justify-between z-10">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'}`}>B측</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/50'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted) && (
-                  <div className="flex flex-col items-end">
-                    <span className="text-[15px] font-black text-[#1B2A4A]">{disagreePercent}%</span>
-                    <span className="text-[10px] font-bold text-[#1B2A4A]/30">{voteCounts.disagree.toLocaleString()}표</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/60">{disagreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/25">{voteCounts.disagree}표</span>
                   </div>
                 )}
               </div>

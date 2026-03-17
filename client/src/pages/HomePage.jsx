@@ -171,7 +171,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] pb-32 pt-4">
+    <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
       <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-6 px-5">
         <div className="flex justify-between items-end mb-3 relative">
@@ -189,7 +189,7 @@ export default function HomePage() {
         </div>
         <CategoryFilter filter={filter} setFilter={setFilter} />
 
-        <section className="mt-3 flex flex-col">
+        <section className="mt-3 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
             <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
           ))}
