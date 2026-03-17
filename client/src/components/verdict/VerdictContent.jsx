@@ -920,48 +920,37 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               <span className="text-xs text-primary/40 font-medium">{statusText}</span>
             </div>
 
-            {/* 투표 버튼 — 항상 표시, 조건부 비활성 */}
-            <div className="flex gap-3 mb-4">
+            {/* 투표 버튼 — 퍼센트+투표수 포함 */}
+            <div className="flex gap-3">
               <button
                 onClick={() => !voteDisabled && handleVote('A')}
                 disabled={voteDisabled && myVote !== 'A'}
-                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                className={`flex-1 py-3 rounded-xl font-bold text-[13px] transition-all border-2 active:scale-[0.97] ${
                   myVote === 'A'
-                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-200'
+                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-md'
                     : voteDisabled
                       ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
-                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 active:scale-[0.97]'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                 }`}
               >
-                {myVote === 'A' ? '✓ ' : ''}A측 투표
+                {myVote === 'A' ? '✓ ' : ''}A측{displayTotal > 0 ? `(${pctA}%) · ${displayA}명` : ' 투표'}
               </button>
               <button
                 onClick={() => !voteDisabled && handleVote('B')}
                 disabled={voteDisabled && myVote !== 'B'}
-                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                className={`flex-1 py-3 rounded-xl font-bold text-[13px] transition-all border-2 active:scale-[0.97] ${
                   myVote === 'B'
-                    ? 'bg-red-500 text-white border-red-600 shadow-lg shadow-red-200'
+                    ? 'bg-red-500 text-white border-red-600 shadow-md'
                     : voteDisabled
                       ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
-                      : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100 active:scale-[0.97]'
+                      : 'bg-red-50 text-red-500 border-red-200'
                 }`}
               >
-                {myVote === 'B' ? '✓ ' : ''}B측 투표
+                {myVote === 'B' ? '✓ ' : ''}B측{displayTotal > 0 ? `(${pctB}%) · ${displayB}명` : ' 투표'}
               </button>
             </div>
             {disabledMsg && !myVote && (
-              <p className="text-center text-[11px] text-primary/30 mb-3">{disabledMsg}</p>
-            )}
-
-            {displayTotal > 0 ? (
-              <div className="flex justify-between text-[12px] font-bold">
-                <span className="text-emerald-600">A측({pctA}%) 투표 : {displayA}명</span>
-                <span className="text-red-500">B측({pctB}%) 투표 : {displayB}명</span>
-              </div>
-            ) : (
-              <p className="text-center text-[13px] text-primary/40 py-3">
-                {canVote ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
-              </p>
+              <p className="text-center text-[11px] text-primary/30 mt-2">{disabledMsg}</p>
             )}
 
           </div>
