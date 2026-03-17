@@ -285,7 +285,9 @@ export default function DebateCard({ feed, formatTime }) {
               {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
             </div>
           </div>
-          <span className="text-[10px] text-[#1B2A4A]/20 font-bold flex-shrink-0">{formatTime ? formatTime(feed.created_at) : ''}</span>
+          <button onClick={handleDetailClick} className="w-9 h-9 rounded-full flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
         </div>
 
         {/* 주제 */}
@@ -378,9 +380,7 @@ export default function DebateCard({ feed, formatTime }) {
               <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
             </div>
           </div>
-          <button onClick={handleDetailClick} className="w-7 h-7 rounded-full flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90 transition-all">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-          </button>
+          <span className="text-[10px] text-[#1B2A4A]/20 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
         </div>
       </div>
 
