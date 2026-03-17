@@ -270,7 +270,7 @@ export default function ProfilePage() {
                     className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
                   />
                 ) : (
-                  <h2 className="text-xl font-bold text-black tracking-tight border-b-2 border-transparent">{newNickname || '사용자'}</h2>
+                  <h2 className="text-xl font-bold text-black tracking-tight border-b-2 border-transparent">{newNickname || '\u00A0'}</h2>
                 )}
                 {/* 우측 버튼 — 절대 위치로 닉네임 밀지 않음 */}
                 <div className="absolute left-full ml-1 flex items-center gap-0.5">
