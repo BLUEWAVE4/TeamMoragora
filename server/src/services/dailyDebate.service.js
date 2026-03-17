@@ -1,17 +1,29 @@
 // ===== 오늘의 논쟁 자동 생성 서비스 =====
 // 매일 오전 8시(KST) cron으로 호출
-// GPT-4o로 주제 생성 → debate 생성 → AI 양측 주장 생성 → 판결 트리거
+// Claude Sonnet으로 주제 생성 → AI 판사(GPT/Gemini/Claude) 중 랜덤 배정 → 판결 트리거
 
-import { openai } from '../config/ai.js';
+import { anthropic, openai, gemini } from '../config/ai.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { nanoid } from '../utils/nanoid.js';
 import { triggerJudgment } from './judgmentTrigger.service.js';
 
 const CATEGORIES = ['daily', 'society', 'philosophy', 'culture', 'politics', 'economy', 'technology', 'education', 'romance'];
 
-// 1. AI로 논쟁 주제 생성
+// AI 판사 풀 (그록 제외)
+const AI_JUDGES = [
+  { id: 'gpt', name: 'Judge M (GPT-4o)', model: 'gpt-4o', type: 'openai' },
+  { id: 'gemini', name: 'Judge G (Gemini)', model: 'gemini-2.5-flash', type: 'gemini' },
+  { id: 'claude', name: 'Judge C (Claude)', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
+];
+
+// 랜덤으로 2개 선택 (A측, B측 각각 다른 판사)
+function pickTwoJudges() {
+  const shuffled = [...AI_JUDGES].sort(() => Math.random() - 0.5);
+  return { judgeA: shuffled[0], judgeB: shuffled[1] };
+}
+
+// 1. Claude Sonnet으로 논쟁 주제 생성
 async function generateDailyTopic() {
-  // 최근 생성된 daily 주제를 가져와 중복 방지
   const { data: recent } = await supabaseAdmin
     .from('debates')
     .select('topic')
@@ -21,29 +33,28 @@ async function generateDailyTopic() {
 
   const recentTopics = (recent || []).map(d => d.topic).join('\n- ');
 
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o',
+  const res = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
     messages: [
       {
-        role: 'system',
+        role: 'user',
         content: `당신은 한국의 논쟁 토론 플랫폼 "모라고라"의 주제 생성 AI입니다.
-매일 사람들이 흥미를 느끼고 의견이 갈릴 수 있는 논쟁 주제를 생성합니다.
+
+목표: SNS에서 바이럴되기 좋은 자극적이고 논쟁적인 주제를 생성하세요.
 
 규칙:
-- 한국 사회에서 공감할 수 있는 주제
-- 찬반이 명확히 갈릴 수 있는 주제 (너무 일방적이지 않게)
-- 일상적, 사회적, 철학적, 문화적 주제를 골고루
+- 한국 MZ세대가 격하게 반응할 만한 자극적인 주제
+- "이건 무조건 내 말이 맞아!" 하고 댓글 달고 싶어지는 주제
+- 찬반이 50:50에 가깝게 갈릴 수 있는 주제 (일방적이면 재미없음)
+- 일상, 연애, 직장, 사회, 철학 등 다양한 카테고리
 - 주제는 선언문 형태 (예: "~해야 한다", "~이다")
-- 반드시 JSON으로 응답
+- 트위터/인스타에서 공유하고 싶어지는 한 줄 주제
 
 최근 사용된 주제 (중복 금지):
-${recentTopics ? `- ${recentTopics}` : '(없음)'}`,
-      },
-      {
-        role: 'user',
-        content: `오늘의 논쟁 주제 1개를 생성해주세요.
+${recentTopics ? `- ${recentTopics}` : '(없음)'}
 
-JSON 형식:
+반드시 아래 JSON 형식으로만 응답하세요:
 {
   "topic": "논쟁 주제 (선언문 형태)",
   "description": "주제 설명 (1-2문장)",
@@ -53,60 +64,67 @@ JSON 형식:
 }`,
       },
     ],
-    response_format: { type: 'json_object' },
-    temperature: 0.9,
   });
 
-  return JSON.parse(res.choices[0].message.content);
+  const text = res.content[0].text;
+  // JSON 블록 추출 (```json ... ``` 또는 순수 JSON)
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('주제 생성 JSON 파싱 실패');
+  return JSON.parse(jsonMatch[0]);
 }
 
-// 2. AI로 양측 주장 생성
-async function generateArguments(topic, proSide, conSide, category) {
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      {
-        role: 'system',
-        content: `당신은 논쟁의 양측 입장을 대변하는 AI입니다. 각 측의 주장을 논리적이고 설득력 있게 작성합니다.
-주장은 각각 500-1500자 내외로, 구체적인 근거와 예시를 포함해야 합니다.
-반드시 JSON으로 응답하세요.`,
-      },
-      {
-        role: 'user',
-        content: `주제: "${topic}"
-카테고리: ${category}
-A측(찬성): ${proSide}
-B측(반대): ${conSide}
+// 2. AI 판사가 각 측 주장 생성
+async function generateArgumentByJudge(judge, topic, side, sideLabel, category) {
+  const prompt = `당신은 논쟁 플랫폼 "모라고라"의 AI 판사 ${judge.name}입니다.
+주제: "${topic}" (카테고리: ${category})
 
-양측의 주장을 작성해주세요.
+당신은 ${side}측(${sideLabel}) 입장을 대변합니다.
+논리적이고 설득력 있는 주장을 500-1500자로 작성하세요.
+구체적인 근거, 통계, 사례를 포함하세요.
+주장 본문만 작성하세요 (JSON 아님, 순수 텍스트).`;
 
-JSON 형식:
-{
-  "argument_a": "A측(찬성) 주장 본문",
-  "argument_b": "B측(반대) 주장 본문"
-}`,
-      },
-    ],
-    response_format: { type: 'json_object' },
-    temperature: 0.7,
-  });
+  if (judge.type === 'openai') {
+    const res = await openai.chat.completions.create({
+      model: judge.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    });
+    return res.choices[0].message.content;
+  }
 
-  return JSON.parse(res.choices[0].message.content);
+  if (judge.type === 'gemini') {
+    const res = await gemini.generateContent(prompt);
+    return res.response.text();
+  }
+
+  if (judge.type === 'anthropic') {
+    const res = await anthropic.messages.create({
+      model: judge.model,
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return res.content[0].text;
+  }
+
+  throw new Error(`Unknown judge type: ${judge.type}`);
 }
 
 // 3. 전체 파이프라인
 export async function createDailyDebate() {
   console.log('[DailyDebate] 오늘의 논쟁 생성 시작...');
 
-  // 1) 주제 생성
+  // 1) Claude Sonnet으로 주제 생성
   const topicData = await generateDailyTopic();
   console.log(`[DailyDebate] 주제: ${topicData.topic}`);
 
-  // 2) debate 레코드 생성 (mode='daily', creator_id는 시스템 계정 또는 null 처리)
-  // 시스템 계정이 없으므로, 첫 번째 프로필을 사용하거나 별도 시스템 계정 필요
-  // → debates 테이블에 creator_id가 NOT NULL이므로 시스템 계정 필요
-  let systemUserId = await getOrCreateSystemUser();
+  // 2) AI 판사 2명 랜덤 배정
+  const { judgeA, judgeB } = pickTwoJudges();
+  console.log(`[DailyDebate] A측: ${judgeA.name}, B측: ${judgeB.name}`);
 
+  // 3) 시스템 유저 확인
+  const systemUserId = await getSystemUser();
+
+  // 4) debate 레코드 생성
   const inviteCode = nanoid(8);
   const { data: debate, error: debateErr } = await supabaseAdmin
     .from('debates')
@@ -123,7 +141,7 @@ export async function createDailyDebate() {
       con_side: topicData.con_side,
       invite_code: inviteCode,
       status: 'arguing',
-      vote_duration: 1, // 1일
+      vote_duration: 1,
     })
     .select()
     .single();
@@ -131,52 +149,44 @@ export async function createDailyDebate() {
   if (debateErr) throw debateErr;
   console.log(`[DailyDebate] debate 생성: ${debate.id}`);
 
-  // 3) 양측 주장 생성
-  const args = await generateArguments(
-    topicData.topic,
-    topicData.pro_side,
-    topicData.con_side,
-    topicData.category,
-  );
+  // 5) AI 판사가 각각 주장 생성 (병렬)
+  const [argA, argB] = await Promise.all([
+    generateArgumentByJudge(judgeA, topicData.topic, 'A', topicData.pro_side, topicData.category),
+    generateArgumentByJudge(judgeB, topicData.topic, 'B', topicData.con_side, topicData.category),
+  ]);
 
-  // 4) arguments 레코드 삽입
+  // 6) arguments 레코드 삽입
   const { error: argErr } = await supabaseAdmin
     .from('arguments')
     .insert([
-      { debate_id: debate.id, user_id: systemUserId, side: 'A', content: args.argument_a, round: 1 },
-      { debate_id: debate.id, user_id: systemUserId, side: 'B', content: args.argument_b, round: 1 },
+      { debate_id: debate.id, user_id: systemUserId, side: 'A', content: argA, round: 1 },
+      { debate_id: debate.id, user_id: systemUserId, side: 'B', content: argB, round: 1 },
     ]);
 
   if (argErr) throw argErr;
   console.log('[DailyDebate] 양측 주장 삽입 완료');
 
-  // 5) AI 판결 트리거
+  // 7) AI 3모델 판결 트리거
   await triggerJudgment(debate.id);
   console.log('[DailyDebate] 판결 트리거 완료');
 
   return debate;
 }
 
-// 시스템 유저 조회/생성
-// 환경변수 SYSTEM_USER_ID가 설정되어 있으면 해당 ID 사용
-// 없으면 profiles에서 '모라고라 AI' 닉네임으로 조회
-async function getOrCreateSystemUser() {
-  // 환경변수에 시스템 유저 ID가 있으면 바로 사용
+// 시스템 유저 조회
+async function getSystemUser() {
   if (process.env.SYSTEM_USER_ID) {
     return process.env.SYSTEM_USER_ID;
   }
 
-  const SYSTEM_NICKNAME = '모라고라 AI';
-
   const { data: existing } = await supabaseAdmin
     .from('profiles')
     .select('id')
-    .eq('nickname', SYSTEM_NICKNAME)
+    .eq('nickname', '모라고라 AI')
     .maybeSingle();
 
   if (existing) return existing.id;
 
-  // 시스템 유저가 없으면 에러 (일반 사용자 ID를 함부로 사용하지 않음)
   throw new Error(
     '시스템 유저가 존재하지 않습니다. Supabase에 "모라고라 AI" 프로필을 생성하거나, SYSTEM_USER_ID 환경변수를 설정하세요.'
   );
