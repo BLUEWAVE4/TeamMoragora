@@ -155,12 +155,12 @@ export async function createDailyDebate() {
     generateArgumentByJudge(judgeB, topicData.topic, 'B', topicData.con_side, topicData.category),
   ]);
 
-  // 6) arguments 레코드 삽입
+  // 6) arguments 레코드 삽입 (DB 제약: 최대 2000자)
   const { error: argErr } = await supabaseAdmin
     .from('arguments')
     .insert([
-      { debate_id: debate.id, user_id: systemUserId, side: 'A', content: argA, round: 1 },
-      { debate_id: debate.id, user_id: systemUserId, side: 'B', content: argB, round: 1 },
+      { debate_id: debate.id, user_id: systemUserId, side: 'A', content: argA.slice(0, 2000), round: 1 },
+      { debate_id: debate.id, user_id: systemUserId, side: 'B', content: argB.slice(0, 2000), round: 1 },
     ]);
 
   if (argErr) throw argErr;
