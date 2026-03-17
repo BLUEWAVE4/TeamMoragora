@@ -279,7 +279,7 @@ export default function ProfilePage() {
                       <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
                       <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
                     </>
-                  ) : (
+                  ) : profileData && (
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
                       <Edit3 size={20} />
                     </button>
@@ -288,11 +288,15 @@ export default function ProfilePage() {
               </div>
               <button
                 onClick={() => setIsTierSheetOpen(true)}
-                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform"
-                style={{ backgroundColor: tier.color }}
+                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform min-w-[60px] justify-center"
+                style={{ backgroundColor: profileData ? tier.color : '#D1D5DB' }}
               >
-                <tier.icon size={14} /> {tier.name}
-                <ChevronRight size={14} strokeWidth={3} />
+                {profileData ? (
+                  <>
+                    <tier.icon size={14} /> {tier.name}
+                    <ChevronRight size={14} strokeWidth={3} />
+                  </>
+                ) : '\u00A0'}
               </button>
             </div>
           </div>
