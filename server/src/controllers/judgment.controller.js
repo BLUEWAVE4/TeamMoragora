@@ -237,13 +237,21 @@ export async function getVerdictFeed(req, res, next) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await supabaseAdmin
+    // daily 모드를 제외하기 위해 넉넉하게 가져와서 필터
+    const fetchLimit = to + 20; // 여유분 확보
+    const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, creator:profiles!creator_id(nickname))', { count: 'exact' })
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, creator:profiles!creator_id(nickname))')
       .order('created_at', { ascending: false })
-      .range(from, to);
+      .range(0, fetchLimit);
 
     if (error) throw error;
+
+    // daily 모드 제외
+    const filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
+    const data = filtered.slice(from, to + 1);
+    const count = filtered.length;
+
     res.json({
       data,
       page,

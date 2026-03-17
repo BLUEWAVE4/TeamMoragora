@@ -158,7 +158,14 @@ export async function createDailyDebate() {
 }
 
 // 시스템 유저 조회/생성
+// 환경변수 SYSTEM_USER_ID가 설정되어 있으면 해당 ID 사용
+// 없으면 profiles에서 '모라고라 AI' 닉네임으로 조회
 async function getOrCreateSystemUser() {
+  // 환경변수에 시스템 유저 ID가 있으면 바로 사용
+  if (process.env.SYSTEM_USER_ID) {
+    return process.env.SYSTEM_USER_ID;
+  }
+
   const SYSTEM_NICKNAME = '모라고라 AI';
 
   const { data: existing } = await supabaseAdmin
@@ -169,26 +176,8 @@ async function getOrCreateSystemUser() {
 
   if (existing) return existing.id;
 
-  // 시스템 유저가 없으면 생성 (UUID 직접 지정)
-  const systemId = '00000000-0000-0000-0000-000000000000';
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .upsert({
-      id: systemId,
-      nickname: SYSTEM_NICKNAME,
-      email: 'system@moragora.ai',
-    });
-
-  if (error) {
-    console.error('[DailyDebate] 시스템 유저 생성 실패:', error);
-    // 폴백: 아무 유저나 사용
-    const { data: any } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .limit(1)
-      .single();
-    return any.id;
-  }
-
-  return systemId;
+  // 시스템 유저가 없으면 에러 (일반 사용자 ID를 함부로 사용하지 않음)
+  throw new Error(
+    '시스템 유저가 존재하지 않습니다. Supabase에 "모라고라 AI" 프로필을 생성하거나, SYSTEM_USER_ID 환경변수를 설정하세요.'
+  );
 }
