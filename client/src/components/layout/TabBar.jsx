@@ -17,13 +17,32 @@ const TrophyIcon = ({ active }) => (
   </svg>
 );
 
-const PlusIcon = ({ active }) => (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
-    <rect width="18" height="18" x="3" y="3" rx="5" ry="5"/>
-    <g stroke={active ? "white" : "currentColor"}>
-      <line x1="12" x2="12" y1="8" y2="16"/>
-      <line x1="8" x2="16" y1="12" y2="12"/>
-    </g>
+const PlusIcon = ({ active, pulse }) => (
+  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
+    {/* 네모 박스 */}
+    <rect
+      x="4" y="4" width="34" height="34" rx="10" ry="10"
+      fill={active ? '#1B2A4A' : 'none'}
+      stroke={active ? '#1B2A4A' : '#1B2A4A'}
+      strokeWidth="1.8"
+      className={pulse ? 'animate-stroke-pulse' : ''}
+    />
+    {/* + 세로선 */}
+    <line
+      x1="21" y1="13" x2="21" y2="29"
+      stroke={active ? 'white' : '#1B2A4A'}
+      strokeWidth="2"
+      strokeLinecap="round"
+      className={pulse ? 'animate-stroke-pulse' : ''}
+    />
+    {/* + 가로선 */}
+    <line
+      x1="13" y1="21" x2="29" y2="21"
+      stroke={active ? 'white' : '#1B2A4A'}
+      strokeWidth="2"
+      strokeLinecap="round"
+      className={pulse ? 'animate-stroke-pulse' : ''}
+    />
   </svg>
 );
 
@@ -185,7 +204,7 @@ export default function TabBar() {
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
     { to: '/ranking', icon: (active) => <TrophyIcon active={active} /> },
-    { isButton: true, icon: (active) => <PlusIcon active={active} /> },
+    { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} /> },
     { to: '/moragora', icon: (active) => <HallIcon active={active} /> },
     { to: '/profile', icon: (active) => <UserIcon active={active} /> }
   ];
@@ -295,13 +314,7 @@ export default function TabBar() {
                   className={`relative flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >
-                  {/* 금색 펄스 링 - 진행중 논쟁 있을 때 */}
-                  {hasActive && !isCreateActive && (
-                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="w-[46px] h-[46px] rounded-xl border-2 border-[#D4AF37] animate-pulse-gold" />
-                    </span>
-                  )}
-                  {item.icon(isCreateActive)}
+                  {item.icon(isCreateActive, hasActive && !isCreateActive)}
                 </button>
               );
             }
@@ -324,12 +337,12 @@ export default function TabBar() {
 
       {/* ===== 인라인 스타일 (애니메이션) ===== */}
       <style>{`
-        @keyframes pulse-gold {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.08); }
+        @keyframes stroke-pulse {
+          0%, 100% { stroke: #1B2A4A; opacity: 0.4; }
+          50% { stroke: #D4AF37; opacity: 1; }
         }
-        .animate-pulse-gold {
-          animation: pulse-gold 2s ease-in-out infinite;
+        .animate-stroke-pulse {
+          animation: stroke-pulse 2s ease-in-out infinite;
         }
         @keyframes slide-up {
           from { transform: translateY(100%); }
