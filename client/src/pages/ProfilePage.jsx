@@ -674,7 +674,7 @@ export default function ProfilePage() {
                     <div>
                       <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">성별</label>
                       <div className="flex gap-2">
-                        {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }, { key: 'other', label: '기타' }].map(g => (
+                        {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }].map(g => (
                           <button
                             key={g.key}
                             onClick={() => setSetupGender(g.key)}
