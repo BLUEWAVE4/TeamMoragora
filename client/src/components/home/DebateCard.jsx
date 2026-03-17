@@ -273,8 +273,8 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
-        <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
+        {/* 서브 정보: 작성자 + 카테고리 + 렌즈 (우측 정렬) */}
+        <div className="px-4 pb-3 flex items-center justify-end gap-1.5 flex-wrap">
           <span className="text-[11px] text-[#1B2A4A]/35 font-bold">{creatorNickname}</span>
           <span className="text-[#1B2A4A]/15">·</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
