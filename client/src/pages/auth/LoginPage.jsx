@@ -73,7 +73,7 @@ const handleGoogleLogin = () => {
   if (user) return null;
 
    return (
-    <div className="relative flex flex-col min-h-screen w-full overflow-hidden bg-[#0e1628]">
+    <div className="relative flex flex-col min-h-screen w-full overflow-hidden bg-[#1a2744]">
 
       {/* ── 배경 레이어 ── */}
       {/* 대각선 라인 패턴 */}
@@ -105,7 +105,7 @@ const handleGoogleLogin = () => {
           모라고라<span className="text-[#D4A843]">.</span>
         </h1>
         <p className="text-white/30 text-[13px] font-medium tracking-[0.15em] uppercase">
-          AI Judge · Debate Court
+          AI 논쟁 · 판결 서비스
         </p>
 
         {/* 구분선 */}
