@@ -293,17 +293,32 @@ export default function ProfilePage() {
             className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
             onClick={() => {
               if (isEditing && profileData?.gender) {
-                // 현재 아바타 기본 스타일로 초기화
+                // 현재 아바타 URL에서 옵션 파싱 또는 기본값
+                const currentUrl = profileData.avatar_url || '';
+                const params = new URLSearchParams(currentUrl.split('?')[1] || '');
                 const isMale = profileData.gender === 'male';
                 const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
                 const hash = user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                setAvatarOptions({ top: styles[hash % styles.length], skinColor: '', hairColor: '', clothing: '', accessories: '' });
+                setAvatarOptions({
+                  top: params.get('top') || styles[hash % styles.length],
+                  skinColor: params.get('skinColor') || '',
+                  hairColor: params.get('hairColor') || '',
+                  clothing: params.get('clothing') || '',
+                  clothesColor: params.get('clothesColor') || '',
+                  accessories: params.get('accessories') || '',
+                  accessoriesColor: params.get('accessoriesColor') || '',
+                  eyes: params.get('eyes') || '',
+                  eyebrows: params.get('eyebrows') || '',
+                  mouth: params.get('mouth') || '',
+                  facialHair: params.get('facialHair') || '',
+                  facialHairColor: params.get('facialHairColor') || '',
+                });
                 setShowAvatarEdit(true);
               }
             }}
           >
             <img
-              src={getAvatarUrl(user.id, profileData?.gender, avatarOptions.top ? avatarOptions : undefined) || DEFAULT_AVATAR_ICON}
+              src={avatarOptions.top ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions) : (profileData?.avatar_url || getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON)}
               alt="avatar"
               className="w-full h-full object-cover"
             />
