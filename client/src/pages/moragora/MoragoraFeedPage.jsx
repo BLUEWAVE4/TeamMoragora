@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { getVerdictFeed } from '../../services/api';
+import { getHallOfFame } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
 const CATEGORY_LABELS = {
@@ -17,21 +17,12 @@ export default function MoragoraFeedPage() {
   const searchQuery = new URLSearchParams(location.search).get('q')?.toLowerCase() || '';
   const [verdicts, setVerdicts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
 
-  // 이달의 최고 논쟁 (검색 무관, 최초 1회 로드)
-  const [featured, setFeatured] = useState(null);
-
-  const fetchVerdicts = async (p = 1, append = false, query = null) => {
+  const fetchVerdicts = async (query = null) => {
     try {
-      if (!append) setLoading(true);
-      const res = await getVerdictFeed(p, 10, null, query || undefined);
-      const items = res?.data || [];
-      if (append) setVerdicts(prev => [...prev, ...items]);
-      else setVerdicts(items);
-      setHasNext(res?.hasNext ?? false);
-      setPage(p);
+      setLoading(true);
+      const items = await getHallOfFame(30, query || undefined);
+      setVerdicts(items || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -39,23 +30,14 @@ export default function MoragoraFeedPage() {
     }
   };
 
-  // 최초 로드: 이달의 최고 논쟁 + 전체 목록
+  // 검색어 변경 시 새로 로드
   useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await getVerdictFeed(1, 1);
-        if (res?.data?.[0]) setFeatured(res.data[0]);
-      } catch {}
-    };
-    init();
-  }, []);
-
-  // 검색어 변경 시 목록 새로 로드
-  useEffect(() => {
-    fetchVerdicts(1, false, searchQuery || null);
+    fetchVerdicts(searchQuery || null);
   }, [searchQuery]);
 
-  const restVerdicts = verdicts;
+  // 1위 = 이달의 최고 논쟁
+  const featured = searchQuery ? null : verdicts[0];
+  const restVerdicts = searchQuery ? verdicts : verdicts.slice(1);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -141,15 +123,6 @@ export default function MoragoraFeedPage() {
           })}
         </div>
 
-        {/* 더보기 */}
-        {hasNext && (
-          <button
-            onClick={() => fetchVerdicts(page + 1, true)}
-            className="w-full mt-4 py-4 bg-white rounded-xl border border-gray-100 text-[14px] font-bold text-gray-400 flex items-center justify-center active:scale-[0.97] transition-all"
-          >
-            더보기
-          </button>
-        )}
 
         {verdicts.length === 0 && (
           <div className="text-center py-16">

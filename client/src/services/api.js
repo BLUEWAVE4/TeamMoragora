@@ -51,6 +51,7 @@ export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
 export const getVerdictFeed = (page = 1, limit = 5, category, q) => api.get(`/judgments/feed`, { params: { page, limit, ...(category ? { category } : {}), ...(q ? { q } : {}) } });
 export const getDailyVerdicts = (limit = 5) => api.get(`/judgments/daily?limit=${limit}`);
+export const getHallOfFame = (limit = 10, q) => api.get('/judgments/hall', { params: { limit, ...(q ? { q } : {}) } });
 
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
