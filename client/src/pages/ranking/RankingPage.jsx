@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
@@ -257,6 +258,8 @@ function PlayerProfileSheet({ player, rank, onClose }) {
 export default function RankingPage() {
   // ... RankingPage 로직은 위와 동일 (생략하지 않고 아까 드린 전체 코드 구조 유지)
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null); 
   const [rankings, setRankings] = useState([]);
@@ -282,7 +285,12 @@ export default function RankingPage() {
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
   const currentTier = findTierByScore(myData?.total_score);
 
-  const podiumData = rankings.slice(0, 3).map((r, idx) => ({
+  // 검색 필터
+  const filteredRankings = searchQuery
+    ? rankings.filter(r => (r.nickname || '').toLowerCase().includes(searchQuery))
+    : rankings;
+
+  const podiumData = (searchQuery ? [] : rankings.slice(0, 3)).map((r, idx) => ({
     ...r,
     rank: idx + 1,
     tierData: findTierByScore(r.total_score),
@@ -291,8 +299,8 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  // 4~10위 표시 (최대 7명)
-  const top10List = rankings.slice(3, 10);
+  // 4~10위 또는 검색 결과
+  const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
   // 내가 10위 밖인 경우
   const myIsOutsideTop10 = myRankIndex >= 10;
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getVerdictFeed } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
@@ -13,6 +13,8 @@ const CATEGORY_LABELS = {
 
 export default function MoragoraFeedPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [verdicts, setVerdicts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -36,9 +38,18 @@ export default function MoragoraFeedPage() {
 
   useEffect(() => { fetchVerdicts(); }, []);
 
+  // 검색 필터
+  const filtered = searchQuery
+    ? verdicts.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(searchQuery) || creator.includes(searchQuery);
+      })
+    : verdicts;
+
   // 이달의 최고 논쟁 (첫 번째)
-  const featured = verdicts[0];
-  const restVerdicts = verdicts.slice(1);
+  const featured = filtered[0];
+  const restVerdicts = filtered.slice(1);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

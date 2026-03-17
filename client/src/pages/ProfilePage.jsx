@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../utils/avatar';
@@ -105,6 +105,8 @@ const formatDate = (iso) => {
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [profileData, setProfileData] = useState(null);
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -410,7 +412,10 @@ export default function ProfilePage() {
           ) : (
             <>
               <div className="bg-white rounded-t-2xl rounded-b-none shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                {myJudgments.slice(0, displayCount).map((debate) => {
+                {(searchQuery
+                  ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
+                  : myJudgments
+                ).slice(0, displayCount).map((debate) => {
                   const result = getDebateResult(debate);
                   const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
                   return (

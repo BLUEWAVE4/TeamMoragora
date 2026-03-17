@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import { supabase } from '../services/supabase';
 import TodayDebate from '../components/home/TodayDebate';
@@ -40,6 +41,8 @@ const fetchCounts = async (feedList) => {
 };
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
   const [feeds, setFeeds] = useState([]);
@@ -139,6 +142,14 @@ export default function HomePage() {
 
   const getProcessedFeeds = () => {
     let result = [...feeds];
+    // 검색어 필터
+    if (searchQuery) {
+      result = result.filter(f => {
+        const topic = (f.debate?.topic || '').toLowerCase();
+        const creator = (f.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(searchQuery) || creator.includes(searchQuery);
+      });
+    }
     return result.sort((a, b) => {
       const aData = a.debate || {};
       const bData = b.debate || {};

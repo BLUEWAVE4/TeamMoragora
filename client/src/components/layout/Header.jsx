@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 const ScalesLogo = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2.5">
@@ -18,39 +18,71 @@ const SearchIcon = ({ className }) => (
   </svg>
 );
 
+// 경로별 검색 설정
+const SEARCH_CONFIG = {
+  '/': { placeholder: '주제 또는 작성자 검색', param: 'q' },
+  '/ranking': { placeholder: '사용자 검색', param: 'q' },
+  '/moragora': { placeholder: '주제 또는 작성자 검색', param: 'q' },
+  '/profile': { placeholder: '최근 논쟁 기록 검색', param: 'q' },
+};
+
+// 헤더 숨김 경로
+const HIDE_PATHS = ['/debate/create'];
+
 export default function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
-  // 스크롤 방향 감지 — 아래로 스크롤 시 숨김, 위로 스크롤 시 표시
+  const pathname = location.pathname;
+  const config = SEARCH_CONFIG[pathname] || SEARCH_CONFIG['/'];
+  const shouldHide = HIDE_PATHS.some(p => pathname.startsWith(p));
+
+  // 페이지 이동 시 검색 닫기
+  useEffect(() => {
+    setIsSearchOpen(false);
+    setSearchQuery(searchParams.get('q') || '');
+  }, [pathname]);
+
+  // 스크롤 방향 감지
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
-      if (currentY < 10) {
-        setVisible(true);
-      } else if (currentY > lastScrollY.current + 5) {
-        setVisible(false);
-      } else if (currentY < lastScrollY.current - 5) {
-        setVisible(true);
-      }
+      if (currentY < 10) setVisible(true);
+      else if (currentY > lastScrollY.current + 5) setVisible(false);
+      else if (currentY < lastScrollY.current - 5) setVisible(true);
       lastScrollY.current = currentY;
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  if (shouldHide) return null;
+
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${searchQuery}`);
-      setIsSearchOpen(false);
-      setSearchQuery('');
+    const q = searchQuery.trim();
+    if (q) {
+      // 현재 페이지에 쿼리 파라미터 추가
+      setSearchParams({ q });
+    } else {
+      // 검색어 비우면 파라미터 제거
+      setSearchParams({});
     }
+    setIsSearchOpen(false);
   };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchParams({});
+    setIsSearchOpen(false);
+  };
+
+  const currentQuery = searchParams.get('q');
 
   return (
     <header
@@ -66,15 +98,18 @@ export default function Header() {
               <input
                 autoFocus
                 type="text"
-                placeholder="논쟁 검색"
+                placeholder={config.placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent border-none outline-none text-sm text-[#2D3350] placeholder:text-gray-400"
               />
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery('')} className="text-gray-400 text-lg leading-none ml-1">&times;</button>
+              )}
             </div>
             <button
               type="button"
-              onClick={() => setIsSearchOpen(false)}
+              onClick={handleClearSearch}
               className="text-[13px] font-bold text-[#1B2A4A]/50 active:opacity-60"
             >
               취소
@@ -88,12 +123,23 @@ export default function Header() {
                 모라고라<span className="text-[#FFBD43]">.</span>
               </span>
             </Link>
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full hover:bg-gray-50 active:scale-90 transition-all"
-            >
-              <SearchIcon />
-            </button>
+            <div className="flex items-center gap-1">
+              {/* 검색 활성화 중이면 검색어 뱃지 표시 */}
+              {currentQuery && (
+                <button
+                  onClick={() => { setSearchParams({}); }}
+                  className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full flex items-center gap-1 active:scale-95 transition-all"
+                >
+                  "{currentQuery}" <span className="text-[#D4AF37]/50">&times;</span>
+                </button>
+              )}
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full active:scale-90 transition-all"
+              >
+                <SearchIcon />
+              </button>
+            </div>
           </>
         )}
       </div>
