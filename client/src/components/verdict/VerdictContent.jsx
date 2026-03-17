@@ -781,8 +781,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/25 cursor-pointer">
                         <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
                       </svg>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-[#1B2A4A] text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-active:opacity-100 transition-opacity pointer-events-none shadow-lg">
-                        AI가 판결에 얼마나 확신하는지를 나타냅니다
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-3 py-2 bg-[#1B2A4A] text-white text-[10px] leading-relaxed rounded-lg w-48 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                        AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 양측 점수 차이가 클수록 높아지며, 동점에 가까울수록 낮아집니다.
                       </span>
                     </span>
                   </div>
