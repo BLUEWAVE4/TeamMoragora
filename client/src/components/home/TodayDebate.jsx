@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { castVote, getVoteTally, cancelVote } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import { AI_JUDGES } from '../../constants/judges';
 
@@ -94,6 +95,43 @@ function DebateBannerCard({ item }) {
     }
   };
 
+  // 좋아요/댓글/조회수
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
+
+  useEffect(() => {
+    if (!debateId) return;
+    const fetchCounts = async () => {
+      try {
+        const [{ count: lc }, { count: cc }] = await Promise.all([
+          supabase.from('debate_likes').select('*', { count: 'exact', head: true }).eq('debate_id', debateId),
+          supabase.from('comments').select('*', { count: 'exact', head: true }).eq('debate_id', debateId),
+        ]);
+        setLikeCount(lc ?? 0);
+        setCommentCount(cc ?? 0);
+        if (user) {
+          const { data: myLike } = await supabase.from('debate_likes').select('id').eq('debate_id', debateId).eq('user_id', user.id).maybeSingle();
+          setLiked(!!myLike);
+        }
+      } catch {}
+    };
+    fetchCounts();
+  }, [debateId, user]);
+
+  const handleLike = async () => {
+    if (!user) return;
+    const prev = liked;
+    const prevCount = likeCount;
+    setLiked(!prev);
+    setLikeCount(prev ? Math.max(0, prevCount - 1) : prevCount + 1);
+    try {
+      if (prev) await supabase.from('debate_likes').delete().eq('debate_id', debateId).eq('user_id', user.id);
+      else await supabase.from('debate_likes').insert({ debate_id: debateId, user_id: user.id });
+    } catch { setLiked(prev); setLikeCount(prevCount); }
+  };
+
   if (!item) return null;
 
   const isParticipant = user && (item.debate?.creator_id === user.id || item.debate?.opponent_id === user.id);
@@ -149,7 +187,7 @@ function DebateBannerCard({ item }) {
 
       {/* 주제 */}
       <div className="mb-5 z-10 flex-1">
-        <h2 className="text-[18px] font-sans font-bold text-white leading-[1.5] break-keep">
+        <h2 className="text-[18px] font-sans font-bold text-white leading-[1.5] break-keep text-center">
           "{item.debate?.topic || '주제를 불러올 수 없습니다'}"
         </h2>
       </div>
@@ -212,17 +250,17 @@ function DebateBannerCard({ item }) {
         {/* 하단: 좋아요/댓글/조회수 + 타이머 */}
         <div className="flex justify-between items-center pt-3 border-t border-white/5">
           <div className="flex items-center gap-4">
+            <button onClick={handleLike} className="flex items-center gap-1 active:scale-90 transition-transform">
+              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : 'white'} strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity={liked ? 1 : 0.4}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span className="text-[10px] font-bold text-white/40">{likeCount}</span>
+            </button>
+            <button onClick={() => navigate(`/moragora/${debateId}`)} className="flex items-center gap-1 active:scale-90 transition-transform">
+              <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span className="text-[10px] font-bold text-white/40">{commentCount}</span>
+            </button>
             <div className="flex items-center gap-1">
-              <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span className="text-[10px] font-bold text-white/30">0</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span className="text-[10px] font-bold text-white/30">0</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.25"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span className="text-[10px] font-bold text-white/25">{totalVotes}</span>
+              <svg fill="none" stroke="white" strokeWidth="2" height="14" viewBox="0 0 24 24" width="14" opacity="0.3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span className="text-[10px] font-bold text-white/30">{totalVotes}</span>
             </div>
           </div>
           <span className={`text-[11px] font-black font-mono ${isClosed ? 'text-white/20' : 'text-[#D4AF37]'}`}>
