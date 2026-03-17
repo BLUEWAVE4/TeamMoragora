@@ -776,7 +776,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 return (
                   <div className="mt-3 px-1 flex items-center gap-1.5">
                     <span className="text-[11px] text-primary/40">확신도</span>
-                    <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}</span>
+                    <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}({pct}%)</span>
                     <span className="relative group">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/25 cursor-pointer">
                         <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
