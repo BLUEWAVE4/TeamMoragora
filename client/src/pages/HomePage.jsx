@@ -53,20 +53,20 @@ export default function HomePage() {
   const loadingMoreRef = useRef(false);
   const pageRef = useRef(1);
 
-  const loadInitialData = async () => {
+  // 카테고리 한글 → DB값 매핑
+  const categoryToApi = {
+    '전체': null, '일상': 'daily', '연애': 'romance', '직장': 'work',
+    '교육': 'education', '사회': 'society', '정치': 'politics',
+    '기술': 'technology', '철학': 'philosophy', '문화': 'culture',
+  };
+
+  const loadFeeds = useCallback(async (cat, isInitial = false) => {
     try {
-      setLoading(true);
-      const [res, dailyRes] = await Promise.all([
-        getVerdictFeed(1, 5),
-        getDailyVerdicts(5).catch(() => []),
-      ]);
-      console.log('피드 응답 전체:', res);
-
-      // 댓글 + 좋아요 카운트 일괄 주입
+      if (isInitial) setLoading(true);
+      const apiCategory = categoryToApi[cat] || null;
+      const res = await getVerdictFeed(1, 5, apiCategory);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-
       setFeeds(feedsWithCount);
-      setDailyItems(dailyRes || []);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -74,9 +74,9 @@ export default function HomePage() {
     } catch (error) {
       console.error('데이터 로드 실패:', error);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  };
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasNextRef.current) return;
@@ -84,12 +84,9 @@ export default function HomePage() {
       loadingMoreRef.current = true;
       setLoadingMore(true);
       const nextPage = pageRef.current + 1;
-      const res = await getVerdictFeed(nextPage, 5);
-      console.log(`${nextPage}페이지 응답:`, res);
-
-      // 댓글 + 좋아요 카운트 일괄 주입
+      const apiCategory = categoryToApi[filter] || null;
+      const res = await getVerdictFeed(nextPage, 5, apiCategory);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-
       setFeeds(prev => [...prev, ...feedsWithCount]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
@@ -101,11 +98,26 @@ export default function HomePage() {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
+  }, [filter]);
+
+  // 초기 로드 + daily
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      const [_, dailyRes] = await Promise.all([
+        loadFeeds('전체', false),
+        getDailyVerdicts(5).catch(() => []),
+      ]);
+      setDailyItems(dailyRes || []);
+      setLoading(false);
+    };
+    init();
   }, []);
 
+  // 카테고리 변경 시 새로 로드
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    loadFeeds(filter);
+  }, [filter, loadFeeds]);
 
   // 스크롤 이벤트
   useEffect(() => {
@@ -125,10 +137,7 @@ export default function HomePage() {
   }, [loadMore]);
 
   const getProcessedFeeds = () => {
-    let result = filter === '전체'
-      ? [...feeds]
-      : feeds.filter(feed => (feed.debate?.category || '일상') === filter);
-
+    let result = [...feeds];
     return result.sort((a, b) => {
       const aData = a.debate || {};
       const bData = b.debate || {};
