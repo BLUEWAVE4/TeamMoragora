@@ -1,32 +1,63 @@
 // 성별 기반 아바타 URL 생성
 // gender가 없으면 null 반환 → 기본 아이콘 표시
 
-const MALE_STYLES = [
+export const MALE_STYLES = [
   'shortFlat', 'shortWaved', 'shortCurly',
   'dreads01', 'theCaesar', 'shortRound',
 ];
 
-const FEMALE_STYLES = [
+export const FEMALE_STYLES = [
   'straight01', 'straight02', 'curly',
   'bob', 'bun', 'curvy',
 ];
 
-export function getAvatarUrl(userId, gender) {
+export const SKIN_COLORS = ['ffdbb4', 'edb98a', 'd08b5b', 'ae5d29', '614335'];
+export const HAIR_COLORS = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'c93305', 'd6b370', 'e8e1e1'];
+export const CLOTHING_OPTIONS = ['blazerAndShirt', 'blazerAndSweater', 'collarAndSweater', 'hoodie', 'overall', 'shirtCrewNeck', 'shirtVNeck'];
+export const ACCESSORIES_OPTIONS = ['kurt', 'prescription01', 'prescription02', 'round', 'sunglasses', 'wayfarers'];
+
+export function getAvatarUrl(userId, gender, customOptions) {
   if (!gender || !userId) return null;
 
   const isMale = gender === 'male';
   const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
 
-  // userId 기반으로 일관된 스타일 선택
+  // 커스텀 옵션이 있으면 사용, 없으면 userId 기반 자동 선택
   const hash = userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const topStyle = styles[hash % styles.length];
+  const topStyle = customOptions?.top || styles[hash % styles.length];
 
   const params = new URLSearchParams({
     seed: userId,
     top: topStyle,
     facialHairProbability: isMale ? '30' : '0',
-    accessoriesProbability: '20',
+    accessoriesProbability: customOptions?.accessories ? '100' : '20',
   });
+
+  if (customOptions?.skinColor) params.set('skinColor', customOptions.skinColor);
+  if (customOptions?.hairColor) params.set('hairColor', customOptions.hairColor);
+  if (customOptions?.clothing) params.set('clothing', customOptions.clothing);
+  if (customOptions?.accessories) params.set('accessories', customOptions.accessories);
+
+  return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
+}
+
+// 커스텀 옵션으로 URL 생성 (프리뷰용)
+export function buildAvatarUrl(userId, gender, options = {}) {
+  if (!userId) return null;
+  const isMale = gender === 'male';
+  const params = new URLSearchParams({ seed: userId });
+
+  if (options.top) params.set('top', options.top);
+  if (options.skinColor) params.set('skinColor', options.skinColor);
+  if (options.hairColor) params.set('hairColor', options.hairColor);
+  if (options.clothing) params.set('clothing', options.clothing);
+  if (options.accessories) {
+    params.set('accessories', options.accessories);
+    params.set('accessoriesProbability', '100');
+  } else {
+    params.set('accessoriesProbability', '0');
+  }
+  params.set('facialHairProbability', isMale ? '30' : '0');
 
   return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
 }
