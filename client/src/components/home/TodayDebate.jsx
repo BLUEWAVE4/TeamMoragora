@@ -121,31 +121,28 @@ function DebateBannerCard({ item }) {
         const jA = findJudge(nameA);
         const jB = findJudge(nameB);
         return (
-          <div className="z-10 mb-3 flex items-center">
-            <div className="flex-1" />
+          <div className="z-10 mb-3 flex items-center justify-center relative">
             <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jA.borderColor || jA.color }}>
-                <img src={jA.avatar} alt="" className="w-full h-full" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jA.borderColor || jA.color }}>
+                  <img src={jA.avatar} alt="" className="w-full h-full" />
+                </div>
+                <span className="text-[12px] font-bold text-white/80">{nameA}</span>
               </div>
-              <span className="text-[12px] font-bold text-white/80">{nameA}</span>
-            </div>
-            <span className="text-[11px] font-black text-[#D4AF37]/60">VS</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[12px] font-bold text-white/80">{nameB}</span>
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jB.borderColor || jB.color }}>
-                <img src={jB.avatar} alt="" className="w-full h-full" />
+              <span className="text-[11px] font-black text-[#D4AF37]/60">VS</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[12px] font-bold text-white/80">{nameB}</span>
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border-2" style={{ borderColor: jB.borderColor || jB.color }}>
+                  <img src={jB.avatar} alt="" className="w-full h-full" />
+                </div>
               </div>
             </div>
-            </div>
-            <div className="flex-1 flex justify-end">
-              <button
-                onClick={() => navigate(`/moragora/${debateId}`)}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10 active:scale-90 transition-all"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-              </button>
-            </div>
+            <button
+              onClick={() => navigate(`/moragora/${debateId}`)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10 active:scale-90 transition-all"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+            </button>
           </div>
         );
       })()}
