@@ -208,6 +208,28 @@ export async function getVerdictOG(req, res, next) {
   }
 }
 
+// ===== 오늘의 논쟁 (mode='daily') 전용 피드 =====
+export async function getDailyVerdicts(req, res, next) {
+  try {
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+
+    // daily 모드만 가져오기 위해 넉넉하게 조회 후 필터
+    const { data, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname))')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    const dailyItems = (data || []).filter(v => v.debate?.mode === 'daily').slice(0, limit);
+
+    res.json(dailyItems);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getVerdictFeed(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);

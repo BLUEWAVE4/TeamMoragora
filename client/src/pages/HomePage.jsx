@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getVerdictFeed } from '../services/api';
+import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import { supabase } from '../services/supabase';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
@@ -48,6 +48,7 @@ export default function HomePage() {
   const [hasNext, setHasNext] = useState(true);
   const [page, setPage] = useState(1);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [dailyItems, setDailyItems] = useState([]);
 
   const hasNextRef = useRef(true);
   const loadingMoreRef = useRef(false);
@@ -56,13 +57,17 @@ export default function HomePage() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const res = await getVerdictFeed(1, 5);
+      const [res, dailyRes] = await Promise.all([
+        getVerdictFeed(1, 5),
+        getDailyVerdicts(5).catch(() => []),
+      ]);
       console.log('피드 응답 전체:', res);
 
       // 댓글 + 좋아요 카운트 일괄 주입
       const feedsWithCount = await fetchCounts(res?.data ?? []);
 
       setFeeds(feedsWithCount);
+      setDailyItems(dailyRes || []);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -164,7 +169,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDFDFD] pb-32 pt-4">
-      <TodayDebate items={feeds.slice(0, 5)} />
+      <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-10 px-6">
         <div className="flex justify-between items-end mb-2 relative">
           <h2 className="text-[22px] font-black text-[#2D3350]">실시간 논쟁 피드</h2>
