@@ -268,18 +268,29 @@ export default function DebateCard({ feed, formatTime }) {
     <>
       <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
 
-        {/* 주제 */}
-        <div className="px-4 pt-5 pb-2">
-          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
+        {/* 프로필 헤더 */}
+        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
+            <img
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${creatorNickname}`}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[13px] font-bold text-[#1B2A4A] block truncate">{creatorNickname}</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
+              {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/35 font-bold">{purpose}</span>}
+              {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
+            </div>
+          </div>
+          <span className="text-[10px] text-[#1B2A4A]/20 font-bold flex-shrink-0">{formatTime ? formatTime(feed.created_at) : ''}</span>
         </div>
 
-        {/* 서브 정보: 작성자 + 카테고리 + 렌즈 (우측 정렬) */}
-        <div className="px-4 pb-3 flex items-center justify-end gap-1.5 flex-wrap">
-          <span className="text-[11px] text-[#1B2A4A]/35 font-bold">{creatorNickname}</span>
-          <span className="text-[#1B2A4A]/15">·</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
-          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/35 font-bold">{purpose}</span>}
-          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
+        {/* 주제 */}
+        <div className="px-4 pb-2">
+          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
         {/* 투표 섹션 */}
@@ -367,12 +378,9 @@ export default function DebateCard({ feed, formatTime }) {
               <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#1B2A4A]/20 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
-            <button onClick={handleDetailClick} className="w-7 h-7 rounded-full flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90 transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-            </button>
-          </div>
+          <button onClick={handleDetailClick} className="w-7 h-7 rounded-full flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90 transition-all">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
         </div>
       </div>
 
