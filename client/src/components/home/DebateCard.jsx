@@ -280,9 +280,6 @@ export default function DebateCard({ feed, formatTime }) {
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/35 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-          <span className="ml-auto text-[10px] text-[#1B2A4A]/20 font-bold">
-            {formatTime ? formatTime(feed.created_at) : ''}
-          </span>
         </div>
 
         {/* 투표 섹션 */}
@@ -370,9 +367,12 @@ export default function DebateCard({ feed, formatTime }) {
               <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
             </div>
           </div>
-          <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-sans font-bold hover:opacity-70 transition-opacity">
-            상세보기
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#1B2A4A]/20 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
+            <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-sans font-bold hover:opacity-70 transition-opacity">
+              상세보기
+            </button>
+          </div>
         </div>
       </div>
 
