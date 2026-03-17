@@ -164,7 +164,8 @@ export default function TabBar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showSheet]);
 
-  const hasActive = activeDebates.some(d => localStorage.getItem(`mute_debate_${d.id}`) !== '1');
+  const hasActiveDebates = activeDebates.length > 0;
+  const hasActiveAlert = activeDebates.some(d => localStorage.getItem(`mute_debate_${d.id}`) !== '1');
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
@@ -179,7 +180,7 @@ export default function TabBar() {
     }
 
     // 진행중 논쟁이 있으면 바텀시트, 없으면 바로 생성
-    if (hasActive) {
+    if (hasActiveDebates) {
       setShowSheet(true);
     } else {
       navigate('/debate/create');
@@ -310,7 +311,7 @@ export default function TabBar() {
                   className={`relative flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >
-                  {item.icon(isCreateActive, hasActive && !isCreateActive)}
+                  {item.icon(isCreateActive, hasActiveAlert && !isCreateActive)}
                 </button>
               );
             }
