@@ -456,6 +456,9 @@ export default function ProfilePage() {
                   더보기 ({myJudgments.length - displayCount}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
                 </motion.button>
               )}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout} className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+                로그아웃
+              </motion.button>
             </>
           )}
         </div>
@@ -622,13 +625,6 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-        {/* 로그아웃 */}
-        <button
-          onClick={handleLogout}
-          className="w-full mt-6 py-3 rounded-xl text-[14px] font-bold text-red-400 bg-white border border-red-100 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
-        >
-          <LogOut size={16} /> 로그아웃
-        </button>
 
       {/* 판결 로딩 오버레이 */}
       {verdictLoading && (
