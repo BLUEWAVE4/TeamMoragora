@@ -112,7 +112,7 @@ function DebateBannerCard({ item }) {
 
       {/* 헤더 */}
       <div className="z-10 mb-1">
-        <span className="text-[11px] font-serif font-bold text-[#D4AF37]/70 uppercase tracking-[0.15em]">오늘의 논쟁</span>
+        <span className="text-[15px] font-sans font-black text-[#D4AF37]/80 tracking-tight">오늘의 논쟁</span>
       </div>
 
       {/* 주제 */}

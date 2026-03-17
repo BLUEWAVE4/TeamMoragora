@@ -268,9 +268,17 @@ export default function DebateCard({ feed, formatTime }) {
     <>
       <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
 
-        {/* 주제 (메인) — 크고 두껍게 */}
+        {/* 주제 + 상태 뱃지 */}
         <div className="px-4 pt-5 pb-2">
-          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
+          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight inline">
+            {topic}
+          </h3>
+          {isVotingStatus && timeLeft && (
+            <span className="inline-flex ml-2 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37] whitespace-nowrap">{timeLeft}</span>
+          )}
+          {isCompleted && (
+            <span className="inline-flex ml-2 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/30 whitespace-nowrap">마감</span>
+          )}
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
@@ -287,18 +295,6 @@ export default function DebateCard({ feed, formatTime }) {
 
         {/* 투표 섹션 */}
         <div className="px-4 pb-4 pt-1">
-          {/* 투표 타이머 (마감 뱃지 대신) */}
-          {isVotingStatus && timeLeft && (
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-pulse" />
-              <span className="text-[11px] font-sans font-bold text-[#D4AF37]">{timeLeft}</span>
-            </div>
-          )}
-          {isCompleted && (
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] font-sans font-bold text-[#1B2A4A]/25">투표 마감</span>
-            </div>
-          )}
 
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
