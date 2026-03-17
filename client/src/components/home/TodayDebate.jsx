@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../store/AuthContext';
 import { castVote, getVoteTally, cancelVote } from '../../services/api';
 import { supabase } from '../../services/supabase';
@@ -319,8 +320,8 @@ function DebateBannerCard({ item }) {
       </div>
     </div>
 
-    {/* 시민 의견 바텀시트 */}
-    <AnimatePresence>
+    {/* 시민 의견 바텀시트 — Portal로 body에 렌더링 */}
+    {createPortal(<AnimatePresence>
       {isCommentOpen && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200]" />
@@ -406,7 +407,7 @@ function DebateBannerCard({ item }) {
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>, document.body)}
     </>
   );
 }
