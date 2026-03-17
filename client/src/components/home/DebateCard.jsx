@@ -176,6 +176,11 @@ export default function DebateCard({ feed, formatTime }) {
   const isParticipant = user && (debateData?.creator_id === user.id || debateData?.opponent_id === user.id);
   const creatorNickname = isMe ? (user.user_metadata?.nickname || "나") : (debateData?.creator?.nickname || "익명");
 
+  const purposeMap = { 'compete': '경쟁', 'fun': '재미', 'resolve': '해결', 'learn': '학습' };
+  const lensMap = { 'general': '종합', 'logic': '논리', 'emotion': '감정', 'practical': '실용', 'ethics': '윤리', 'creative': '자유' };
+  const purpose = purposeMap[debateData?.purpose] || '';
+  const lens = lensMap[debateData?.lens] || '';
+
   const categoryMap = {
     'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'ROMANCE': '연애', 'LOVE': '연애',
     'EDUCATION': '교육', 'TECHNOLOGY': '기술', 'POLITICS': '정치', 'PHILOSOPHY': '철학',
@@ -296,49 +301,36 @@ export default function DebateCard({ feed, formatTime }) {
     <>
       <div className="w-full bg-white border border-gray-100 rounded-[32px] mb-6 overflow-hidden shadow-sm font-sans">
 
-        {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm">
-              {categoryIcon}
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[16px] font-bold text-[#1a1a1a]">{creatorNickname}</span>
-                {isMe && <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-white font-bold">ME</span>}
-              </div>
-              <span className="text-[12px] text-gray-400 font-semibold">{categoryName}</span>
-            </div>
-          </div>
-          <p className="text-[11px] text-gray-300 font-bold tracking-widest uppercase">
-            {formatTime ? formatTime(feed.created_at) : 'JUST NOW'}
-          </p>
+        {/* 주제 (메인) */}
+        <div className="px-6 pt-5 pb-2">
+          <h3 className="text-[19px] font-black text-[#1C1C1E] leading-snug break-keep">{topic}</h3>
         </div>
 
-        {/* 본문 제목 */}
-        <div className="px-7 py-2 pb-4">
-          <h3 className="text-[20px] font-bold text-[#1C1C1E] leading-tight break-keep">{topic}</h3>
+        {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
+        <div className="px-6 pb-3 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-gray-400 font-bold">{creatorNickname}</span>
+          <span className="text-gray-200">·</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-bold">{categoryName}</span>
+          {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] font-bold border border-[#D4AF37]/20">{lens} 렌즈</span>}
+          <span className="ml-auto text-[10px] text-gray-300 font-bold">
+            {formatTime ? formatTime(feed.created_at) : ''}
+          </span>
         </div>
 
         {/* 투표 섹션 */}
-        <div className="px-6 pb-6 pt-2">
-          {/* 상태 배지 */}
-          <div className="flex items-center gap-2 mb-4">
-            {isVotingStatus ? (
-              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">{timeLeft || "투표 진행 중"}</span>
-              </div>
-            ) : isCompleted ? (
-              <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
-                <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight">🔒 투표 마감</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight">준비 중</span>
-              </div>
-            )}
-          </div>
+        <div className="px-6 pb-6 pt-1">
+          {/* 투표 타이머 (마감 뱃지 대신) */}
+          {isVotingStatus && timeLeft && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[11px] font-bold text-emerald-600">{timeLeft}</span>
+            </div>
+          )}
+          {isCompleted && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[11px] font-bold text-gray-400">투표 마감</span>
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
             {/* 논쟁 당사자 안내 */}
