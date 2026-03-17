@@ -54,10 +54,11 @@ export default function HomePage() {
   const pageRef = useRef(1);
 
   // 카테고리 한글 → DB값 매핑
+  // DB에 한글로 저장되므로 그대로 전달
   const categoryToApi = {
-    '전체': null, '일상': 'daily', '연애': 'romance', '직장': 'work',
-    '교육': 'education', '사회': 'society', '정치': 'politics',
-    '기술': 'technology', '철학': 'philosophy', '문화': 'culture',
+    '전체': null, '일상': '일상', '연애': '연애', '직장': '직장',
+    '교육': '교육', '사회': '사회', '정치': '정치',
+    '기술': '기술', '철학': '철학', '문화': '문화',
   };
 
   const loadFeeds = useCallback(async (cat, isInitial = false) => {

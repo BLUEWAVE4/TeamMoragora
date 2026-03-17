@@ -265,10 +265,7 @@ export async function getVerdictFeed(req, res, next) {
     // daily 모드 제외 + 카테고리 필터
     let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
     if (category) {
-      filtered = filtered.filter(v => {
-        const cat = v.debate?.category?.toLowerCase();
-        return cat === category.toLowerCase();
-      });
+      filtered = filtered.filter(v => v.debate?.category === category);
     }
     const data = filtered.slice(from, to + 1);
     const count = filtered.length;
