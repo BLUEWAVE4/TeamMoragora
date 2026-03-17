@@ -78,6 +78,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null); // winnerSide 기반 초기화
+  const [showVoteInfo, setShowVoteInfo] = useState(false);
 
   // ===== 댓글 상태 =====
   const [comments, setComments] = useState([]);
@@ -426,27 +427,33 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             </div>
           </div>
 
-          {/* 시민 투표 (복합 카드 내부) */}
-          {totalVotes > 0 && (
-            <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-gold/10">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-wider">시민 투표</p>
-                <span className="text-[11px] text-primary/40">{totalVotes.toLocaleString()}명 참여</span>
+          {/* 시민 투표 뱃지 — 클릭 시 안내 토글 */}
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setShowVoteInfo(prev => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/5 border border-gold/10 active:scale-95 transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/40">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span className="text-[11px] font-bold text-primary/50">시민 투표 {totalVotes > 0 ? `${totalVotes}명` : '진행중'}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-primary/30 transition-transform ${showVoteInfo ? 'rotate-180' : ''}`}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          </div>
+          {showVoteInfo && (
+            <div className="mt-2 p-3 bg-primary/3 rounded-xl border border-gold/10 text-center space-y-1.5">
+              <div className="flex justify-center gap-4">
+                <span className="text-[12px] font-bold text-emerald-600">A측 {percentA}%<span className="text-primary/30 ml-1">({voteA}명)</span></span>
+                <span className="text-[12px] font-bold text-red-500">B측 {percentB}%<span className="text-primary/30 ml-1">({voteB}명)</span></span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-emerald-600 w-8">{percentA}%</span>
-                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentA}%` : '0%' }}
-                  />
-                  <div
-                    className="h-full bg-red-500 rounded-r-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentB}%` : '0%' }}
-                  />
-                </div>
-                <span className="text-[11px] font-bold text-red-500 w-8 text-right">{percentB}%</span>
-              </div>
+              <p className="text-[10px] text-primary/30 leading-relaxed">
+                시민 투표는 최소 30명 이상 참여 시 최종 판결에 반영됩니다
+              </p>
+              {totalVotes > 0 && totalVotes < 30 && (
+                <p className="text-[10px] text-[#D4AF37] font-bold">{30 - totalVotes}명 더 참여하면 결과에 반영!</p>
+              )}
             </div>
           )}
         </div>
