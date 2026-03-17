@@ -121,7 +121,7 @@ export async function getDebateByInviteCode(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('*, creator:profiles!creator_id(nickname, avatar_url)')
       .eq('invite_code', inviteCode)
       .single();
 
