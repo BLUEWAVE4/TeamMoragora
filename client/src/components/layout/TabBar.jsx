@@ -231,25 +231,6 @@ export default function TabBar() {
                 const isMuted = localStorage.getItem(muteKey) === '1';
                 return (
                   <div key={debate.id} className="flex items-center gap-2">
-                    {/* 삭제 버튼 (왼쪽) */}
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
-                        try {
-                          await deleteDebate(debate.id);
-                          setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
-                        } catch (err) {
-                          alert(err.message || '삭제에 실패했습니다.');
-                        }
-                      }}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 active:scale-90 transition-all"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round" opacity="0.5">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-
                     {/* 논쟁 카드 (상세보기 포함) */}
                     <button
                       onClick={() => handleSelectDebate(debate)}
