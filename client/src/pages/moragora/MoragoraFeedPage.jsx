@@ -64,7 +64,7 @@ export default function MoragoraFeedPage() {
             <h3 className="text-[16px] font-bold text-white leading-snug mb-3">
               {featured.debate?.topic}
             </h3>
-            <div className="flex items-center gap-3 text-[10px] text-white/40 font-bold">
+            <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold">
               <span>{CATEGORY_LABELS[featured.debate?.category] || '일상'}</span>
               <span>·</span>
               <span>{featured.debate?.creator?.nickname || '익명'}</span>
@@ -73,10 +73,13 @@ export default function MoragoraFeedPage() {
                 {featured.winner_side === 'draw' ? '무승부' : `${featured.winner_side === 'A' ? 'A' : 'B'}측 승리`}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-2 text-[10px] text-white/30">
-              <span>A {featured.ai_score_a || 0}점</span>
-              <span>vs</span>
-              <span>B {featured.ai_score_b || 0}점</span>
+            <div className="flex items-center gap-3 mt-2 text-[9px] text-white/25">
+              <span>♡ {featured._likes || 0}</span>
+              <span>투표 {featured._votes || 0}</span>
+              <span>조회 {featured._views || 0}</span>
+              <span>댓글 {featured._comments || 0}</span>
+              <span>·</span>
+              <span>AI {(featured.ai_score_a || 0) + (featured.ai_score_b || 0)}점</span>
             </div>
           </button>
         )}
@@ -113,6 +116,14 @@ export default function MoragoraFeedPage() {
                     <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{debate.creator?.nickname || '익명'}</span>
                     <span className="text-[#1B2A4A]/15">·</span>
                     <span className={`text-[10px] font-bold ${winColor}`}>{winText}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 text-[9px] text-[#1B2A4A]/25">
+                    <span>♡ {v._likes || 0}</span>
+                    <span>투표 {v._votes || 0}</span>
+                    <span>조회 {v._views || 0}</span>
+                    <span>댓글 {v._comments || 0}</span>
+                    <span>·</span>
+                    <span>AI {(v.ai_score_a || 0) + (v.ai_score_b || 0)}점</span>
                   </div>
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="flex-shrink-0 opacity-40">
