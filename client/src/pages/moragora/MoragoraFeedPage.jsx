@@ -47,7 +47,7 @@ export default function MoragoraFeedPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAF5] pb-32">
+    <div className="min-h-screen bg-[#F3F1EC] pb-32">
       <div className="max-w-md mx-auto px-5 pt-6">
 
         {/* 헤더 */}
