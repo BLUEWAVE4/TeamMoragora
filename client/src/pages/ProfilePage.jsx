@@ -291,7 +291,16 @@ export default function ProfilePage() {
           {/* 아바타 */}
           <div
             className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
-            onClick={() => { if (isEditing && profileData?.gender) setShowAvatarEdit(true); }}
+            onClick={() => {
+              if (isEditing && profileData?.gender) {
+                // 현재 아바타 기본 스타일로 초기화
+                const isMale = profileData.gender === 'male';
+                const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
+                const hash = user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                setAvatarOptions({ top: styles[hash % styles.length], skinColor: '', hairColor: '', clothing: '', accessories: '' });
+                setShowAvatarEdit(true);
+              }
+            }}
           >
             <img
               src={getAvatarUrl(user.id, profileData?.gender, avatarOptions.top ? avatarOptions : undefined) || DEFAULT_AVATAR_ICON}
