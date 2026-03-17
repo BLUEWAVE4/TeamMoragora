@@ -921,7 +921,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         else if (!canVote) disabledMsg = '투표가 마감되었습니다';
 
         return (
-          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
+          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10">
+            <div className="px-5 pt-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
               <span className="text-xs text-primary/40 font-medium">{statusText}</span>
@@ -989,18 +990,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               </div>
             )}
 
-            {/* 내 투표 상태 안내 (마감 후) */}
-            {myVote && !canVote && (
-              <p className="text-center text-[11px] text-primary/30 mt-2">
-                나의 투표: {myVote === 'A' ? 'A측' : 'B측'}
-              </p>
-            )}
           </div>
-        );
-      })()}
 
-      {/* ===== 시민 의견 ===== */}
-      <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
+          {/* 구분선 + 시민 의견 */}
+          <div className="border-t border-gold/10" />
+          <div className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[14px] font-sans font-bold text-primary">시민 의견</h3>
           <span className="text-[11px] text-primary/40">{comments.length}개</span>
@@ -1102,6 +1096,9 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           </div>
         )}
       </div>
+      </div>
+        );
+      })()}
     </div>
   );
 }
