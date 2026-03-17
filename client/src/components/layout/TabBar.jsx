@@ -39,13 +39,34 @@ const UserIcon = ({ active }) => (
   </svg>
 );
 
+// ===== 남은 기간 계산 =====
+function getTimeRemaining(deadline) {
+  if (!deadline) return '';
+  const diff = new Date(deadline) - new Date();
+  if (diff <= 0) return '곧 마감';
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  if (days > 0) return `${days}일 ${hours}시간 남음`;
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}시간 ${mins}분 남음`;
+  return `${mins}분 남음`;
+}
+
+function getStatusLabel(debate) {
+  if (debate.status === 'voting') {
+    const remaining = getTimeRemaining(debate.vote_deadline);
+    return { label: `시민 투표 진행중${remaining ? `(${remaining})` : ''}`, color: 'text-emerald-600' };
+  }
+  return STATUS_MAP[debate.status] || STATUS_MAP.waiting;
+}
+
 // ===== 상태별 라벨/라우팅 =====
 const STATUS_MAP = {
-  waiting:     { label: '상대 대기중', color: 'text-amber-600', bg: 'bg-amber-50' },
-  both_joined: { label: '주장 작성중', color: 'text-blue-600', bg: 'bg-blue-50' },
-  arguing:     { label: '주장 작성중', color: 'text-blue-600', bg: 'bg-blue-50' },
-  judging:     { label: '판결 진행중', color: 'text-purple-600', bg: 'bg-purple-50' },
-  voting:      { label: '투표 진행중', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  waiting:     { label: '상대 대기중', color: 'text-amber-600' },
+  both_joined: { label: '주장 작성중', color: 'text-blue-600' },
+  arguing:     { label: '주장 작성중', color: 'text-blue-600' },
+  judging:     { label: '판결 진행중', color: 'text-purple-600' },
+  voting:      { label: '시민 투표 진행중', color: 'text-emerald-600' },
 };
 
 function getDebateRoute(debate, userId) {
@@ -77,23 +98,45 @@ export default function TabBar() {
   const isLoggedIn = !!user;
   const isCreateActive = location.pathname === '/debate/create';
 
-  // ===== 진행중 논쟁 상태 =====
+  // ===== 진행중 논쟁 상태 (커서 기반 lazy loading) =====
   const [activeDebates, setActiveDebates] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
   const sheetRef = useRef(null);
+  const listRef = useRef(null);
 
-  const fetchActiveDebates = useCallback(async () => {
-    if (!isLoggedIn) { setActiveDebates([]); return; }
+  const fetchActiveDebates = useCallback(async (cursor) => {
+    if (!isLoggedIn) { setActiveDebates([]); setHasMore(false); return; }
     try {
-      const data = await getMyActiveDebates();
-      setActiveDebates(data || []);
+      const res = await getMyActiveDebates(cursor);
+      const { items, hasMore: more } = res;
+      if (cursor) {
+        setActiveDebates(prev => [...prev, ...items]);
+      } else {
+        setActiveDebates(items || []);
+      }
+      setHasMore(more);
     } catch {
-      setActiveDebates([]);
+      if (!cursor) setActiveDebates([]);
+      setHasMore(false);
     }
   }, [isLoggedIn]);
 
   // 로그인 상태 변경 시 + 페이지 이동 시 갱신
   useEffect(() => { fetchActiveDebates(); }, [fetchActiveDebates, location.pathname]);
+
+  // 스크롤 감지 → 추가 로드
+  const handleScroll = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+      setLoadingMore(true);
+      const lastItem = activeDebates[activeDebates.length - 1];
+      fetchActiveDebates(lastItem?.created_at).finally(() => setLoadingMore(false));
+    }
+  }, [hasMore, loadingMore, activeDebates, fetchActiveDebates]);
 
   // 바텀시트 바깥 클릭 닫기
   useEffect(() => {
@@ -167,44 +210,48 @@ export default function TabBar() {
             </div>
 
             {/* 진행중 논쟁 목록 */}
-            <div className="px-5 pb-3 space-y-2 max-h-[40vh] overflow-y-auto">
+            <div ref={listRef} onScroll={handleScroll} className="px-5 pb-3 space-y-2 max-h-[40vh] overflow-y-auto">
               {activeDebates.map((debate) => {
-                const info = STATUS_MAP[debate.status] || STATUS_MAP.waiting;
+                const info = getStatusLabel(debate);
                 return (
-                  <div key={debate.id} className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleSelectDebate(debate)}
-                      className="flex-1 flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 hover:border-[#D4AF37]/30 active:scale-[0.98] transition-all duration-300 text-left shadow-inner"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
-                        <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
-                      </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]/40 shrink-0 ml-2">
+                  <button
+                    key={debate.id}
+                    onClick={() => handleSelectDebate(debate)}
+                    className="group w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 hover:border-[#D4AF37]/30 active:scale-[0.98] transition-all duration-300 text-left shadow-inner"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
+                      <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {/* 삭제 버튼 — hover 시에만 표시 */}
+                      <span
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
+                          try {
+                            await deleteDebate(debate.id);
+                            setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
+                          } catch (err) {
+                            alert(err.message || '삭제에 실패했습니다.');
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center opacity-30 group-hover:opacity-100 hover:bg-[#E63946]/10 active:scale-90 transition-all"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]/40">
                         <polyline points="9 18 15 12 9 6"/>
                       </svg>
-                    </button>
-                    {/* 삭제 버튼 */}
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
-                        try {
-                          await deleteDebate(debate.id);
-                          setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
-                        } catch (err) {
-                          alert(err.message || '삭제에 실패했습니다.');
-                        }
-                      }}
-                      className="shrink-0 w-9 h-9 rounded-xl bg-white border-2 border-[#E63946]/15 flex items-center justify-center hover:bg-[#E63946]/5 active:scale-90 transition-all"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
-                        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                      </svg>
-                    </button>
-                  </div>
+                    </div>
+                  </button>
                 );
               })}
+              {loadingMore && (
+                <p className="text-center text-[#1B2A4A]/30 text-[12px] py-2 animate-pulse">불러오는 중...</p>
+              )}
               {activeDebates.length === 0 && (
                 <p className="text-center text-[#1B2A4A]/20 text-[13px] py-4">진행중인 논쟁이 없습니다.</p>
               )}

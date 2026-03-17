@@ -66,22 +66,34 @@ export async function getDebate(req, res, next) {
   }
 }
 
-// ===== 내 진행중인 논쟁 목록 =====
+// ===== 내 진행중인 논쟁 목록 (커서 기반 페이지네이션) =====
 export async function getMyActiveDebates(req, res, next) {
   try {
     const userId = req.user.id;
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 10));
+    const cursor = req.query.cursor; // created_at ISO string
     const activeStatuses = ['waiting', 'both_joined', 'arguing', 'judging', 'voting'];
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('debates')
-      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at')
+      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at, vote_deadline')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
       .in('status', activeStatuses)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(limit + 1);
 
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
-    res.json(data || []);
+
+    const items = data || [];
+    const hasMore = items.length > limit;
+    if (hasMore) items.pop();
+
+    res.json({ items, hasMore });
   } catch (err) {
     next(err);
   }

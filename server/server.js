@@ -14,6 +14,7 @@ import feedbackRoutes from './src/routes/feedback.routes.js';
 import ogRoutes from './src/routes/og.routes.js';
 import aiRoutes from './src/routes/ai.routes.js';
 import commentRoutes from './src/routes/comment.routes.js';
+import cronRoutes from './src/routes/cron.routes.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/feedbacks', feedbackRoutes);
 app.use('/og', ogRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

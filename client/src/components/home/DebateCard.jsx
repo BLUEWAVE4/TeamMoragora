@@ -76,6 +76,7 @@ export default function DebateCard({ feed, formatTime }) {
   const [commentText, setCommentText] = useState('');
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [localCommentCount, setLocalCommentCount] = useState(0);
+  const [sideUsers, setSideUsers] = useState({ A: null, B: null });
   const commentInputRef = useRef(null);
 
   // ✅ 조회수 state — page_views 테이블에서 직접 fetch
@@ -151,9 +152,17 @@ export default function DebateCard({ feed, formatTime }) {
     if (!isCommentOpen || !debateId) return;
     const fetchComments = async () => {
       try {
-        const { data } = await supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', debateId).order('created_at', { ascending: true });
+        const [{ data }, { data: args }] = await Promise.all([
+          supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', debateId).order('created_at', { ascending: true }),
+          supabase.from('arguments').select('side, user_id').eq('debate_id', debateId),
+        ]);
         setComments(data || []);
         setLocalCommentCount(data?.length ?? 0);
+        if (args) {
+          const a = args.find(x => x.side === 'A');
+          const b = args.find(x => x.side === 'B');
+          setSideUsers({ A: a?.user_id || null, B: b?.user_id || null });
+        }
       } catch (e) { console.log('댓글 fetch 실패:', e); }
     };
     fetchComments();
@@ -164,6 +173,7 @@ export default function DebateCard({ feed, formatTime }) {
 
   const topic = debateData?.topic || "제목 없는 논쟁";
   const isMe = user && (debateData?.creator_id === user.id);
+  const isParticipant = user && (debateData?.creator_id === user.id || debateData?.opponent_id === user.id);
   const creatorNickname = isMe ? (user.user_metadata?.nickname || "나") : (debateData?.creator?.nickname || "익명");
 
   const categoryMap = {
@@ -181,7 +191,7 @@ export default function DebateCard({ feed, formatTime }) {
   const handleVote = async (side) => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!user) { alert('로그인이 필요합니다.'); return; }
-    if (isVoting || !isVotingStatus) return;
+    if (isVoting || !isVotingStatus || isParticipant) return;
     const isCanceling = myVote === side;
     const prevVote = myVote;
     const prevCounts = { ...voteCounts };
@@ -331,13 +341,17 @@ export default function DebateCard({ feed, formatTime }) {
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* 논쟁 당사자 안내 */}
+            {isParticipant && isVotingStatus && (
+              <p className="text-[11px] text-center text-slate-400 font-bold mb-2">논쟁 당사자는 투표할 수 없습니다</p>
+            )}
             {/* A측 버튼 */}
             <button
               onClick={() => handleVote('A')}
-              disabled={isVoting || !isVotingStatus}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2 
+              disabled={isVoting || !isVotingStatus || isParticipant}
+              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
                 ${myVote === 'A' ? 'border-[#34C759] bg-[#34C759]/5' : 'border-slate-100 bg-white'}
-                ${!isVotingStatus ? 'opacity-70' : ''}`}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-70' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-[#34C759]/10" />
@@ -359,10 +373,10 @@ export default function DebateCard({ feed, formatTime }) {
             {/* B측 버튼 */}
             <button
               onClick={() => handleVote('B')}
-              disabled={isVoting || !isVotingStatus}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2 
+              disabled={isVoting || !isVotingStatus || isParticipant}
+              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
                 ${myVote === 'B' ? 'border-[#FF3B30] bg-[#FF3B30]/5' : 'border-slate-100 bg-white'}
-                ${!isVotingStatus ? 'opacity-70' : ''}`}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-70' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-[#FF3B30]/10" />
@@ -412,46 +426,121 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
       </div>
 
-      {/* 댓글 바텀시트 */}
+      {/* 시민 의견 바텀시트 */}
       <AnimatePresence>
         {isCommentOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-sm" />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 220 }} className="fixed bottom-0 left-0 right-0 bg-white z-[201] rounded-t-[28px] max-h-[75vh] flex flex-col shadow-2xl">
-              <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-gray-100">
-                <div className="w-10 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[16px] font-black text-black">댓글 {localCommentCount}</h3>
-                  <button onClick={() => setIsCommentOpen(false)} className="text-gray-400 text-[13px] font-bold">닫기</button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-                {comments.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-gray-300">
-                    <p className="text-[13px] font-bold">첫 댓글을 남겨보세요!</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200]" />
+            <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto"
+              >
+                {/* 핸들 + 헤더 */}
+                <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-[#D4AF37]/10">
+                  <div className="w-10 h-1 bg-[#1B2A4A]/10 rounded-full mx-auto mb-3" />
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[14px] font-bold text-[#1B2A4A]">시민 의견 <span className="text-[11px] text-[#1B2A4A]/40 ml-1">{localCommentCount}개</span></h3>
+                    <button onClick={() => setIsCommentOpen(false)} className="text-[#1B2A4A]/30 text-[12px] font-bold">닫기</button>
                   </div>
-                ) : (
-                  comments.map((c) => (
-                    <div key={c.id} className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 text-[13px] font-black text-gray-400">{(c.profiles?.nickname || '익명').charAt(0)}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[13px] font-bold text-black">{c.profiles?.nickname || '익명'}</span>
-                          <span className="text-[11px] text-gray-400">{formatCommentTime(c.created_at)}</span>
-                        </div>
-                        <p className="text-[14px] text-gray-700 leading-snug">{c.content}</p>
-                      </div>
+                </div>
+
+                {/* 의견 목록 */}
+                <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+                  {comments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-[13px] text-[#1B2A4A]/30">아직 의견이 없습니다</p>
+                      <p className="text-[11px] text-[#1B2A4A]/20 mt-1">이 판결에 대한 의견을 남겨보세요</p>
                     </div>
-                  ))
-                )}
-              </div>
-              <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100 flex items-center gap-3" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
-                <input ref={commentInputRef} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }} placeholder={user ? "댓글을 입력하세요..." : "로그인 후 댓글을 남길 수 있어요"} disabled={!user} className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-[14px] outline-none placeholder-gray-400" />
-                <button onClick={handleSendComment} disabled={!commentText.trim() || isSendingComment || !user} className="w-8 h-8 rounded-full bg-[#007AFF] flex items-center justify-center">
-                  {isSendingComment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg fill="white" height="14" viewBox="0 0 24 24" width="14"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>}
-                </button>
-              </div>
-            </motion.div>
+                  ) : (
+                    comments.map((c) => {
+                      const nickname = c.profiles?.nickname || '익명';
+                      const isMine = user?.id === c.user_id;
+                      return (
+                        <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${nickname}`}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
+                            <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
+                              <span className="text-[12px] font-bold text-[#1B2A4A]">{nickname}</span>
+                              {c.user_id === sideUsers.A && (
+                                <span className="text-[9px] text-white bg-emerald-500 px-1.5 py-0.5 rounded-full font-bold">A측</span>
+                              )}
+                              {c.user_id === sideUsers.B && (
+                                <span className="text-[9px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold">B측</span>
+                              )}
+                              <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
+                            </div>
+                            <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+                              <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
+                                <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
+                              </div>
+                              {isMine && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase.from('comments').delete().eq('id', c.id);
+                                      if (!error) {
+                                        setComments(prev => prev.filter(x => x.id !== c.id));
+                                        setLocalCommentCount(prev => prev - 1);
+                                      }
+                                    } catch {}
+                                  }}
+                                  className="text-[9px] text-[#1B2A4A]/15 hover:text-red-400 transition-colors shrink-0 pb-0.5"
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* 입력창 */}
+                <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
+                  {user && (
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <input
+                    ref={commentInputRef}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }}
+                    placeholder={user ? "의견을 입력하세요..." : "로그인 후 의견을 남길 수 있어요"}
+                    disabled={!user}
+                    maxLength={500}
+                    className="flex-1 h-9 bg-[#1B2A4A]/5 rounded-full px-4 text-[12px] text-[#1B2A4A] placeholder:text-[#1B2A4A]/25 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
+                  />
+                  <button
+                    onClick={handleSendComment}
+                    disabled={!commentText.trim() || isSendingComment || !user}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                      commentText.trim() ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37]/20 text-[#D4AF37]/40'
+                    }`}
+                  >
+                    {isSendingComment
+                      ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <span className="text-[14px] font-bold">↑</span>
+                    }
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

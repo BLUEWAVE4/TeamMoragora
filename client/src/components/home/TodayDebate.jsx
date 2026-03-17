@@ -57,7 +57,7 @@ function DebateBannerCard({ item }) {
 
   const handleVote = async (side) => {
     if (!user) { alert('로그인이 필요합니다.'); return; }
-    if (isVoting || !isVotingStatus) return;
+    if (isVoting || !isVotingStatus || isParticipant) return;
 
     const isCanceling = myVote === side;
     const prevVote = myVote;
@@ -89,32 +89,9 @@ function DebateBannerCard({ item }) {
     }
   };
 
-  // 공유하기 기능 (수정된 부분)
-  const handleShare = async () => {
-    const shareData = {
-      title: '모라고라 - 오늘의 논쟁',
-      text: `"${item.debate?.topic || '오늘의 논쟁'}"\n지금 모라고라에서 당신의 판결을 내려주세요!`,
-      url: window.location.href,
-    };
-
-    try {
-      // 모바일 등 네이티브 공유 API 지원 여부 확인
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // 미지원 시 클립보드 복사
-        await navigator.clipboard.writeText(window.location.href);
-        alert('링크가 복사되었습니다!');
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('공유 실패:', err);
-      }
-    }
-  };
-
   if (!item) return null;
 
+  const isParticipant = user && (item.debate?.creator_id === user.id || item.debate?.opponent_id === user.id);
   const isClosed = !isVotingStatus || timeLeft === '00:00:00';
   const totalVotes = voteCounts.A + voteCounts.B;
   const percentA = totalVotes === 0 ? 50 : Math.round((voteCounts.A / totalVotes) * 100);
@@ -125,25 +102,8 @@ function DebateBannerCard({ item }) {
     <div className="relative w-full bg-gradient-to-br from-[#2D3350] to-[#1a1f35] rounded-[32px] p-7 shadow-xl overflow-hidden flex flex-col min-h-[260px]">
 
       {/* 헤더 */}
-      <div className="flex justify-between items-center z-10 mb-4">
-        <div>
-          {!isClosed ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-full border border-white/10">
-              <span className="w-1.5 h-1.5 bg-[#FF6B6B] rounded-full animate-pulse" />
-              <span className="text-[10px] font-black text-white uppercase tracking-wider">Live</span>
-            </div>
-          ) : (
-            <div className="px-2.5 py-1 bg-gray-700/50 rounded-full border border-white/5">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Closed</span>
-            </div>
-          )}
-        </div>
-        <button onClick={handleShare} className="hover:opacity-60 transition-opacity p-1 active:scale-90">
-          <svg fill="none" stroke="white" strokeWidth="2.5" height="20" viewBox="0 0 24 24" width="20" className="opacity-80">
-            <line x1="22" y1="3" x2="9.218" y2="10.083" strokeLinecap="round" strokeLinejoin="round" />
-            <polygon points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      <div className="z-10 mb-4">
+        <h2 className="text-[13px] font-black text-white/50 uppercase tracking-widest">오늘의 논쟁</h2>
       </div>
 
       {/* 주제 */}
@@ -156,15 +116,20 @@ function DebateBannerCard({ item }) {
       {/* 투표 영역 */}
       <div className="z-10 space-y-4">
         {!showResult ? (
-          <div className="flex gap-3">
-            <button onClick={() => handleVote('A')} disabled={isVoting}
-              className="flex-1 py-3 bg-white text-[#2D3350] font-black rounded-xl text-sm transition-all active:scale-95 disabled:opacity-50">
-              찬성
-            </button>
-            <button onClick={() => handleVote('B')} disabled={isVoting}
-              className="flex-1 py-3 bg-white/10 text-white font-black rounded-xl text-sm border border-white/10 transition-all active:scale-95 disabled:opacity-50">
-              반대
-            </button>
+          <div>
+            {isParticipant && (
+              <p className="text-[11px] text-center text-white/50 font-bold mb-2">논쟁 당사자는 투표할 수 없습니다</p>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => handleVote('A')} disabled={isVoting || isParticipant}
+                className={`flex-1 py-3 bg-white text-[#2D3350] font-black rounded-xl text-sm transition-all active:scale-95 disabled:opacity-50`}>
+                찬성
+              </button>
+              <button onClick={() => handleVote('B')} disabled={isVoting || isParticipant}
+                className={`flex-1 py-3 bg-white/10 text-white font-black rounded-xl text-sm border border-white/10 transition-all active:scale-95 disabled:opacity-50`}>
+                반대
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
@@ -257,15 +222,6 @@ export default function TodayDebate({ items = [] }) {
 
   return (
     <div className="px-5 pt-3 pb-6">
-      <div className="mb-4 px-1 flex items-center justify-between">
-        <h2 className="text-[21px] font-black text-[#2D3350] tracking-tight">오늘의 논쟁</h2>
-        {validItems.length > 1 && (
-          <span className="text-[12px] font-bold text-gray-400">
-            {currentIndex + 1} / {validItems.length}
-          </span>
-        )}
-      </div>
-
       {/* 스와이프 영역 */}
       <div
         ref={containerRef}

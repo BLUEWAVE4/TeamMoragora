@@ -47,7 +47,7 @@ CREATE TABLE debates (
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
   mode TEXT NOT NULL DEFAULT 'duo'
-    CHECK (mode IN ('duo', 'solo')),
+    CHECK (mode IN ('duo', 'solo', 'daily')),
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
     CHECK (status IN ('waiting', 'both_joined', 'arguing', 'judging', 'voting', 'completed')),

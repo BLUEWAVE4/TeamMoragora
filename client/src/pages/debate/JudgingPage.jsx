@@ -522,7 +522,7 @@ export default function JudgingPage() {
             {!isAllDone && (
               <h2 className="text-white/80 text-lg font-serif font-bold tracking-tight">
                 {opponentStatus === 'not_invited' && '상대방을 기다리고 있습니다...'}
-                {opponentStatus === 'writing' && '양측의 주장을 수집하고 있습니다...'}
+                {opponentStatus === 'writing' && '현자들의 논의가 진행중입니다...'}
                 {opponentStatus === 'ready' && '배심원단이 아고라에 모였습니다.'}
                 {opponentStatus === 'unknown' && '배심원단이 아고라에 모였습니다.'}
               </h2>

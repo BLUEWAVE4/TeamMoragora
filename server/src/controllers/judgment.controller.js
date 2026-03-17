@@ -182,6 +182,32 @@ export async function getVerdict(req, res, next) {
   }
 }
 
+// ===== OG 메타 태그용 경량 판결 데이터 =====
+export async function getVerdictOG(req, res, next) {
+  try {
+    const { data: verdict, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('winner_side, ai_score_a, ai_score_b, debate:debates!debate_id(topic, pro_side, con_side)')
+      .eq('debate_id', req.params.debateId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!verdict) return res.status(404).json({ error: 'not found' });
+
+    const debate = verdict.debate;
+    const winner = verdict.winner_side === 'A' ? (debate.pro_side || 'A측') : (debate.con_side || 'B측');
+    const description = `${debate.pro_side || 'A측'} ${verdict.ai_score_a}점 vs ${debate.con_side || 'B측'} ${verdict.ai_score_b}점 — AI 판결: ${winner} 승리!`;
+
+    res.json({
+      title: `⚖️ ${debate.topic}`,
+      description,
+      image: 'https://team-moragora-client.vercel.app/ogCard2.png',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getVerdictFeed(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -191,7 +217,7 @@ export async function getVerdictFeed(req, res, next) {
 
     const { data, error, count } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))', { count: 'exact' })
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, creator:profiles!creator_id(nickname))', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 

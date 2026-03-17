@@ -32,7 +32,7 @@ export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
-export const getMyActiveDebates = () => api.get('/debates/my/active');
+export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 10, ...(cursor ? { cursor } : {}) } });
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
 
 // ===== AI 분석 =====
