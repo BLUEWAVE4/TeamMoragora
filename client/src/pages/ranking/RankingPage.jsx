@@ -40,8 +40,13 @@ const findTierByScore = (score) => {
 function PlayerProfileSheet({ player, rank, onClose }) {
   const [debates, setDebates] = useState([]);
   const [loadingDebates, setLoadingDebates] = useState(true);
-  // 논쟁 리스트 더보기 상태 추가 (기본 5개)
   const [visibleDebatesCount, setVisibleDebatesCount] = useState(5);
+
+  // 바텀시트 열릴 때 배경 스크롤 방지
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const tier = findTierByScore(player?.total_score);
   const wins = player?.wins || 0;
@@ -95,21 +100,24 @@ function PlayerProfileSheet({ player, rank, onClose }) {
         className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm"
       />
       <motion.div
-        drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-        onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] flex flex-col shadow-2xl"
       >
-        <div className="sticky top-0 bg-[#F2F2F7] z-10 pt-4 pb-2">
+        {/* 드래그 핸들 — 여기서만 드래그로 닫기 가능 */}
+        <motion.div
+          drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.2}
+          onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
+          className="sticky top-0 bg-[#F2F2F7] z-10 pt-4 pb-2 cursor-grab active:cursor-grabbing rounded-t-[30px]"
+        >
           <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto" />
-        </div>
+        </motion.div>
         
         <button onClick={onClose} className="absolute top-4 right-5 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center active:scale-90 transition-all z-20">
           <X size={20} className="text-gray-500" />
         </button>
 
-        <div className="px-5 pb-32">
+        <div className="px-5 pb-32 overflow-y-auto flex-1 overscroll-contain touch-pan-y">
           {/* 프로필 헤더 섹션 */}
           <div className="flex items-center gap-4 mb-6 pt-2">
             <div className="relative">
@@ -289,8 +297,8 @@ export default function RankingPage() {
     <div className="min-h-screen bg-[#F2F2F7] font-sans">
       <nav className="sticky top-0 z-[50] bg-white/70 backdrop-blur-2xl px-6 pt-5 pb-5 flex justify-between items-end border-b border-gray-200/30">
         <div>
-          <p className="text-[16px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1 ml-0.5">Hall of Fame</p>
-          <h1 className="text-[32px] font-black text-black tracking-tight leading-none">명예의 전당</h1>
+          <p className="text-[16px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1 ml-0.5">Ranking</p>
+          <h1 className="text-[32px] font-black text-black tracking-tight leading-none">랭킹</h1>
         </div>
         <button onClick={() => setIsTierSheetOpen(true)} className="w-12 h-12 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center text-[#007AFF] active:scale-90 transition-all">
           <Info size={24} />
@@ -324,8 +332,8 @@ export default function RankingPage() {
                         <motion.div animate={{ y: [0, -8, 0], rotate: isFirst ? [-5, 5, -5] : 0 }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="relative z-10">
                           <Trophy size={isFirst ? 44 : 32} fill={p.trophyColor} color={p.trophyColor} className="drop-shadow-lg" />
                         </motion.div>
-                        {isFirst && <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-yellow-400 blur-2xl rounded-full -z-10" />}
-                        <Sparkles className="absolute -top-4 -right-2 text-yellow-200 w-5 h-5 animate-pulse" />
+                        {isFirst && <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 blur-2xl rounded-full -z-10" style={{ backgroundColor: p.trophyColor }} />}
+                        <Sparkles className="absolute -top-4 -right-2 w-5 h-5 animate-pulse" style={{ color: p.trophyColor, opacity: 0.6 }} />
                       </div>
 
                       <div className="relative mb-6">
@@ -443,14 +451,18 @@ export default function RankingPage() {
               onClick={() => setIsTierSheetOpen(false)}
               className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
             <motion.div
-              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-              onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] overflow-y-auto pb-12 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] flex flex-col pb-12 shadow-2xl"
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
-              <div className="px-5">
+              <motion.div
+                drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.2}
+                onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
+                className="cursor-grab active:cursor-grabbing rounded-t-[30px]"
+              >
+                <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
+              </motion.div>
+              <div className="px-5 overflow-y-auto flex-1 overscroll-contain touch-pan-y">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <p className="text-[16px] font-bold text-gray-400 uppercase tracking-widest mb-1">Point System</p>
