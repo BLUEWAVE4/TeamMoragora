@@ -369,8 +369,8 @@ export default function DebateCard({ feed, formatTime }) {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-[#1B2A4A]/20 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
-            <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-sans font-bold hover:opacity-70 transition-opacity">
-              상세보기
+            <button onClick={handleDetailClick} className="w-7 h-7 rounded-full flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90 transition-all">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
             </button>
           </div>
         </div>
