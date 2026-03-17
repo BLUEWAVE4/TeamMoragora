@@ -174,20 +174,19 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
       <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-6 px-5">
-        <div className="flex justify-between items-end mb-3 relative">
-          <h2 className="text-[20px] font-serif font-black text-[#1B2A4A] tracking-tight">실시간 논쟁 피드</h2>
+        <CategoryFilter filter={filter} setFilter={setFilter} />
+        <div className="flex justify-end items-center mt-1 mb-2 relative">
           <div className="relative">
-            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#D4AF37] font-serif font-bold text-[13px] cursor-pointer">{sortBy} ▼</div>
+            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#D4AF37] font-serif font-bold text-[12px] cursor-pointer">{sortBy} ▼</div>
             {showSortMenu && (
-              <div className="absolute right-0 top-8 w-36 bg-white shadow-xl rounded-xl p-1.5 z-[100] border border-[#D4AF37]/15">
+              <div className="absolute right-0 top-7 w-32 bg-white shadow-xl rounded-xl p-1.5 z-[100] border border-[#D4AF37]/15">
                 {sortOptions.map((opt) => (
-                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-bold transition-all ${sortBy === opt.name ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 hover:text-[#1B2A4A]/60'}`}>{opt.name}</button>
+                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${sortBy === opt.name ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 hover:text-[#1B2A4A]/60'}`}>{opt.name}</button>
                 ))}
               </div>
             )}
           </div>
         </div>
-        <CategoryFilter filter={filter} setFilter={setFilter} />
 
         <section className="mt-3 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
