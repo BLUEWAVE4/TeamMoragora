@@ -329,11 +329,9 @@ export default function RankingPage() {
                       <div className="relative mb-3">
                         <motion.div animate={{ y: [0, -6, 0], rotate: isFirst ? [-3, 3, -3] : 0 }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="relative z-10">
                           <Trophy size={isFirst ? 40 : 28} fill={p.trophyColor} color={p.trophyColor} className="drop-shadow-md" />
+                          <Sparkles className="absolute -top-2 -right-2 w-4 h-4" style={{ color: p.trophyColor, opacity: 0.7 }} />
                         </motion.div>
-                        <motion.div animate={{ opacity: [0.2, 0.5, 0.2], scale: [0.8, 1.1, 0.8] }} transition={{ repeat: Infinity, duration: 2.5 }} className="absolute inset-0 blur-xl rounded-full -z-10" style={{ backgroundColor: p.trophyColor }} />
-                        <motion.div animate={{ opacity: [0.3, 0.7, 0.3], y: [0, -3, 0], rotate: [0, 15, 0] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}>
-                          <Sparkles className="absolute -top-3 -right-1 w-4 h-4" style={{ color: p.trophyColor }} />
-                        </motion.div>
+                        <motion.div animate={{ opacity: [0.15, 0.4, 0.15], scale: [0.8, 1.1, 0.8] }} transition={{ repeat: Infinity, duration: 2.5 }} className="absolute inset-0 blur-xl rounded-full -z-10" style={{ backgroundColor: p.trophyColor }} />
                       </div>
 
                       <div className="relative mb-4">
