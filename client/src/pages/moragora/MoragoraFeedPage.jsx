@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { getVerdictFeed } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
@@ -13,8 +13,8 @@ const CATEGORY_LABELS = {
 
 export default function MoragoraFeedPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
+  const location = useLocation();
+  const searchQuery = new URLSearchParams(location.search).get('q')?.toLowerCase() || '';
   const [verdicts, setVerdicts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
