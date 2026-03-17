@@ -258,27 +258,32 @@ export default function ProfilePage() {
           {/* 닉네임 + 편집 */}
           <div className="flex flex-col items-center w-full">
             <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1.5">
+              {/* 닉네임 — 항상 중앙 고정 */}
+              <div className="relative flex items-center justify-center">
                 {isEditing ? (
-                  <>
-                    <input
-                      autoFocus
-                      value={newNickname}
-                      onChange={(e) => setNewNickname(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateNickname()}
-                      className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
-                    />
-                    <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[14px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all">저장</button>
-                    <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[14px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all">취소</button>
-                  </>
+                  <input
+                    autoFocus
+                    value={newNickname}
+                    onChange={(e) => setNewNickname(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateNickname()}
+                    className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
+                  />
                 ) : (
-                  <>
-                    <h2 className="text-xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
+                  <h2 className="text-xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
+                )}
+                {/* 우측 버튼 — 절대 위치로 닉네임 밀지 않음 */}
+                <div className="absolute left-full ml-1 flex items-center gap-0.5">
+                  {isEditing ? (
+                    <>
+                      <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
+                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
+                    </>
+                  ) : (
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
                       <Edit3 size={20} />
                     </button>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setIsTierSheetOpen(true)}
