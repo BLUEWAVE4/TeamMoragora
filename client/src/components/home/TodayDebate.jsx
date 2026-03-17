@@ -201,11 +201,19 @@ function DebateBannerCard({ item }) {
             )}
             <div className="flex gap-2.5">
               <button onClick={() => handleVote('A')} disabled={isVoting || isParticipant}
-                className="flex-1 py-3 bg-[#D4AF37] text-[#1B2A4A] font-serif font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-40 shadow-md hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]">
+                className={`flex-1 py-3 font-sans font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-40 border ${
+                  myVote === 'A'
+                    ? 'bg-[#D4AF37] text-[#1B2A4A] border-[#D4AF37] shadow-md'
+                    : 'bg-white/8 text-[#D4AF37] border-[#D4AF37]/20'
+                }`}>
                 {proSide}
               </button>
               <button onClick={() => handleVote('B')} disabled={isVoting || isParticipant}
-                className="flex-1 py-3 bg-white/8 text-[#D4AF37] font-serif font-bold rounded-xl text-sm border border-[#D4AF37]/20 transition-all active:scale-95 disabled:opacity-40 hover:bg-white/12">
+                className={`flex-1 py-3 font-sans font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-40 border ${
+                  myVote === 'B'
+                    ? 'bg-[#D4AF37] text-[#1B2A4A] border-[#D4AF37] shadow-md'
+                    : 'bg-white/8 text-[#D4AF37] border-[#D4AF37]/20'
+                }`}>
                 {conSide}
               </button>
             </div>
