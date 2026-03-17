@@ -126,7 +126,7 @@ export default function TabBar() {
   const listRef = useRef(null);
 
   const fetchActiveDebates = useCallback(async (cursor) => {
-    if (!isLoggedIn) { setActiveDebates([]); setHasMore(false); return; }
+    if (!isLoggedIn || !user) { setActiveDebates([]); setHasMore(false); return; }
     try {
       const res = await getMyActiveDebates(cursor);
       const { items, hasMore: more } = res;
@@ -140,7 +140,7 @@ export default function TabBar() {
       if (!cursor) setActiveDebates([]);
       setHasMore(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, user]);
 
   // 로그인 상태 변경 시 + 페이지 이동 시 갱신
   useEffect(() => { fetchActiveDebates(); }, [fetchActiveDebates, location.pathname]);
