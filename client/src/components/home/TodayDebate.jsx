@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { castVote, getVoteTally, cancelVote } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import { AI_JUDGES } from '../../constants/judges';
 
 // 개별 카드 컴포넌트
 function DebateBannerCard({ item }) {
@@ -114,21 +115,24 @@ function DebateBannerCard({ item }) {
       {(() => {
         const desc = item.debate?.description || '';
         const names = desc.split(' vs ');
-        const nameA = names[0] || '지피티';
-        const nameB = names[1] || '클로드';
+        const nameA = names[0]?.trim() || '지피티';
+        const nameB = names[1]?.trim() || '클로드';
+        const findJudge = (name) => Object.values(AI_JUDGES).find(j => j.name === name) || AI_JUDGES.gpt;
+        const jA = findJudge(nameA);
+        const jB = findJudge(nameB);
         return (
           <div className="z-10 mb-3 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-white/10">
-                <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${nameA}`} alt="" className="w-full h-full" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border border-white/20">
+                <img src={jA.avatar} alt="" className="w-full h-full" />
               </div>
               <span className="text-[12px] font-bold text-white/80">{nameA}</span>
             </div>
             <span className="text-[11px] font-black text-[#D4AF37]/60">VS</span>
             <div className="flex items-center gap-1.5">
               <span className="text-[12px] font-bold text-white/80">{nameB}</span>
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-white/10">
-                <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${nameB}`} alt="" className="w-full h-full" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border border-white/20">
+                <img src={jB.avatar} alt="" className="w-full h-full" />
               </div>
             </div>
           </div>
