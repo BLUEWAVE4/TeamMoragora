@@ -134,7 +134,7 @@ export async function createDailyDebate() {
       creator_id: systemUserId,
       opponent_id: systemUserId,
       topic: topicData.topic,
-      description: topicData.description || null,
+      description: `${judgeA.name} vs ${judgeB.name}`,
       category: topicData.category || 'daily',
       purpose: 'fun',
       lens: 'general',
