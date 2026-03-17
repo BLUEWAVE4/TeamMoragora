@@ -139,7 +139,7 @@ function DebateBannerCard({ item }) {
             </div>
             <button
               onClick={() => navigate(`/moragora/${debateId}`)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10 active:scale-90 transition-all"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10 active:scale-90 transition-all"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
             </button>
