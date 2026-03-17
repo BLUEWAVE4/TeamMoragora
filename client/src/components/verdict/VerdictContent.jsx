@@ -995,11 +995,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           {/* 구분선 + 시민 의견 */}
           <div className="border-t border-gold/10" />
           <div className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[14px] font-sans font-bold text-primary">시민 의견</h3>
-          <span className="text-[11px] text-primary/40">{comments.length}개</span>
-        </div>
-
         {/* 댓글 목록 */}
         <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
           {comments.length === 0 ? (
