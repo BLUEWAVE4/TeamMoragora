@@ -59,8 +59,8 @@ export default function MoragoraFeedPage() {
             className="w-full mb-6 p-5 bg-gradient-to-br from-[#1B2A4A] to-[#0f1a30] rounded-2xl text-left border-2 border-[#D4AF37]/30 active:scale-[0.98] transition-all relative"
           >
             {/* 상세보기 */}
-            <div className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-white/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+            <div className="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37]">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
             </div>
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-[11px] font-bold text-[#D4AF37]/70">이달의 최고 논쟁</span>
