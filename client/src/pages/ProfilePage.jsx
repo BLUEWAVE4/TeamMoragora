@@ -268,14 +268,14 @@ export default function ProfilePage() {
                       onKeyDown={(e) => e.key === 'Enter' && handleUpdateNickname()}
                       className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
                     />
-                    <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[12px] font-bold">저장</button>
-                    <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[12px] font-bold">취소</button>
+                    <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[14px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all">저장</button>
+                    <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[14px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all">취소</button>
                   </>
                 ) : (
                   <>
                     <h2 className="text-xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
-                    <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors">
-                      <Edit3 size={16} />
+                    <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
+                      <Edit3 size={20} />
                     </button>
                   </>
                 )}
