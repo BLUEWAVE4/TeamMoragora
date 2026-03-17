@@ -162,23 +162,26 @@ export default function HomePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center font-bold text-gray-400">
-      데이터 동기화 중...
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+        <span className="text-[13px] font-serif font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+      </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FDFDFD] pb-32 pt-4">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] pb-32 pt-4">
       <TodayDebate items={dailyItems} />
-      <main className="flex flex-col mt-10 px-6">
-        <div className="flex justify-between items-end mb-2 relative">
-          <h2 className="text-[22px] font-black text-[#2D3350]">실시간 논쟁 피드</h2>
+      <main className="flex flex-col mt-6 px-5">
+        <div className="flex justify-between items-end mb-3 relative">
+          <h2 className="text-[20px] font-serif font-black text-[#1B2A4A] tracking-tight">실시간 논쟁 피드</h2>
           <div className="relative">
-            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#FF6B6B] font-black text-[14px] cursor-pointer">{sortBy} ▼</div>
+            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#D4AF37] font-serif font-bold text-[13px] cursor-pointer">{sortBy} ▼</div>
             {showSortMenu && (
-              <div className="absolute right-0 top-8 w-36 bg-white shadow-2xl rounded-2xl p-2 z-[100] border border-gray-100">
+              <div className="absolute right-0 top-8 w-36 bg-white shadow-xl rounded-xl p-1.5 z-[100] border border-[#D4AF37]/15">
                 {sortOptions.map((opt) => (
-                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-2 rounded-xl text-[12px] font-bold ${sortBy === opt.name ? 'bg-red-50 text-[#FF6B6B]' : 'text-gray-500'}`}>{opt.name}</button>
+                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-bold transition-all ${sortBy === opt.name ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 hover:text-[#1B2A4A]/60'}`}>{opt.name}</button>
                 ))}
               </div>
             )}
@@ -186,23 +189,21 @@ export default function HomePage() {
         </div>
         <CategoryFilter filter={filter} setFilter={setFilter} />
 
-        <section className="mt-4 flex flex-col gap-6">
+        <section className="mt-3 flex flex-col">
           {getProcessedFeeds().map((feed) => (
             <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
           ))}
         </section>
 
-        {/* 로딩 스피너 */}
         {loadingMore && (
           <div className="flex justify-center py-6">
-            <div className="w-6 h-6 border-4 border-[#FF6B6B] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* 더 이상 없을 때 */}
         {!hasNext && feeds.length > 0 && (
-          <p className="text-center text-[13px] text-gray-300 font-bold py-6">
-            모든 논쟁을 다 봤어요 🎉
+          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-serif font-bold py-8">
+            모든 논쟁을 확인했습니다
           </p>
         )}
       </main>

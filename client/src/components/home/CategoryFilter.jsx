@@ -83,25 +83,25 @@ export default function CategoryFilter({ filter, setFilter }) {
   ];
 
   return (
-    <div className="py-3">
-      <div className="flex gap-3 px-6 overflow-x-auto no-scrollbar scroll-smooth w-full items-center">
+    <div className="py-2">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth w-full items-center">
         {categories.map((cat) => (
           <button
             key={cat.key}
             onClick={() => setFilter(cat.key)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[1rem] text-[14px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-serif font-bold whitespace-nowrap transition-all flex-shrink-0 ${
               filter === cat.key
-                ? 'bg-[#2D3350] text-white shadow-md shadow-[#2D3350]/20 scale-105'
-                : 'bg-white text-gray-400 border border-gray-300 hover:text-gray-600'
+                ? 'bg-[#1B2A4A] text-[#D4AF37] shadow-sm'
+                : 'bg-[#1B2A4A]/5 text-[#1B2A4A]/40 hover:text-[#1B2A4A]/60'
             }`}
           >
-            <span className={filter === cat.key ? "text-white" : "text-gray-400"}>
+            <span className={filter === cat.key ? "text-[#D4AF37]" : "text-[#1B2A4A]/30"}>
               {cat.icon}
             </span>
             <span>{cat.name}</span>
           </button>
         ))}
-        <div className="min-w-[24px] h-1 flex-shrink-0" />
+        <div className="min-w-[16px] h-1 flex-shrink-0" />
       </div>
     </div>
   );

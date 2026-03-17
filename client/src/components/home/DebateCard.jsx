@@ -266,21 +266,21 @@ export default function DebateCard({ feed, formatTime }) {
 
   return (
     <>
-      <div className="w-full font-sans pb-4 mb-2 border-b border-gray-100">
+      <div className="w-full font-sans pb-4 mb-2 border-b border-[#1B2A4A]/5">
 
         {/* 주제 (메인) */}
         <div className="px-4 pt-4 pb-1.5">
-          <h3 className="text-[17px] font-black text-[#1C1C1E] leading-snug break-keep">{topic}</h3>
+          <h3 className="text-[17px] font-serif font-black text-[#1B2A4A] leading-snug break-keep">{topic}</h3>
         </div>
 
         {/* 서브 정보: 작성자 + 카테고리 + 렌즈 */}
         <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] text-gray-400 font-bold">{creatorNickname}</span>
-          <span className="text-gray-200">·</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-bold">{categoryName}</span>
-          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/6 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
+          <span className="text-[11px] text-[#1B2A4A]/35 font-bold">{creatorNickname}</span>
+          <span className="text-[#1B2A4A]/15">·</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
+          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/35 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-          <span className="ml-auto text-[10px] text-gray-300 font-bold">
+          <span className="ml-auto text-[10px] text-[#1B2A4A]/20 font-bold">
             {formatTime ? formatTime(feed.created_at) : ''}
           </span>
         </div>
@@ -290,41 +290,41 @@ export default function DebateCard({ feed, formatTime }) {
           {/* 투표 타이머 (마감 뱃지 대신) */}
           {isVotingStatus && timeLeft && (
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[11px] font-bold text-emerald-600">{timeLeft}</span>
+              <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-pulse" />
+              <span className="text-[11px] font-serif font-bold text-[#D4AF37]">{timeLeft}</span>
             </div>
           )}
           {isCompleted && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] font-bold text-gray-400">투표 마감</span>
+              <span className="text-[11px] font-serif font-bold text-[#1B2A4A]/25">투표 마감</span>
             </div>
           )}
 
           <div className="flex flex-col gap-3">
             {/* 논쟁 당사자 안내 */}
             {isParticipant && isVotingStatus && (
-              <p className="text-[11px] text-center text-slate-400 font-bold mb-2">논쟁 당사자는 투표할 수 없습니다</p>
+              <p className="text-[11px] text-center text-[#1B2A4A]/30 font-serif font-bold mb-2">논쟁 당사자는 투표할 수 없습니다</p>
             )}
             {/* A측 버튼 */}
             <button
               onClick={() => handleVote('A')}
               disabled={isVoting || !isVotingStatus || isParticipant}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
-                ${myVote === 'A' ? 'border-[#34C759] bg-[#34C759]/5' : 'border-slate-100 bg-white'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-70' : ''}`}
+              className={`relative h-14 w-full rounded-xl overflow-hidden transition-all active:scale-[0.98] border
+                ${myVote === 'A' ? 'border-emerald-500 bg-emerald-500/5' : 'border-[#1B2A4A]/8 bg-white'}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-60' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
-                <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-[#34C759]/10" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/10" />
               )}
               <div className="relative h-full px-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2.5">
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'A' ? 'bg-[#34C759] text-white' : 'bg-slate-100 text-slate-400'}`}>A측</span>
-                  <span className={`text-[16px] font-bold ${myVote === 'A' ? 'text-[#34C759]' : 'text-slate-700'}`}>{optionAText || "찬성"}</span>
+                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'A' ? 'bg-emerald-600 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/40'}`}>A측</span>
+                  <span className={`text-[15px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted) && (
                   <div className="flex flex-col items-end">
-                    <span className="text-[16px] font-black text-slate-900">{agreePercent}%</span>
-                    <span className="text-[10px] font-bold text-slate-400">{voteCounts.agree.toLocaleString()}표</span>
+                    <span className="text-[15px] font-black text-[#1B2A4A]">{agreePercent}%</span>
+                    <span className="text-[10px] font-bold text-[#1B2A4A]/30">{voteCounts.agree.toLocaleString()}표</span>
                   </div>
                 )}
               </div>
@@ -334,22 +334,22 @@ export default function DebateCard({ feed, formatTime }) {
             <button
               onClick={() => handleVote('B')}
               disabled={isVoting || !isVotingStatus || isParticipant}
-              className={`relative h-16 w-full rounded-2xl overflow-hidden transition-all active:scale-[0.98] border-2
-                ${myVote === 'B' ? 'border-[#FF3B30] bg-[#FF3B30]/5' : 'border-slate-100 bg-white'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-70' : ''}`}
+              className={`relative h-14 w-full rounded-xl overflow-hidden transition-all active:scale-[0.98] border
+                ${myVote === 'B' ? 'border-red-500 bg-red-500/5' : 'border-[#1B2A4A]/8 bg-white'}
+                ${(!isVotingStatus || isParticipant) ? 'opacity-60' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
-                <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-[#FF3B30]/10" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/10" />
               )}
               <div className="relative h-full px-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2.5">
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'B' ? 'bg-[#FF3B30] text-white' : 'bg-slate-100 text-slate-400'}`}>B측</span>
-                  <span className={`text-[16px] font-bold ${myVote === 'B' ? 'text-[#FF3B30]' : 'text-slate-700'}`}>{optionBText || "반대"}</span>
+                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/40'}`}>B측</span>
+                  <span className={`text-[15px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted) && (
                   <div className="flex flex-col items-end">
-                    <span className="text-[16px] font-black text-slate-900">{disagreePercent}%</span>
-                    <span className="text-[10px] font-bold text-slate-400">{voteCounts.disagree.toLocaleString()}표</span>
+                    <span className="text-[15px] font-black text-[#1B2A4A]">{disagreePercent}%</span>
+                    <span className="text-[10px] font-bold text-[#1B2A4A]/30">{voteCounts.disagree.toLocaleString()}표</span>
                   </div>
                 )}
               </div>
@@ -362,25 +362,22 @@ export default function DebateCard({ feed, formatTime }) {
           <div className="flex items-center gap-5">
             {/* 좋아요 */}
             <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill={liked ? '#FF3B30' : 'none'} stroke={liked ? '#FF3B30' : '#262626'} strokeWidth="2.5" height="19" viewBox="0 0 24 24" width="19"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span className="text-[13px] font-black">{likeCount}</span>
+              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.3}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/40">{likeCount}</span>
             </button>
-            {/* 댓글 */}
             <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill="none" stroke="#262626" strokeWidth="2.5" height="19" viewBox="0 0 24 24" width="19"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span className="text-[13px] font-black">{localCommentCount}</span>
+              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/40">{localCommentCount}</span>
             </button>
-            {/* ✅ 조회수 */}
-            <div className="flex items-center gap-1.5 opacity-50">
-              <svg fill="none" stroke="#262626" strokeWidth="2.5" height="19" viewBox="0 0 24 24" width="19">
+            <div className="flex items-center gap-1.5">
+              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span className="text-[13px] font-black text-[#262626]">{viewCount}</span>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
             </div>
           </div>
-          {/* ✅ Link → button으로 교체해서 클릭 시 조회수 기록 후 이동 */}
-          <button onClick={handleDetailClick} className="text-[#007AFF] text-[14px] font-black hover:opacity-70 transition-opacity">
+          <button onClick={handleDetailClick} className="text-[#D4AF37] text-[13px] font-serif font-bold hover:opacity-70 transition-opacity">
             상세보기
           </button>
         </div>
