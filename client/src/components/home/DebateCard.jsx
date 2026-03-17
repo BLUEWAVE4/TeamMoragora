@@ -158,7 +158,7 @@ export default function DebateCard({ feed, formatTime }) {
   const topic = debateData?.topic || "제목 없는 논쟁";
   const isMe = user && (debateData?.creator_id === user.id);
   const isParticipant = user && (debateData?.creator_id === user.id || debateData?.opponent_id === user.id);
-  const creatorNickname = isMe ? (user.user_metadata?.nickname || "나") : (debateData?.creator?.nickname || "익명");
+  const creatorNickname = debateData?.creator?.nickname || (isMe ? (user.user_metadata?.nickname || "나") : "익명");
 
   const purposeMap = { 'compete': '경쟁', 'fun': '재미', 'resolve': '해결', 'learn': '학습' };
   const lensMap = { 'general': '종합', 'logic': '논리', 'emotion': '감정', 'practical': '실용', 'ethics': '윤리', 'creative': '자유' };
@@ -277,15 +277,15 @@ export default function DebateCard({ feed, formatTime }) {
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 min-w-0 leading-tight">
-            <span className="text-[13px] font-bold text-[#1B2A4A] block truncate leading-none">{creatorNickname}</span>
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <span className="text-[13px] font-bold text-[#1B2A4A] truncate">{creatorNickname}</span>
             {(() => {
               const tier = debateData?.creator?.tier || '시민';
               const tierColor = { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
               const tierBg = { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
               return (
                 <span
-                  className="text-[9px] font-black leading-none mt-1 inline-block px-1.5 py-0.5 rounded"
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0"
                   style={{ color: tierColor[tier] || '#8E8E93', backgroundColor: tierBg[tier] || '#F5F5F7' }}
                 >{tier}</span>
               );
