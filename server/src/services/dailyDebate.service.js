@@ -11,9 +11,9 @@ const CATEGORIES = ['daily', 'society', 'philosophy', 'culture', 'politics', 'ec
 
 // AI 판사 풀 (그록 제외)
 const AI_JUDGES = [
-  { id: 'gpt', name: 'Judge M (GPT-4o)', model: 'gpt-4o', type: 'openai' },
-  { id: 'gemini', name: 'Judge G (Gemini)', model: 'gemini-2.5-flash', type: 'gemini' },
-  { id: 'claude', name: 'Judge C (Claude)', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
+  { id: 'gpt', name: '지피티 현자', model: 'gpt-4o', type: 'openai' },
+  { id: 'gemini', name: '제미나이 현자', model: 'gemini-2.5-flash', type: 'gemini' },
+  { id: 'claude', name: '클로드 현자', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
 ];
 
 // 랜덤으로 2개 선택 (A측, B측 각각 다른 판사)
@@ -73,9 +73,11 @@ ${recentTopics ? `- ${recentTopics}` : '(없음)'}
   return JSON.parse(jsonMatch[0]);
 }
 
-// 2. AI 판사가 각 측 주장 생성
+// 2. 현자가 각 측 주장 생성
 async function generateArgumentByJudge(judge, topic, side, sideLabel, category) {
-  const prompt = `당신은 논쟁 플랫폼 "모라고라"의 AI 판사 ${judge.name}입니다.
+  const prompt = `당신은 논쟁 플랫폼 "모라고라"의 ${judge.name}입니다.
+자기소개를 한 문장으로 한 뒤(예: "안녕하십니까, 모라고라의 ${judge.name}입니다."), 바로 주장을 시작하세요.
+
 주제: "${topic}" (카테고리: ${category})
 
 당신은 ${side}측(${sideLabel}) 입장을 대변합니다.
