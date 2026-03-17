@@ -42,8 +42,14 @@ export async function triggerJudgment(debateId) {
     .select('id, nickname')
     .in('id', [debate.creator_id, debate.opponent_id]);
 
-  const nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || '찬성측';
-  const nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || '반대측';
+  let nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || '찬성측';
+  let nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || '반대측';
+
+  // daily 모드이거나 같은 유저인 경우 "(찬성)/(반대)" 구분 추가
+  if (debate.creator_id === debate.opponent_id || debate.mode === 'daily') {
+    nicknameA = `${nicknameA}(찬성)`;
+    nicknameB = `${nicknameB.replace(/\(찬성\)$/, '')}(반대)`;
+  }
 
   // 3. 원자적 상태 전환 (arguing → judging)
   const { data: updated, error: updateErr } = await supabaseAdmin

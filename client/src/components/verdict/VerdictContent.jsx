@@ -274,17 +274,32 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const hasRound2 = !!(rebuttalA || rebuttalB);
 
   // 닉네임을 A측(초록)/B측(빨강) 색상으로 하이라이트
+  // 같은 닉네임(예: 시스템 유저)인 경우 "닉네임(찬성)"/"닉네임(반대)" 패턴으로 구분
+  const isSameNickname = nicknameA && nicknameB && nicknameA === nicknameB;
+  const displayNameA = isSameNickname ? `${nicknameA}(찬성)` : (nicknameA || proSide);
+  const displayNameB = isSameNickname ? `${nicknameB}(반대)` : (nicknameB || conSide);
+
   const highlightNicknames = (text) => {
     if (!text || (!nicknameA && !nicknameB)) return text;
-    const parts = [];
     const names = [];
-    if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
-    if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
-    // 닉네임으로 정규식 생성
-    const pattern = new RegExp(`(${names.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+
+    if (isSameNickname) {
+      // 같은 닉네임이면 "닉네임(찬성)"/"닉네임(반대)" 패턴을 먼저 찾고, 단독 닉네임도 A측으로 처리
+      names.push({ name: `${nicknameA}(찬성)`, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
+      names.push({ name: `${nicknameB}(반대)`, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
+      // 판결문에서 단독 닉네임은 중립 표시
+      names.push({ name: nicknameA, cls: 'font-semibold text-primary/80' });
+    } else {
+      if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
+      if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
+    }
+
+    // 긴 패턴부터 매치 (찬성/반대 붙은 것 우선)
+    const sorted = [...names].sort((a, b) => b.name.length - a.name.length);
+    const pattern = new RegExp(`(${sorted.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
     const segments = text.split(pattern);
     return segments.map((seg, i) => {
-      const match = names.find(n => n.name === seg);
+      const match = sorted.find(n => n.name === seg);
       if (match) return <span key={i} className={match.cls}>{seg}</span>;
       return seg;
     });
