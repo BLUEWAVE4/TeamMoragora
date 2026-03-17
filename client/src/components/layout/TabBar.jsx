@@ -17,34 +17,36 @@ const TrophyIcon = ({ active }) => (
   </svg>
 );
 
-const PlusIcon = ({ active, pulse }) => (
-  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
-    {/* 네모 박스 */}
-    <rect
-      x="4" y="4" width="34" height="34" rx="10" ry="10"
-      fill={active ? '#1B2A4A' : 'none'}
-      stroke={active ? '#1B2A4A' : '#1B2A4A'}
-      strokeWidth="1.8"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-    {/* + 세로선 */}
-    <line
-      x1="21" y1="13" x2="21" y2="29"
-      stroke={active ? 'white' : '#1B2A4A'}
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-    {/* + 가로선 */}
-    <line
-      x1="13" y1="21" x2="29" y2="21"
-      stroke={active ? 'white' : '#1B2A4A'}
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-  </svg>
-);
+const PlusIcon = ({ active, pulse }) => {
+  // 진행중 논쟁 있으면 말풍선(진행중) 아이콘
+  if (pulse) {
+    return (
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
+        <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
+          fill="none" strokeWidth="1.8" className="animate-stroke-pulse" />
+        {/* 말풍선 아이콘 */}
+        <path
+          d="M13 15a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-3 3-3-3h-3a2 2 0 0 1-2-2v-8z"
+          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          className="animate-stroke-pulse"
+        />
+        {/* 점 3개 */}
+        <circle cx="18" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
+        <circle cx="21" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
+        <circle cx="24" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
+      <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
+        fill={active ? '#1B2A4A' : 'none'} stroke={active ? '#1B2A4A' : '#1B2A4A'} strokeWidth="1.8" />
+      <line x1="21" y1="13" x2="21" y2="29" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
+      <line x1="13" y1="21" x2="29" y2="21" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+};
 
 const HallIcon = ({ active }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.8" : "2"} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
