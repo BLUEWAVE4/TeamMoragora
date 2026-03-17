@@ -326,7 +326,7 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <>
                       <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
-                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
+                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
                     </>
                   ) : profileData && (
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
@@ -694,7 +694,7 @@ export default function ProfilePage() {
         {showAvatarEdit && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setShowAvatarEdit(false)} className="fixed inset-0 bg-black/40 z-[300]" />
+              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="fixed inset-0 bg-black/40 z-[300]" />
             <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -705,7 +705,7 @@ export default function ProfilePage() {
                   <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
                   <div className="flex items-center justify-between">
                     <h3 className="text-[16px] font-black text-[#1B2A4A]">아바타 꾸미기</h3>
-                    <button onClick={() => setShowAvatarEdit(false)} className="text-[12px] text-gray-400 font-bold">닫기</button>
+                    <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', accessories: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
                   </div>
                 </div>
 
