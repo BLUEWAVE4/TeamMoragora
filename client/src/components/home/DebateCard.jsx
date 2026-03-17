@@ -293,15 +293,14 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 카테고리 + 목적 + 렌즈 뱃지 */}
-        <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
-          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
-          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-        </div>
-
-        {/* 투표 섹션 */}
-        <div className="pr-4 pl-6 pb-4 pt-1">
+        {/* 투표 섹션 — 왼쪽에 카테고리/목적/렌즈 세로 배치 */}
+        <div className="relative pr-4 pl-15 pb-4 pt-1">
+          {/* 왼쪽 사이드 정보 */}
+          <div className="absolute left-4 top-1 flex flex-col items-start gap-0.5">
+            <span className="text-[9px] text-[#1B2A4A]/40 font-bold">{categoryName}</span>
+            {purpose && <span className="text-[9px] text-[#1B2A4A]/30 font-bold">{purpose}</span>}
+            {lens && <span className="text-[9px] text-[#D4AF37] font-bold">{lens}</span>}
+          </div>
 
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
