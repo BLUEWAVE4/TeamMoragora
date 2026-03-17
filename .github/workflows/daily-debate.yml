@@ -1,0 +1,19 @@
+name: Daily Debate Generator
+
+on:
+  schedule:
+    # UTC 23:00 = KST 08:00 매일
+    - cron: '0 23 * * *'
+  workflow_dispatch: # 수동 실행 버튼
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily debate
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail --silent --show-error \
+            https://teammoragora.onrender.com/api/cron/daily-debate
