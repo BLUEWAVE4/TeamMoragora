@@ -265,10 +265,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const highlightCriterion = LENS_CRITERION_MAP[lensRaw] || null;
   const argA = verdictData.arguments?.A || null;
   const argB = verdictData.arguments?.B || null;
+  const rebuttalA = verdictData.arguments?.rebuttalA || null;
+  const rebuttalB = verdictData.arguments?.rebuttalB || null;
   const nicknameA = verdictData.arguments?.nicknameA || null;
   const nicknameB = verdictData.arguments?.nicknameB || null;
   const userIdA = verdictData.arguments?.userIdA || null;
   const userIdB = verdictData.arguments?.userIdB || null;
+  const hasRound2 = !!(rebuttalA || rebuttalB);
 
   // 닉네임을 A측(초록)/B측(빨강) 색상으로 하이라이트
   const highlightNicknames = (text) => {
@@ -830,21 +833,49 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             </button>
           </div>
 
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 space-y-3">
               {activeArgSide === 'A' && argA && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
+                <div>
+                  {hasRound2 && <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>}
+                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/70">{argA}</p>
                   </div>
-                  <p className="text-[12px] leading-[1.7] text-primary/70">{argA}</p>
+                </div>
+              )}
+              {activeArgSide === 'A' && rebuttalA && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 2 — 반박</p>
+                  <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/30">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-emerald-500">{nicknameA || 'A측'}의 반박</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/60">{rebuttalA}</p>
+                  </div>
                 </div>
               )}
               {activeArgSide === 'B' && argB && (
-                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
+                <div>
+                  {hasRound2 && <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>}
+                  <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/70">{argB}</p>
                   </div>
-                  <p className="text-[12px] leading-[1.7] text-primary/70">{argB}</p>
+                </div>
+              )}
+              {activeArgSide === 'B' && rebuttalB && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 2 — 반박</p>
+                  <div className="p-3 rounded-xl bg-red-50/50 border border-red-200/30">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-red-400">{nicknameB || 'B측'}의 반박</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/60">{rebuttalB}</p>
+                  </div>
                 </div>
               )}
             </div>

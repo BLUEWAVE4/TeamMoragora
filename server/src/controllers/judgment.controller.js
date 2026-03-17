@@ -142,21 +142,28 @@ export async function getVerdict(req, res, next) {
       throw new NotFoundError('아직 판결이 완료되지 않았습니다.');
     }
 
-    // 양측 주장도 함께 반환
+    // 양측 주장도 함께 반환 (라운드별 구분)
     const { data: args } = await supabaseAdmin
       .from('arguments')
-      .select('side, content, user_id, user:profiles!user_id(nickname)')
-      .eq('debate_id', req.params.debateId);
+      .select('side, content, round, user_id, user:profiles!user_id(nickname)')
+      .eq('debate_id', req.params.debateId)
+      .order('round', { ascending: true });
 
-    const argA = args?.find(a => a.side === 'A');
-    const argB = args?.find(a => a.side === 'B');
+    const r1A = args?.find(a => a.side === 'A' && (a.round || 1) === 1);
+    const r1B = args?.find(a => a.side === 'B' && (a.round || 1) === 1);
+    const r2A = args?.find(a => a.side === 'A' && a.round === 2);
+    const r2B = args?.find(a => a.side === 'B' && a.round === 2);
+
     verdict.arguments = {
-      A: argA?.content || null,
-      B: argB?.content || null,
-      nicknameA: argA?.user?.nickname || null,
-      nicknameB: argB?.user?.nickname || null,
-      userIdA: argA?.user_id || null,
-      userIdB: argB?.user_id || null,
+      A: r1A?.content || null,
+      B: r1B?.content || null,
+      nicknameA: r1A?.user?.nickname || null,
+      nicknameB: r1B?.user?.nickname || null,
+      userIdA: r1A?.user_id || null,
+      userIdB: r1B?.user_id || null,
+      // 2라운드 반박
+      rebuttalA: r2A?.content || null,
+      rebuttalB: r2B?.content || null,
     };
 
     // 실시간 시민 투표 수 조회 (finalizeVerdict 전에도 표시되도록)
