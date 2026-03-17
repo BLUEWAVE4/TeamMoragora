@@ -110,12 +110,30 @@ function DebateBannerCard({ item }) {
       <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#D4AF37]/3 rounded-full blur-2xl" />
 
-      {/* 헤더 */}
-      <div className="z-10 mb-1">
-        <span className="text-[13px] font-sans font-bold text-[#D4AF37]/70 tracking-tight">
-          {item.debate?.description || '오늘의 논쟁'}
-        </span>
-      </div>
+      {/* AI 대결 헤더 */}
+      {(() => {
+        const desc = item.debate?.description || '';
+        const names = desc.split(' vs ');
+        const nameA = names[0] || '지피티';
+        const nameB = names[1] || '클로드';
+        return (
+          <div className="z-10 mb-3 flex items-center justify-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-white/10">
+                <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${nameA}`} alt="" className="w-full h-full" />
+              </div>
+              <span className="text-[12px] font-bold text-white/80">{nameA}</span>
+            </div>
+            <span className="text-[11px] font-black text-[#D4AF37]/60">VS</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[12px] font-bold text-white/80">{nameB}</span>
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-white/10">
+                <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${nameB}`} alt="" className="w-full h-full" />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 주제 */}
       <div className="mb-5 z-10 flex-1">

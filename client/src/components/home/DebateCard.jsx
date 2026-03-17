@@ -279,11 +279,7 @@ export default function DebateCard({ feed, formatTime }) {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[13px] font-bold text-[#1B2A4A] block truncate">{creatorNickname}</span>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
-              {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
-              {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-            </div>
+            <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{debateData?.creator?.tier || '시민'}</span>
           </div>
           <button onClick={handleDetailClick} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
@@ -293,8 +289,15 @@ export default function DebateCard({ feed, formatTime }) {
         <div className="mx-4 border-b border-[#1B2A4A]/5" />
 
         {/* 주제 */}
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-3 pb-1">
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
+        </div>
+
+        {/* 카테고리 + 목적 + 렌즈 뱃지 */}
+        <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
+          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
+          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
         </div>
 
         {/* 투표 섹션 */}
