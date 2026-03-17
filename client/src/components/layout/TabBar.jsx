@@ -24,16 +24,9 @@ const PlusIcon = ({ active, pulse }) => {
       <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
         <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
           fill="none" strokeWidth="1.8" className="animate-stroke-pulse" />
-        {/* 말풍선 아이콘 */}
-        <path
-          d="M13 15a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-3 3-3-3h-3a2 2 0 0 1-2-2v-8z"
-          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-          className="animate-stroke-pulse"
-        />
-        {/* 점 3개 */}
-        <circle cx="18" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
-        <circle cx="21" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
-        <circle cx="24" cy="19" r="1" className="animate-stroke-pulse" fill="currentColor" />
+        {/* 느낌표 */}
+        <line x1="21" y1="14" x2="21" y2="23" strokeWidth="2.5" strokeLinecap="round" className="animate-stroke-pulse" />
+        <circle cx="21" cy="27" r="1.5" className="animate-stroke-pulse" fill="currentColor" />
       </svg>
     );
   }
