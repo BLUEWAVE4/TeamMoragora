@@ -733,7 +733,7 @@ export default function ProfilePage() {
                       {(profileData?.gender === 'male' ? MALE_STYLES : FEMALE_STYLES).map(s => (
                         <button key={s} onClick={() => setAvatarOptions(prev => ({ ...prev, top: s }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, top: s })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { top: s })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -770,7 +770,7 @@ export default function ProfilePage() {
                       {CLOTHING_OPTIONS.map(c => (
                         <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothing: c }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, clothing: c })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { clothing: c })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -787,7 +787,7 @@ export default function ProfilePage() {
                       {ACCESSORIES_OPTIONS.map(a => (
                         <button key={a} onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: a }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, accessories: a })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { accessories: a })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -800,7 +800,7 @@ export default function ProfilePage() {
                       {EYES_OPTIONS.map(e => (
                         <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, eyes: e })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyes: e })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -813,7 +813,7 @@ export default function ProfilePage() {
                       {EYEBROWS_OPTIONS.map(e => (
                         <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, eyebrows: e })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyebrows: e })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -826,7 +826,7 @@ export default function ProfilePage() {
                       {MOUTH_OPTIONS.map(m => (
                         <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
                           className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, mouth: m })} alt="" className="w-full h-full" />
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { mouth: m })} alt="" className="w-full h-full" />
                         </button>
                       ))}
                     </div>
@@ -844,7 +844,7 @@ export default function ProfilePage() {
                         {FACIAL_HAIR_OPTIONS.map(f => (
                           <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
                             className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                            <img src={buildAvatarUrl(user.id, profileData?.gender, { ...avatarOptions, facialHair: f })} alt="" className="w-full h-full" />
+                            <img src={buildAvatarUrl(user.id, profileData?.gender, { facialHair: f })} alt="" className="w-full h-full" />
                           </button>
                         ))}
                       </div>
