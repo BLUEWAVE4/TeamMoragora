@@ -280,8 +280,8 @@ export default function DebateCard({ feed, formatTime }) {
           <div className="flex-1 min-w-0">
             <span className="text-[13px] font-bold text-[#1B2A4A] block truncate">{creatorNickname}</span>
             <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/40 font-bold">{categoryName}</span>
-              {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/5 text-[#1B2A4A]/35 font-bold">{purpose}</span>}
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
+              {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
               {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
             </div>
           </div>
@@ -307,7 +307,7 @@ export default function DebateCard({ feed, formatTime }) {
               onClick={() => handleVote('A')}
               disabled={isVoting || !isVotingStatus || isParticipant}
               className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
-                ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/6'}
+                ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
@@ -316,15 +316,15 @@ export default function DebateCard({ feed, formatTime }) {
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    isCompleted ? 'bg-[#1B2A4A]/8 text-[#1B2A4A]/30' :
-                    myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'
+                    isCompleted ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
                   }`}>{isCompleted ? '마감' : 'A측'}</span>
-                  <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/50'}`}>{optionAText || "찬성"}</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted) && (
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-[#1B2A4A]/60">{agreePercent}%</span>
-                    <span className="text-[9px] text-[#1B2A4A]/25">{voteCounts.agree}표</span>
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/80">{agreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.agree}표</span>
                   </div>
                 )}
               </div>
@@ -335,7 +335,7 @@ export default function DebateCard({ feed, formatTime }) {
               onClick={() => handleVote('B')}
               disabled={isVoting || !isVotingStatus || isParticipant}
               className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
-                ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/6'}
+                ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
@@ -344,15 +344,15 @@ export default function DebateCard({ feed, formatTime }) {
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    isCompleted ? 'bg-[#1B2A4A]/8 text-[#1B2A4A]/30' :
-                    myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/6 text-[#1B2A4A]/30'
+                    isCompleted ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
                   }`}>{isCompleted ? '마감' : 'B측'}</span>
-                  <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/50'}`}>{optionBText || "반대"}</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted) && (
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-[#1B2A4A]/60">{disagreePercent}%</span>
-                    <span className="text-[9px] text-[#1B2A4A]/25">{voteCounts.disagree}표</span>
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/80">{disagreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.disagree}표</span>
                   </div>
                 )}
               </div>
@@ -365,22 +365,22 @@ export default function DebateCard({ feed, formatTime }) {
           <div className="flex items-center gap-5">
             {/* 좋아요 */}
             <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.3}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/40">{likeCount}</span>
+              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.5}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/60">{likeCount}</span>
             </button>
             <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/40">{localCommentCount}</span>
+              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/60">{localCommentCount}</span>
             </button>
             <div className="flex items-center gap-1.5">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.2">
+              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.4">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/30">{viewCount}</span>
+              <span className="text-[12px] font-bold text-[#1B2A4A]/50">{viewCount}</span>
             </div>
           </div>
-          <span className="text-[10px] text-[#1B2A4A]/20 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
+          <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
         </div>
       </div>
 
