@@ -138,7 +138,7 @@ export default function DebateCard({ feed, formatTime }) {
     const fetchComments = async () => {
       try {
         const [{ data }, { data: args }] = await Promise.all([
-          supabase.from('comments').select('*, profiles(nickname, gender)').eq('debate_id', debateId).order('created_at', { ascending: true }),
+          supabase.from('comments').select('*, profiles(nickname, gender, avatar_url)').eq('debate_id', debateId).order('created_at', { ascending: true }),
           supabase.from('arguments').select('side, user_id').eq('debate_id', debateId),
         ]);
         setComments(data || []);
@@ -273,7 +273,7 @@ export default function DebateCard({ feed, formatTime }) {
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
             <img
-              src={getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
+              src={debateData?.creator?.avatar_url || getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -434,7 +434,7 @@ export default function DebateCard({ feed, formatTime }) {
                         <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                             <img
-                              src={getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON}
+                              src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON}
                               alt=""
                               className="w-full h-full object-cover"
                             />

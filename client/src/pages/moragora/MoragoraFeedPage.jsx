@@ -107,7 +107,7 @@ export default function MoragoraFeedPage() {
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-50 flex-shrink-0">
                   <img
-                    src={getAvatarUrl(debate.creator_id, debate.creator?.gender) || DEFAULT_AVATAR_ICON}
+                    src={debate.creator?.avatar_url || getAvatarUrl(debate.creator_id, debate.creator?.gender) || DEFAULT_AVATAR_ICON}
                     alt=""
                     className="w-full h-full object-cover"
                   />
@@ -130,7 +130,7 @@ export default function MoragoraFeedPage() {
                     <span>AI {(v.ai_score_a || 0) + (v.ai_score_b || 0)}점</span>
                   </div>
                 </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="flex-shrink-0 opacity-40">
+                <svg width="14" height="14" viewBox="0 0 10 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="flex-shrink-0 opacity-40">
                   <polyline points="9 6 15 12 9 18"/>
                 </svg>
               </button>

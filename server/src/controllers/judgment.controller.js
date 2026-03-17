@@ -253,7 +253,7 @@ export async function getHallOfFame(req, res, next) {
     // verdicts + debate + 좋아요/댓글/조회수
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender))')
+      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .limit(200);
 
@@ -326,7 +326,7 @@ export async function getVerdictFeed(req, res, next) {
     const fetchLimit = search ? 200 : to + 50;
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .range(0, fetchLimit);
 
