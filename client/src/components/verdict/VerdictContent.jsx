@@ -954,32 +954,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             )}
 
             {displayTotal > 0 ? (
-              <>
-                <div className="flex justify-between text-sm font-bold mb-1.5">
-                  <span className="text-emerald-600">A측 {pctA}%</span>
-                  <span className="text-red-500">B측 {pctB}%</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000"
-                    style={{ width: animated ? `${pctA}%` : '0%' }}
-                  />
-                  <div
-                    className="h-full bg-red-500 rounded-r-full transition-all duration-1000"
-                    style={{ width: animated ? `${pctB}%` : '0%' }}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-primary/40 mt-1">
-                  <span>{displayA.toLocaleString()}명</span>
-                  <span>{displayB.toLocaleString()}명</span>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-[13px] text-primary/40 font-sans">
-                  {canVote ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
-                </p>
+              <div className="flex justify-between text-[12px] font-bold">
+                <span className="text-emerald-600">A측({pctA}%) 투표 : {displayA}명</span>
+                <span className="text-red-500">B측({pctB}%) 투표 : {displayB}명</span>
               </div>
+            ) : (
+              <p className="text-center text-[13px] text-primary/40 py-3">
+                {canVote ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
+              </p>
             )}
 
           </div>
