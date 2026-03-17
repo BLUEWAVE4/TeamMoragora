@@ -244,51 +244,45 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
-      <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-16 flex items-center justify-between border-b border-gray-200/50">
-        <h1 className="text-[18px] font-semibold text-black">프로필</h1>
-        <div className="flex gap-4">
-          <button onClick={() => setIsEditing(!isEditing)} className="text-[#007AFF] text-[16px] active:opacity-30 transition-opacity font-medium">
-            {isEditing ? '취소' : '편집'}
-          </button>
-          {!isEditing && (
-            <button onClick={handleLogout} className="text-[#FF3B30] flex items-center gap-1 text-[16px] active:opacity-30 transition-opacity font-medium">
-              <LogOut size={18} /> 로그아웃
-            </button>
-          )}
-        </div>
-      </nav>
-
       <div className="max-w-md mx-auto px-5 pt-8">
-        <div className="flex flex-col items-center mb-10">
-          <motion.div
-            animate={{ scale: isEditing ? 1.05 : 1 }}
-            className="w-24 h-24 rounded-full bg-gradient-to-b from-gray-200 to-gray-300 flex items-center justify-center shadow-inner mb-4 relative overflow-hidden"
-          >
-            <span className="text-4xl font-light text-white">{(newNickname || 'U').charAt(0)}</span>
-            {isEditing && <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-white text-[14px] font-bold">변경</div>}
-          </motion.div>
-          <div className="min-h-[90px] flex flex-col items-center justify-center w-full">
+        <div className="flex flex-col items-center mb-8">
+          {/* 아바타 */}
+          <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm">
+            <img
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+              alt="avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* 닉네임 + 편집 */}
+          <div className="flex flex-col items-center w-full">
             <AnimatePresence mode="wait">
               {isEditing ? (
                 <motion.div key="edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex flex-col items-center gap-3 w-full">
                   <input autoFocus value={newNickname} onChange={(e) => setNewNickname(e.target.value)}
-                    className="w-full max-w-[280px] bg-white rounded-2xl px-4 py-4 text-center text-xl font-bold outline-none shadow-sm border border-gray-200" 
-                    style={{ fontSize: '16px' }} />
-                  <button onClick={handleUpdateNickname} className="text-[#007AFF] text-[16px] font-bold tracking-tight">저장하기</button>
+                    className="w-full max-w-[280px] bg-white rounded-xl px-4 py-3 text-center text-[16px] font-bold outline-none border border-gray-200" />
+                  <div className="flex gap-3">
+                    <button onClick={() => setIsEditing(false)} className="text-[14px] text-gray-400 font-bold">취소</button>
+                    <button onClick={handleUpdateNickname} className="text-[14px] text-[#007AFF] font-bold">저장</button>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                  <h2 className="text-2xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
-                  <div className="mt-3">
-                    <button 
-                      onClick={() => setIsTierSheetOpen(true)}
-                      className="text-[16px] font-black px-4 py-1.5 rounded-full text-white flex items-center gap-2 active:scale-95 transition-transform shadow-sm" 
-                      style={{ backgroundColor: tier.color }}
-                    >
-                      <tier.icon size={18} /> {tier.name}
-                      <ChevronRight size={16} strokeWidth={3} />
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
+                    <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors">
+                      <Edit3 size={16} />
                     </button>
                   </div>
+                  <button
+                    onClick={() => setIsTierSheetOpen(true)}
+                    className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform"
+                    style={{ backgroundColor: tier.color }}
+                  >
+                    <tier.icon size={14} /> {tier.name}
+                    <ChevronRight size={14} strokeWidth={3} />
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -627,6 +621,14 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
+
+        {/* 로그아웃 */}
+        <button
+          onClick={handleLogout}
+          className="w-full mt-6 py-3 rounded-xl text-[14px] font-bold text-red-400 bg-white border border-red-100 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+        >
+          <LogOut size={16} /> 로그아웃
+        </button>
 
       {/* 판결 로딩 오버레이 */}
       {verdictLoading && (
