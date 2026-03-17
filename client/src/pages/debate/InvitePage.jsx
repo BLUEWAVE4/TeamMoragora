@@ -40,11 +40,7 @@ export default function InvitePage() {
   const [isCreator, setIsCreator] = useState(null)
 
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
-
-  // ✅ 팀장님 API 응답 기준: debate.creator.nickname
   const creatorNickname = debate?.creator?.nickname || '논쟁 생성자'
-  const creatorAvatar = debate?.creator?.avatar_url
-    || `https://api.dicebear.com/9.x/avataaars/svg?seed=${debate?.creator?.nickname || 'default'}`
 
   // ── 1. 초대 정보 로드 ──
   useEffect(() => {
@@ -198,12 +194,17 @@ export default function InvitePage() {
         <div className="bg-[#1B2A4A] pt-8 pb-7 px-6 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
+          {/* 뱃지 */}
           <div className="relative w-14 h-14 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mb-4">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+        <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+        <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+      </svg>
           </div>
-          <p className="text-[#D4AF37] text-[12px] font-black tracking-[0.2em] mb-1">모라고라 AI 법정 · 논쟁 소환장</p>
+          <p className="text-white text-[16px] font-black tracking-[0.2em] mb-1">모라고라 AI 법정 · 논쟁 소환장</p>
           <span className={`mt-2 px-3 py-1 text-[12px] font-black font-mono rounded-full border ${
             timeLeft < 60
               ? 'bg-red-500/20 border-red-400/40 text-red-300'
@@ -226,8 +227,8 @@ export default function InvitePage() {
                   : '논쟁 참여자 귀하'
               },
               {
-                label: '발신',
-                value: creatorNickname  // ✅ debate.creator.nickname
+                label: '발신인',
+                value: `${creatorNickname} 드림`// ✅ debate.creator.nickname
               },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center gap-4 text-[14px]">
@@ -312,9 +313,13 @@ export default function InvitePage() {
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           <div className="relative w-14 h-14 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mb-4">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
-              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+        <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+        <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+      </svg>
           </div>
           <p className="text-white text-[16px] font-black mb-1">논쟁 개시 대기 중</p>
           <p className="text-white/40 text-[13px]">상대방의 출석을 기다리고 있습니다</p>
@@ -368,11 +373,11 @@ export default function InvitePage() {
             }`}
           >
             {isOpponentJoined && (
-              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${opponentWriting ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse`} />
             )}
             <span>
               {opponentWriting ? '상대방이 주장 작성 중...'
-                : isOpponentJoined ? '논쟁 시작하기 →'
+                : isOpponentJoined ? '논쟁 시작하기'
                 : '상대방 출석 대기 중...'}
             </span>
           </button>
