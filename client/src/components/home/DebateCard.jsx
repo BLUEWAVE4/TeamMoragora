@@ -92,10 +92,14 @@ export default function DebateCard({ feed, formatTime }) {
   const [viewCount, setViewCount] = useState(debateData?.view_count || 0);
 
   // 현재 유저 아바타 URL (profiles 테이블)
+  const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('avatar_url').eq('id', user.id).single()
-      .then(({ data }) => { if (data?.avatar_url) setMyAvatarUrl(data.avatar_url); });
+    supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+        if (data?.gender) setMyGender(data.gender);
+      });
   }, [user]);
 
   const categoryIconMap = {
@@ -250,7 +254,7 @@ export default function DebateCard({ feed, formatTime }) {
         debate_id: debateId,
         user_id: user.id,
         content: commentText.trim(),
-      }).select('*, profiles(nickname)').single();
+      }).select('*, profiles(nickname, gender, avatar_url)').single();
       if (error) throw error;
       setComments(prev => [...prev, data]);
       setCommentText('');
@@ -532,7 +536,7 @@ export default function DebateCard({ feed, formatTime }) {
                   {user && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                       <img
-                        src={myAvatarUrl || getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON}
+                        src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
                         alt=""
                         className="w-full h-full object-cover"
                       />

@@ -143,13 +143,17 @@ function DebateBannerCard({ item }) {
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
+  const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
   const commentInputRef = useRef(null);
 
   // 현재 유저 아바타 URL (profiles 테이블)
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('avatar_url').eq('id', user.id).single()
-      .then(({ data }) => { if (data?.avatar_url) setMyAvatarUrl(data.avatar_url); });
+    supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+        if (data?.gender) setMyGender(data.gender);
+      });
   }, [user]);
 
   useEffect(() => {
@@ -393,7 +397,7 @@ function DebateBannerCard({ item }) {
               <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                 {user && (
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                    <img src={myAvatarUrl || getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                    <img src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <input
