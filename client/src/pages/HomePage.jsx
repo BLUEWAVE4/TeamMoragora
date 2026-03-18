@@ -6,16 +6,20 @@ import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
 
-// 댓글 + 좋아요 카운트 일괄 fetch 헬퍼
+// 댓글 + 좋아요 + 조회수 카운트 일괄 fetch 헬퍼
 const fetchCounts = async (feedList) => {
   const debateIds = feedList.map(f => f.debate_id).filter(Boolean);
   if (!debateIds.length) return feedList;
 
   try {
-    // 댓글 수 + 좋아요 수 동시에 fetch
-    const [{ data: commentData }, { data: likeData }] = await Promise.all([
+    // 댓글 수 + 좋아요 수 + 조회수 동시에 fetch
+    const [{ data: commentData }, { data: likeData }, { data: viewData }] = await Promise.all([
       supabase.from('comments').select('debate_id').in('debate_id', debateIds),
       supabase.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+      // debate_id별 path 목록 생성해서 필터링
+      supabase.from('page_views').select('path').in(
+        'path', debateIds.map(id => `/moragora/${id}`)
+      ),
     ]);
 
     // debate_id별 카운트 집계
@@ -29,14 +33,22 @@ const fetchCounts = async (feedList) => {
       likeCountMap[row.debate_id] = (likeCountMap[row.debate_id] || 0) + 1;
     });
 
+    // page_views는 path 기준으로 집계 (/moragora/{debate_id})
+    const viewCountMap = {};
+    (viewData || []).forEach(row => {
+      const id = row.path?.replace('/moragora/', '');
+      if (id) viewCountMap[id] = (viewCountMap[id] || 0) + 1;
+    });
+
     return feedList.map(f => ({
       ...f,
       comments_count: commentCountMap[f.debate_id] ?? 0,
       likes_count: likeCountMap[f.debate_id] ?? 0,
+      views_count: viewCountMap[f.debate_id] ?? 0,
     }));
   } catch (e) {
     console.error('카운트 일괄 fetch 실패:', e);
-    return feedList.map(f => ({ ...f, comments_count: 0, likes_count: 0 }));
+    return feedList.map(f => ({ ...f, comments_count: 0, likes_count: 0, views_count: 0 }));
   }
 };
 
@@ -180,7 +192,7 @@ export default function HomePage() {
         case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
         // ✅ 핵심 수정: feed 최상위에 주입된 comments_count 사용
         case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
-        case '조회순': return (bData.views_count || 0) - (aData.views_count || 0);
+        case '조회순': return (b.views_count || 0) - (a.views_count || 0);
         case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
       }
     });

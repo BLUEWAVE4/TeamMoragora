@@ -89,7 +89,23 @@ export default function DebateCard({ feed, formatTime }) {
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const commentInputRef = useRef(null);
 
-  const [viewCount, setViewCount] = useState(debateData?.view_count || 0);
+  // ✅ 조회수 state — page_views 테이블에서 직접 fetch
+  const [viewCount, setViewCount] = useState(0);
+
+  useEffect(() => {
+    const debateId = feed?.debate_id || debateData?.id;
+    if (!debateId) return;
+    const fetchViewCount = async () => {
+      try {
+        const { count } = await supabase
+          .from('page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('path', `/moragora/${debateId}`);
+        setViewCount(count ?? 0);
+      } catch (e) { console.log('조회수 fetch 실패:', e); }
+    };
+    fetchViewCount();
+  }, [feed?.debate_id, debateData?.id]);
 
   // 현재 유저 아바타 URL (profiles 테이블)
   const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
@@ -262,12 +278,29 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (e) { alert('실패'); } finally { setIsSendingComment(false); }
   };
 
+  // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
   const handleDetailClick = async () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
 
-    setViewCount(prev => prev + 1);
-    incrementDebateView(debateId).catch(() => {});
+    // 같은 세션에서 이미 조회한 경우 중복 insert 방지
+    const viewKey = `viewed_${debateId}`;
+    const alreadyViewed = sessionStorage.getItem(viewKey);
+
+    if (!alreadyViewed) {
+      sessionStorage.setItem(viewKey, 'true');
+      setViewCount(prev => prev + 1);
+      try {
+        await supabase.from('page_views').insert({
+          path: `/moragora/${debateId}`,
+          user_id: user?.id ?? null,
+          session_id: crypto.randomUUID(),
+        });
+      } catch (e) {
+        console.error('❌ 조회수 기록 실패:', e);
+        sessionStorage.removeItem(viewKey);
+      }
+    }
 
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }
