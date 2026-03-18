@@ -191,19 +191,24 @@ export default function InvitePage() {
       <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
 
         {/* 헤더 */}
-        <div className="bg-[#1B2A4A] pt-8 pb-7 px-6 flex flex-col items-center text-center relative overflow-hidden">
+        <div className="bg-[#1B2A4A] pt-6 pb-7 px-6 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           {/* 뱃지 */}
-          <div className="relative w-14 h-14 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-        <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-        <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
-      </svg>
+<div className="mb-4 relative">
+          <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
+          <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
+            <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+                <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+                <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+              </svg>
+            </div>
           </div>
+        </div>
           <p className="text-white text-[16px] font-black tracking-[0.2em] mb-1">모라고라 AI 법정 · 논쟁 소환장</p>
           <span className={`mt-2 px-3 py-1 text-[12px] font-black font-mono rounded-full border ${
             timeLeft < 60
@@ -313,13 +318,21 @@ export default function InvitePage() {
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           <div className="relative w-14 h-14 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-        <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-        <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
-      </svg>
+          {/* 뱃지 */}
+   <div className="mt-2 mb-4 relative">
+    <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
+    <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
+      <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+          <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+          <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+        </svg>
+      </div>
+    </div>
+  </div>
           </div>
           <p className="text-white text-[16px] font-black mb-1">논쟁 개시 대기 중</p>
           <p className="text-white/40 text-[13px]">상대방의 출석을 기다리고 있습니다</p>
