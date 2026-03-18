@@ -73,7 +73,7 @@ ${recentTopics ? `- ${recentTopics}` : '(없음)'}
   return JSON.parse(jsonMatch[0]);
 }
 
-// 2. 현자가 각 측 주장 생성
+// 2. AI 판사가 각 측 주장 생성
 async function generateArgumentByJudge(judge, topic, side, sideLabel, category) {
   const prompt = `당신은 논쟁 플랫폼 "모라고라"의 ${judge.name}입니다.
 자기소개를 한 문장으로 한 뒤(예: "안녕하십니까, 모라고라의 ${judge.name}입니다."), 바로 주장을 시작하세요.
@@ -103,6 +103,51 @@ async function generateArgumentByJudge(judge, topic, side, sideLabel, category) 
     const res = await anthropic.messages.create({
       model: judge.model,
       max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return res.content[0].text;
+  }
+
+  throw new Error(`Unknown judge type: ${judge.type}`);
+}
+
+// 2-1. AI 판사가 반박(round 2) 생성
+async function generateRebuttalByJudge(judge, topic, side, sideLabel, category, myArgument, opponentArgument) {
+  const prompt = `당신은 논쟁 플랫폼 "모라고라"의 ${judge.name}입니다.
+
+주제: "${topic}" (카테고리: ${category})
+당신은 ${side}측(${sideLabel}) 입장입니다.
+
+[당신의 1라운드 주장]
+${myArgument}
+
+[상대측 1라운드 주장]
+${opponentArgument}
+
+상대측 주장의 약점을 정확히 짚어 반박하세요.
+- 상대의 논리적 허점, 근거 부족, 편향을 구체적으로 지적
+- 자신의 주장을 보강하는 추가 근거 제시
+- 300자 이내로 간결하고 날카롭게 작성
+- 반박 본문만 작성하세요 (JSON 아님, 순수 텍스트)`;
+
+  if (judge.type === 'openai') {
+    const res = await openai.chat.completions.create({
+      model: judge.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    });
+    return res.choices[0].message.content;
+  }
+
+  if (judge.type === 'gemini') {
+    const res = await gemini.generateContent(prompt);
+    return res.response.text();
+  }
+
+  if (judge.type === 'anthropic') {
+    const res = await anthropic.messages.create({
+      model: judge.model,
+      max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
     });
     return res.content[0].text;
@@ -175,7 +220,33 @@ export async function createDailyDebate() {
     ]);
 
   if (argErr) throw argErr;
-  console.log('[DailyDebate] 양측 주장 삽입 완료');
+  console.log('[DailyDebate] 양측 1라운드 주장 삽입 완료');
+
+  // 6-1) AI 판사가 각각 반박(round 2) 생성
+  const rebuttalWithFallback = async (judge, side, sideLabel, myArg, opponentArg) => {
+    try {
+      return await generateRebuttalByJudge(judge, topicData.topic, side, sideLabel, topicData.category, myArg, opponentArg);
+    } catch (err) {
+      console.warn(`[DailyDebate] ${judge.name} 반박 실패, GPT로 폴백: ${err.message}`);
+      const fallback = AI_JUDGES.find(j => j.type === 'openai');
+      return await generateRebuttalByJudge(fallback, topicData.topic, side, sideLabel, topicData.category, myArg, opponentArg);
+    }
+  };
+  const [rebuttalA, rebuttalB] = await Promise.all([
+    rebuttalWithFallback(judgeA, 'A', topicData.pro_side, argA, argB),
+    rebuttalWithFallback(judgeB, 'B', topicData.con_side, argB, argA),
+  ]);
+
+  // 6-2) 반박 레코드 삽입 (300자 제한)
+  const { error: rebuttalErr } = await supabaseAdmin
+    .from('arguments')
+    .insert([
+      { debate_id: debate.id, user_id: systemUserId, side: 'A', content: rebuttalA.slice(0, 300), round: 2 },
+      { debate_id: debate.id, user_id: systemUserId, side: 'B', content: rebuttalB.slice(0, 300), round: 2 },
+    ]);
+
+  if (rebuttalErr) throw rebuttalErr;
+  console.log('[DailyDebate] 양측 2라운드 반박 삽입 완료');
 
   // 7) AI 3모델 판결 트리거
   await triggerJudgment(debate.id);

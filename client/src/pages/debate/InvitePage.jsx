@@ -42,7 +42,7 @@ export default function InvitePage() {
   const shareUrl = `${window.location.origin}/invite/${inviteCode}`
   const creatorNickname = debate?.creator?.nickname || '논쟁 생성자'
 
-  // ── 1. 초대 정보 로드 ──
+  // ── 1. 초대 정보 로드 + B측 자동 참여 ──
   useEffect(() => {
     const fetchDebateInfo = async () => {
       try {
@@ -52,13 +52,28 @@ export default function InvitePage() {
         if (user) {
           const amICreator = String(user.id) === String(debateData.creator_id)
           setIsCreator(amICreator)
-          if (amICreator) sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
+          if (amICreator) {
+            sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
+          } else if (debateData.status === 'waiting' && !debateData.opponent_id) {
+            // B측: 소환장 진입 시 자동 참여 → 진행중인 논쟁에 즉시 표시
+            try {
+              const joined = await joinByInvite(inviteCode)
+              setDebate(joined)
+            } catch (joinErr) {
+              console.warn('자동 참여 실패 (이미 참여 등):', joinErr.message)
+            }
+          }
         } else {
           setIsCreator(false)
         }
       } catch (err) {
         console.error('초대 정보 로드 실패', err)
-        setError('유효하지 않거나 만료된 초대 링크입니다.')
+        const msg = err?.message || ''
+        if (msg.includes('참여자가 확정')) {
+          setError('이미 참여자가 확정된 논쟁입니다.')
+        } else {
+          setError('유효하지 않거나 만료된 초대 링크입니다.')
+        }
       } finally {
         setLoading(false)
       }
@@ -114,6 +129,11 @@ export default function InvitePage() {
       navigate(`${isKakaoApp ? '/login/kakao' : '/login'}?target=${encodeURIComponent(targetPath)}`)
       return
     }
+    // 이미 자동 참여 완료된 경우 바로 이동
+    if (debate?.opponent_id === user.id) {
+      navigate(getDebateRoute(debate.id, debate.status))
+      return
+    }
     try {
       const response = await joinByInvite(inviteCode)
       const targetId = response.id || response._id
@@ -165,23 +185,28 @@ export default function InvitePage() {
   }
 
   // ── 로딩 ──
+  // ── 에러 (자동 홈 리다이렉트) ──
+  useEffect(() => {
+    if (error && !debate) {
+      const timer = setTimeout(() => navigate('/'), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [error, debate, navigate])
+
+  if (error && !debate) return (
+    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
+      <ShieldBan size={48} className="text-[#1B2A4A]/25 mb-5" />
+      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">{error}</h1>
+      <p className="text-[13px] text-gray-400 mt-3">잠시 후 홈으로 이동됩니다.</p>
+    </div>
+  )
+
   if (loading || isCreator === null) return (
     <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-7 h-7 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
         <p className="text-gray-400 text-[11px] tracking-widest">불러오는 중...</p>
       </div>
-    </div>
-  )
-
-  // ── 에러 ──
-  if (error && !debate) return (
-    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
-      <ShieldBan size={48} className="text-[#1B2A4A]/25 mb-5" />
-      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">{error}</h1>
-      <button onClick={() => navigate('/')} className="mt-6 px-8 py-3 bg-[#1B2A4A] text-[#D4AF37] font-black text-[14px] rounded-xl">
-        홈으로 돌아가기
-      </button>
     </div>
   )
 

@@ -86,9 +86,17 @@ export default function DebateCard({ feed, formatTime }) {
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [sideUsers, setSideUsers] = useState({ A: null, B: null });
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const commentInputRef = useRef(null);
 
   const [viewCount, setViewCount] = useState(debateData?.view_count || 0);
+
+  // 현재 유저 아바타 URL (profiles 테이블)
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('avatar_url').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.avatar_url) setMyAvatarUrl(data.avatar_url); });
+  }, [user]);
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -524,7 +532,7 @@ export default function DebateCard({ feed, formatTime }) {
                   {user && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                       <img
-                        src={getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON}
+                        src={myAvatarUrl || getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON}
                         alt=""
                         className="w-full h-full object-cover"
                       />

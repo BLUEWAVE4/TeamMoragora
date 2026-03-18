@@ -76,7 +76,7 @@ export async function getMyActiveDebates(req, res, next) {
 
     let query = supabaseAdmin
       .from('debates')
-      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at, vote_deadline')
+      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at, vote_deadline, vote_duration')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
       .in('status', activeStatuses)
       .order('created_at', { ascending: false })
@@ -127,6 +127,12 @@ export async function getDebateByInviteCode(req, res, next) {
 
     if (error || !data) {
       return res.status(404).json({ error: 'Debate not found' });
+    }
+
+    // 이미 상대방이 확정된 논쟁 → 생성자/참여자 외 접근 차단
+    const userId = req.user?.id;
+    if (data.opponent_id && userId !== data.creator_id && userId !== data.opponent_id) {
+      return res.status(403).json({ error: '이미 참여자가 확정된 논쟁입니다.' });
     }
 
     res.json(data);

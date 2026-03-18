@@ -23,6 +23,7 @@ function DebateBannerCard({ item }) {
   const [voteCounts, setVoteCounts] = useState({ A: 0, B: 0 });
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
+  const [voteExpired, setVoteExpired] = useState(false);
 
   useEffect(() => {
     if (!debateId) return;
@@ -37,36 +38,37 @@ function DebateBannerCard({ item }) {
     fetchVoteCounts();
   }, [debateId]);
 
-  // 타이머: 다음날 오전 8시(KST) 기준 카운트다운
+  // 타이머: vote_duration(일) 기반 카운트다운, 없으면 24시간 기본
   useEffect(() => {
-    const getTarget = () => {
-      // 오늘 8시(KST) 기준, 이미 지났으면 내일 8시
-      const now = new Date();
-      const today8am = new Date(now);
-      today8am.setHours(8, 0, 0, 0);
-      if (now >= today8am) {
-        // 오늘 8시가 지났으면 내일 8시
-        today8am.setDate(today8am.getDate() + 1);
-      }
-      return today8am;
-    };
+    const createdAt = item?.debate?.created_at || item?.created_at;
+    if (!createdAt) return;
+
+    const voteDuration = item?.debate?.vote_duration ?? 1; // 기본 1일
+    const totalMs = Number(voteDuration) * 24 * 60 * 60 * 1000;
+    const deadline = new Date(new Date(createdAt).getTime() + totalMs);
+    const pad = (n) => String(n).padStart(2, '0');
 
     const tick = () => {
-      const diff = getTarget() - new Date();
-      if (diff <= 0) { setTimeLeft('00:00:00'); return; }
+      const diff = deadline.getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('00:00:00');
+        setVoteExpired(true);
+        return;
+      }
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      setTimeLeft(`${pad(h)}:${pad(m)}:${pad(s)}`);
+      setVoteExpired(false);
     };
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [item?.debate?.created_at, item?.created_at, item?.debate?.vote_duration]);
 
   const handleVote = async (side) => {
     if (!user) { alert('로그인이 필요합니다.'); return; }
-    if (isVoting || !isVotingStatus || isParticipant) return;
+    if (isVoting || !isVotingStatus || isParticipant || voteExpired) return;
 
     const isCanceling = myVote === side;
     const prevVote = myVote;
@@ -140,7 +142,15 @@ function DebateBannerCard({ item }) {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const commentInputRef = useRef(null);
+
+  // 현재 유저 아바타 URL (profiles 테이블)
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('avatar_url').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.avatar_url) setMyAvatarUrl(data.avatar_url); });
+  }, [user]);
 
   useEffect(() => {
     if (!isCommentOpen || !debateId) return;
@@ -177,7 +187,7 @@ function DebateBannerCard({ item }) {
   if (!item) return null;
 
   const isParticipant = user && (item.debate?.creator_id === user.id || item.debate?.opponent_id === user.id);
-  const isClosed = !isVotingStatus || timeLeft === '00:00:00';
+  const isClosed = !isVotingStatus || voteExpired;
   const totalVotes = voteCounts.A + voteCounts.B;
   const percentA = totalVotes === 0 ? 50 : Math.round((voteCounts.A / totalVotes) * 100);
   const percentB = 100 - percentA;
@@ -285,7 +295,9 @@ function DebateBannerCard({ item }) {
             </div>
             <div className="flex justify-between px-1 text-[11px] text-white/25 font-bold">
               <span>총 {totalVotes.toLocaleString()}명 참여</span>
-              {!isClosed && myVote && (
+              {isClosed ? (
+                <span className="text-red-400/60 text-[10px] font-bold">투표마감</span>
+              ) : myVote ? (
                 <button onClick={() => handleVote(myVote)} disabled={isVoting}
                   className="flex items-center gap-1 text-[#D4AF37]/40 hover:text-[#D4AF37]/70 transition-colors disabled:opacity-30">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -293,7 +305,7 @@ function DebateBannerCard({ item }) {
                   </svg>
                   다시하기
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         )}
@@ -381,7 +393,7 @@ function DebateBannerCard({ item }) {
               <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                 {user && (
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                    <img src={getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                    <img src={myAvatarUrl || getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <input
