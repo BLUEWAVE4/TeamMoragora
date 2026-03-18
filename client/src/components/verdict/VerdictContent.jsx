@@ -8,6 +8,8 @@ import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
+import { supabase } from "../../services/supabase";
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
@@ -84,6 +86,9 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [myProfileNickname, setMyProfileNickname] = useState(null);
+  const [myGender, setMyGender] = useState(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const debateId = verdictData?.debate_id || verdictData?.debateId;
   const verdictTabRef = useRef(null);
 
@@ -104,6 +109,17 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     return () => clearTimeout(t);
   }, []);
 
+  // ===== 내 profiles 닉네임 + 성별 로드 =====
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('nickname, gender, avatar_url').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.nickname) setMyProfileNickname(data.nickname);
+        if (data?.gender) setMyGender(data.gender);
+        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+      });
+  }, [user]);
+
   // ===== 댓글 로드 =====
   useEffect(() => {
     if (!debateId) return;
@@ -117,7 +133,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       const newComment = await createComment(debateId, commentInput.trim());
       // dicebear avataaars 아바타 설정 (닉네임 기반)
       if (newComment.user) {
-        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || user?.user_metadata?.nickname || 'anon'}`;
+        newComment.user.avatar_url = myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON;
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -806,20 +822,20 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex gap-1 mx-4 mt-3 bg-primary/5 rounded-lg p-0.5 border border-gold/10">
             <button
               onClick={() => setArgSide('A')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'A'
                   ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               A측 : {proSide}
             </button>
             <button
               onClick={() => setArgSide('B')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'B'
                   ? 'bg-red-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               B측 : {conSide}
@@ -972,7 +988,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 {/* 아바타 */}
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
+                    src={c.user?.avatar_url || getAvatarUrl(c.user_id, c.user?.gender) || DEFAULT_AVATAR_ICON}
                     alt=""
                     className="w-full h-full object-cover"
                   />
@@ -1024,7 +1040,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
                 alt=""
                 className="w-full h-full object-cover"
               />

@@ -6,6 +6,7 @@ import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
 // 개별 카드 컴포넌트
 function DebateBannerCard({ item }) {
@@ -144,7 +145,7 @@ function DebateBannerCard({ item }) {
   useEffect(() => {
     if (!isCommentOpen || !debateId) return;
     const fetch = async () => {
-      const { data } = await supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', debateId).order('created_at', { ascending: true });
+      const { data } = await supabase.from('comments').select('*, profiles(nickname, gender, avatar_url)').eq('debate_id', debateId).order('created_at', { ascending: true });
       setComments(data || []);
       setCommentCount(data?.length ?? 0);
     };
@@ -156,7 +157,7 @@ function DebateBannerCard({ item }) {
     if (!user || !commentText.trim() || isSending) return;
     setIsSending(true);
     try {
-      const { data } = await supabase.from('comments').insert({ debate_id: debateId, user_id: user.id, content: commentText.trim() }).select('*, profiles(nickname)').single();
+      const { data } = await supabase.from('comments').insert({ debate_id: debateId, user_id: user.id, content: commentText.trim() }).select('*, profiles(nickname, gender, avatar_url)').single();
       setComments(prev => [...prev, data]);
       setCommentText('');
       setCommentCount(prev => prev + 1);
@@ -350,7 +351,7 @@ function DebateBannerCard({ item }) {
                   return (
                     <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${nickname}`} alt="" className="w-full h-full object-cover" />
+                        <img src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
                         <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
@@ -380,7 +381,7 @@ function DebateBannerCard({ item }) {
               <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                 {user && (
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || 'me'}`} alt="" className="w-full h-full object-cover" />
+                    <img src={getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <input

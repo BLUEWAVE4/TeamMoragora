@@ -4,6 +4,30 @@ import { useAuth } from '../../store/AuthContext.jsx';
 import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+
+// created_at + vote_duration(일) → 카운트다운 훅
+function useVoteCountdown(createdAt, voteDuration) {
+  const [timeLeft, setTimeLeft] = useState(null);
+  useEffect(() => {
+    if (!createdAt || !voteDuration) return;
+    const totalMs = Number(voteDuration) * 24 * 60 * 60 * 1000;
+    const deadline = new Date(new Date(createdAt).getTime() + totalMs);
+    const pad = (n) => String(n).padStart(2, '0');
+    const update = () => {
+      const diff = deadline.getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft({ expired: true, progressRatio: 0, label: '00:00:00' }); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft({ expired: false, progressRatio: Math.min(diff / totalMs, 1), label: `${pad(h)}:${pad(m)}:${pad(s)}` });
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [createdAt, voteDuration]);
+  return timeLeft;
+}
 
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
@@ -14,31 +38,16 @@ export default function DebateCard({ feed, formatTime }) {
   const isVotingStatus = debateStatus === 'voting';
   const isCompleted = debateStatus === 'completed';
 
-  // 투표 마감 시간 계산
-  const [timeLeft, setTimeLeft] = useState("");
+  // 카운트다운
+  const voteDuration = debateData?.vote_duration ?? null;
+  const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration);
+  const hasTimer = !!voteDuration;
+  const timerExpired = timeLeft?.expired === true;
+  const isClosed = !isVotingStatus || timerExpired;
+  const canVote = isVotingStatus && !timerExpired;
 
-  useEffect(() => {
-    // vote_deadline 컬럼 우선, 없으면 created_at + 24시간
-    const deadline = debateData?.vote_deadline
-      ? new Date(debateData.vote_deadline).getTime()
-      : debateData?.created_at
-        ? new Date(debateData.created_at).getTime() + (24 * 60 * 60 * 1000)
-        : null;
-
-    if (!isVotingStatus || !deadline) return;
-
-    const tick = () => {
-      const diff = deadline - new Date().getTime();
-      if (diff <= 0) { setTimeLeft("마감 임박"); return; }
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft(`${h}시간 ${m}분 ${s}초 남음`);
-    };
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, [isVotingStatus, debateData?.vote_deadline, debateData?.created_at]);
+  const barColor = !timeLeft || timeLeft.progressRatio > 0.5 ? '#10b981'
+    : timeLeft.progressRatio > 0.2 ? '#f59e0b' : '#ef4444';
 
   const [optionAText, setOptionAText] = useState(debateData?.pro_side || feed?.pro_side || "");
   const [optionBText, setOptionBText] = useState(debateData?.con_side || feed?.con_side || "");
@@ -137,7 +146,7 @@ export default function DebateCard({ feed, formatTime }) {
     const fetchComments = async () => {
       try {
         const [{ data }, { data: args }] = await Promise.all([
-          supabase.from('comments').select('*, profiles(nickname)').eq('debate_id', debateId).order('created_at', { ascending: true }),
+          supabase.from('comments').select('*, profiles(nickname, gender, avatar_url)').eq('debate_id', debateId).order('created_at', { ascending: true }),
           supabase.from('arguments').select('side, user_id').eq('debate_id', debateId),
         ]);
         setComments(data || []);
@@ -158,7 +167,7 @@ export default function DebateCard({ feed, formatTime }) {
   const topic = debateData?.topic || "제목 없는 논쟁";
   const isMe = user && (debateData?.creator_id === user.id);
   const isParticipant = user && (debateData?.creator_id === user.id || debateData?.opponent_id === user.id);
-  const creatorNickname = isMe ? (user.user_metadata?.nickname || "나") : (debateData?.creator?.nickname || "익명");
+  const creatorNickname = debateData?.creator?.nickname || (isMe ? (user.user_metadata?.nickname || "나") : "익명");
 
   const purposeMap = { 'compete': '경쟁', 'fun': '재미', 'resolve': '해결', 'learn': '학습' };
   const lensMap = { 'general': '종합', 'logic': '논리', 'emotion': '감정', 'practical': '실용', 'ethics': '윤리', 'creative': '자유' };
@@ -180,7 +189,7 @@ export default function DebateCard({ feed, formatTime }) {
   const handleVote = async (side) => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!user) { alert('로그인이 필요합니다.'); return; }
-    if (isVoting || !isVotingStatus || isParticipant) return;
+    if (isVoting || !canVote || isParticipant) return;
     const isCanceling = myVote === side;
     const prevVote = myVote;
     const prevCounts = { ...voteCounts };
@@ -272,14 +281,24 @@ export default function DebateCard({ feed, formatTime }) {
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${creatorNickname}`}
+              src={debateData?.creator?.avatar_url || getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
               alt=""
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 min-w-0 leading-tight">
-            <span className="text-[13px] font-bold text-[#1B2A4A] block truncate leading-none">{creatorNickname}</span>
-            <span className="text-[10px] text-[#1B2A4A]/40 font-bold leading-none mt-1 block">{debateData?.creator?.tier || '시민'}</span>
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <span className="text-[13px] font-bold text-[#1B2A4A] truncate">{creatorNickname}</span>
+            {(() => {
+              const tier = debateData?.creator?.tier || '시민';
+              const tierColor = { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
+              const tierBg = { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
+              return (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0"
+                  style={{ color: tierColor[tier] || '#8E8E93', backgroundColor: tierBg[tier] || '#F5F5F7' }}
+                >{tier}</span>
+              );
+            })()}
           </div>
           <button onClick={handleDetailClick} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
@@ -293,16 +312,48 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 카테고리 + 목적 + 렌즈 뱃지 */}
+        {/* 카테고리 + 목적 + 렌즈 뱃지 + 타이머 뱃지 */}
         <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
+          {hasTimer && timerExpired && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-bold">투표 마감</span>
+          )}
         </div>
+
+        {/* 투표 진행 바 (vote_duration 있을 때만) */}
+        {hasTimer && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-bold text-[#1B2A4A]/30 uppercase tracking-wider">
+                {timerExpired ? '투표 마감' : '투표 진행 중'}
+              </span>
+              {!timerExpired && timeLeft && (
+                <span className="text-[9px] font-bold" style={{ color: barColor }}>
+                  {timeLeft.label}
+                </span>
+              )}
+            </div>
+            <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
+              {timerExpired ? (
+                <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
+              ) : (
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                    backgroundColor: barColor,
+                    boxShadow: `0 0 4px ${barColor}50`,
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 투표 섹션 */}
         <div className="px-4 pb-4 pt-1">
-
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
               <p className="text-[10px] text-center text-[#1B2A4A]/25 font-bold">논쟁 당사자는 투표할 수 없습니다</p>
@@ -310,10 +361,10 @@ export default function DebateCard({ feed, formatTime }) {
             {/* A측 */}
             <button
               onClick={() => handleVote('A')}
-              disabled={isVoting || !isVotingStatus || isParticipant}
+              disabled={isVoting || !canVote || isParticipant}
               className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
                 ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/10'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
+                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
@@ -321,9 +372,9 @@ export default function DebateCard({ feed, formatTime }) {
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    isCompleted ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
                     myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
-                  }`}>{isCompleted ? '마감' : 'A측'}</span>
+                  }`}>{isCompleted || timerExpired ? '마감' : 'A측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted) && (
@@ -338,10 +389,10 @@ export default function DebateCard({ feed, formatTime }) {
             {/* B측 */}
             <button
               onClick={() => handleVote('B')}
-              disabled={isVoting || !isVotingStatus || isParticipant}
+              disabled={isVoting || !canVote || isParticipant}
               className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
                 ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/10'}
-                ${(!isVotingStatus || isParticipant) ? 'opacity-50' : ''}`}
+                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {(myVote || isCompleted) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
@@ -349,9 +400,9 @@ export default function DebateCard({ feed, formatTime }) {
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    isCompleted ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
                     myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
-                  }`}>{isCompleted ? '마감' : 'B측'}</span>
+                  }`}>{isCompleted || timerExpired ? '마감' : 'B측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted) && (
@@ -424,7 +475,7 @@ export default function DebateCard({ feed, formatTime }) {
                         <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                             <img
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${nickname}`}
+                              src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON}
                               alt=""
                               className="w-full h-full object-cover"
                             />
@@ -473,7 +524,7 @@ export default function DebateCard({ feed, formatTime }) {
                   {user && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
                       <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                        src={getAvatarUrl(user.id, user.user_metadata?.gender) || DEFAULT_AVATAR_ICON}
                         alt=""
                         className="w-full h-full object-cover"
                       />

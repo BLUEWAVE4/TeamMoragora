@@ -17,34 +17,29 @@ const TrophyIcon = ({ active }) => (
   </svg>
 );
 
-const PlusIcon = ({ active, pulse }) => (
-  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
-    {/* 네모 박스 */}
-    <rect
-      x="4" y="4" width="34" height="34" rx="10" ry="10"
-      fill={active ? '#1B2A4A' : 'none'}
-      stroke={active ? '#1B2A4A' : '#1B2A4A'}
-      strokeWidth="1.8"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-    {/* + 세로선 */}
-    <line
-      x1="21" y1="13" x2="21" y2="29"
-      stroke={active ? 'white' : '#1B2A4A'}
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-    {/* + 가로선 */}
-    <line
-      x1="13" y1="21" x2="29" y2="21"
-      stroke={active ? 'white' : '#1B2A4A'}
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={pulse ? 'animate-stroke-pulse' : ''}
-    />
-  </svg>
-);
+const PlusIcon = ({ active, pulse }) => {
+  // 진행중 논쟁 있으면 말풍선(진행중) 아이콘
+  if (pulse) {
+    return (
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
+        <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
+          fill="none" strokeWidth="1.8" className="animate-stroke-pulse" />
+        {/* 느낌표 */}
+        <line x1="21" y1="14" x2="21" y2="23" strokeWidth="2.5" strokeLinecap="round" className="animate-stroke-pulse" />
+        <circle cx="21" cy="27" r="1.5" className="animate-stroke-pulse" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
+      <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
+        fill={active ? '#1B2A4A' : 'none'} stroke={active ? '#1B2A4A' : '#1B2A4A'} strokeWidth="1.8" />
+      <line x1="21" y1="13" x2="21" y2="29" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
+      <line x1="13" y1="21" x2="29" y2="21" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+};
 
 const HallIcon = ({ active }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.8" : "2"} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
@@ -126,7 +121,7 @@ export default function TabBar() {
   const listRef = useRef(null);
 
   const fetchActiveDebates = useCallback(async (cursor) => {
-    if (!isLoggedIn) { setActiveDebates([]); setHasMore(false); return; }
+    if (!isLoggedIn || !user) { setActiveDebates([]); setHasMore(false); return; }
     try {
       const res = await getMyActiveDebates(cursor);
       const { items, hasMore: more } = res;
@@ -140,7 +135,7 @@ export default function TabBar() {
       if (!cursor) setActiveDebates([]);
       setHasMore(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, user]);
 
   // 로그인 상태 변경 시 + 페이지 이동 시 갱신
   useEffect(() => { fetchActiveDebates(); }, [fetchActiveDebates, location.pathname]);
@@ -169,7 +164,8 @@ export default function TabBar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showSheet]);
 
-  const hasActive = activeDebates.length > 0;
+  const hasActiveDebates = activeDebates.length > 0;
+  const hasActiveAlert = activeDebates.some(d => localStorage.getItem(`mute_debate_${d.id}`) !== '1');
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
@@ -184,7 +180,7 @@ export default function TabBar() {
     }
 
     // 진행중 논쟁이 있으면 바텀시트, 없으면 바로 생성
-    if (hasActive) {
+    if (hasActiveDebates) {
       setShowSheet(true);
     } else {
       navigate('/debate/create');
@@ -224,8 +220,29 @@ export default function TabBar() {
             </div>
 
             {/* 헤더 */}
-            <div className="px-5 pt-2 pb-3">
+            <div className="px-5 pt-2 pb-3 flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
+              <button
+                onClick={() => {
+                  const allMuted = activeDebates.every(d => localStorage.getItem(`mute_debate_${d.id}`) === '1');
+                  activeDebates.forEach(d => {
+                    if (allMuted) localStorage.removeItem(`mute_debate_${d.id}`);
+                    else localStorage.setItem(`mute_debate_${d.id}`, '1');
+                  });
+                  setActiveDebates(prev => [...prev]);
+                }}
+                className="active:scale-90 transition-all"
+              >
+                {activeDebates.every(d => localStorage.getItem(`mute_debate_${d.id}`) === '1') ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.25">
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                )}
+              </button>
             </div>
 
             {/* 진행중 논쟁 목록 */}
@@ -236,35 +253,15 @@ export default function TabBar() {
                   <button
                     key={debate.id}
                     onClick={() => handleSelectDebate(debate)}
-                    className="group w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 hover:border-[#D4AF37]/30 active:scale-[0.98] transition-all duration-300 text-left shadow-inner"
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 active:scale-[0.98] transition-all text-left"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
                       <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      {/* 삭제 버튼 — hover 시에만 표시 */}
-                      <span
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!window.confirm(`"${debate.topic}" 논쟁을 삭제하시겠습니까?`)) return;
-                          try {
-                            await deleteDebate(debate.id);
-                            setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
-                          } catch (err) {
-                            alert(err.message || '삭제에 실패했습니다.');
-                          }
-                        }}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center opacity-30 group-hover:opacity-100 hover:bg-[#E63946]/10 active:scale-90 transition-all"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="2" strokeLinecap="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]/40">
-                        <polyline points="9 18 15 12 9 6"/>
-                      </svg>
-                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 ml-2">
+                      <polyline points="9 6 15 12 9 18"/>
+                    </svg>
                   </button>
                 );
               })}
@@ -314,7 +311,7 @@ export default function TabBar() {
                   className={`relative flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >
-                  {item.icon(isCreateActive, hasActive && !isCreateActive)}
+                  {item.icon(isCreateActive, hasActiveAlert && !isCreateActive)}
                 </button>
               );
             }

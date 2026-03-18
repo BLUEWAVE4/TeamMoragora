@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import { 
   Gavel, Scale, User, Trophy, Info, ChevronRight, FileText, Crown, Sparkles, X, History, MessageSquarePlus, Plus
 } from 'lucide-react';
@@ -123,7 +125,7 @@ function PlayerProfileSheet({ player, rank, onClose }) {
             <div className="relative">
               <div className="w-24 h-24 rounded-[24px] overflow-hidden border-2 shadow-lg" style={{ borderColor: tier.color }}>
                 <img
-                  src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`}
+                  src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON}
                   alt="avatar" className="w-full h-full object-cover"
                 />
               </div>
@@ -256,6 +258,8 @@ function PlayerProfileSheet({ player, rank, onClose }) {
 export default function RankingPage() {
   // ... RankingPage 로직은 위와 동일 (생략하지 않고 아까 드린 전체 코드 구조 유지)
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null); 
   const [rankings, setRankings] = useState([]);
@@ -281,7 +285,12 @@ export default function RankingPage() {
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
   const currentTier = findTierByScore(myData?.total_score);
 
-  const podiumData = rankings.slice(0, 3).map((r, idx) => ({
+  // 검색 필터
+  const filteredRankings = searchQuery
+    ? rankings.filter(r => (r.nickname || '').toLowerCase().includes(searchQuery))
+    : rankings;
+
+  const podiumData = (searchQuery ? [] : rankings.slice(0, 3)).map((r, idx) => ({
     ...r,
     rank: idx + 1,
     tierData: findTierByScore(r.total_score),
@@ -290,8 +299,8 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  // 4~10위 표시 (최대 7명)
-  const top10List = rankings.slice(3, 10);
+  // 4~10위 또는 검색 결과
+  const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
   // 내가 10위 밖인 경우
   const myIsOutsideTop10 = myRankIndex >= 10;
 
@@ -340,7 +349,7 @@ export default function RankingPage() {
                         <div className={`rounded-full p-0.5 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-3 ring-blue-400 ring-offset-1' : ''}`}>
                           <div className="rounded-full bg-white p-0.5">
                             <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20' : 'w-16 h-16'} bg-gray-50`}>
-                              <img src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nickname}`} alt="avatar" />
+                              <img src={p.avatar_url || getAvatarUrl(p.id, p.gender) || DEFAULT_AVATAR_ICON} alt="avatar" />
                             </div>
                           </div>
                         </div>
@@ -374,7 +383,7 @@ export default function RankingPage() {
                 <div className="flex items-center gap-3 relative z-10">
                   <span className="text-[24px] font-black italic min-w-[32px] text-center" style={{ color: currentTier.color }}>{myRank}</span>
                   <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 flex-shrink-0">
-                    <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                    <img src={myData?.avatar_url || getAvatarUrl(myData?.id, myData?.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -414,7 +423,7 @@ export default function RankingPage() {
                       <span className={`text-[18px] font-black italic ${isListMe ? '' : 'text-black/15'}`} style={isListMe ? { color: playerTier.color } : {}}>{rank}</span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
-                      <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                      <img src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -448,7 +457,7 @@ export default function RankingPage() {
                       <span className="text-[18px] font-black italic" style={{ color: currentTier.color }}>{myRankIndex + 1}</span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
-                      <img src={myData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                      <img src={myData.avatar_url || getAvatarUrl(myData.id, myData.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">

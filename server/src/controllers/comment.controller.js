@@ -7,7 +7,7 @@ export async function getComments(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('comments')
-      .select('*, user:profiles!user_id(id, nickname, avatar_url, tier)')
+      .select('*, user:profiles!user_id(id, nickname, avatar_url, tier, gender)')
       .eq('debate_id', debateId)
       .order('created_at', { ascending: true });
 
@@ -55,7 +55,7 @@ export async function createComment(req, res, next) {
         user_id: req.user.id,
         content: content.trim(),
       })
-      .select('*, user:profiles!user_id(id, nickname, avatar_url, tier)')
+      .select('*, user:profiles!user_id(id, nickname, avatar_url, tier, gender)')
       .single();
 
     if (error) throw error;

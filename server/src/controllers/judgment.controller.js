@@ -244,28 +244,106 @@ export async function getDailyVerdicts(req, res, next) {
   }
 }
 
+// ===== 명예의 전당 — 종합 점수 기반 랭킹 =====
+export async function getHallOfFame(req, res, next) {
+  try {
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const search = req.query.q || null;
+
+    // verdicts + debate + 좋아요/댓글/조회수
+    const { data: rawData, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    let items = (rawData || []).filter(v => v.debate?.mode !== 'daily');
+
+    // 검색 필터
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(q) || creator.includes(q);
+      });
+    }
+
+    // 좋아요/댓글 수 일괄 조회
+    const debateIds = items.map(v => v.debate_id).filter(Boolean);
+    let likeMap = {}, commentMap = {};
+    if (debateIds.length > 0) {
+      const [{ data: likes }, { data: comments }] = await Promise.all([
+        supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+        supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
+      ]);
+      (likes || []).forEach(r => { likeMap[r.debate_id] = (likeMap[r.debate_id] || 0) + 1; });
+      (comments || []).forEach(r => { commentMap[r.debate_id] = (commentMap[r.debate_id] || 0) + 1; });
+    }
+
+    // 종합 점수 계산 + 정렬
+    // 참여 점수 = 좋아요 + 시민투표수 + 조회수
+    // AI 품질 점수 = (ai_score_a + ai_score_b) / 200 * 참여점수 최대값
+    const scored = items.map(v => {
+      const likes = likeMap[v.debate_id] || 0;
+      const commentCount = commentMap[v.debate_id] || 0;
+      const voteCount = (v.citizen_score_a || 0) + (v.citizen_score_b || 0);
+      const viewCount = v.debate?.view_count || 0;
+      const participationScore = likes + voteCount + viewCount + commentCount;
+      const aiQuality = ((v.ai_score_a || 0) + (v.ai_score_b || 0)) / 200; // 0~1
+      return {
+        ...v,
+        _likes: likes,
+        _comments: commentCount,
+        _votes: voteCount,
+        _views: viewCount,
+        _participationScore: participationScore,
+        _aiQuality: aiQuality,
+        _hallScore: participationScore * 0.5 + (aiQuality * participationScore) * 0.5,
+      };
+    });
+
+    scored.sort((a, b) => b._hallScore - a._hallScore);
+
+    res.json(scored.slice(0, limit));
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getVerdictFeed(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
-    const category = req.query.category || null; // 카테고리 필터
+    const category = req.query.category || null;
+    const search = req.query.q || null;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // 넉넉하게 가져와서 daily 제외 + 카테고리 필터
-    const fetchLimit = to + 50;
+    // 넉넉하게 가져와서 필터
+    const fetchLimit = search ? 200 : to + 50;
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier))')
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .range(0, fetchLimit);
 
     if (error) throw error;
 
-    // daily 모드 제외 + 카테고리 필터
+    // daily 모드 제외 + 카테고리 + 검색 필터
     let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
     if (category) {
       filtered = filtered.filter(v => v.debate?.category === category);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(q) || creator.includes(q);
+      });
     }
     const data = filtered.slice(from, to + 1);
     const count = filtered.length;
