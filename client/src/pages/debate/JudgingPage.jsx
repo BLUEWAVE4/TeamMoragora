@@ -10,7 +10,6 @@ import { trackEvent } from '../../services/analytics';
 import VerdictContent from '../../components/verdict/VerdictContent';
 import { AI_JUDGES, MODEL_MAP } from '../../constants/judges';
 import confetti from 'canvas-confetti';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
 
 // ===== 분석 중 랜덤 메시지 =====
 const ANALYSIS_MESSAGES = [
@@ -336,14 +335,13 @@ export default function JudgingPage() {
   const [judgeScores, setJudgeScores]   = useState({ gpt: null, gemini: null, claude: null });
   const [voteCount, setVoteCount]       = useState(0);
   const [displayCount, setDisplayCount] = useState(0);
-  const [isAllDone, setIsAllDone] = useState(false);
-  const [debateTitle, setDebateTitle] = useState("데이터를 불러오는 중...");
-  const [proSide, setProSide] = useState(null);
-  const [conSide, setConSide] = useState(null);
-  const [verdictData, setVerdictData] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [debateArgs, setDebateArgs] = useState([]);
-  const [opponentStatus, setOpponentStatus] = useState('unknown'); // 'not_invited' | 'waiting' | 'writing' | 'ready'
+  const [isAllDone, setIsAllDone]       = useState(false);
+  const [debateTitle, setDebateTitle]   = useState("데이터를 불러오는 중...");
+  const [proSide, setProSide]           = useState(null);
+  const [conSide, setConSide]           = useState(null);
+  const [verdictData, setVerdictData]   = useState(null);
+  const [copied, setCopied]             = useState(false);
+  const [debateArgs, setDebateArgs]     = useState([]);
 
   // ===== 투표 타이머 관련 상태 =====
   const [voteDeadline, setVoteDeadline]   = useState(null); // Date 객체
@@ -352,15 +350,6 @@ export default function JudgingPage() {
 
   const verdictRef       = useRef(null);
   const confettiFiredRef = useRef(false);
-
-  // 상대방 상태 판단 헬퍼
-  const updateOpponentStatus = (debateData) => {
-    if (!debateData.opponent_id) {
-      setOpponentStatus('not_invited');
-    } else {
-      setOpponentStatus('writing');
-    }
-  };
 
   const fireConfetti = () => {
     confetti({
@@ -387,50 +376,54 @@ export default function JudgingPage() {
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
-        // 상대방 상태 판단
-        updateOpponentStatus(data);
 
         // ── 마감 시각 계산 ──
-        const rawTime = data.time;
-        const days = rawTime ? parseInt(rawTime, 10) : 0;
+        // Step3에서 설정한 time 값("1" | "3" | "7" | "")
+        // ── 마감 시각 계산 ──
+const rawTime = data.time;
+const days = rawTime ? parseInt(rawTime, 10) : 0;
 
-        if (days > 0) {
-          setVoteTotalDays(days);
+if (days > 0) {
+  setVoteTotalDays(days);
 
-          const totalMs = days * 24 * 60 * 60 * 1000;
-          setVoteTotalMs(totalMs);
+  const totalMs = days * 24 * 60 * 60 * 1000;
+  setVoteTotalMs(totalMs);
 
-          let deadlineDate = null;
+  let deadlineDate = null;
 
-          // 1️⃣ 서버에서 deadline 제공
-          if (data.deadline) {
-            deadlineDate = new Date(data.deadline);
-          }
-          // 2️⃣ created_at 기반 계산
-          else if (data.created_at) {
-            deadlineDate = new Date(data.created_at);
-            deadlineDate.setDate(deadlineDate.getDate() + days);
-          }
-          // 3️⃣ fallback
-          else {
-            const now = new Date();
-            deadlineDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-          }
+  // 1️⃣ 서버에서 deadline 제공
+  if (data.deadline) {
 
-          if (deadlineDate && !isNaN(deadlineDate.getTime())) {
-            setVoteDeadline(deadlineDate);
-          }
-        }
+    deadlineDate = new Date(data.deadline);
 
-        // 양측 주장 가져오기
+  }
+
+  // 2️⃣ created_at 기반 계산
+  else if (data.created_at) {
+
+    deadlineDate = new Date(data.created_at);
+    deadlineDate.setDate(deadlineDate.getDate() + days);
+
+  }
+
+  // ⭐ 3️⃣ fallback (이게 추가된 부분)
+  else {
+
+    const now = new Date();
+    deadlineDate = new Date(
+      now.getTime() + days * 24 * 60 * 60 * 1000
+    );
+
+  }
+
+  if (deadlineDate && !isNaN(deadlineDate.getTime())) {
+    setVoteDeadline(deadlineDate);
+  }
+}
+
         try {
           const args = await getArguments(debateId);
           setDebateArgs(args || []);
-          // 주장 기반 상태 업데이트
-          const hasA = args?.some(a => a.side === 'A');
-          const hasB = args?.some(a => a.side === 'B');
-          if (hasA && hasB) setOpponentStatus('ready');
-          else if (data.opponent_id && (hasA || hasB)) setOpponentStatus('writing');
         } catch (_) {}
 
       } catch (e) {
@@ -439,6 +432,7 @@ export default function JudgingPage() {
       }
     };
     initFetch();
+    
 
     const pollInterval = setInterval(async () => {
       try {
@@ -453,22 +447,8 @@ export default function JudgingPage() {
         } catch (_) {}
 
         const debateData = await getDebate(debateId);
-        updateOpponentStatus(debateData);
-
-        // arguing 상태에서 주장 업데이트
-        if (debateData.status === 'arguing') {
-          try {
-            const args = await getArguments(debateId);
-            setDebateArgs(args || []);
-            const hasA = args?.some(a => a.side === 'A');
-            const hasB = args?.some(a => a.side === 'B');
-            if (hasA && hasB) setOpponentStatus('ready');
-            else if (debateData.opponent_id && (hasA || hasB)) setOpponentStatus('writing');
-          } catch (_) {}
-          return;
-        }
-
         const isVotingOrDone = ['voting', 'completed'].includes(debateData.status);
+        if (debateData.status === 'arguing') return;
 
         try {
           const verdictResponse = await getVerdict(debateId);
@@ -523,10 +503,7 @@ export default function JudgingPage() {
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (
               <h2 className="text-white/80 text-lg font-sans font-bold tracking-tight">
-                {opponentStatus === 'not_invited' && '상대방이 아직 초대를 받지 않았습니다'}
-                {opponentStatus === 'writing' && '상대방이 주장을 작성하고 있습니다...'}
-                {opponentStatus === 'ready' && '배심원단이 아고라에 모였습니다.'}
-                {opponentStatus === 'unknown' && '배심원단이 아고라에 모였습니다.'}
+                세 현자가 아고라에 모였습니다.
               </h2>
             )}
             {isAllDone && (
@@ -539,9 +516,9 @@ export default function JudgingPage() {
             </p>
             {(proSide || conSide) && (
               <div className="flex items-center gap-2 text-xs font-sans font-bold mt-1">
-                <span className="text-emerald-400">{proSide || 'A측'} <span className="text-emerald-400/50">(A측)</span></span>
+                <span className="text-emerald-400">{proSide || '찬성'}</span>
                 <span className="text-white/30">vs</span>
-                <span className="text-red-300">{conSide || 'B측'} <span className="text-red-300/50">(B측)</span></span>
+                <span className="text-red-300">{conSide || '반대'}</span>
               </div>
             )}
           </div>
@@ -572,8 +549,10 @@ export default function JudgingPage() {
               {debateArgs.filter(a => a.side === 'A').map((arg, i) => (
                 <div key={`a-${i}`} className="bg-white/5 border border-emerald-500/20 rounded-2xl p-4">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <ThumbsUp size={12} className="text-emerald-400" />
-                    <span className="text-[11px] font-bold text-emerald-400">A측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-[11px] font-bold text-emerald-400">
+                      찬성{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
+                    </span>
                   </div>
                   <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
                 </div>
@@ -581,8 +560,10 @@ export default function JudgingPage() {
               {debateArgs.filter(a => a.side === 'B').map((arg, i) => (
                 <div key={`b-${i}`} className="bg-white/5 border border-red-500/20 rounded-2xl p-4">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <ThumbsDown size={12} className="text-red-400" />
-                    <span className="text-[11px] font-bold text-red-400">B측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}</span>
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-[11px] font-bold text-red-400">
+                      반대{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
+                    </span>
                   </div>
                   <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
                 </div>

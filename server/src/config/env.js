@@ -30,4 +30,5 @@ export const env = {
   PORT: parseInt(optional('PORT', '5000'), 10),
   CLIENT_URL: optional('CLIENT_URL', 'http://localhost:5173'),
   VOTE_DURATION_HOURS: parseInt(optional('VOTE_DURATION_HOURS', '24'), 10),
+  CRON_SECRET: optional('CRON_SECRET', ''),
 };

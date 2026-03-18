@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback, getMyFeedbacks } from '../services/api';
 
 const RATING_ITEMS = [
@@ -150,8 +151,6 @@ export default function FeedbackModal({ isOpen, onClose }) {
     })();
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const allRated = Object.values(ratings).every((v) => v > 0);
   const avgScore = allRated
     ? (Object.values(ratings).reduce((a, b) => a + b, 0) / 5).toFixed(1)
@@ -186,11 +185,21 @@ export default function FeedbackModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center bg-black/50" onClick={handleClose}>
-      <div
-        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl pb-safe"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[999] bg-black/40"
+            onClick={handleClose}
+          />
+          <div className="fixed inset-0 z-[1000] flex items-end justify-center pointer-events-none">
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto shadow-xl pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
         {submitted ? (
           <div className="p-8 text-center">
             <div className="text-5xl mb-4">&#9989;</div>
@@ -303,7 +312,10 @@ export default function FeedbackModal({ isOpen, onClose }) {
             </button>
           </div>
         )}
-      </div>
-    </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

@@ -32,6 +32,10 @@ export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
+export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 10, ...(cursor ? { cursor } : {}) } });
+export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
+export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
+
 
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
@@ -45,7 +49,9 @@ export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
-export const getVerdictFeed = (page = 1, limit = 5) => api.get(`/judgments/feed?page=${page}&limit=${limit}`);
+export const getVerdictFeed = (page = 1, limit = 5, category, q) => api.get(`/judgments/feed`, { params: { page, limit, ...(category ? { category } : {}), ...(q ? { q } : {}) } });
+export const getDailyVerdicts = (limit = 5) => api.get(`/judgments/daily?limit=${limit}`);
+export const getHallOfFame = (limit = 10, q) => api.get('/judgments/hall', { params: { limit, ...(q ? { q } : {}) } });
 
 // ===== 투표 (Votes) =====
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });

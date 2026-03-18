@@ -42,8 +42,14 @@ export async function triggerJudgment(debateId) {
     .select('id, nickname')
     .in('id', [debate.creator_id, debate.opponent_id]);
 
-  const nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || '찬성측';
-  const nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || '반대측';
+  let nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || '찬성측';
+  let nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || '반대측';
+
+  // daily 모드이거나 같은 유저인 경우 "(찬성)/(반대)" 구분 추가
+  if (debate.creator_id === debate.opponent_id || debate.mode === 'daily') {
+    nicknameA = `${nicknameA}(찬성)`;
+    nicknameB = `${nicknameB.replace(/\(찬성\)$/, '')}(반대)`;
+  }
 
   // 3. 원자적 상태 전환 (arguing → judging)
   const { data: updated, error: updateErr } = await supabaseAdmin
@@ -112,9 +118,9 @@ export async function triggerJudgment(debateId) {
   // 6. 복합 판결 업데이트 (빈 verdict를 최종 점수로 갱신)
   await updateCompositeVerdict(verdictId, judgments);
 
-  // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 분 단위, 없으면 기본값)
+  // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 일 단위, 없으면 기본값)
   const durationMs = debate.vote_duration
-    ? debate.vote_duration * 60 * 1000
+    ? debate.vote_duration * 24 * 60 * 60 * 1000
     : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
   const voteDeadline = new Date(Date.now() + durationMs);
 
@@ -133,10 +139,19 @@ async function updateCompositeVerdict(verdictId, judgments) {
   const aiScoreA = avg(judgments.map((j) => j.score_a));
   const aiScoreB = avg(judgments.map((j) => j.score_b));
 
+  // 다수결 + 점수 기반 보정
   const winnerVotes = { A: 0, B: 0, draw: 0 };
-  judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
-  const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
-    : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+  judgments.forEach((j) => {
+    // AI가 winner_side를 잘못 반환한 경우 점수 기반으로 보정
+    const corrected = j.score_a > j.score_b ? 'A'
+      : j.score_b > j.score_a ? 'B' : 'draw';
+    winnerVotes[corrected]++;
+  });
+  // 다수결로 결정, 동률이면 평균 점수로 결정
+  let aiWinner;
+  if (winnerVotes.A > winnerVotes.B) aiWinner = 'A';
+  else if (winnerVotes.B > winnerVotes.A) aiWinner = 'B';
+  else aiWinner = aiScoreA > aiScoreB ? 'A' : aiScoreB > aiScoreA ? 'B' : 'draw';
 
   const summary = judgments[0]?.verdict_text || '';
 

@@ -82,9 +82,23 @@ export function preprocessArgument(rawText, otherSideText) {
   text = text.replace(/ {3,}/g, ' ');
   text = text.trim();
 
-  // 5. 최소 글자 수 체크 (50자 미만)
+  // 5. 최소 글자 수 체크
   if (text.length < MIN_LENGTH) {
     return { text, status: 'too_short', charCount: text.length, warnings };
+  }
+
+  // 5-1. 자기 주장 내 동일 문장 반복 감지
+  const repeatResult = detectRepetition(text);
+  if (repeatResult.blocked) {
+    return {
+      text,
+      status: 'repetitive',
+      charCount: text.length,
+      warnings: [...warnings, repeatResult.reason],
+    };
+  }
+  if (repeatResult.warning) {
+    warnings.push(repeatResult.warning);
   }
 
   // 6. 양측 동일 주장 체크 (Jaccard 유사도)
@@ -101,6 +115,60 @@ export function preprocessArgument(rawText, otherSideText) {
   }
 
   return { text, status: 'valid', charCount: text.length, warnings };
+}
+
+/**
+ * 동일 문장/구절 반복 감지
+ * - 문장 단위로 분리 후 중복 비율 계산
+ * - 50% 이상 반복이면 차단, 30% 이상이면 경고
+ */
+function detectRepetition(text) {
+  // 문장 단위 분리 (마침표, 느낌표, 물음표, 줄바꿈)
+  const sentences = text
+    .split(/[.!?\n]+/)
+    .map(s => s.trim().replace(/\s+/g, ' '))
+    .filter(s => s.length >= 5); // 5자 미만 무시
+
+  if (sentences.length < 2) return { blocked: false };
+
+  // 중복 문장 카운트
+  const seen = {};
+  let duplicateCount = 0;
+  for (const s of sentences) {
+    const key = s.toLowerCase();
+    if (seen[key]) {
+      duplicateCount++;
+    } else {
+      seen[key] = true;
+    }
+  }
+
+  const repeatRatio = duplicateCount / sentences.length;
+
+  if (repeatRatio >= 0.5) {
+    return { blocked: true, reason: '동일한 내용이 과도하게 반복되었습니다. 다양한 논거를 포함해주세요.' };
+  }
+  if (repeatRatio >= 0.3) {
+    return { blocked: false, warning: `문장 반복 ${Math.round(repeatRatio * 100)}% 감지 — 판결 시 감점될 수 있습니다.` };
+  }
+
+  // 연속 동일 구절 감지 (같은 텍스트 3회 이상 연속)
+  const words = text.split(/\s+/);
+  for (let len = 3; len <= 10; len++) {
+    for (let i = 0; i <= words.length - len * 3; i++) {
+      const chunk = words.slice(i, i + len).join(' ');
+      let count = 0;
+      for (let j = i; j <= words.length - len; j += len) {
+        if (words.slice(j, j + len).join(' ') === chunk) count++;
+        else break;
+      }
+      if (count >= 3) {
+        return { blocked: true, reason: `"${chunk.slice(0, 20)}..." 구절이 ${count}회 연속 반복되었습니다.` };
+      }
+    }
+  }
+
+  return { blocked: false };
 }
 
 /**

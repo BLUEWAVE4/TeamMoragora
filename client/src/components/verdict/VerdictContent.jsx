@@ -8,6 +8,8 @@ import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
+import { supabase } from "../../services/supabase";
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
@@ -24,7 +26,7 @@ import { useAuth } from "../../store/AuthContext";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-import { IoInformationCircleOutline } from "react-icons/io5";
+
 
 // 이미지 로드 실패 시 이니셜 SVG 폴백
 const fallbackAvatar = (name, color) =>
@@ -75,14 +77,18 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [chartMode, setChartMode] = useState('auto'); // 'auto' = 선택된 AI, 'avg' = 종합 평균
   const [animated, setAnimated] = useState(false);
   const [verdictView, setVerdictView] = useState('summary'); // 'summary' | 'detail'
-  const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
+
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null); // winnerSide 기반 초기화
+  const [showVoteInfo, setShowVoteInfo] = useState(false);
 
   // ===== 댓글 상태 =====
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [myProfileNickname, setMyProfileNickname] = useState(null);
+  const [myGender, setMyGender] = useState(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const debateId = verdictData?.debate_id || verdictData?.debateId;
   const verdictTabRef = useRef(null);
 
@@ -103,6 +109,17 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     return () => clearTimeout(t);
   }, []);
 
+  // ===== 내 profiles 닉네임 + 성별 로드 =====
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('nickname, gender, avatar_url').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.nickname) setMyProfileNickname(data.nickname);
+        if (data?.gender) setMyGender(data.gender);
+        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+      });
+  }, [user]);
+
   // ===== 댓글 로드 =====
   useEffect(() => {
     if (!debateId) return;
@@ -116,7 +133,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       const newComment = await createComment(debateId, commentInput.trim());
       // dicebear avataaars 아바타 설정 (닉네임 기반)
       if (newComment.user) {
-        newComment.user.avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newComment.user.nickname || user?.user_metadata?.nickname || 'anon'}`;
+        newComment.user.avatar_url = myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON;
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -246,10 +263,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const finalScoreA = verdictData.final_score_a || verdictData.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
   const finalScoreB = verdictData.final_score_b || verdictData.score_b || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_b, 0) / judges.length) : 0);
 
-  // 시민 투표 (verdicts 테이블: citizen_score_a/b, citizen_vote_count)
-  const voteA = verdictData.citizen_score_a || 0;
-  const voteB = verdictData.citizen_score_b || 0;
-  const totalVotes = verdictData.citizen_vote_count || (voteA + voteB) || 0;
+  // 시민 투표 — 실시간 데이터 우선, 없으면 verdict 데이터
+  const voteA = liveVoteA !== null ? liveVoteA : (verdictData.citizen_score_a || 0);
+  const voteB = liveVoteB !== null ? liveVoteB : (verdictData.citizen_score_b || 0);
+  const totalVotes = voteA + voteB;
   const percentA = totalVotes > 0 ? Math.round((voteA / totalVotes) * 100) : 50;
   const percentB = totalVotes > 0 ? 100 - percentA : 50;
 
@@ -265,23 +282,41 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const highlightCriterion = LENS_CRITERION_MAP[lensRaw] || null;
   const argA = verdictData.arguments?.A || null;
   const argB = verdictData.arguments?.B || null;
+  const rebuttalA = verdictData.arguments?.rebuttalA || null;
+  const rebuttalB = verdictData.arguments?.rebuttalB || null;
   const nicknameA = verdictData.arguments?.nicknameA || null;
   const nicknameB = verdictData.arguments?.nicknameB || null;
   const userIdA = verdictData.arguments?.userIdA || null;
   const userIdB = verdictData.arguments?.userIdB || null;
+  const hasRound2 = !!(rebuttalA || rebuttalB);
 
   // 닉네임을 A측(초록)/B측(빨강) 색상으로 하이라이트
+  // 같은 닉네임(예: 시스템 유저)인 경우 "닉네임(찬성)"/"닉네임(반대)" 패턴으로 구분
+  const isSameNickname = nicknameA && nicknameB && nicknameA === nicknameB;
+  const displayNameA = isSameNickname ? `${nicknameA}(찬성)` : (nicknameA || proSide);
+  const displayNameB = isSameNickname ? `${nicknameB}(반대)` : (nicknameB || conSide);
+
   const highlightNicknames = (text) => {
     if (!text || (!nicknameA && !nicknameB)) return text;
-    const parts = [];
     const names = [];
-    if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
-    if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
-    // 닉네임으로 정규식 생성
-    const pattern = new RegExp(`(${names.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+
+    if (isSameNickname) {
+      // 같은 닉네임이면 "닉네임(찬성)"/"닉네임(반대)" 패턴을 먼저 찾고, 단독 닉네임도 A측으로 처리
+      names.push({ name: `${nicknameA}(찬성)`, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
+      names.push({ name: `${nicknameB}(반대)`, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
+      // 판결문에서 단독 닉네임은 중립 표시
+      names.push({ name: nicknameA, cls: 'font-semibold text-primary/80' });
+    } else {
+      if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
+      if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
+    }
+
+    // 긴 패턴부터 매치 (찬성/반대 붙은 것 우선)
+    const sorted = [...names].sort((a, b) => b.name.length - a.name.length);
+    const pattern = new RegExp(`(${sorted.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
     const segments = text.split(pattern);
     return segments.map((seg, i) => {
-      const match = names.find(n => n.name === seg);
+      const match = sorted.find(n => n.name === seg);
       if (match) return <span key={i} className={match.cls}>{seg}</span>;
       return seg;
     });
@@ -300,6 +335,14 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <p className="text-2xl font-sans font-extrabold text-primary">
               {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? 'A측 승리' : 'B측 승리'}
             </p>
+            {winnerSide !== 'draw' && (
+              <p className="text-[13px] font-bold mt-1.5 px-3 py-1 rounded-full inline-block" style={{
+                color: winnerSide === 'A' ? '#059669' : '#E63946',
+                backgroundColor: winnerSide === 'A' ? 'rgba(5,150,105,0.08)' : 'rgba(230,57,70,0.08)',
+              }}>
+                "{winnerSide === 'A' ? proSide : conSide}"
+              </p>
+            )}
           </div>
 
           {/* 최종 점수 — 스코어보드 */}
@@ -400,29 +443,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             </div>
           </div>
 
-          {/* 시민 투표 (복합 카드 내부) */}
-          {totalVotes > 0 && (
-            <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-gold/10">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-wider">시민 투표</p>
-                <span className="text-[11px] text-primary/40">{totalVotes.toLocaleString()}명 참여</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-emerald-600 w-8">{percentA}%</span>
-                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentA}%` : '0%' }}
-                  />
-                  <div
-                    className="h-full bg-red-500 rounded-r-full transition-all duration-1000"
-                    style={{ width: animated ? `${percentB}%` : '0%' }}
-                  />
-                </div>
-                <span className="text-[11px] font-bold text-red-500 w-8 text-right">{percentB}%</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -761,37 +781,29 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 </>
               )}
 
-              {/* 확신도 */}
-              <div className="mt-4 px-1">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-primary/40 font-sans font-medium">확신도</span>
-                    <button
-                      onClick={() => setShowConfidenceInfo(!showConfidenceInfo)}
-                      className="text-primary/30 hover:text-primary/50 transition-colors"
-                    >
-                      <IoInformationCircleOutline className="text-[14px]" />
-                    </button>
+              {/* 확신도 — 5단계 텍스트 + 툴팁 */}
+              {(() => {
+                const pct = Math.round(currentJudge.confidence * 100);
+                const level = pct >= 90 ? { text: '매우 높음', color: '#059669' }
+                  : pct >= 80 ? { text: '높음', color: '#10B981' }
+                  : pct >= 70 ? { text: '보통', color: '#D4AF37' }
+                  : pct >= 55 ? { text: '낮음', color: '#F59E0B' }
+                  : { text: '매우 낮음', color: '#8E8E93' };
+                return (
+                  <div className="mt-3 px-1 flex items-center gap-1.5">
+                    <span className="text-[11px] text-primary/40">확신도</span>
+                    <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}({pct}%)</span>
+                    <span className="relative group">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/25 cursor-pointer">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                      </svg>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-3 py-2 bg-[#1B2A4A] text-white text-[10px] leading-relaxed rounded-lg w-48 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                        AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 양측 점수 차이가 클수록 높아지며, 동점에 가까울수록 낮아집니다.
+                      </span>
+                    </span>
                   </div>
-                  <div className="flex-1 h-1.5 bg-primary/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: animated ? `${currentJudge.confidence * 100}%` : '0%',
-                        background: `linear-gradient(90deg, ${currentJudge.color}, ${currentJudge.color}90)`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-sans font-bold" style={{ color: currentJudge.color }}>
-                    {Math.round(currentJudge.confidence * 100)}%
-                  </span>
-                </div>
-                {showConfidenceInfo && (
-                  <p className="text-[11px] text-primary/50 leading-[1.6] mt-2 p-2.5 bg-primary/[0.03] rounded-lg border border-gold/10">
-                    AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 높을수록 양측 차이가 명확하다는 의미입니다.
-                  </p>
-                )}
-              </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -810,42 +822,76 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex gap-1 mx-4 mt-3 bg-primary/5 rounded-lg p-0.5 border border-gold/10">
             <button
               onClick={() => setArgSide('A')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'A'
                   ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               A측 : {proSide}
             </button>
             <button
               onClick={() => setArgSide('B')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-sans font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-md text-[11px] font-sans font-bold transition-all truncate ${
                 activeArgSide === 'B'
                   ? 'bg-red-500 text-white shadow-sm'
-                  : 'text-primary/40 hover:text-primary/60'
+                  : 'text-primary/40'
               }`}
             >
               B측 : {conSide}
             </button>
           </div>
 
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 space-y-3">
               {activeArgSide === 'A' && argA && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
-                  <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>
+                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/50">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-emerald-600">{nicknameA || 'A측'}의 주장</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/70 whitespace-pre-line">{argA}</p>
                   </div>
-                  <p className="text-[12px] leading-[1.7] text-primary/70">{argA}</p>
                 </div>
               )}
-              {activeArgSide === 'B' && argB && (
-                <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
-                  <div className="mb-1">
-                    <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
+              {activeArgSide === 'A' && rebuttalA && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 2 — 반박</p>
+                  <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/30">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-emerald-500">{nicknameA || 'A측'}의 반박</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/60 whitespace-pre-line">{rebuttalA}</p>
                   </div>
-                  <p className="text-[12px] leading-[1.7] text-primary/70">{argB}</p>
                 </div>
+              )}
+              {activeArgSide === 'A' && !rebuttalA && argA && (
+                <p className="text-[11px] text-primary/20 text-center py-2">반박이 작성되지 않았습니다</p>
+              )}
+              {activeArgSide === 'B' && argB && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 1 — 주장</p>
+                  <div className="p-3 rounded-xl bg-red-50/80 border border-red-200/50">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-red-500">{nicknameB || 'B측'}의 주장</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/70 whitespace-pre-line">{argB}</p>
+                  </div>
+                </div>
+              )}
+              {activeArgSide === 'B' && rebuttalB && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary/25 mb-1.5 px-1">Round 2 — 반박</p>
+                  <div className="p-3 rounded-xl bg-red-50/50 border border-red-200/30">
+                    <div className="mb-1">
+                      <p className="text-[11px] font-sans font-bold text-red-400">{nicknameB || 'B측'}의 반박</p>
+                    </div>
+                    <p className="text-[12px] leading-[1.7] text-primary/60 whitespace-pre-line">{rebuttalB}</p>
+                  </div>
+                </div>
+              )}
+              {activeArgSide === 'B' && !rebuttalB && argB && (
+                <p className="text-[11px] text-primary/20 text-center py-2">반박이 작성되지 않았습니다</p>
               )}
             </div>
         </div>
@@ -862,16 +908,16 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         const isAuthor = user && (String(user.id) === String(userIdA) || String(user.id) === String(userIdB));
         const voteDisabled = isVoting || !canVote || isAuthor || !user;
 
-        // 실시간 집계 우선, 없으면 verdict 데이터 사용
-        const displayA = liveVoteA !== null ? liveVoteA : voteA;
-        const displayB = liveVoteB !== null ? liveVoteB : voteB;
-        const displayTotal = displayA + displayB;
-        const pctA = displayTotal > 0 ? Math.round((displayA / displayTotal) * 100) : 50;
-        const pctB = displayTotal > 0 ? 100 - pctA : 50;
+        // 상단 복합 판결과 동일한 voteA/voteB 사용
+        const displayA = voteA;
+        const displayB = voteB;
+        const displayTotal = totalVotes;
+        const pctA = percentA;
+        const pctB = percentB;
 
         // 상태 텍스트
         let statusText = '';
-        if (displayTotal > 0) statusText = `${displayTotal.toLocaleString()}명 참여`;
+        if (displayTotal > 0) statusText = displayTotal >= 30 ? `${displayTotal.toLocaleString()}명 참여` : `${displayTotal}/30명 참여`;
         else if (canVote) statusText = '투표 진행 중';
         else if (isCompletedStatus || deadlinePassed) statusText = '투표 마감';
         else statusText = '투표 대기';
@@ -883,91 +929,51 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         else if (!canVote) disabledMsg = '투표가 마감되었습니다';
 
         return (
-          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
+          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10">
+            <div className="px-5 pt-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
               <span className="text-xs text-primary/40 font-medium">{statusText}</span>
             </div>
 
-            {/* 투표 버튼 — 항상 표시, 조건부 비활성 */}
-            <div className="flex gap-3 mb-4">
+            {/* 투표 버튼 — 퍼센트+투표수 포함 */}
+            <div className="flex gap-3">
               <button
                 onClick={() => !voteDisabled && handleVote('A')}
                 disabled={voteDisabled && myVote !== 'A'}
-                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                className={`flex-1 py-3 rounded-xl font-bold text-[13px] transition-all border-2 active:scale-[0.97] ${
                   myVote === 'A'
-                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-200'
+                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-md'
                     : voteDisabled
                       ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
-                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 active:scale-[0.97]'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                 }`}
               >
-                {myVote === 'A' ? '✓ ' : ''}A측 투표
+                {myVote === 'A' ? '✓ ' : ''}A측{displayTotal > 0 ? `(${pctA}%) · ${displayA}명` : ' 투표'}
               </button>
               <button
                 onClick={() => !voteDisabled && handleVote('B')}
                 disabled={voteDisabled && myVote !== 'B'}
-                className={`flex-1 py-3 rounded-xl font-black text-[14px] transition-all border-2 ${
+                className={`flex-1 py-3 rounded-xl font-bold text-[13px] transition-all border-2 active:scale-[0.97] ${
                   myVote === 'B'
-                    ? 'bg-red-500 text-white border-red-600 shadow-lg shadow-red-200'
+                    ? 'bg-red-500 text-white border-red-600 shadow-md'
                     : voteDisabled
                       ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
-                      : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100 active:scale-[0.97]'
+                      : 'bg-red-50 text-red-500 border-red-200'
                 }`}
               >
-                {myVote === 'B' ? '✓ ' : ''}B측 투표
+                {myVote === 'B' ? '✓ ' : ''}B측{displayTotal > 0 ? `(${pctB}%) · ${displayB}명` : ' 투표'}
               </button>
             </div>
             {disabledMsg && !myVote && (
-              <p className="text-center text-[11px] text-primary/30 mb-3">{disabledMsg}</p>
+              <p className="text-center text-[11px] text-primary/30 mt-2">{disabledMsg}</p>
             )}
 
-            {displayTotal > 0 ? (
-              <>
-                <div className="flex justify-between text-sm font-bold mb-1.5">
-                  <span className="text-emerald-600">A측 {pctA}%</span>
-                  <span className="text-red-500">B측 {pctB}%</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000"
-                    style={{ width: animated ? `${pctA}%` : '0%' }}
-                  />
-                  <div
-                    className="h-full bg-red-500 rounded-r-full transition-all duration-1000"
-                    style={{ width: animated ? `${pctB}%` : '0%' }}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-primary/40 mt-1">
-                  <span>{displayA.toLocaleString()}명</span>
-                  <span>{displayB.toLocaleString()}명</span>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-[13px] text-primary/40 font-sans">
-                  {canVote ? '아직 투표가 없습니다' : '시민 투표가 진행되지 않았습니다'}
-                </p>
-              </div>
-            )}
-
-            {/* 내 투표 상태 안내 (마감 후) */}
-            {myVote && !canVote && (
-              <p className="text-center text-[11px] text-primary/30 mt-2">
-                나의 투표: {myVote === 'A' ? 'A측' : 'B측'}
-              </p>
-            )}
           </div>
-        );
-      })()}
 
-      {/* ===== 시민 의견 ===== */}
-      <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm p-5 border border-gold/10">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[14px] font-sans font-bold text-primary">시민 의견</h3>
-          <span className="text-[11px] text-primary/40">{comments.length}개</span>
-        </div>
-
+          {/* 구분선 + 시민 의견 */}
+          <div className="border-t border-gold/10" />
+          <div className="p-5">
         {/* 댓글 목록 */}
         <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
           {comments.length === 0 ? (
@@ -982,7 +988,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 {/* 아바타 */}
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.user?.nickname || c.user_id || 'anon'}`}
+                    src={c.user?.avatar_url || getAvatarUrl(c.user_id, c.user?.gender) || DEFAULT_AVATAR_ICON}
                     alt=""
                     className="w-full h-full object-cover"
                   />
@@ -1034,7 +1040,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user_metadata?.nickname || user.email || 'me'}`}
+                src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -1064,6 +1070,9 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           </div>
         )}
       </div>
+      </div>
+        );
+      })()}
     </div>
   );
 }

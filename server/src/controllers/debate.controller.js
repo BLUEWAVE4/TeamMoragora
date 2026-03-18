@@ -66,6 +66,39 @@ export async function getDebate(req, res, next) {
   }
 }
 
+// ===== 내 진행중인 논쟁 목록 (커서 기반 페이지네이션) =====
+export async function getMyActiveDebates(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 10));
+    const cursor = req.query.cursor; // created_at ISO string
+    const activeStatuses = ['waiting', 'both_joined', 'arguing', 'judging', 'voting'];
+
+    let query = supabaseAdmin
+      .from('debates')
+      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at, vote_deadline')
+      .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
+      .in('status', activeStatuses)
+      .order('created_at', { ascending: false })
+      .limit(limit + 1);
+
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const items = data || [];
+    const hasMore = items.length > limit;
+    if (hasMore) items.pop();
+
+    res.json({ items, hasMore });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function listDebates(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
@@ -88,7 +121,7 @@ export async function getDebateByInviteCode(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('*, creator:profiles!creator_id(nickname, avatar_url)')
       .eq('invite_code', inviteCode)
       .single();
 
@@ -97,6 +130,64 @@ export async function getDebateByInviteCode(req, res, next) {
     }
 
     res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 조회수 증가 =====
+export async function incrementView(req, res, next) {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('increment_view_count', {
+      debate_id_input: req.params.id,
+    });
+    if (error) {
+      // RPC 없으면 직접 update
+      const { data: debate } = await supabaseAdmin
+        .from('debates')
+        .select('view_count')
+        .eq('id', req.params.id)
+        .single();
+      const current = debate?.view_count || 0;
+      await supabaseAdmin
+        .from('debates')
+        .update({ view_count: current + 1 })
+        .eq('id', req.params.id);
+      return res.json({ view_count: current + 1 });
+    }
+    res.json({ view_count: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 논쟁 삭제 (생성자 또는 참여자) =====
+export async function deleteDebate(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const debateId = req.params.id;
+
+    const { data: debate, error: fetchErr } = await supabaseAdmin
+      .from('debates')
+      .select('id, creator_id, opponent_id, status')
+      .eq('id', debateId)
+      .maybeSingle();
+
+    if (fetchErr) throw fetchErr;
+    if (!debate) return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
+
+    // 생성자 또는 참여자만 삭제 가능
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('debates')
+      .delete()
+      .eq('id', debateId);
+
+    if (error) throw error;
+    res.json({ message: '논쟁이 삭제되었습니다.' });
   } catch (err) {
     next(err);
   }

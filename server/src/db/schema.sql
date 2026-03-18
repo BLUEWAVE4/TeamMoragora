@@ -42,16 +42,17 @@ CREATE TABLE debates (
   description TEXT,
   pro_side TEXT,                          -- A측(찬성) 입장 제목
   con_side TEXT,                          -- B측(반대) 입장 제목
-  vote_duration INTEGER,                  -- 시민 투표 제한시간 (분 단위, NULL이면 기본 24시간)
+  vote_duration INTEGER,                  -- 시민 투표 제한시간 (일 단위, NULL이면 기본 24시간)
   category TEXT NOT NULL DEFAULT 'daily',
   purpose TEXT NOT NULL DEFAULT 'compete',
   lens TEXT NOT NULL DEFAULT 'general',
   mode TEXT NOT NULL DEFAULT 'duo'
-    CHECK (mode IN ('duo', 'solo')),
+    CHECK (mode IN ('duo', 'solo', 'daily')),
   invite_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting'
     CHECK (status IN ('waiting', 'both_joined', 'arguing', 'judging', 'voting', 'completed')),
   vote_deadline TIMESTAMPTZ,
+  view_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -64,9 +65,10 @@ CREATE TABLE arguments (
   debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   side TEXT NOT NULL CHECK (side IN ('A', 'B')),
-  content TEXT NOT NULL CHECK (char_length(content) BETWEEN 50 AND 2000),
+  round INTEGER NOT NULL DEFAULT 1 CHECK (round IN (1, 2)),
+  content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 2000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (debate_id, user_id)
+  UNIQUE (debate_id, side, round)
 );
 
 -- 4. verdicts

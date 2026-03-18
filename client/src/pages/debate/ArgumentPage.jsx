@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDebate, submitArgument } from '../../services/api'
+import { getDebate, getArguments, submitArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
-import { Target, Tag, Scale } from 'lucide-react';
 
 const labelMap = {
   battle: '승부', consensus: '합의', analysis: '분석',
@@ -12,196 +11,416 @@ const labelMap = {
 }
 const toKor = (v) => labelMap[v] || v
 
+const MAX_CHAR_R1 = 2000
+const MAX_CHAR_R2 = 300
+
+// ── 이미지 속 저울 모양을 그대로 재현한 뱃지 ──
+function JusticeBadge() {
+  return (
+    <div className="mb-6 relative">
+      {/* 배경 광채 효과 */}
+      <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
+      
+      {/* 뱃지 */}
+      <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
+        <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+            <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+            <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 제출된 주장 카드 ──
+function SubmittedCard({ label, side, content, isMe }) {
+  return (
+    <div className={`rounded-xl border px-5 py-4 ${
+      isMe ? 'bg-[#F5F0E8] border-[#D4AF37]/30' : 'bg-white border-gray-100'
+    }`}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-400' : 'bg-red-400'}`} />
+        <span className={`text-[10px] font-black uppercase tracking-widest ${
+          side === 'A' ? 'text-emerald-600' : 'text-red-500'
+        }`}>{label} {isMe ? '· 내 주장' : '· 상대방 주장'}</span>
+      </div>
+      <p className="text-[14px] leading-[1.75] text-[#1B2A4A]/75">{content}</p>
+    </div>
+  )
+}
+
+// ── 대기 메시지 타이핑 효과 ──
+const WAITING_MESSAGES = [
+  '상대방이 신중하게 논거를 정리하고 있습니다...',
+  '상대방이 강력한 주장을 준비하고 있습니다...',
+  '상대방이 깊은 고민에 빠져 있습니다...',
+]
+
+function useTypingEffect(messages, typingSpeed = 50, deleteSpeed = 30, pauseMs = 2000) {
+  const [displayed, setDisplayed] = React.useState('')
+  const [msgIdx, setMsgIdx] = React.useState(() => Math.floor(Math.random() * messages.length))
+  const [charIdx, setCharIdx] = React.useState(0)
+  const [isDeleting, setIsDeleting] = React.useState(false)
+
+  React.useEffect(() => {
+    const current = messages[msgIdx]
+    if (!isDeleting && charIdx <= current.length) {
+      if (charIdx === current.length) {
+        const pause = setTimeout(() => setIsDeleting(true), pauseMs)
+        return () => clearTimeout(pause)
+      }
+      const timer = setTimeout(() => {
+        setDisplayed(current.slice(0, charIdx + 1))
+        setCharIdx(prev => prev + 1)
+      }, typingSpeed)
+      return () => clearTimeout(timer)
+    }
+    if (isDeleting && charIdx >= 0) {
+      if (charIdx === 0) {
+        setIsDeleting(false)
+        setMsgIdx(prev => (prev + 1) % messages.length)
+        setDisplayed('')
+        return
+      }
+      const timer = setTimeout(() => {
+        setDisplayed(current.slice(0, charIdx - 1))
+        setCharIdx(prev => prev - 1)
+      }, deleteSpeed)
+      return () => clearTimeout(timer)
+    }
+  }, [msgIdx, charIdx, isDeleting, messages, typingSpeed, deleteSpeed, pauseMs])
+
+  return displayed
+}
+
+// ── 대기 카드 ──
+function WaitingCard({ label, side, submitted }) {
+  const typedText = useTypingEffect(WAITING_MESSAGES)
+  return (
+    <div className="rounded-xl border border-dashed border-[#1B2A4A]/10 bg-[#FAFAF5] px-5 py-4 text-center">
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-300' : 'bg-red-300'}`} />
+        <span className={`text-[10px] font-black uppercase tracking-widest ${
+          side === 'A' ? 'text-emerald-400/60' : 'text-red-400/60'
+        }`}>{label}</span>
+      </div>
+      {submitted ? (
+        <p className="text-[12px] text-[#1B2A4A]/30 font-medium">제출 완료 · 대기 중</p>
+      ) : (
+        <p className="text-[12px] text-[#1B2A4A]/25 h-[18px]">
+          {typedText}
+          <span className="inline-block w-[1.5px] h-[12px] bg-[#1B2A4A]/20 ml-[1px] align-middle animate-pulse" />
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── 라운드 헤더 (텍스트 색상 강조 버전) ──
+function RoundHeader({ num, label, state }) {
+  const isActive = state === 'active';
+  const isDone = state === 'done';
+
+  return (
+    <div className="flex items-center gap-3">
+      {/* 라운드 숫자 아이콘 */}
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-500 flex-shrink-0 ${
+        isDone
+          ? 'bg-gray-100 text-gray-400 border-gray-200' // 완료 시 회색
+          : isActive
+            ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_8px_rgba(16,185,129,0.3)]' // 작성 중 초록색
+            : 'bg-white text-gray-200 border-gray-100' // 대기 시 연한 회색
+      }`}>{num}</div>
+
+      {/* 라운드 제목 텍스트 */}
+      <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-500 ${
+        isActive 
+          ? 'text-[#D4AF37]'
+          : isDone 
+            ? 'text-gray-400' // 다음 라운드로 넘어가면 회색
+            : 'text-gray-300' // 아직 시작 안 했을 때
+      }`}>
+        {label}
+      </p>
+      
+      {/* 구분선 색상도 상태에 맞게 변화 */}
+      <div className={`flex-1 h-px transition-colors duration-500 ${
+        isActive ? 'bg-[#D4AF37]' : 'bg-gray-100'
+      }`} />
+    </div>
+  )
+}
+
+// ── 라운드 입력 폼 ──
+function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmitting }) {
+  const maxChar = roundNum === 1 ? MAX_CHAR_R1 : MAX_CHAR_R2
+  const isInvalid = content.length === 0 || content.length > maxChar
+
+  return (
+    <div className={`flex flex-col gap-3 transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+      <div className={`bg-white rounded-xl border-2 overflow-hidden transition-all duration-300 ${
+        !isActive ? 'border-gray-100'
+          : content.trim().length > 0 ? 'border-[#D4AF37]/50'
+          : 'border-gray-100 focus-within:border-[#D4AF37]/40 shadow-sm'
+      }`}>
+        <textarea
+          className="w-full px-5 pt-4 pb-3 focus:outline-none resize-none text-[15px] leading-[1.75] text-[#1B2A4A] placeholder:text-[#1B2A4A]/20 bg-transparent"
+          style={{ minHeight: roundNum === 1 ? '160px' : '100px' }}
+          placeholder={roundNum === 1
+            ? '상대방을 설득할 수 있는 논리적 근거를 작성해주세요.'
+            : '상대방의 1라운드 주장에 대해 반박해주세요.'}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          maxLength={maxChar}
+          disabled={!isActive}
+        />
+        <div className="px-5 py-2.5 border-t border-gray-50 flex items-center justify-between bg-gray-50/50">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${
+              content.length === 0 ? 'bg-gray-200'
+                : content.length > maxChar ? 'bg-red-400'
+                : 'bg-emerald-400'
+            }`} />
+            <span className={`text-[10px] font-bold ${
+              content.length === 0 ? 'text-gray-300'
+                : content.length > maxChar ? 'text-red-500'
+                : 'text-emerald-500'
+            }`}>
+              {content.length === 0 ? '내용을 입력해주세요'
+                : content.length > maxChar ? '글자 수 초과'
+                : '제출 가능'}
+            </span>
+          </div>
+          <span className="text-[10px] tabular-nums text-[#1B2A4A]/25">
+            {content.length.toLocaleString()} / {maxChar.toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={!isActive || isInvalid || isSubmitting}
+        className={`w-full h-[50px] rounded-xl font-black text-[15px] tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
+          !isActive || isInvalid || isSubmitting
+            ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+            : 'bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.97] cursor-pointer shadow-md'
+        }`}
+      >
+        {isSubmitting ? (
+          <>
+            <div className="w-4 h-4 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+            <span>제출 중...</span>
+          </>
+        ) : (
+          <span>{roundNum === 1 ? '1라운드 주장 제출하기' : '2라운드 반박 제출하기'}</span>
+        )}
+      </button>
+    </div>
+  )
+}
+
+// ── 메인 컴포넌트 ──
 export default function ArgumentPage() {
   const { debateId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const [debate, setDebate] = useState(null)
-  const [content, setContent] = useState('')
+  const [args, setArgs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [r1Content, setR1Content] = useState('')
+  const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const MIN_CHAR = 50
-  const MAX_CHAR = 2000
-  const isInvalid = content.length < MIN_CHAR || content.length > MAX_CHAR
+  const fetchData = useCallback(async () => {
+    try {
+      const [debateData, argsData] = await Promise.all([
+        getDebate(debateId),
+        getArguments(debateId),
+      ])
+      setDebate(debateData)
+      setArgs(argsData || [])
+      if (argsData?.length >= 4 || debateData?.status === 'judging') {
+        navigate(`/debate/${debateId}/judging`)
+      }
+    } catch (err) {
+      console.error('데이터 로드 에러:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [debateId, navigate])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
-    const fetchDebate = async () => {
-      try {
-        const data = await getDebate(debateId)
-        setDebate(data)
-      } catch (err) {
-        console.error("데이터 로드 에러:", err)
-        alert(err.message || '논쟁 정보를 불러올 수 없습니다.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchDebate()
-  }, [debateId])
+    if (!debate || debate.status !== 'arguing') return
+    const interval = setInterval(fetchData, 3000)
+    return () => clearInterval(interval)
+  }, [debate?.status, fetchData])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!debate || isInvalid || isSubmitting) return
+  if (loading || !debate) return (
+    <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-7 h-7 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-400 text-[11px] tracking-widest">논쟁 정보를 불러오는 중...</p>
+      </div>
+    </div>
+  )
 
+  const isCreator = user && user.id === debate.creator_id
+  const mySide = isCreator ? 'A' : 'B'
+  const otherSide = isCreator ? 'B' : 'A'
+  const myLabel = isCreator ? 'A측' : 'B측'
+  const otherLabel = isCreator ? 'B측' : 'A측'
+
+  const getArg = (side, round) => args.find(a => a.side === side && (a.round || 1) === round)
+  const myR1 = getArg(mySide, 1)
+  const otherR1 = getArg(otherSide, 1)
+  const myR2 = getArg(mySide, 2)
+  const otherR2 = getArg(otherSide, 2)
+
+  const r1BothDone = !!myR1 && !!otherR1
+  const r2BothDone = !!myR2 && !!otherR2
+
+  const activeRound = !myR1 ? 1 : (r1BothDone && !myR2) ? 2 : 0
+  const r1State = myR1 ? 'done' : 'active'
+  const r2State = myR2 ? 'done' : r1BothDone ? 'active' : 'locked'
+
+  const handleSubmit = async (round) => {
+    const content = round === 1 ? r1Content : r2Content
+    if (!content.trim() || isSubmitting) return
     setIsSubmitting(true)
     try {
-      const side = isCreator ? 'A' : 'B'
-      await submitArgument(debateId, { content, side })
-      navigate(`/debate/${debateId}/judging`)
+      await submitArgument(debateId, { content, side: mySide, round })
+      if (round === 1) setR1Content('')
+      else setR2Content('')
+      await fetchData()
+      const updatedArgs = await getArguments(debateId)
+      if (updatedArgs.length >= 4) navigate(`/debate/${debateId}/judging`)
     } catch (err) {
       alert(err.message || '제출에 실패했습니다.')
+    } finally {
       setIsSubmitting(false)
     }
   }
 
-  // 로딩 중이거나 데이터가 아직 없을 때의 처리
-  if (loading || !debate) return (
-    <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">
-      <div className="animate-pulse text-gray-400 font-medium">논쟁 데이터 분석 중...</div>
-    </div>
-  )
-
-  const isCreator = user && debate && user.id === debate.creator_id;
-  const sideLabel = isCreator ? 'A측' : 'B측';
-
   return (
-    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-10">
+    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center pb-16">
+      <div className="w-full max-w-md">
 
-      {/* 1. 상단 논쟁 정보 카드 */}
-      <div className="w-[92%] max-w-md bg-gradient-to-br from-[#1B2A4A] to-[#2d3a5d] text-white px-6 py-7 rounded-[24px] shadow-2xl mt-8 mb-[-28px] z-10 relative overflow-hidden">
-        {/* 배경 장식 */}
-        <div className="absolute -top-10 -right-10 w-36 h-36 bg-white/5 rounded-full blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#D4AF37]/5 rounded-full blur-xl" />
+        {/* ── 헤더 ── */}
+        <div className="bg-[#1B2A4A] pt-8 pb-9 px-6 flex flex-col items-center text-center relative overflow-hidden rounded-b-2xl shadow-xl">
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
+          {/* ── 상단 로고 ── */}
+          <JusticeBadge />
+          <p className="text-[#D4AF37] text-[11px] font-black tracking-[0.2em] mb-3">
+            모라고라 AI 법정 · 주장 제출서</p>
 
-        {/* 태그 뱃지 */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="flex items-center gap-1 bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-3 py-1 rounded-full text-[11px] font-bold text-[#D4AF37]">
-            <Target size={11} /> {toKor(debate?.purpose)}
-          </span>
-          <span className="flex items-center gap-1 bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-3 py-1 rounded-full text-[11px] font-bold text-[#D4AF37]">
-            <Scale size={11} /> {toKor(debate?.lens)}
-          </span>
-          <span className="flex items-center gap-1 bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-3 py-1 rounded-full text-[11px] font-bold text-[#D4AF37]">
-            <Tag size={11} /> {toKor(debate?.category)}
-          </span>
-        </div>
-
-        {/* 주제 */}
-        <h1 className="text-[18px] font-black leading-[1.45] tracking-tight italic mb-5">
-          "{debate?.topic || debate?.title || '주제를 불러오는 중...'}"
-        </h1>
-
-        {/* A측/B측 입장 */}
-        {(debate?.pro_side || debate?.con_side) && (
-          <div className="flex items-stretch gap-2">
-            <div className={`flex-1 rounded-2xl px-3 py-2.5 border text-center ${
-              isCreator ? 'bg-emerald-500/15 border-emerald-500/30' : 'bg-white/5 border-white/10'
-            }`}>
-              <p className="text-[10px] font-black uppercase tracking-wider mb-1 text-emerald-400/70">A측</p>
-              <p className={`text-[12px] font-bold leading-tight ${isCreator ? 'text-emerald-300' : 'text-white/35'}`}>
-                {debate.pro_side || '미정'}
-              </p>
-              {isCreator && <p className="text-[9px] text-emerald-400/50 font-bold mt-1">내 입장</p>}
-            </div>
-
-            <div className="flex items-center justify-center px-1">
-              <span className="text-[#D4AF37]/40 text-[11px] font-black">VS</span>
-            </div>
-
-            <div className={`flex-1 rounded-2xl px-3 py-2.5 border text-center ${
-              !isCreator ? 'bg-red-500/15 border-red-500/30' : 'bg-white/5 border-white/10'
-            }`}>
-              <p className="text-[10px] font-black uppercase tracking-wider mb-1 text-red-400/70">B측</p>
-              <p className={`text-[12px] font-bold leading-tight ${!isCreator ? 'text-red-300' : 'text-white/35'}`}>
-                {debate.con_side || '미정'}
-              </p>
-              {!isCreator && <p className="text-[9px] text-red-400/50 font-bold mt-1">내 입장</p>}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col p-6 pt-14 gap-5">
-
-        {/* 진영 안내 */}
-        <div className="flex justify-between items-center px-1">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isCreator ? 'bg-emerald-500' : 'bg-red-500'}`} />
-            <p className="text-gray-500 text-[13px] font-bold">
-              나의 주장
-              <span className={`ml-1.5 font-black ${isCreator ? 'text-emerald-600' : 'text-red-500'}`}>
-                ({sideLabel}{user?.user_metadata?.nickname ? ` · ${user.user_metadata.nickname}` : ''})
+          <div className="flex gap-1.5 flex-wrap justify-center mb-3">
+            {[
+              { value: debate?.purpose },
+              { value: debate?.lens },
+            ].filter(({ value }) => value).map(({ value }, i) => (
+              <span 
+                key={i} 
+                className="flex items-center bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-[#D4AF37]"
+              >
+                {toKor(value)}
               </span>
-            </p>
+            ))}
           </div>
+
+          <h1 className="text-white text-[16px] font-black italic leading-snug">
+            "{debate?.topic}"
+          </h1>
         </div>
 
-        {/* 텍스트 입력 영역 */}
-        <div className={`bg-white rounded-[20px] border-2 transition-all duration-300 overflow-hidden shadow-sm ${
-          content.trim().length > 0
-            ? isCreator ? 'border-emerald-200' : 'border-red-200'
-            : 'border-gray-100 focus-within:border-[#D4AF37]/40'
-        }`}>
-          <textarea
-            className="w-full h-72 px-6 pt-5 pb-3 focus:outline-none resize-none text-[16px] leading-[1.6] text-gray-800 placeholder:text-gray-200 bg-transparent"
-            placeholder="상대방을 설득할 수 있는 강력한 근거를 제시해주세요. 논리적인 흐름이 판결에 큰 영향을 미칩니다."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            maxLength={MAX_CHAR}
-          />
+        {/* ── 바디 카드 ── */}
+        <div className="bg-white mx-4 mt-[-12px] rounded-2xl shadow-xl px-5 pt-7 pb-5 relative z-10 flex flex-col gap-5">
 
-          {/* 하단 카운터 바 */}
-          <div className="px-6 py-3.5 border-t border-gray-50 flex justify-between items-center bg-gray-50/60">
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${
-                content.length < MIN_CHAR ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
-              }`} />
-              <span className={`text-[11px] font-bold ${
-                content.length < MIN_CHAR ? 'text-amber-600' : 'text-emerald-600'
+          {/* A/B측 입장 */}
+          {(debate?.pro_side || debate?.con_side) && (
+            <div className="grid grid-cols-[1fr_24px_1fr] items-center border-b border-gray-100 pb-5">
+              <div className={`rounded-xl px-3 py-2.5 text-center border ${
+                isCreator ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'
               }`}>
-                {content.length < MIN_CHAR
-                  ? `${MIN_CHAR - content.length}자 더 필요`
-                  : '제출 준비 완료 ✓'}
-              </span>
+                <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-wider mb-1">A측</p>
+                <p className={`text-[12px] font-bold leading-tight ${isCreator ? 'text-emerald-700' : 'text-gray-400'}`}>
+                  {debate.pro_side || '미정'}
+                </p>
+                {isCreator && <p className="text-[9px] text-emerald-500/60 font-bold mt-0.5">내 입장</p>}
+              </div>
+              <div className="text-center text-[10px] font-black text-[#D4AF37]/50">VS</div>
+              <div className={`rounded-xl px-3 py-2.5 text-center border ${
+                !isCreator ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
+              }`}>
+                <p className="text-[10px] font-black text-red-400/70 uppercase tracking-wider mb-1">B측</p>
+                <p className={`text-[12px] font-bold leading-tight ${!isCreator ? 'text-red-700' : 'text-gray-400'}`}>
+                  {debate.con_side || '미정'}
+                </p>
+                {!isCreator && <p className="text-[9px] text-red-400/60 font-bold mt-0.5">내 입장</p>}
+              </div>
             </div>
-            <div className="text-[13px] tabular-nums">
-              <span className={`font-black ${content.length < MIN_CHAR ? 'text-gray-300' : 'text-[#1B2A4A]'}`}>
-                {content.length.toLocaleString()}
-              </span>
-              <span className="text-gray-200 font-medium"> / {MAX_CHAR.toLocaleString()}</span>
-            </div>
+          )}
+
+          {/* ROUND 1 */}
+          <div className="flex flex-col gap-3">
+            <RoundHeader num={1} label="1라운드 · 주장" state={r1State} />
+            {myR1 && <SubmittedCard label={myLabel} side={mySide} content={myR1.content} isMe />}
+            {r1BothDone
+              ? <SubmittedCard label={otherLabel} side={otherSide} content={otherR1.content} isMe={false} />
+              : myR1 ? <WaitingCard label={otherLabel} side={otherSide} submitted={!!otherR1} /> : null}
+            {!myR1 && (
+              <RoundForm roundNum={1} isActive={activeRound === 1}
+                content={r1Content} setContent={setR1Content}
+                onSubmit={() => handleSubmit(1)} isSubmitting={isSubmitting} />
+            )}
+          </div>
+
+          {/* 구분선 */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-100" />
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${r1BothDone ? 'bg-[#D4AF37]/50' : 'bg-gray-200'}`} />
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          {/* ROUND 2 */}
+          <div className="flex flex-col gap-3">
+            <RoundHeader num={2} label="2라운드 · 반박" state={r2State} />
+            {myR2 && <SubmittedCard label={myLabel} side={mySide} content={myR2.content} isMe />}
+            {r2BothDone
+              ? <SubmittedCard label={otherLabel} side={otherSide} content={otherR2.content} isMe={false} />
+              : myR2 ? <WaitingCard label={otherLabel} side={otherSide} submitted={!!otherR2} /> : null}
+            {!myR2 && (
+              <RoundForm roundNum={2} isActive={activeRound === 2}
+                content={r2Content} setContent={setR2Content}
+                onSubmit={() => handleSubmit(2)} isSubmitting={isSubmitting} />
+            )}
+          </div>
+
+          <p className="text-center text-gray-300 text-[10px] font-medium tracking-widest">
+            제출된 주장은 수정할 수 없습니다
+          </p>
+        </div>
+
+        {/* ── 푸터 ── */}
+        <div className="mx-4 bg-[#F5F0E8] rounded-b-2xl px-5 py-3 border-t border-[#1B2A4A]/5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 font-black tracking-widest">모라고라 AI 법정</span>
+            <span className="text-[10px] text-[#8B6914] font-black border border-[#D4AF37]/40 bg-white px-2.5 py-1 rounded-full">
+              AI 판결 예정
+            </span>
           </div>
         </div>
 
-        {/* 제출 버튼 */}
-        <button
-          type="submit"
-          disabled={isInvalid || isSubmitting}
-          className={`w-full h-[60px] rounded-[20px] font-black text-[16px] transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${
-            isInvalid || isSubmitting
-              ? 'bg-gray-100 text-gray-300 shadow-none cursor-not-allowed'
-              : 'bg-[#1B2A4A] text-[#D4AF37] shadow-[#1B2A4A]/20 hover:bg-[#151f36] transform active:scale-[0.97] cursor-pointer'
-          }`}
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
-              <span>제출 중...</span>
-            </>
-          ) : (
-            <>
-              <span>주장 제출하기</span>
-              {!isInvalid && <span className="text-[#D4AF37]/60 text-[14px]">→</span>}
-            </>
-          )}
-        </button>
-
-        <p className="text-center text-gray-300 text-[11px] font-medium leading-relaxed px-4">
-          제출된 주장은 수정할 수 없으며,<br/>AI 판사 3인의 분석을 통해 실시간 판결이 시작됩니다.
-        </p>
-      </form>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getVerdictFeed } from '../services/api';
+import { useSearchParams } from 'react-router-dom';
+import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import { supabase } from '../services/supabase';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
@@ -51,7 +52,38 @@ const fetchCounts = async (feedList) => {
   }
 };
 
+// vote_duration 일괄 보완 헬퍼
+// getVerdictFeed가 vote_duration을 포함하지 않을 때 Supabase에서 직접 보완
+const enrichVoteDuration = async (feedList) => {
+  const debateIds = feedList.map(f => f.debate_id).filter(Boolean);
+  if (!debateIds.length) return feedList;
+  try {
+    const { data, error } = await supabase
+      .from('debates')
+      .select('id, vote_duration, created_at')
+      .in('id', debateIds);
+    if (error) throw error;
+
+    const map = {};
+    (data || []).forEach(d => { map[d.id] = d; });
+
+    return feedList.map(f => ({
+      ...f,
+      debate: {
+        ...f.debate,
+        vote_duration: f.debate?.vote_duration ?? map[f.debate_id]?.vote_duration ?? null,
+        created_at: f.debate?.created_at ?? map[f.debate_id]?.created_at ?? null,
+      },
+    }));
+  } catch (e) {
+    console.error('[HomePage] vote_duration 보완 실패:', e);
+    return feedList;
+  }
+};
+
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
   const [feeds, setFeeds] = useState([]);
@@ -59,22 +91,28 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasNext, setHasNext] = useState(true);
   const [page, setPage] = useState(1);
-  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [dailyItems, setDailyItems] = useState([]);
 
   const hasNextRef = useRef(true);
   const loadingMoreRef = useRef(false);
   const pageRef = useRef(1);
 
-  const loadInitialData = async () => {
+  // 카테고리 한글 → DB값 매핑
+  // DB에 한글로 저장되므로 그대로 전달
+  const categoryToApi = {
+    '전체': null, '일상': '일상', '연애': '연애', '직장': '직장',
+    '교육': '교육', '사회': '사회', '정치': '정치',
+    '기술': '기술', '철학': '철학', '문화': '문화',
+  };
+
+  const loadFeeds = useCallback(async (cat, isInitial = false, query = null) => {
     try {
-      setLoading(true);
-      const res = await getVerdictFeed(1, 5);
-      console.log('피드 응답 전체:', res);
-
-      // 댓글 + 좋아요 카운트 일괄 주입
+      if (isInitial) setLoading(true);
+      const apiCategory = categoryToApi[cat] || null;
+      const res = await getVerdictFeed(1, 5, apiCategory, query || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-
-      setFeeds(feedsWithCount);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
+      setFeeds(feedsWithDuration);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -82,9 +120,9 @@ export default function HomePage() {
     } catch (error) {
       console.error('데이터 로드 실패:', error);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  };
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasNextRef.current) return;
@@ -92,13 +130,11 @@ export default function HomePage() {
       loadingMoreRef.current = true;
       setLoadingMore(true);
       const nextPage = pageRef.current + 1;
-      const res = await getVerdictFeed(nextPage, 5);
-      console.log(`${nextPage}페이지 응답:`, res);
-
-      // 댓글 + 좋아요 카운트 일괄 주입
+      const apiCategory = categoryToApi[filter] || null;
+      const res = await getVerdictFeed(nextPage, 5, apiCategory, searchQuery || undefined);
       const feedsWithCount = await fetchCounts(res?.data ?? []);
-
-      setFeeds(prev => [...prev, ...feedsWithCount]);
+      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
+      setFeeds(prev => [...prev, ...feedsWithDuration]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
@@ -109,11 +145,26 @@ export default function HomePage() {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
+  }, [filter]);
+
+  // 초기 로드 + daily
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      const [_, dailyRes] = await Promise.all([
+        loadFeeds('전체', false),
+        getDailyVerdicts(5).catch(() => []),
+      ]);
+      setDailyItems(dailyRes || []);
+      setLoading(false);
+    };
+    init();
   }, []);
 
+  // 카테고리 또는 검색어 변경 시 새로 로드
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    loadFeeds(filter, false, searchQuery || null);
+  }, [filter, searchQuery, loadFeeds]);
 
   // 스크롤 이벤트
   useEffect(() => {
@@ -132,18 +183,8 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const sortOptions = [
-    { name: '최신순', description: '최근 작성된 글' },
-    { name: '좋아요순', description: '좋아요가 많은 글' },
-    { name: '댓글순', description: '댓글이 많은 글' },
-    { name: '조회순', description: '조회수가 높은 글' },
-  ];
-
   const getProcessedFeeds = () => {
-    let result = filter === '전체'
-      ? [...feeds]
-      : feeds.filter(feed => (feed.debate?.category || '일상') === filter);
-
+    let result = [...feeds];
     return result.sort((a, b) => {
       const aData = a.debate || {};
       const bData = b.debate || {};
@@ -169,47 +210,35 @@ export default function HomePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center font-bold text-gray-400">
-      데이터 동기화 중...
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+        <span className="text-[13px] font-serif font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+      </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FDFDFD] pb-32 pt-4">
-      <TodayDebate items={feeds.slice(0, 5)} />
-      <main className="flex flex-col mt-10 px-6">
-        <div className="flex justify-between items-end mb-2 relative">
-          <h2 className="text-[22px] font-black text-[#2D3350]">실시간 논쟁 피드</h2>
-          <div className="relative">
-            <div onClick={() => setShowSortMenu(!showSortMenu)} className="text-[#FF6B6B] font-black text-[14px] cursor-pointer">{sortBy} ▼</div>
-            {showSortMenu && (
-              <div className="absolute right-0 top-8 w-36 bg-white shadow-2xl rounded-2xl p-2 z-[100] border border-gray-100">
-                {sortOptions.map((opt) => (
-                  <button key={opt.name} onClick={() => { setSortBy(opt.name); setShowSortMenu(false); }} className={`w-full text-left px-3 py-2 rounded-xl text-[12px] font-bold ${sortBy === opt.name ? 'bg-red-50 text-[#FF6B6B]' : 'text-gray-500'}`}>{opt.name}</button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        <CategoryFilter filter={filter} setFilter={setFilter} />
+    <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
+      <TodayDebate items={dailyItems} />
+      <main className="flex flex-col mt-6 px-5">
+        <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
 
-        <section className="mt-4 flex flex-col gap-6">
+        <section className="mt-2 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
             <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
           ))}
         </section>
 
-        {/* 로딩 스피너 */}
         {loadingMore && (
           <div className="flex justify-center py-6">
-            <div className="w-6 h-6 border-4 border-[#FF6B6B] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* 더 이상 없을 때 */}
         {!hasNext && feeds.length > 0 && (
-          <p className="text-center text-[13px] text-gray-300 font-bold py-6">
-            모든 논쟁을 다 봤어요 🎉
+          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-serif font-bold py-8">
+            모든 논쟁을 확인했습니다
           </p>
         )}
       </main>

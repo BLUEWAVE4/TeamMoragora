@@ -44,11 +44,23 @@ export function AuthProvider({ children }) {
 
   const signOut = () => supabase.auth.signOut();
 
-    const updateProfile = async (data) => {
+  const updateProfile = async (data) => {
+    // 1. auth user_metadata 업데이트
     const { error } = await supabase.auth.updateUser({
       data: { nickname: data.nickname, gender: data.gender, age: data.age }
-    })
-    return { error }
+    });
+    if (error) return { error };
+
+    // 2. profiles 테이블도 동기화
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      const profileUpdate = { nickname: data.nickname };
+      if (data.gender) profileUpdate.gender = data.gender;
+      if (data.age) profileUpdate.age = parseInt(data.age);
+      await supabase.from('profiles').update(profileUpdate).eq('id', currentUser.id);
+    }
+
+    return { error: null };
   }
 
   return (

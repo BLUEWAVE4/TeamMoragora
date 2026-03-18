@@ -93,10 +93,17 @@ export async function requestJudgment(req, res, next) {
     const avg = (arr) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
     const aiScoreA = avg(judgments.map((j) => j.score_a));
     const aiScoreB = avg(judgments.map((j) => j.score_b));
+    // 다수결 + 점수 기반 보정
     const winnerVotes = { A: 0, B: 0, draw: 0 };
-    judgments.forEach((j) => { winnerVotes[j.winner_side]++; });
-    const aiWinner = winnerVotes.A > winnerVotes.B ? 'A'
-      : winnerVotes.B > winnerVotes.A ? 'B' : 'draw';
+    judgments.forEach((j) => {
+      const corrected = j.score_a > j.score_b ? 'A'
+        : j.score_b > j.score_a ? 'B' : 'draw';
+      winnerVotes[corrected]++;
+    });
+    let aiWinner;
+    if (winnerVotes.A > winnerVotes.B) aiWinner = 'A';
+    else if (winnerVotes.B > winnerVotes.A) aiWinner = 'B';
+    else aiWinner = aiScoreA > aiScoreB ? 'A' : aiScoreB > aiScoreA ? 'B' : 'draw';
 
     await supabaseAdmin
       .from('verdicts')
@@ -112,9 +119,9 @@ export async function requestJudgment(req, res, next) {
 
     const verdict = { id: verdictId, debate_id: debateId, winner_side: aiWinner, ai_score_a: aiScoreA, ai_score_b: aiScoreB };
 
-    // Update status to voting + set vote deadline (debate.vote_duration 분 단위, 없으면 기본값)
+    // Update status to voting + set vote deadline (debate.vote_duration 일 단위, 없으면 기본값)
     const durationMs = debate.vote_duration
-      ? debate.vote_duration * 60 * 1000
+      ? debate.vote_duration * 24 * 60 * 60 * 1000
       : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
     const voteDeadline = new Date(Date.now() + durationMs);
 
@@ -142,21 +149,28 @@ export async function getVerdict(req, res, next) {
       throw new NotFoundError('아직 판결이 완료되지 않았습니다.');
     }
 
-    // 양측 주장도 함께 반환
+    // 양측 주장도 함께 반환 (라운드별 구분)
     const { data: args } = await supabaseAdmin
       .from('arguments')
-      .select('side, content, user_id, user:profiles!user_id(nickname)')
-      .eq('debate_id', req.params.debateId);
+      .select('side, content, round, user_id, user:profiles!user_id(nickname)')
+      .eq('debate_id', req.params.debateId)
+      .order('round', { ascending: true });
 
-    const argA = args?.find(a => a.side === 'A');
-    const argB = args?.find(a => a.side === 'B');
+    const r1A = args?.find(a => a.side === 'A' && (a.round || 1) === 1);
+    const r1B = args?.find(a => a.side === 'B' && (a.round || 1) === 1);
+    const r2A = args?.find(a => a.side === 'A' && a.round === 2);
+    const r2B = args?.find(a => a.side === 'B' && a.round === 2);
+
     verdict.arguments = {
-      A: argA?.content || null,
-      B: argB?.content || null,
-      nicknameA: argA?.user?.nickname || null,
-      nicknameB: argB?.user?.nickname || null,
-      userIdA: argA?.user_id || null,
-      userIdB: argB?.user_id || null,
+      A: r1A?.content || null,
+      B: r1B?.content || null,
+      nicknameA: r1A?.user?.nickname || null,
+      nicknameB: r1B?.user?.nickname || null,
+      userIdA: r1A?.user_id || null,
+      userIdB: r1B?.user_id || null,
+      // 2라운드 반박
+      rebuttalA: r2A?.content || null,
+      rebuttalB: r2B?.content || null,
     };
 
     // 실시간 시민 투표 수 조회 (finalizeVerdict 전에도 표시되도록)
@@ -182,20 +196,158 @@ export async function getVerdict(req, res, next) {
   }
 }
 
+// ===== OG 메타 태그용 경량 판결 데이터 =====
+export async function getVerdictOG(req, res, next) {
+  try {
+    const { data: verdict, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('winner_side, ai_score_a, ai_score_b, debate:debates!debate_id(topic, pro_side, con_side)')
+      .eq('debate_id', req.params.debateId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!verdict) return res.status(404).json({ error: 'not found' });
+
+    const debate = verdict.debate;
+    const winner = verdict.winner_side === 'A' ? (debate.pro_side || 'A측') : (debate.con_side || 'B측');
+    const description = `${debate.pro_side || 'A측'} ${verdict.ai_score_a}점 vs ${debate.con_side || 'B측'} ${verdict.ai_score_b}점 — AI 판결: ${winner} 승리!`;
+
+    res.json({
+      title: `⚖️ ${debate.topic}`,
+      description,
+      image: 'https://team-moragora-client.vercel.app/ogCard2.png',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 오늘의 논쟁 (mode='daily') 전용 피드 =====
+export async function getDailyVerdicts(req, res, next) {
+  try {
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+
+    // daily 모드만 가져오기 위해 넉넉하게 조회 후 필터
+    const { data, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('*, debate:debates!debate_id(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname))')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    const dailyItems = (data || []).filter(v => v.debate?.mode === 'daily').slice(0, limit);
+
+    res.json(dailyItems);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 명예의 전당 — 종합 점수 기반 랭킹 =====
+export async function getHallOfFame(req, res, next) {
+  try {
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const search = req.query.q || null;
+
+    // verdicts + debate + 좋아요/댓글/조회수
+    const { data: rawData, error } = await supabaseAdmin
+      .from('verdicts')
+      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    let items = (rawData || []).filter(v => v.debate?.mode !== 'daily');
+
+    // 검색 필터
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(q) || creator.includes(q);
+      });
+    }
+
+    // 좋아요/댓글 수 일괄 조회
+    const debateIds = items.map(v => v.debate_id).filter(Boolean);
+    let likeMap = {}, commentMap = {};
+    if (debateIds.length > 0) {
+      const [{ data: likes }, { data: comments }] = await Promise.all([
+        supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+        supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
+      ]);
+      (likes || []).forEach(r => { likeMap[r.debate_id] = (likeMap[r.debate_id] || 0) + 1; });
+      (comments || []).forEach(r => { commentMap[r.debate_id] = (commentMap[r.debate_id] || 0) + 1; });
+    }
+
+    // 종합 점수 계산 + 정렬
+    // 참여 점수 = 좋아요 + 시민투표수 + 조회수
+    // AI 품질 점수 = (ai_score_a + ai_score_b) / 200 * 참여점수 최대값
+    const scored = items.map(v => {
+      const likes = likeMap[v.debate_id] || 0;
+      const commentCount = commentMap[v.debate_id] || 0;
+      const voteCount = (v.citizen_score_a || 0) + (v.citizen_score_b || 0);
+      const viewCount = v.debate?.view_count || 0;
+      const participationScore = likes + voteCount + viewCount + commentCount;
+      const aiQuality = ((v.ai_score_a || 0) + (v.ai_score_b || 0)) / 200; // 0~1
+      return {
+        ...v,
+        _likes: likes,
+        _comments: commentCount,
+        _votes: voteCount,
+        _views: viewCount,
+        _participationScore: participationScore,
+        _aiQuality: aiQuality,
+        _hallScore: participationScore * 0.5 + (aiQuality * participationScore) * 0.5,
+      };
+    });
+
+    scored.sort((a, b) => b._hallScore - a._hallScore);
+
+    res.json(scored.slice(0, limit));
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getVerdictFeed(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const category = req.query.category || null;
+    const search = req.query.q || null;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await supabaseAdmin
+    // 넉넉하게 가져와서 필터
+    const fetchLimit = search ? 200 : to + 50;
+    const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator:profiles!creator_id(nickname))', { count: 'exact' })
+      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
-      .range(from, to);
+      .range(0, fetchLimit);
 
     if (error) throw error;
+
+    // daily 모드 제외 + 카테고리 + 검색 필터
+    let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
+    if (category) {
+      filtered = filtered.filter(v => v.debate?.category === category);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(v => {
+        const topic = (v.debate?.topic || '').toLowerCase();
+        const creator = (v.debate?.creator?.nickname || '').toLowerCase();
+        return topic.includes(q) || creator.includes(q);
+      });
+    }
+    const data = filtered.slice(from, to + 1);
+    const count = filtered.length;
+
     res.json({
       data,
       page,

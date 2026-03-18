@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
+import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import { 
   Gavel, Scale, User, Trophy, Info, ChevronRight, FileText, Crown, Sparkles, X, History, MessageSquarePlus, Plus
 } from 'lucide-react';
@@ -40,8 +42,13 @@ const findTierByScore = (score) => {
 function PlayerProfileSheet({ player, rank, onClose }) {
   const [debates, setDebates] = useState([]);
   const [loadingDebates, setLoadingDebates] = useState(true);
-  // 논쟁 리스트 더보기 상태 추가 (기본 5개)
   const [visibleDebatesCount, setVisibleDebatesCount] = useState(5);
+
+  // 바텀시트 열릴 때 배경 스크롤 방지
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const tier = findTierByScore(player?.total_score);
   const wins = player?.wins || 0;
@@ -95,27 +102,30 @@ function PlayerProfileSheet({ player, rank, onClose }) {
         className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm"
       />
       <motion.div
-        drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-        onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] flex flex-col shadow-2xl"
       >
-        <div className="sticky top-0 bg-[#F2F2F7] z-10 pt-4 pb-2">
+        {/* 드래그 핸들 — 여기서만 드래그로 닫기 가능 */}
+        <motion.div
+          drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.2}
+          onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
+          className="sticky top-0 bg-[#F2F2F7] z-10 pt-4 pb-2 cursor-grab active:cursor-grabbing rounded-t-[30px]"
+        >
           <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto" />
-        </div>
+        </motion.div>
         
         <button onClick={onClose} className="absolute top-4 right-5 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center active:scale-90 transition-all z-20">
           <X size={20} className="text-gray-500" />
         </button>
 
-        <div className="px-5 pb-32">
+        <div className="px-5 pb-32 overflow-y-auto flex-1 overscroll-contain touch-pan-y">
           {/* 프로필 헤더 섹션 */}
           <div className="flex items-center gap-4 mb-6 pt-2">
             <div className="relative">
               <div className="w-24 h-24 rounded-[24px] overflow-hidden border-2 shadow-lg" style={{ borderColor: tier.color }}>
                 <img
-                  src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`}
+                  src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON}
                   alt="avatar" className="w-full h-full object-cover"
                 />
               </div>
@@ -248,11 +258,12 @@ function PlayerProfileSheet({ player, rank, onClose }) {
 export default function RankingPage() {
   // ... RankingPage 로직은 위와 동일 (생략하지 않고 아까 드린 전체 코드 구조 유지)
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null); 
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -274,7 +285,12 @@ export default function RankingPage() {
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
   const currentTier = findTierByScore(myData?.total_score);
 
-  const podiumData = rankings.slice(0, 3).map((r, idx) => ({
+  // 검색 필터
+  const filteredRankings = searchQuery
+    ? rankings.filter(r => (r.nickname || '').toLowerCase().includes(searchQuery))
+    : rankings;
+
+  const podiumData = (searchQuery ? [] : rankings.slice(0, 3)).map((r, idx) => ({
     ...r,
     rank: idx + 1,
     tierData: findTierByScore(r.total_score),
@@ -283,29 +299,30 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  const listRankers = rankings.slice(3, visibleCount + 3);
+  // 4~10위 또는 검색 결과
+  const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
+  // 내가 10위 밖인 경우
+  const myIsOutsideTop10 = myRankIndex >= 10;
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] font-sans">
-      <nav className="sticky top-0 z-[50] bg-white/70 backdrop-blur-2xl px-6 pt-5 pb-5 flex justify-between items-end border-b border-gray-200/30">
-        <div>
-          <p className="text-[16px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1 ml-0.5">Hall of Fame</p>
-          <h1 className="text-[32px] font-black text-black tracking-tight leading-none">명예의 전당</h1>
-        </div>
-        <button onClick={() => setIsTierSheetOpen(true)} className="w-12 h-12 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center text-[#007AFF] active:scale-90 transition-all">
-          <Info size={24} />
-        </button>
-      </nav>
-
-      <div className="max-w-md mx-auto px-5 pt-8 pb-32">
+    <div className="min-h-screen bg-white font-sans">
+      <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="w-10 h-10 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
+            {/* 랭킹 헤더 + 정보 버튼 */}
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-[24px] font-black text-[#1B2A4A]">랭킹</h1>
+              <button onClick={() => setIsTierSheetOpen(true)} className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all">
+                <Info size={20} />
+              </button>
+            </div>
+
             {podiumData.length >= 3 && (
-              <div className="flex justify-center items-end gap-2 h-[420px] mb-12 pt-10">
+              <div className="flex justify-center items-end gap-2 h-[380px] mb-8 pt-6">
                 {[1, 0, 2].map((idx) => {
                   const p = podiumData[idx];
                   if (!p) return null;
@@ -321,31 +338,31 @@ export default function RankingPage() {
                       onClick={() => setSelectedPlayer({ player: p, rank: p.rank })}
                     >
                       <div className="relative mb-3">
-                        <motion.div animate={{ y: [0, -8, 0], rotate: isFirst ? [-5, 5, -5] : 0 }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="relative z-10">
-                          <Trophy size={isFirst ? 44 : 32} fill={p.trophyColor} color={p.trophyColor} className="drop-shadow-lg" />
+                        <motion.div animate={{ y: [0, -6, 0], rotate: isFirst ? [-3, 3, -3] : 0 }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="relative z-10">
+                          <Trophy size={isFirst ? 40 : 28} fill={p.trophyColor} color={p.trophyColor} className="drop-shadow-md" />
+                          <Sparkles className="absolute -top-2 -right-2 w-4 h-4" style={{ color: p.trophyColor, opacity: 0.7 }} />
                         </motion.div>
-                        {isFirst && <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-yellow-400 blur-2xl rounded-full -z-10" />}
-                        <Sparkles className="absolute -top-4 -right-2 text-yellow-200 w-5 h-5 animate-pulse" />
+                        <motion.div animate={{ opacity: [0.15, 0.4, 0.15], scale: [0.8, 1.1, 0.8] }} transition={{ repeat: Infinity, duration: 2.5 }} className="absolute inset-0 blur-xl rounded-full -z-10" style={{ backgroundColor: p.trophyColor }} />
                       </div>
 
-                      <div className="relative mb-6">
-                        <div className={`rounded-full p-1 bg-gradient-to-tr ${p.color} shadow-xl ${isPodiumMe ? 'ring-4 ring-blue-400 ring-offset-2' : ''}`}>
-                          <div className="rounded-full bg-white p-1">
-                            <div className={`rounded-full overflow-hidden ${isFirst ? 'w-24 h-24' : 'w-20 h-20'} bg-gray-50`}>
-                              <img src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.nickname}`} alt="avatar" />
+                      <div className="relative mb-4">
+                        <div className={`rounded-full p-0.5 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-3 ring-blue-400 ring-offset-1' : ''}`}>
+                          <div className="rounded-full bg-white p-0.5">
+                            <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20' : 'w-16 h-16'} bg-gray-50`}>
+                              <img src={p.avatar_url || getAvatarUrl(p.id, p.gender) || DEFAULT_AVATAR_ICON} alt="avatar" />
                             </div>
                           </div>
                         </div>
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg border border-gray-100 text-[18px] font-black" style={{ color: p.trophyColor }}>
+                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-white w-7 h-7 flex items-center justify-center rounded-full shadow-md border border-gray-100 text-[14px] font-black" style={{ color: p.trophyColor }}>
                           {p.rank}
                         </div>
                       </div>
 
-                      <div className={`w-full ${isFirst ? 'h-48' : idx === 1 ? 'h-36' : 'h-32'} rounded-t-[32px] relative overflow-hidden flex flex-col items-center justify-start pt-5 shadow-xl border border-white/80 ${p.podiumBg} backdrop-blur-md`}>
-                        <div className={`absolute top-0 inset-x-0 h-2 bg-gradient-to-r ${p.color}`} />
-                        <p className={`text-[17px] font-black mb-1 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>{p.nickname}</p>
-                        <p className="text-[16px] font-black text-[#007AFF]">{p.total_score?.toLocaleString()} XP</p>
-                        <div className="mt-3 px-4 py-1.5 bg-black/5 rounded-full text-[16px] font-black text-gray-500">
+                      <div className={`w-full ${isFirst ? 'h-40' : idx === 1 ? 'h-32' : 'h-28'} rounded-t-[24px] relative overflow-hidden flex flex-col items-center justify-start pt-4 shadow-md border border-gray-100 ${p.podiumBg}`}>
+                        <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${p.color}`} />
+                        <p className={`text-[14px] font-black mb-0.5 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>{p.nickname}</p>
+                        <p className="text-[13px] font-black text-[#D4AF37]">{p.total_score?.toLocaleString()} XP</p>
+                        <div className="mt-2 px-3 py-1 bg-black/5 rounded-full text-[11px] font-black text-gray-400">
                           {p.wins}승 {p.losses}패
                         </div>
                       </div>
@@ -355,83 +372,105 @@ export default function RankingPage() {
               </div>
             )}
 
+            {/* 내 정보 — 컴팩트 */}
             {!isLoading && myData && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="mb-12 bg-white rounded-[32px] p-6 shadow-xl border-2 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
-                style={{ borderColor: currentTier.color, boxShadow: `0 15px 30px -10px ${currentTier.color}40` }}
+                className="mb-8 bg-white rounded-2xl p-4 shadow-sm border relative overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
+                style={{ borderColor: `${currentTier.color}40` }}
                 onClick={() => setSelectedPlayer({ player: myData, rank: myRank })}
               >
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="text-center min-w-[60px]">
-                    <p className="text-[40px] font-black italic leading-none tracking-tighter" style={{ color: currentTier.color }}>{myRank}</p>
-                    <p className="text-[16px] font-black text-gray-300 mt-2 uppercase tracking-widest">Rank</p>
-                  </div>
-                  <div className="w-20 h-20 rounded-[22px] bg-gray-50 overflow-hidden border border-gray-100 shadow-inner flex-shrink-0">
-                    <img src={myData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.nickname}`} alt="avatar" className="w-full h-full object-cover" />
+                <div className="flex items-center gap-3 relative z-10">
+                  <span className="text-[24px] font-black italic min-w-[32px] text-center" style={{ color: currentTier.color }}>{myRank}</span>
+                  <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 flex-shrink-0">
+                    <img src={myData?.avatar_url || getAvatarUrl(myData?.id, myData?.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[22px] font-black text-black truncate">{myData?.nickname}</span>
-                      <span className="text-[16px] font-black px-2.5 py-1 rounded-md text-white uppercase" style={{ backgroundColor: currentTier.color }}>{currentTier.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[15px] font-black text-black truncate">{myData?.nickname}</span>
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: currentTier.color }}>{currentTier.name}</span>
                     </div>
-                    <p className="text-[17px] font-bold text-gray-400">
-                      {myData.wins}승 {myData.losses}패 • <span style={{ color: currentTier.color }}>{myData.total_score?.toLocaleString()} XP</span>
+                    <p className="text-[12px] font-bold text-gray-400">
+                      {myData.wins}승 {myData.losses}패 · <span style={{ color: currentTier.color }}>{myData.total_score?.toLocaleString()} XP</span>
                     </p>
                   </div>
-                  <ChevronRight size={24} className="text-gray-200" />
+                  <ChevronRight size={18} className="text-gray-200 flex-shrink-0" />
                 </div>
               </motion.div>
             )}
 
-            <div className="flex items-center gap-2 mb-6 px-1">
-              <div className="w-1.5 h-6 bg-[#007AFF] rounded-full" />
-              <h3 className="text-[20px] font-black text-black">전체 랭킹 순위</h3>
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <div className="w-1 h-5 bg-[#D4AF37] rounded-full" />
+              <h3 className="text-[16px] font-black text-[#1B2A4A]">전체 랭킹</h3>
             </div>
 
-            <div className="space-y-4">
-              <AnimatePresence mode='popLayout'>
-                {listRankers.map((player, idx) => {
-                  const isListMe = user && player.id === user.id;
-                  const playerTier = findTierByScore(player.total_score);
-                  return (
-                    <motion.div
-                      key={player.id} layout
-                      onClick={() => setSelectedPlayer({ player, rank: idx + 4 })}
-                      className={`rounded-[26px] p-5 flex items-center transition-all relative cursor-pointer active:scale-[0.98]
-                        ${isListMe ? 'z-10 border-2 shadow-xl scale-[1.03] ring-[8px] ring-white' : 'bg-white border border-white shadow-sm'}`}
-                      style={{ borderColor: isListMe ? playerTier.color : 'transparent', backgroundColor: isListMe ? `${playerTier.color}05` : 'white' }}
-                    >
-                      {isListMe && (
-                        <div className="absolute -top-4 left-6 bg-[#007AFF] text-white text-[16px] font-black px-4 py-1.5 rounded-full shadow-lg animate-bounce flex items-center gap-2">
-                          <User size={14} fill="white" /> YOU ARE HERE!
-                        </div>
-                      )}
-                      <div className="w-12 flex flex-col items-center mr-3">
-                        <span className={`text-[24px] font-black italic ${isListMe ? 'text-black' : 'text-black/15'}`}>{idx + 4}</span>
+            <div className="space-y-3">
+              {top10List.map((player, idx) => {
+                const rank = idx + 4;
+                const isListMe = user && player.id === user.id;
+                const playerTier = findTierByScore(player.total_score);
+                return (
+                  <motion.div
+                    key={player.id}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() => setSelectedPlayer({ player, rank })}
+                    className={`rounded-2xl p-4 flex items-center transition-all cursor-pointer active:scale-[0.98]
+                      ${isListMe ? 'border-2 shadow-md' : 'bg-white border border-gray-100 shadow-sm'}`}
+                    style={{ borderColor: isListMe ? playerTier.color : undefined, backgroundColor: isListMe ? `${playerTier.color}08` : 'white' }}
+                  >
+                    <div className="w-9 flex items-center justify-center mr-3">
+                      <span className={`text-[18px] font-black italic ${isListMe ? '' : 'text-black/15'}`} style={isListMe ? { color: playerTier.color } : {}}>{rank}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
+                      <img src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
                       </div>
-                      <div className="w-16 h-16 rounded-2xl bg-[#F2F2F7] overflow-hidden mr-4 shadow-inner flex-shrink-0">
-                        <img src={player.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.nickname}`} alt="avatar" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-[18px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
-                          <span className="text-[14px] font-black px-2 py-0.5 rounded-md text-white uppercase flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
-                        </div>
-                        <div className="text-[14px] font-bold text-gray-400">{player.wins}승 {player.losses}패 • {player.total_score?.toLocaleString()} XP</div>
-                      </div>
-                      <ChevronRight className={`w-6 h-6 flex-shrink-0 ${isListMe ? 'text-black' : 'text-gray-200'}`} />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+                      <div className="text-[12px] font-bold text-gray-400">{player.wins}승 {player.losses}패 · {player.total_score?.toLocaleString()} XP</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-gray-200" />
+                  </motion.div>
+                );
+              })}
 
-            {visibleCount + 3 < rankings.length && (
-              <button onClick={() => setVisibleCount(v => v + 10)} className="w-full py-6 mt-10 bg-white rounded-[26px] border-2 border-dashed border-gray-200 text-[18px] font-black text-gray-400 active:scale-95 transition-all">
-                VIEW MORE RANKERS
-              </button>
-            )}
+              {/* 내가 10위 밖이면 ... + 내 순위 표시 */}
+              {myIsOutsideTop10 && myData && (
+                <>
+                  <div className="flex items-center justify-center py-2">
+                    <div className="flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4A]/15" />
+                    </div>
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setSelectedPlayer({ player: myData, rank: myRankIndex + 1 })}
+                    className="rounded-2xl p-4 flex items-center cursor-pointer active:scale-[0.98] border-2 shadow-md"
+                    style={{ borderColor: currentTier.color, backgroundColor: `${currentTier.color}08` }}
+                  >
+                    <div className="w-9 flex items-center justify-center mr-3">
+                      <span className="text-[18px] font-black italic" style={{ color: currentTier.color }}>{myRankIndex + 1}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
+                      <img src={myData.avatar_url || getAvatarUrl(myData.id, myData.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-bold truncate" style={{ color: currentTier.color }}>{myData.nickname}</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white flex-shrink-0" style={{ backgroundColor: currentTier.color }}>{currentTier.name}</span>
+                      </div>
+                      <div className="text-[12px] font-bold text-gray-400">{myData.wins}승 {myData.losses}패 · {myData.total_score?.toLocaleString()} XP</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-gray-200" />
+                  </motion.div>
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -443,14 +482,18 @@ export default function RankingPage() {
               onClick={() => setIsTierSheetOpen(false)}
               className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
             <motion.div
-              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.2}
-              onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] overflow-y-auto pb-12 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] flex flex-col pb-12 shadow-2xl"
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
-              <div className="px-5">
+              <motion.div
+                drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.2}
+                onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
+                className="cursor-grab active:cursor-grabbing rounded-t-[30px]"
+              >
+                <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-5 mb-8" />
+              </motion.div>
+              <div className="px-5 overflow-y-auto flex-1 overscroll-contain touch-pan-y">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <p className="text-[16px] font-bold text-gray-400 uppercase tracking-widest mb-1">Point System</p>

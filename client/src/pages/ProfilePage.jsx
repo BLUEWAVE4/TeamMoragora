@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
+import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../utils/avatar';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import {
   User,
@@ -97,6 +98,8 @@ const formatDate = (iso) => {
 };
 export default function ProfilePage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [profileData, setProfileData] = useState(null);
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -227,39 +230,91 @@ export default function ProfilePage() {
         </div>
       </nav>
       <div className="max-w-md mx-auto px-5 pt-8">
-        <div className="flex flex-col items-center mb-10">
-          <motion.div
-            animate={{ scale: isEditing ? 1.05 : 1 }}
-            className="w-24 h-24 rounded-full bg-gradient-to-b from-gray-200 to-gray-300 flex items-center justify-center shadow-inner mb-4 relative overflow-hidden"
+        <div className="flex flex-col items-center mb-8">
+          {/* 아바타 */}
+          <div
+            className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
+            onClick={() => {
+              if (isEditing && profileData?.gender) {
+                // 현재 아바타 URL에서 옵션 파싱 또는 기본값
+                const currentUrl = profileData.avatar_url || '';
+                const params = new URLSearchParams(currentUrl.split('?')[1] || '');
+                const isMale = profileData.gender === 'male';
+                const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
+                const hash = user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                setAvatarOptions({
+                  top: params.get('top') || styles[hash % styles.length],
+                  skinColor: params.get('skinColor') || '',
+                  hairColor: params.get('hairColor') || '',
+                  clothing: params.get('clothing') || '',
+                  clothesColor: params.get('clothesColor') || '',
+                  accessories: params.get('accessories') || '',
+                  accessoriesColor: params.get('accessoriesColor') || '',
+                  eyes: params.get('eyes') || '',
+                  eyebrows: params.get('eyebrows') || '',
+                  mouth: params.get('mouth') || '',
+                  facialHair: params.get('facialHair') || '',
+                  facialHairColor: params.get('facialHairColor') || '',
+                });
+                setShowAvatarEdit(true);
+              }
+            }}
           >
-            <span className="text-4xl font-light text-white">{(newNickname || 'U').charAt(0)}</span>
-            {isEditing && <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-white text-[14px] font-bold">변경</div>}
-          </motion.div>
-          <div className="min-h-[90px] flex flex-col items-center justify-center w-full">
-            <AnimatePresence mode="wait">
-              {isEditing ? (
-                <motion.div key="edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex flex-col items-center gap-3 w-full">
-                  <input autoFocus value={newNickname} onChange={(e) => setNewNickname(e.target.value)}
-                    className="w-full max-w-[280px] bg-white rounded-2xl px-4 py-4 text-center text-xl font-bold outline-none shadow-sm border border-gray-200" 
-                    style={{ fontSize: '16px' }} />
-                  <button onClick={handleUpdateNickname} className="text-[#007AFF] text-[16px] font-bold tracking-tight">저장하기</button>
-                </motion.div>
-              ) : (
-                <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                  <h2 className="text-2xl font-bold text-black tracking-tight">{newNickname || '사용자'}</h2>
-                  <div className="mt-3">
-                    <button 
-                      onClick={() => setIsTierSheetOpen(true)}
-                      className="text-[16px] font-black px-4 py-1.5 rounded-full text-white flex items-center gap-2 active:scale-95 transition-transform shadow-sm" 
-                      style={{ backgroundColor: tier.color }}
-                    >
-                      <tier.icon size={18} /> {tier.name}
-                      <ChevronRight size={16} strokeWidth={3} />
+            <img
+              src={avatarOptions.top ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions) : (profileData?.avatar_url || getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON)}
+              alt="avatar"
+              className="w-full h-full object-cover"
+            />
+            {isEditing && profileData?.gender && (
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <Edit3 size={20} className="text-white" />
+              </div>
+            )}
+          </div>
+
+          {/* 닉네임 + 편집 */}
+          <div className="flex flex-col items-center w-full">
+            <div className="flex flex-col items-center">
+              {/* 닉네임 — 항상 중앙 고정 */}
+              <div className="relative flex items-center justify-center">
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={newNickname}
+                    onChange={(e) => setNewNickname(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateNickname()}
+                    className="text-xl font-bold text-black tracking-tight text-center bg-transparent border-b-2 border-[#D4AF37] outline-none w-40"
+                  />
+                ) : (
+                  <h2 className="text-xl font-bold text-black tracking-tight border-b-2 border-transparent">{newNickname || '\u00A0'}</h2>
+                )}
+                {/* 우측 버튼 — 절대 위치로 닉네임 밀지 않음 */}
+                <div className="absolute left-full ml-1 flex items-center gap-0.5">
+                  {isEditing ? (
+                    <>
+                      <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
+                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
+                    </>
+                  ) : profileData && (
+                    <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
+                      <Edit3 size={20} />
                     </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsTierSheetOpen(true)}
+                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform min-w-[60px] justify-center"
+                style={{ backgroundColor: profileData ? tier.color : '#D1D5DB' }}
+              >
+                {profileData ? (
+                  <>
+                    <tier.icon size={14} /> {tier.name}
+                    <ChevronRight size={14} strokeWidth={3} />
+                  </>
+                ) : '\u00A0'}
+              </button>
+            </div>
           </div>
         </div>
         <div className="space-y-4 mb-6">
@@ -307,7 +362,7 @@ export default function ProfilePage() {
           {/* ✅ 전체 승률 카드 — 무승부 제외 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
-            <div className="text-4xl font-bold text-[#007AFF] mb-5">{winRate.toFixed(1)}%</div>
+            <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
               <span className="text-[#007AFF]">{wins}승</span>
               {draws > 0 && <span className="text-gray-400">{draws}무</span>}
@@ -380,8 +435,13 @@ export default function ProfilePage() {
             </div>
           ) : (
             <>
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                {myJudgments.slice(0, displayCount).map((debate) => {
+              <div className="bg-white rounded-t-2xl rounded-b-none shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+                {(() => {
+                  const filteredJudgments = searchQuery
+                    ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
+                    : myJudgments;
+                  return filteredJudgments.slice(0, displayCount);
+                })().map((debate) => {
                   const result = getDebateResult(debate);
                   const category = categoryMap[debate.category?.toLowerCase()] || categoryMap[debate.category] || debate.category || '기타';
                   return (
@@ -435,11 +495,21 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
-              {myJudgments.length > displayCount && (
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full mt-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
-                  더보기 ({myJudgments.length - displayCount}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
-                </motion.button>
-              )}
+              {(() => {
+                const filteredLen = (searchQuery
+                  ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
+                  : myJudgments
+                ).length;
+                const remaining = filteredLen - displayCount;
+                return remaining > 0 ? (
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full py-4 bg-white rounded-b-2xl border-x border-b border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
+                    5개 더보기 ({remaining}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
+                  </motion.button>
+                ) : null;
+              })()}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout} className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+                로그아웃
+              </motion.button>
             </>
           )}
         </div>
@@ -563,38 +633,7 @@ export default function ProfilePage() {
       {/* 판결 상세 모달 */}
       <AnimatePresence>
         {selectedVerdict && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedVerdict(null)}
-              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] flex justify-center"
-            >
-              <div className="w-full max-w-md max-h-[90vh] bg-[#FAFAF5] rounded-t-[30px] overflow-hidden flex flex-col shadow-2xl">
-                <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-6 pb-8 text-center relative shrink-0">
-                  <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mb-4" />
-                  <button onClick={() => setSelectedVerdict(null)} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
-                  <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
-                  <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
-                    "{selectedVerdict.debate?.topic || selectedVerdict.debates?.topic || '논쟁 주제'}"
-                  </h2>
-                </div>
-                <div className="flex-1 overflow-y-auto px-5 pb-6 -mt-4">
-                  <VerdictContent verdictData={selectedVerdict} />
-                  <button
-                    onClick={() => setSelectedVerdict(null)}
-                    className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
-                  >
-                    판결 리포트 닫기
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
+          <VerdictModal verdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
         )}
       </AnimatePresence>
       {verdictLoading && (
@@ -603,6 +642,334 @@ export default function ProfilePage() {
         </div>
       )}
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+
+      {/* 아바타 커스터마이징 바텀시트 */}
+      <AnimatePresence>
+        {showAvatarEdit && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="fixed inset-0 bg-black/40 z-[300]" />
+            <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl pointer-events-auto"
+              >
+                <div className="px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
+                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[16px] font-black text-[#1B2A4A]">아바타 꾸미기</h3>
+                    <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
+                  </div>
+                </div>
+
+                {/* 프리뷰 */}
+                <div className="flex justify-center py-4 shrink-0">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
+                    <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
+                  {/* 헤어스타일 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">헤어스타일</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {(profileData?.gender === 'male' ? MALE_STYLES : FEMALE_STYLES).map(s => (
+                        <button key={s} onClick={() => setAvatarOptions(prev => ({ ...prev, top: s }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { top: s })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 피부색 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
+                    <div className="flex gap-2">
+                      {SKIN_COLORS.map(c => (
+                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, skinColor: c }))}
+                          className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.skinColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                          style={{ backgroundColor: `#${c}` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 머리색 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {HAIR_COLORS.map(c => (
+                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, hairColor: c }))}
+                          className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.hairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                          style={{ backgroundColor: `#${c}` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 의상 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {CLOTHING_OPTIONS.map(c => (
+                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothing: c }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { clothing: c })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 액세서리 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: '' }))}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.accessories ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                        없음
+                      </button>
+                      {ACCESSORIES_OPTIONS.map(a => (
+                        <button key={a} onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: a }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { accessories: a })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 눈 모양 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {EYES_OPTIONS.map(e => (
+                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyes: e })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 눈썹 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {EYEBROWS_OPTIONS.map(e => (
+                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyebrows: e })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 입 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {MOUTH_OPTIONS.map(m => (
+                        <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
+                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                          <img src={buildAvatarUrl(user.id, profileData?.gender, { mouth: m })} alt="" className="w-full h-full" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 수염 (남성만) */}
+                  {profileData?.gender === 'male' && (
+                    <div>
+                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <button onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: '' }))}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                          없음
+                        </button>
+                        {FACIAL_HAIR_OPTIONS.map(f => (
+                          <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
+                            className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                            <img src={buildAvatarUrl(user.id, profileData?.gender, { facialHair: f })} alt="" className="w-full h-full" />
+                          </button>
+                        ))}
+                      </div>
+                      {avatarOptions.facialHair && (
+                        <div className="mt-2">
+                          <p className="text-[11px] text-[#1B2A4A]/30 mb-1">수염 색상</p>
+                          <div className="flex gap-2">
+                            {FACIAL_HAIR_COLORS.map(c => (
+                              <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHairColor: c }))}
+                                className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                                style={{ backgroundColor: `#${c}` }} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 의상 색상 */}
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {CLOTHES_COLORS.map(c => (
+                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothesColor: c }))}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                          style={{ backgroundColor: `#${c}` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 액세서리 색상 */}
+                  {avatarOptions.accessories && (
+                    <div>
+                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
+                      <div className="flex gap-2">
+                        {ACCESSORIES_COLORS.map(c => (
+                          <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, accessoriesColor: c }))}
+                            className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                            style={{ backgroundColor: `#${c}` }} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 저장 */}
+                  <button
+                    onClick={async () => {
+                      const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);
+                      await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+                      setShowAvatarEdit(false);
+                      window.location.reload();
+                    }}
+                    className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.97] transition-all"
+                  >
+                    아바타 저장
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ===== 프로필 미완성 설정 바텀시트 ===== */}
+      <AnimatePresence>
+        {showProfileSetup && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-[300]" />
+            <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                className="w-full max-w-[440px] bg-white rounded-t-2xl shadow-xl pointer-events-auto"
+              >
+                <div className="px-5 pt-4 pb-2">
+                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+                  <h3 className="text-[18px] font-black text-[#1B2A4A] mb-1">프로필을 완성해주세요</h3>
+                  <p className="text-[12px] text-[#1B2A4A]/40 mb-4">더 나은 서비스를 위해 기본 정보를 입력해주세요</p>
+                </div>
+
+                <div className="px-5 pb-6 space-y-4">
+                  {/* 닉네임 */}
+                  {!profileData?.nickname && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">닉네임</label>
+                      <input
+                        value={setupNickname}
+                        onChange={(e) => setSetupNickname(e.target.value)}
+                        placeholder="2자 이상 입력"
+                        maxLength={20}
+                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+                      />
+                    </div>
+                  )}
+
+                  {/* 성별 */}
+                  {!profileData?.gender && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">성별</label>
+                      <div className="flex gap-2">
+                        {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }].map(g => (
+                          <button
+                            key={g.key}
+                            onClick={() => setSetupGender(g.key)}
+                            className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
+                              setupGender === g.key
+                                ? 'bg-[#1B2A4A] text-[#D4AF37] border-[#1B2A4A]'
+                                : 'bg-white text-[#1B2A4A]/40 border-[#1B2A4A]/10'
+                            }`}
+                          >{g.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 나이 */}
+                  {!profileData?.age && (
+                    <div>
+                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">나이</label>
+                      <input
+                        value={setupAge}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, '');
+                          if (v.length <= 2) setSetupAge(v);
+                        }}
+                        placeholder="예: 25"
+                        maxLength={2}
+                        inputMode="numeric"
+                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+                      />
+                    </div>
+                  )}
+
+                  {/* 저장 버튼 */}
+                  <button
+                    onClick={async () => {
+                      setSetupSaving(true);
+                      try {
+                        const updates = {};
+                        if (setupNickname.trim() && !profileData?.nickname) updates.nickname = setupNickname.trim();
+                        if (setupGender && !profileData?.gender) updates.gender = setupGender;
+                        if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
+
+                        if (Object.keys(updates).length > 0) {
+                          await supabase.from('profiles').update(updates).eq('id', user.id);
+                          // user_metadata도 동기화
+                          if (updates.nickname) {
+                            await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
+                          }
+                        }
+                        setShowProfileSetup(false);
+                        window.location.reload();
+                      } catch (e) {
+                        alert('저장 중 오류가 발생했습니다.');
+                      } finally {
+                        setSetupSaving(false);
+                      }
+                    }}
+                    disabled={setupSaving || (
+                      (!profileData?.nickname && setupNickname.trim().length < 2) ||
+                      (!profileData?.gender && !setupGender) ||
+                      (!profileData?.age && setupAge.length < 1)
+                    )}
+                    className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] disabled:opacity-30 active:scale-[0.97] transition-all"
+                  >
+                    {setupSaving ? '저장 중...' : '프로필 저장'}
+                  </button>
+
+                  <button
+                    onClick={() => setShowProfileSetup(false)}
+                    className="w-full py-2 text-[12px] text-[#1B2A4A]/30 font-bold"
+                  >
+                    나중에 하기
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

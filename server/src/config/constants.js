@@ -13,7 +13,7 @@ export const VERDICT_CITIZEN_WEIGHT = 0.25;
 export const CITIZEN_VOTE_THRESHOLD = 30;
 
 // 글자수 제한
-export const ARGUMENT_MIN_LENGTH = 50;
+export const ARGUMENT_MIN_LENGTH = 1;
 export const ARGUMENT_MAX_LENGTH = 2000;
 export const VERDICT_TEXT_MAX_LENGTH = 2000;
 

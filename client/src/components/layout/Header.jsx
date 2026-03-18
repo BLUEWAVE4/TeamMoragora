@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../store/AuthContext';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
-// ⚖️ 공정함을 상징하는 천칭(Scales) 로고 아이콘
 const ScalesLogo = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2.5">
     <path d="M12 3V21" stroke="#2D3350" strokeWidth="2" strokeLinecap="round"/>
@@ -13,7 +11,6 @@ const ScalesLogo = () => (
   </svg>
 );
 
-// 🔍 커스텀 검색 아이콘 (천칭 로고와 굵기 밸런스를 맞춤)
 const SearchIcon = ({ className }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="11" cy="11" r="8" />
@@ -21,62 +18,124 @@ const SearchIcon = ({ className }) => (
   </svg>
 );
 
+// 경로별 검색 설정
+const SEARCH_CONFIG = {
+  '/': { placeholder: '주제 또는 작성자 검색', param: 'q' },
+  '/ranking': { placeholder: '사용자 검색', param: 'q' },
+  '/moragora': { placeholder: '주제 또는 작성자 검색', param: 'q' },
+  '/profile': { placeholder: '최근 논쟁 기록 검색', param: 'q' },
+};
+
+// 헤더 숨김 경로
+const HIDE_PATHS = ['/debate/create', '/moragora/'];
+
 export default function Header() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  const pathname = location.pathname;
+  const config = SEARCH_CONFIG[pathname] || SEARCH_CONFIG['/'];
+  const shouldHide = HIDE_PATHS.some(p => pathname.startsWith(p));
+
+  // 페이지 이동 시 검색 닫기
+  useEffect(() => {
+    setIsSearchOpen(false);
+    setSearchQuery(searchParams.get('q') || '');
+  }, [pathname]);
+
+  // 스크롤 방향 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY < 10) setVisible(true);
+      else if (currentY > lastScrollY.current + 5) setVisible(false);
+      else if (currentY < lastScrollY.current - 5) setVisible(true);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  if (shouldHide) return null;
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${searchQuery}`);
-      setIsSearchOpen(false);
-      setSearchQuery('');
+    const q = searchQuery.trim();
+    if (q) {
+      // 현재 페이지에 쿼리 파라미터 추가
+      setSearchParams({ q });
+    } else {
+      // 검색어 비우면 파라미터 제거
+      setSearchParams({});
     }
+    setIsSearchOpen(false);
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchParams({});
+    setIsSearchOpen(false);
+  };
+
+  const currentQuery = searchParams.get('q');
+
   return (
-    <header className="bg-white/80 border-b border-gray-100 sticky top-0 z-[100] h-16 flex items-center shadow-sm backdrop-blur-md">
+    <header
+      className={`bg-white/80 border-b border-gray-100 sticky top-0 z-[100] h-14 flex items-center backdrop-blur-md transition-transform duration-300 ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
       <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
-        
         {isSearchOpen ? (
-          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
-            {/* 🍏 iOS 스타일 검색 필드 컨테이너 */}
-            <div className="flex-1 flex items-center bg-gray-100/80 rounded-2xl px-3 py-2 focus-within:ring-2 focus-within:ring-[#FFBD43]/30 transition-all">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-3">
+            <div className="flex-1 flex items-center bg-gray-100/80 rounded-xl px-3 py-1.5">
               <SearchIcon className="text-gray-400 mr-2" />
               <input
                 autoFocus
                 type="text"
-                placeholder="논쟁 검색"
+                placeholder={config.placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent border-none outline-none text-sm text-[#2D3350] placeholder:text-gray-400"
               />
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery('')} className="text-gray-400 text-lg leading-none ml-1">&times;</button>
+              )}
             </div>
-            <button 
-              type="button" 
-              onClick={() => setIsSearchOpen(false)}
-              className="text-[15px] font-bold text-[#007AFF] active:opacity-60 transition-opacity"
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="text-[13px] font-bold text-[#1B2A4A]/50 active:opacity-60"
             >
               취소
             </button>
           </form>
         ) : (
           <>
-            <Link to="/" className="flex items-center no-underline active:scale-95 transition-transform group">
+            <Link to="/" className="flex items-center no-underline active:scale-95 transition-transform">
               <ScalesLogo />
-              <span className="text-xl font-black text-[#2D3350] tracking-tight group-hover:text-black transition-colors">
+              <span className="text-lg font-black text-[#2D3350] tracking-tight">
                 모라고라<span className="text-[#FFBD43]">.</span>
               </span>
             </Link>
-
-            <div className="flex items-center gap-2">
-              <button 
+            <div className="flex items-center gap-1">
+              {/* 검색 활성화 중이면 검색어 뱃지 표시 */}
+              {currentQuery && (
+                <button
+                  onClick={() => { setSearchParams({}); }}
+                  className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full flex items-center gap-1 active:scale-95 transition-all"
+                >
+                  "{currentQuery}" <span className="text-[#D4AF37]/50">&times;</span>
+                </button>
+              )}
+              <button
                 onClick={() => setIsSearchOpen(true)}
-                className="w-10 h-10 flex items-center justify-center text-[#2D3350] rounded-full hover:bg-gray-50 active:scale-90 transition-all"
+                className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full active:scale-90 transition-all"
               >
                 <SearchIcon />
               </button>
