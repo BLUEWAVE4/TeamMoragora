@@ -88,7 +88,6 @@ export default function DebateCard({ feed, formatTime }) {
   const [sideUsers, setSideUsers] = useState({ A: null, B: null });
   const commentInputRef = useRef(null);
 
-<<<<<<< HEAD
   // ✅ 조회수 state — page_views 테이블에서 직접 fetch
   const [viewCount, setViewCount] = useState(0);
 
@@ -106,9 +105,6 @@ export default function DebateCard({ feed, formatTime }) {
     };
     fetchViewCount();
   }, [feed?.debate_id, debateData?.id]);
-=======
-  const [viewCount, setViewCount] = useState(debateData?.view_count || 0);
->>>>>>> 36700ebd087364bb76c706d072daf60dce2d583e
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,

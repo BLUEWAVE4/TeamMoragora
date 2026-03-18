@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
+
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -38,8 +39,9 @@ const CountUp = ({ end }) => {
   }, [end]);
   return <span>{count.toLocaleString()}</span>;
 };
+
 const RadarChart = ({ data }) => {
-  const size = 300; 
+  const size = 300;
   const center = size / 2;
   const radius = size * 0.3;
   const angleStep = (Math.PI * 2) / data.length;
@@ -72,6 +74,7 @@ const RadarChart = ({ data }) => {
     </div>
   );
 };
+
 const TIER_LIST = [
   { name: '시민', en: 'Citizen', min: 0, max: 299, color: '#8E8E93', bg: '#F5F5F7', icon: User, desc: '논쟁의 첫 발걸음' },
   { name: '배심원', en: 'Juror', min: 300, max: 1000, color: '#007AFF', bg: '#EBF5FF', icon: Gavel, desc: '공정한 시각으로 논쟁을 바라보는 자' },
@@ -79,23 +82,62 @@ const TIER_LIST = [
   { name: '판사', en: 'Judge', min: 2001, max: 5000, color: '#FF9500', bg: '#FFF5EB', icon: Scale, desc: '논리와 이성으로 판단을 내리는 자' },
   { name: '대법관', en: 'Supreme', min: 5001, max: null, color: '#FF3B30', bg: '#FFF0EF', icon: Crown, desc: '서버 최강의 논쟁 지배자' },
 ];
+
 const getTier = (pts) => {
   for (let i = TIER_LIST.length - 1; i >= 0; i--) {
     if (pts >= TIER_LIST[i].min) return TIER_LIST[i];
   }
   return TIER_LIST[0];
 };
+
 const categoryMap = {
   daily: '일상', romance: '연애', work: '직장', education: '교육',
   social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
   culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
   사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
+
 const formatDate = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
+
+function VerdictModal({ verdict, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 z-[200]"
+      />
+      <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
+        <motion.div
+          initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+          className="w-full max-w-[440px] max-h-[92vh] bg-[#FAFAF5] rounded-t-2xl overflow-hidden flex flex-col shadow-2xl pointer-events-auto"
+        >
+          <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-5 pb-7 text-center relative shrink-0 z-10">
+            <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-3" />
+            <button onClick={onClose} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
+            <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
+            <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
+              "{verdict.debate?.topic || verdict.debates?.topic || '논쟁 주제'}"
+            </h2>
+          </div>
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8 -mt-3">
+            <VerdictContent verdictData={verdict} />
+          </div>
+        </motion.div>
+      </div>
+    </>
+  );
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -112,24 +154,48 @@ export default function ProfilePage() {
   const [isListEditing, setIsListEditing] = useState(false);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
   const [verdictLoading, setVerdictLoading] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [setupGender, setSetupGender] = useState('');
+  const [setupAge, setSetupAge] = useState('');
+  const [setupNickname, setSetupNickname] = useState('');
+  const [setupSaving, setSetupSaving] = useState(false);
+  const [showAvatarEdit, setShowAvatarEdit] = useState(false);
+  const [avatarOptions, setAvatarOptions] = useState({
+    top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '',
+  });
+
   const tierDragControls = useDragControls();
   const analysisDragControls = useDragControls();
+
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
-
-  // ✅ 승률 계산 — 무승부 제외, 승+패만으로 계산
-  const decidedGames = wins + losses;
-  const totalGames = wins + losses + draws;
-  const winRate = decidedGames > 0 ? (wins / decidedGames) * 100 : 0;
-  const lossRate = decidedGames > 0 ? (losses / decidedGames) * 100 : 0;
-
+  const totalGames = wins + losses;
+  const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+  const lossRate = totalGames > 0 ? (losses / totalGames) * 100 : 0;
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
   const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
   const progress = nextTier
     ? Math.min(100, Math.max(0, ((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
     : 100;
+
+  // ✅ 바텀시트가 열릴 때 배경 스크롤 및 터치 완전 차단
+  useEffect(() => {
+    const isAnySheetOpen = isTierSheetOpen || isSheetOpen || showAvatarEdit || showProfileSetup;
+    if (isAnySheetOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isTierSheetOpen, isSheetOpen, showAvatarEdit, showProfileSetup]);
+
   useEffect(() => {
     const fetchAllData = async () => {
       if (!user) return;
@@ -139,6 +205,12 @@ export default function ProfilePage() {
         const profile = pRes.data || pRes;
         setProfileData(profile);
         setNewNickname(profile.nickname || '');
+        if (!profile.gender || !profile.age || !profile.nickname) {
+          setSetupNickname(profile.nickname || '');
+          setSetupGender(profile.gender || '');
+          setSetupAge(profile.age ? String(profile.age) : '');
+          setShowProfileSetup(true);
+        }
         const { data: debates, error } = await supabase
           .from('debates')
           .select(`*, verdicts (*)`)
@@ -154,6 +226,7 @@ export default function ProfilePage() {
     };
     fetchAllData();
   }, [user]);
+
   const getDebateResult = (debate) => {
     const verdict = debate.verdicts?.[0];
     if (!verdict) return null;
@@ -162,6 +235,7 @@ export default function ProfilePage() {
     if (verdict.winner_side === 'draw') return '무승부';
     return verdict.winner_side === mySide ? '승리' : '패배';
   };
+
   const handleUpdateNickname = async () => {
     if (!newNickname.trim()) return;
     setLoading(true);
@@ -175,6 +249,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
   const handleVerdictClick = async (debateId) => {
     setVerdictLoading(true);
     try {
@@ -187,6 +262,7 @@ export default function ProfilePage() {
       setVerdictLoading(false);
     }
   };
+
   const handleDeleteDebate = async (debateId, e) => {
     e.stopPropagation();
     if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
@@ -198,6 +274,7 @@ export default function ProfilePage() {
       alert('삭제 처리 중 오류가 발생했습니다.');
     }
   };
+
   const handleLogout = async () => {
     if (!window.confirm("로그아웃 하시겠습니까?")) return;
     try {
@@ -209,26 +286,15 @@ export default function ProfilePage() {
       window.location.href = '/';
     }
   };
+
   if (!user) return (
     <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7] text-[16px]">
       로그인이 필요합니다.
     </div>
   );
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
-      <nav className="sticky top-0 z-50 bg-[#F2F2F7]/80 backdrop-blur-xl px-5 h-16 flex items-center justify-between border-b border-gray-200/50">
-        <h1 className="text-[18px] font-semibold text-black">프로필</h1>
-        <div className="flex gap-4">
-          <button onClick={() => setIsEditing(!isEditing)} className="text-[#007AFF] text-[16px] active:opacity-30 transition-opacity font-medium">
-            {isEditing ? '취소' : '편집'}
-          </button>
-          {!isEditing && (
-            <button onClick={handleLogout} className="text-[#FF3B30] flex items-center gap-1 text-[16px] active:opacity-30 transition-opacity font-medium">
-              <LogOut size={18} /> 로그아웃
-            </button>
-          )}
-        </div>
-      </nav>
       <div className="max-w-md mx-auto px-5 pt-8">
         <div className="flex flex-col items-center mb-8">
           {/* 아바타 */}
@@ -236,7 +302,6 @@ export default function ProfilePage() {
             className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
             onClick={() => {
               if (isEditing && profileData?.gender) {
-                // 현재 아바타 URL에서 옵션 파싱 또는 기본값
                 const currentUrl = profileData.avatar_url || '';
                 const params = new URLSearchParams(currentUrl.split('?')[1] || '');
                 const isMale = profileData.gender === 'male';
@@ -275,7 +340,6 @@ export default function ProfilePage() {
           {/* 닉네임 + 편집 */}
           <div className="flex flex-col items-center w-full">
             <div className="flex flex-col items-center">
-              {/* 닉네임 — 항상 중앙 고정 */}
               <div className="relative flex items-center justify-center">
                 {isEditing ? (
                   <input
@@ -288,7 +352,6 @@ export default function ProfilePage() {
                 ) : (
                   <h2 className="text-xl font-bold text-black tracking-tight border-b-2 border-transparent">{newNickname || '\u00A0'}</h2>
                 )}
-                {/* 우측 버튼 — 절대 위치로 닉네임 밀지 않음 */}
                 <div className="absolute left-full ml-1 flex items-center gap-0.5">
                   {isEditing ? (
                     <>
@@ -317,6 +380,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
         <div className="space-y-4 mb-6">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2">
@@ -339,12 +403,12 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div 
+                <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full rounded-full" 
-                  style={{ backgroundColor: tier.color }} 
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: tier.color }}
                 />
               </div>
               <div className="flex justify-end">
@@ -359,36 +423,32 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ✅ 전체 승률 카드 — 무승부 제외 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
             <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
-              <span className="text-[#007AFF]">{wins}승</span>
+              <span className="text-emerald-600">{wins}승</span>
               {draws > 0 && <span className="text-gray-400">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
-            {/* ✅ 막대그래프 — 승/패만 표시, 무승부 제외 */}
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${winRate}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-[#007AFF] rounded-l-full"
+                className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
               />
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${lossRate}%` }}
                 transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-                className="h-full bg-[#FF3B30] rounded-r-full"
+                className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
               />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">
-              총 {totalGames}회 논쟁 참여
-              {draws > 0 && <span className="text-gray-300"> (무승부 {draws}회 제외)</span>}
-            </p>
+            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
           </div>
         </div>
+
         <div className="space-y-3 mb-10">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
@@ -411,6 +471,7 @@ export default function ProfilePage() {
             <ChevronRight size={20} className="text-[#C7C7CC]" />
           </motion.button>
         </div>
+
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4 ml-2 mr-2">
             <div className="flex items-center gap-2">
@@ -513,18 +574,23 @@ export default function ProfilePage() {
             </>
           )}
         </div>
+
         <div className="flex justify-center gap-8 mb-12 text-center">
           <Link to="/terms" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">이용약관</Link>
           <Link to="/privacy" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">개인정보처리방침</Link>
         </div>
       </div>
+
       {/* 등급 시스템 바텀시트 */}
       <AnimatePresence>
         {isTierSheetOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsTierSheetOpen(false)}
-              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
+              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
+              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md"
+            />
             <motion.div
               drag="y"
               dragControls={tierDragControls}
@@ -534,9 +600,11 @@ export default function ProfilePage() {
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
               className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              <div 
+              {/* 핸들: 여기서만 드래그 가능 */}
+              <div
                 onPointerDown={(e) => tierDragControls.start(e)}
                 className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
               >
@@ -550,7 +618,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="space-y-4 mb-10">
-                  {[...TIER_LIST].reverse().map((t, i) => {
+                  {[...TIER_LIST].reverse().map((t) => {
                     const isCurrent = t.name === tier.name;
                     return (
                       <motion.div key={t.name}
@@ -574,12 +642,17 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
+
       {/* 논리 분석 바텀시트 */}
       <AnimatePresence>
         {isSheetOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsSheetOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md" />
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsSheetOpen(false)}
+              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
+              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md"
+            />
             <motion.div
               drag="y"
               dragControls={analysisDragControls}
@@ -589,9 +662,11 @@ export default function ProfilePage() {
               onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
               className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
             >
-              <div 
+              {/* 핸들: 여기서만 드래그 가능 */}
+              <div
                 onPointerDown={(e) => analysisDragControls.start(e)}
                 className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
               >
@@ -630,29 +705,38 @@ export default function ProfilePage() {
           </>
         )}
       </AnimatePresence>
+
       {/* 판결 상세 모달 */}
       <AnimatePresence>
         {selectedVerdict && (
           <VerdictModal verdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
         )}
       </AnimatePresence>
+
+      {/* 판결 로딩 오버레이 */}
       {verdictLoading && (
         <div className="fixed inset-0 bg-black/30 z-[199] flex items-center justify-center">
           <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       )}
+
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
 
       {/* 아바타 커스터마이징 바텀시트 */}
       <AnimatePresence>
         {showAvatarEdit && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="fixed inset-0 bg-black/40 z-[300]" />
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }}
+              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
+              className="fixed inset-0 bg-black/40 z-[300]"
+            />
             <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
                 className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl pointer-events-auto"
               >
                 <div className="px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
@@ -662,14 +746,12 @@ export default function ProfilePage() {
                     <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
                   </div>
                 </div>
-
                 {/* 프리뷰 */}
                 <div className="flex justify-center py-4 shrink-0">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
                     <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
                   </div>
                 </div>
-
                 <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
                   {/* 헤어스타일 */}
                   <div>
@@ -683,7 +765,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 피부색 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
@@ -695,7 +776,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 머리색 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
@@ -707,7 +787,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 의상 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
@@ -720,7 +799,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 액세서리 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
@@ -737,7 +815,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 눈 모양 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
@@ -750,7 +827,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 눈썹 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
@@ -763,7 +839,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 입 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
@@ -776,7 +851,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 수염 (남성만) */}
                   {profileData?.gender === 'male' && (
                     <div>
@@ -807,7 +881,6 @@ export default function ProfilePage() {
                       )}
                     </div>
                   )}
-
                   {/* 의상 색상 */}
                   <div>
                     <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
@@ -819,7 +892,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-
                   {/* 액세서리 색상 */}
                   {avatarOptions.accessories && (
                     <div>
@@ -833,7 +905,6 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   )}
-
                   {/* 저장 */}
                   <button
                     onClick={async () => {
@@ -857,11 +928,16 @@ export default function ProfilePage() {
       <AnimatePresence>
         {showProfileSetup && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-[300]" />
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
+              className="fixed inset-0 bg-black/40 z-[300]"
+            />
             <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
                 className="w-full max-w-[440px] bg-white rounded-t-2xl shadow-xl pointer-events-auto"
               >
                 <div className="px-5 pt-4 pb-2">
@@ -869,7 +945,6 @@ export default function ProfilePage() {
                   <h3 className="text-[18px] font-black text-[#1B2A4A] mb-1">프로필을 완성해주세요</h3>
                   <p className="text-[12px] text-[#1B2A4A]/40 mb-4">더 나은 서비스를 위해 기본 정보를 입력해주세요</p>
                 </div>
-
                 <div className="px-5 pb-6 space-y-4">
                   {/* 닉네임 */}
                   {!profileData?.nickname && (
@@ -884,7 +959,6 @@ export default function ProfilePage() {
                       />
                     </div>
                   )}
-
                   {/* 성별 */}
                   {!profileData?.gender && (
                     <div>
@@ -904,7 +978,6 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   )}
-
                   {/* 나이 */}
                   {!profileData?.age && (
                     <div>
@@ -922,7 +995,6 @@ export default function ProfilePage() {
                       />
                     </div>
                   )}
-
                   {/* 저장 버튼 */}
                   <button
                     onClick={async () => {
@@ -932,10 +1004,8 @@ export default function ProfilePage() {
                         if (setupNickname.trim() && !profileData?.nickname) updates.nickname = setupNickname.trim();
                         if (setupGender && !profileData?.gender) updates.gender = setupGender;
                         if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
-
                         if (Object.keys(updates).length > 0) {
                           await supabase.from('profiles').update(updates).eq('id', user.id);
-                          // user_metadata도 동기화
                           if (updates.nickname) {
                             await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
                           }
@@ -957,7 +1027,6 @@ export default function ProfilePage() {
                   >
                     {setupSaving ? '저장 중...' : '프로필 저장'}
                   </button>
-
                   <button
                     onClick={() => setShowProfileSetup(false)}
                     className="w-full py-2 text-[12px] text-[#1B2A4A]/30 font-bold"
