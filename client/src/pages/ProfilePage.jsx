@@ -92,12 +92,6 @@ const formatDate = (iso) => {
 };
 
 // ─── iOS-like BottomSheet ─────────────────────────────────────────────────────
-/**
- * Reusable iOS-style bottom sheet with:
- * - Handle drag to dismiss (velocity + distance based, like iOS)
- * - X close button top-right
- * - Background scroll & touch locked while open
- */
 function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = '#F2F2F7', zIndex = 100 }) {
   const sheetRef = useRef(null);
   const startYRef = useRef(null);
@@ -106,21 +100,16 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
   const isDraggingHandle = useRef(false);
   const animFrameRef = useRef(null);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (!isOpen) return;
     const prev = { overflow: document.body.style.overflow, touchAction: document.body.style.touchAction };
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
-
-    // Prevent touchmove on document (passive: false required for preventDefault)
     const preventTouch = (e) => {
-      // Allow scrolling inside the sheet content area
       if (sheetRef.current && sheetRef.current.contains(e.target)) return;
       e.preventDefault();
     };
     document.addEventListener('touchmove', preventTouch, { passive: false });
-
     return () => {
       document.body.style.overflow = prev.overflow;
       document.body.style.touchAction = prev.touchAction;
@@ -128,7 +117,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
     };
   }, [isOpen]);
 
-  // Reset sheet position on open
   useEffect(() => {
     if (isOpen && sheetRef.current) {
       sheetRef.current.style.transform = 'translateY(0px)';
@@ -138,7 +126,7 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
 
   const applyDrag = useCallback((deltaY) => {
     if (!sheetRef.current) return;
-    const clamped = Math.max(0, deltaY); // only allow downward
+    const clamped = Math.max(0, deltaY);
     const resistance = clamped > 0 ? clamped * 0.85 : clamped;
     cancelAnimationFrame(animFrameRef.current);
     animFrameRef.current = requestAnimationFrame(() => {
@@ -166,16 +154,10 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
   const handlePointerUp = useCallback(() => {
     if (!isDraggingHandle.current) return;
     isDraggingHandle.current = false;
-
     const deltaY = currentYRef.current;
     const elapsed = Date.now() - startTimeRef.current;
-    const velocity = deltaY / elapsed; // px/ms
-
-    const DISMISS_DISTANCE = 120;
-    const DISMISS_VELOCITY = 0.5; // px/ms
-
-    const shouldDismiss = deltaY > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY;
-
+    const velocity = deltaY / elapsed;
+    const shouldDismiss = deltaY > 120 || velocity > 0.5;
     if (shouldDismiss) {
       if (sheetRef.current) {
         sheetRef.current.style.transition = 'transform 0.32s cubic-bezier(0.32, 0, 0.67, 0)';
@@ -183,13 +165,11 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
       }
       setTimeout(onClose, 320);
     } else {
-      // Snap back
       if (sheetRef.current) {
         sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
         sheetRef.current.style.transform = 'translateY(0px)';
       }
     }
-
     startYRef.current = null;
     currentYRef.current = 0;
   }, [onClose]);
@@ -198,7 +178,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -208,8 +187,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
             className="fixed inset-0 backdrop-blur-md"
             style={{ backgroundColor: 'rgba(0,0,0,0.45)', zIndex }}
           />
-
-          {/* Sheet */}
           <div
             className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none"
             style={{ zIndex: zIndex + 1 }}
@@ -223,7 +200,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
               className="w-full max-w-[440px] rounded-t-[32px] flex flex-col shadow-2xl overflow-hidden pointer-events-auto"
               style={{ backgroundColor: bgColor, maxHeight }}
             >
-              {/* Handle bar + close button area */}
               <div
                 className="relative flex items-center justify-center px-5 pt-4 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing select-none"
                 onMouseDown={handlePointerDown}
@@ -234,10 +210,7 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
                 onTouchMove={handlePointerMove}
                 onTouchEnd={handlePointerUp}
               >
-                {/* Drag handle */}
                 <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.18)' }} />
-
-                {/* X close button */}
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
@@ -247,8 +220,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
                   <X size={16} strokeWidth={2.5} style={{ color: 'rgba(0,0,0,0.45)' }} />
                 </button>
               </div>
-
-              {/* Content slot — passed as children */}
               {children}
             </motion.div>
           </div>
@@ -258,7 +229,7 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
   );
 }
 
-// ─── VerdictModal (kept as-is, separate full-screen modal) ──────────────────
+// ─── VerdictModal ──────────────────────────────────────────────────────────
 function VerdictModal({ verdict, onClose }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -326,9 +297,10 @@ export default function ProfilePage() {
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
-  const totalGames = wins + losses;
-  const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-  const lossRate = totalGames > 0 ? (losses / totalGames) * 100 : 0;
+  const totalForRate = wins + losses;           // 승률 계산용 (무승부 제외)
+  const totalGames = wins + losses + draws;     // 총 참여 횟수 (무승부 포함)
+  const winRate = totalForRate > 0 ? (wins / totalForRate) * 100 : 0;
+  const lossRate = totalForRate > 0 ? (losses / totalForRate) * 100 : 0;
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
   const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
@@ -485,7 +457,6 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-
           <div className="flex flex-col items-center w-full">
             <div className="flex flex-col items-center">
               <div className="relative flex items-center justify-center">
@@ -528,6 +499,7 @@ export default function ProfilePage() {
 
         {/* Stats Cards */}
         <div className="space-y-4 mb-6">
+          {/* 포인트 카드 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
@@ -558,12 +530,13 @@ export default function ProfilePage() {
                     <span className="text-black">{(nextTier.min - currentScore).toLocaleString()}점</span> 더 모으면 {nextTier.name}
                   </p>
                 ) : (
-                  <p className="text-[16px] text-[#FF3B30] font-black italic">최고 등급 달성! 🔥</p>
+                  <p className="text-[16px] text-[#FF3B30] font-black italic">최고 등급 달성!</p>
                 )}
               </div>
             </div>
           </div>
 
+          {/* 승률 카드 */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
             <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
@@ -572,6 +545,7 @@ export default function ProfilePage() {
               {draws > 0 && <span className="text-gray-400">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
+            {/* 막대 그래프 — 승률은 무승부 제외 유지 */}
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
               <motion.div
                 initial={{ width: 0 }} animate={{ width: `${winRate}%` }}
@@ -584,7 +558,15 @@ export default function ProfilePage() {
                 className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
               />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
+            {/* ✅ 총 참여 횟수 (무승부 포함) + 안내 문구 */}
+            <div className="mt-4 text-center space-y-1">
+              <p className="text-[16px] text-gray-400 font-bold">총 {totalGames}회 논쟁 참여</p>
+              {draws > 0 && (
+                <p className="text-[11px] text-[#8E8E93] font-medium">
+                  승률은 무승부를 제외하고 계산됩니다
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -747,7 +729,7 @@ export default function ProfilePage() {
       <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#ffffff" zIndex={100}>
         <div className="px-6 overflow-y-auto flex-1 pb-16">
           <div className="flex justify-between items-end mb-8">
-            <h3 className="text-[26px] font-black text-black">논리 분석</h3>
+            <h3 className="text-[26px] font-black text-black mb-6">논리 분석</h3>
             <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
           </div>
           <div className="bg-[#F9F9F9] rounded-[32px] mb-8 border border-gray-50 overflow-hidden shadow-inner">
@@ -781,14 +763,12 @@ export default function ProfilePage() {
         <div className="px-5 pb-2 border-b border-gray-100 shrink-0">
           <h3 className="text-[16px] font-black text-[#1B2A4A] pb-2">아바타 꾸미기</h3>
         </div>
-        {/* Preview */}
         <div className="flex justify-center py-4 shrink-0">
           <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
             <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
-          {/* 헤어스타일 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">헤어스타일</p>
             <div className="flex gap-2 flex-wrap">
@@ -800,7 +780,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 피부색 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
             <div className="flex gap-2">
@@ -811,7 +790,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 머리색 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
             <div className="flex gap-2 flex-wrap">
@@ -822,7 +800,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 의상 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
             <div className="flex gap-2 flex-wrap">
@@ -834,7 +811,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 액세서리 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
             <div className="flex gap-2 flex-wrap">
@@ -850,7 +826,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 눈 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
             <div className="flex gap-2 flex-wrap">
@@ -862,7 +837,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 눈썹 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
             <div className="flex gap-2 flex-wrap">
@@ -874,7 +848,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 입 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
             <div className="flex gap-2 flex-wrap">
@@ -886,7 +859,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 수염 (남성만) */}
           {profileData?.gender === 'male' && (
             <div>
               <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
@@ -916,7 +888,6 @@ export default function ProfilePage() {
               )}
             </div>
           )}
-          {/* 의상 색상 */}
           <div>
             <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
             <div className="flex gap-2 flex-wrap">
@@ -927,7 +898,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-          {/* 액세서리 색상 */}
           {avatarOptions.accessories && (
             <div>
               <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
@@ -940,7 +910,6 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
-          {/* 저장 */}
           <button
             onClick={async () => {
               const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);

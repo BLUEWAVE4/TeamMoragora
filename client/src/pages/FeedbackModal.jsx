@@ -218,7 +218,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
             <div className="flex justify-center mb-3 sm:hidden">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />
             </div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-">
               <h3 className="text-lg font-black text-[#2D3350]">서비스 평가</h3>
               <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 text-lg">&times;</button>
             </div>
