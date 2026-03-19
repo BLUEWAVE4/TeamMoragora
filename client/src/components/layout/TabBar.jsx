@@ -68,7 +68,12 @@ function getTimeRemaining(deadline) {
 
 function getStatusLabel(debate) {
   if (debate.status === 'voting') {
-    const remaining = getTimeRemaining(debate.vote_deadline);
+    // vote_duration(일) + created_at 기반 남은 시간 계산
+    const voteDuration = debate.vote_duration ?? 1;
+    const deadline = debate.created_at
+      ? new Date(new Date(debate.created_at).getTime() + voteDuration * 86400000)
+      : debate.vote_deadline ? new Date(debate.vote_deadline) : null;
+    const remaining = deadline ? getTimeRemaining(deadline) : '';
     return { label: `시민 투표 진행중${remaining ? `(${remaining})` : ''}`, color: 'text-emerald-600' };
   }
   return STATUS_MAP[debate.status] || STATUS_MAP.waiting;
@@ -121,7 +126,7 @@ export default function TabBar() {
   const listRef = useRef(null);
 
   const fetchActiveDebates = useCallback(async (cursor) => {
-    if (!isLoggedIn || !user) { setActiveDebates([]); setHasMore(false); return; }
+    if (!isLoggedIn || !user) { setActiveDebates([]); setHasMore(false); return []; }
     try {
       const res = await getMyActiveDebates(cursor);
       const { items, hasMore: more } = res;
@@ -131,9 +136,11 @@ export default function TabBar() {
         setActiveDebates(items || []);
       }
       setHasMore(more);
+      return items || [];
     } catch {
       if (!cursor) setActiveDebates([]);
       setHasMore(false);
+      return [];
     }
   }, [isLoggedIn, user]);
 
@@ -179,12 +186,14 @@ export default function TabBar() {
       return;
     }
 
-    // 진행중 논쟁이 있으면 바텀시트, 없으면 바로 생성
-    if (hasActiveDebates) {
-      setShowSheet(true);
-    } else {
-      navigate('/debate/create');
-    }
+    // 최신 목록 갱신 후 바텀시트 or 바로 생성
+    fetchActiveDebates().then((items) => {
+      if (items.length > 0) {
+        setShowSheet(true);
+      } else {
+        navigate('/debate/create');
+      }
+    });
   };
 
   const handleSelectDebate = (debate) => {

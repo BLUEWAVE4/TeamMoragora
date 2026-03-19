@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
-import { 
+import {
   Gavel, Scale, User, Trophy, Info, ChevronRight, FileText, Crown, Sparkles, X, History, MessageSquarePlus, Plus
 } from 'lucide-react';
 
@@ -44,21 +44,24 @@ function PlayerProfileSheet({ player, rank, onClose }) {
   const [loadingDebates, setLoadingDebates] = useState(true);
   const [visibleDebatesCount, setVisibleDebatesCount] = useState(5);
 
-  // 바텀시트 열릴 때 배경 스크롤 방지
+  // ✅ 바텀시트 열릴 때 배경 스크롤 및 터치 완전 차단
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
   }, []);
 
   const tier = findTierByScore(player?.total_score);
   const wins = player?.wins || 0;
   const losses = player?.losses || 0;
   const draws = player?.draws || 0;
+  // ✅ 승률: 무승부 제외하고 승/패만으로 계산
+  const totalForRate = wins + losses;
+  const winRate = totalForRate > 0 ? ((wins / totalForRate) * 100).toFixed(1) : '0.0';
   const totalGames = wins + losses + draws;
-  const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0.0';
-  const winPct = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-  const drawPct = totalGames > 0 ? (draws / totalGames) * 100 : 0;
-  const lossPct = totalGames > 0 ? (losses / totalGames) * 100 : 0;
 
   useEffect(() => {
     if (!player?.id) return;
@@ -70,7 +73,7 @@ function PlayerProfileSheet({ player, rank, onClose }) {
           .select(`*, verdicts (*)`)
           .or(`creator_id.eq.${player.id},opponent_id.eq.${player.id}`)
           .order('created_at', { ascending: false })
-          .limit(50); // 충분히 가져오되 보여주는 것만 조절
+          .limit(50);
         if (error) throw error;
         setDebates(data || []);
       } catch (e) {
@@ -91,7 +94,6 @@ function PlayerProfileSheet({ player, rank, onClose }) {
     return verdict.winner_side === mySide ? '승리' : '패배';
   };
 
-  // 현재 보여줄 리스트 슬라이싱
   const currentDebates = debates.slice(0, visibleDebatesCount);
 
   return (
@@ -99,14 +101,16 @@ function PlayerProfileSheet({ player, rank, onClose }) {
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
         className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm"
       />
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+        onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
         className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[90vh] flex flex-col shadow-2xl"
       >
-        {/* 드래그 핸들 — 여기서만 드래그로 닫기 가능 */}
+        {/* 드래그 핸들 */}
         <motion.div
           drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.2}
           onDragEnd={(_, info) => { if (info.offset.y > 120) onClose(); }}
@@ -114,13 +118,13 @@ function PlayerProfileSheet({ player, rank, onClose }) {
         >
           <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto" />
         </motion.div>
-        
+
         <button onClick={onClose} className="absolute top-4 right-5 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center active:scale-90 transition-all z-20">
           <X size={20} className="text-gray-500" />
         </button>
 
         <div className="px-5 pb-32 overflow-y-auto flex-1 overscroll-contain touch-pan-y">
-          {/* 프로필 헤더 섹션 */}
+          {/* 프로필 헤더 */}
           <div className="flex items-center gap-4 mb-6 pt-2">
             <div className="relative">
               <div className="w-24 h-24 rounded-[24px] overflow-hidden border-2 shadow-lg" style={{ borderColor: tier.color }}>
@@ -146,23 +150,34 @@ function PlayerProfileSheet({ player, rank, onClose }) {
             </div>
           </div>
 
-          {/* 승률 카드 */}
+          {/* ✅ 승률 카드 — 승/패 막대차트, 무승부 글자만 표시, 승률은 무승부 제외 계산 */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-1">
               <span className="text-[16px] font-bold text-gray-500 uppercase">전체 승률</span>
-              <span className="text-[24px] font-black text-[#007AFF]">{winRate}%</span>
             </div>
+            <div className="text-[32px] font-bold text-emerald-600 mb-4">{winRate}%</div>
             <div className="flex justify-between text-[16px] font-black mb-3 px-1">
-              <span className="text-[#007AFF]">{wins}승</span>
-              <span className="text-[#8E8E93]">{draws}무</span>
+              <span className="text-emerald-600">{wins}승</span>
+              {draws > 0 && <span className="text-[#8E8E93]">{draws}무</span>}
               <span className="text-[#FF3B30]">{losses}패</span>
             </div>
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex gap-[1px]">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${winPct}%` }} transition={{ duration: 1 }} className="h-full bg-[#007AFF] rounded-l-full" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${drawPct}%` }} transition={{ duration: 1, delay: 0.1 }} className="h-full bg-[#8E8E93]" />
-              <motion.div initial={{ width: 0 }} animate={{ width: `${lossPct}%` }} transition={{ duration: 1, delay: 0.2 }} className="h-full bg-[#FF3B30] rounded-r-full" />
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
+              {/* 승 — 왼쪽에서 */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${totalForRate > 0 ? (wins / totalForRate) * 100 : 0}%` }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
+              />
+              {/* 패 — 오른쪽에서 */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${totalForRate > 0 ? (losses / totalForRate) * 100 : 0}%` }}
+                transition={{ duration: 1, delay: 0.1, ease: 'easeOut' }}
+                className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
+              />
             </div>
-            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 참여</p>
+            <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
           </div>
 
           {/* 티어 진행도 */}
@@ -193,12 +208,11 @@ function PlayerProfileSheet({ player, rank, onClose }) {
             })()}
           </div>
 
-          {/* 논쟁 리스트 섹션 */}
+          {/* 논쟁 리스트 */}
           <div className="flex items-center gap-2 mb-4 ml-1">
             <History size={18} className="text-[#8E8E93]" />
             <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 리스트</h3>
           </div>
-
           {loadingDebates ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
@@ -236,10 +250,8 @@ function PlayerProfileSheet({ player, rank, onClose }) {
                   );
                 })}
               </div>
-
-              {/* 논쟁 더보기 버튼 */}
               {visibleDebatesCount < debates.length && (
-                <button 
+                <button
                   onClick={() => setVisibleDebatesCount(v => v + 5)}
                   className="w-full py-4 mt-3 bg-white rounded-xl border border-gray-100 text-[15px] font-bold text-gray-400 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
                 >
@@ -256,14 +268,28 @@ function PlayerProfileSheet({ player, rank, onClose }) {
 }
 
 export default function RankingPage() {
-  // ... RankingPage 로직은 위와 동일 (생략하지 않고 아까 드린 전체 코드 구조 유지)
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState(null); 
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // ✅ 등급 시스템 바텀시트 열릴 때 배경 스크롤 및 터치 차단
+  useEffect(() => {
+    if (isTierSheetOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isTierSheetOpen]);
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -285,7 +311,6 @@ export default function RankingPage() {
   const myData = myRankIndex !== -1 ? rankings[myRankIndex] : null;
   const currentTier = findTierByScore(myData?.total_score);
 
-  // 검색 필터
   const filteredRankings = searchQuery
     ? rankings.filter(r => (r.nickname || '').toLowerCase().includes(searchQuery))
     : rankings;
@@ -299,9 +324,7 @@ export default function RankingPage() {
     podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
   }));
 
-  // 4~10위 또는 검색 결과
   const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
-  // 내가 10위 밖인 경우
   const myIsOutsideTop10 = myRankIndex >= 10;
 
   return (
@@ -313,7 +336,6 @@ export default function RankingPage() {
           </div>
         ) : (
           <>
-            {/* 랭킹 헤더 + 정보 버튼 */}
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-[24px] font-black text-[#1B2A4A]">랭킹</h1>
               <button onClick={() => setIsTierSheetOpen(true)} className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all">
@@ -328,7 +350,6 @@ export default function RankingPage() {
                   if (!p) return null;
                   const isFirst = idx === 0;
                   const isPodiumMe = user && p.id === user.id;
-
                   return (
                     <motion.div
                       key={p.id}
@@ -344,7 +365,6 @@ export default function RankingPage() {
                         </motion.div>
                         <motion.div animate={{ opacity: [0.15, 0.4, 0.15], scale: [0.8, 1.1, 0.8] }} transition={{ repeat: Infinity, duration: 2.5 }} className="absolute inset-0 blur-xl rounded-full -z-10" style={{ backgroundColor: p.trophyColor }} />
                       </div>
-
                       <div className="relative mb-4">
                         <div className={`rounded-full p-0.5 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-3 ring-blue-400 ring-offset-1' : ''}`}>
                           <div className="rounded-full bg-white p-0.5">
@@ -357,7 +377,6 @@ export default function RankingPage() {
                           {p.rank}
                         </div>
                       </div>
-
                       <div className={`w-full ${isFirst ? 'h-40' : idx === 1 ? 'h-32' : 'h-28'} rounded-t-[24px] relative overflow-hidden flex flex-col items-center justify-start pt-4 shadow-md border border-gray-100 ${p.podiumBg}`}>
                         <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${p.color}`} />
                         <p className={`text-[14px] font-black mb-0.5 truncate px-2 ${isPodiumMe ? 'text-[#007AFF]' : 'text-gray-800'}`}>{p.nickname}</p>
@@ -372,7 +391,6 @@ export default function RankingPage() {
               </div>
             )}
 
-            {/* 내 정보 — 컴팩트 */}
             {!isLoading && myData && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -437,7 +455,6 @@ export default function RankingPage() {
                 );
               })}
 
-              {/* 내가 10위 밖이면 ... + 내 순위 표시 */}
               {myIsOutsideTop10 && myData && (
                 <>
                   <div className="flex items-center justify-center py-2">
@@ -475,15 +492,20 @@ export default function RankingPage() {
         )}
       </div>
 
+      {/* 등급 시스템 바텀시트 */}
       <AnimatePresence>
         {isTierSheetOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsTierSheetOpen(false)}
-              className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm" />
+              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
+              className="fixed inset-0 bg-black/30 z-[100] backdrop-blur-sm"
+            />
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
               className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[30px] max-h-[88vh] flex flex-col pb-12 shadow-2xl"
             >
               <motion.div

@@ -160,7 +160,7 @@ const handleGoogleLogin = () => {
             className="flex items-center justify-center gap-3 bg-[#FEE500] rounded-2xl px-4 py-4 font-black text-[#191919] active:scale-[0.97] transition-all w-full shadow-lg shadow-black/30"
           >
             <img src={kakaoBtn} alt="카카오" className="h-8 w-8 -m-2 object-contain" />
-            <span className="text-[15px]">카카오로 시작하기</span>
+            <span className="text-[15px]">카카오로 로그인</span>
           </button>
 
           {/* 구글 버튼 */}
