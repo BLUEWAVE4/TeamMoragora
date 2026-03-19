@@ -6,6 +6,7 @@ function ModeSelector({ onStart }) {
 
   const [selectedIdx, setSelectedIdx] = useState(1);
   const [showRandomModal, setShowRandomModal] = useState(false);
+  const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   const startX = useRef(0);
   const endX = useRef(0);
@@ -93,6 +94,9 @@ function ModeSelector({ onStart }) {
 
     if (selectedMode.key === "random") {
       setShowRandomModal(true);
+      return;
+    } else if (selectedMode.key === "practice") {
+      setShowPracticeModal(true);
       return;
     }
 
@@ -209,6 +213,21 @@ function ModeSelector({ onStart }) {
 
         <div className="flex justify-end mt-6">
           <Button onClick={() => setShowRandomModal(false)}>
+            확인
+          </Button>
+        </div>
+
+      </Modal>
+
+      <Modal
+        isOpen={showPracticeModal}
+        onClose={() => setShowPracticeModal(false)}
+        title="연습 모드 안내"
+      >
+        <p>연습 모드 기능은 추후 업데이트 예정입니다.</p>
+
+        <div className="flex justify-end mt-6">
+          <Button onClick={() => setShowPracticeModal(false)}>
             확인
           </Button>
         </div>

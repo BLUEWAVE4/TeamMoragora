@@ -4,7 +4,7 @@ export async function getPublicProfile(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, xp, tier')
+      .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, tier')
       .eq('id', req.params.userId)
       .single();
 
@@ -87,7 +87,7 @@ export async function getRanking(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, xp, tier')
+      .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, tier')
       .order('total_score', { ascending: false })
       .limit(50);
 
