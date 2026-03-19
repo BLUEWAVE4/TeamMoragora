@@ -47,20 +47,17 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
   const isDraggingHandle = useRef(false);
   const animFrameRef = useRef(null);
 
-  // Lock body scroll & touch when open
   useEffect(() => {
     if (!isOpen) return;
     const prevOverflow = document.body.style.overflow;
     const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
-
     const preventTouch = (e) => {
       if (sheetRef.current && sheetRef.current.contains(e.target)) return;
       e.preventDefault();
     };
     document.addEventListener('touchmove', preventTouch, { passive: false });
-
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.touchAction = prevTouch;
@@ -68,7 +65,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
     };
   }, [isOpen]);
 
-  // Reset position on open
   useEffect(() => {
     if (isOpen && sheetRef.current) {
       sheetRef.current.style.transform = 'translateY(0px)';
@@ -105,13 +101,10 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
   const handlePointerUp = useCallback(() => {
     if (!isDraggingHandle.current) return;
     isDraggingHandle.current = false;
-
     const deltaY = currentYRef.current;
     const elapsed = Date.now() - startTimeRef.current;
     const velocity = deltaY / Math.max(elapsed, 1);
-
     const shouldDismiss = deltaY > 120 || velocity > 0.5;
-
     if (shouldDismiss) {
       if (sheetRef.current) {
         sheetRef.current.style.transition = 'transform 0.32s cubic-bezier(0.32, 0, 0.67, 0)';
@@ -124,7 +117,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
         sheetRef.current.style.transform = 'translateY(0px)';
       }
     }
-
     startYRef.current = null;
     currentYRef.current = 0;
   }, [onClose]);
@@ -133,7 +125,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
@@ -141,8 +132,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
             className="fixed inset-0 backdrop-blur-sm"
             style={{ backgroundColor: 'rgba(0,0,0,0.4)', zIndex }}
           />
-
-          {/* Sheet */}
           <div className="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: zIndex + 1 }}>
             <motion.div
               ref={sheetRef}
@@ -172,7 +161,6 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
                   <X size={16} strokeWidth={2.5} style={{ color: 'rgba(0,0,0,0.45)' }} />
                 </button>
               </div>
-
               {children}
             </motion.div>
           </div>
@@ -192,9 +180,9 @@ function PlayerProfileSheet({ player, rank, onClose }) {
   const wins = player?.wins || 0;
   const losses = player?.losses || 0;
   const draws = player?.draws || 0;
-  const totalForRate = wins + losses;
+  const totalForRate = wins + losses;         // 승률 계산용 (무승부 제외)
+  const totalGames = wins + losses + draws;   // 총 참여 횟수 (무승부 포함)
   const winRate = totalForRate > 0 ? ((wins / totalForRate) * 100).toFixed(1) : '0.0';
-  const totalGames = wins + losses + draws;
 
   useEffect(() => {
     if (!player?.id) return;
@@ -269,6 +257,7 @@ function PlayerProfileSheet({ player, rank, onClose }) {
             {draws > 0 && <span className="text-[#8E8E93]">{draws}무</span>}
             <span className="text-[#FF3B30]">{losses}패</span>
           </div>
+          {/* 막대 그래프 — 승률 계산은 무승부 제외 유지 */}
           <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
             <motion.div
               initial={{ width: 0 }}
@@ -283,7 +272,15 @@ function PlayerProfileSheet({ player, rank, onClose }) {
               className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
             />
           </div>
-          <p className="text-[16px] text-gray-400 font-bold mt-4 text-center">총 {totalGames}회 논쟁 참여</p>
+          {/* ✅ 총 참여 횟수 (무승부 포함) + 안내 문구 */}
+          <div className="mt-4 text-center space-y-1">
+            <p className="text-[16px] text-gray-400 font-bold">총 {totalGames}회 논쟁 참여</p>
+            {draws > 0 && (
+              <p className="text-[11px] text-[#8E8E93] font-medium">
+                승률은 무승부를 제외하고 계산됩니다
+              </p>
+            )}
+          </div>
         </div>
 
         {/* 티어 진행도 */}
@@ -313,7 +310,6 @@ function PlayerProfileSheet({ player, rank, onClose }) {
             );
           })()}
         </div>
-        
 
         {/* 논쟁 리스트 */}
         <div className="flex items-center gap-2 mb-4 ml-1">
@@ -564,7 +560,6 @@ export default function RankingPage() {
                 );
               })}
 
-              {/* My rank if outside top 10 */}
               {myIsOutsideTop10 && myData && (
                 <>
                   <div className="flex items-center justify-center py-2">
