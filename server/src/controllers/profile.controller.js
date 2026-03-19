@@ -23,7 +23,6 @@ export async function getMyVerdicts(req, res, next) {
       .from('debates')
       .select('*, verdicts(*, ai_judgments(*))')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
-      .eq('status', 'completed')
       .order('created_at', { ascending: false });
 
     if (error) throw error;

@@ -308,14 +308,14 @@ export default function InvitePage() {
           {(debate?.pro_side || debate?.con_side) && (
             <div className="px-5 pb-5">
               <div className="grid grid-cols-[1fr_28px_1fr] items-start gap-1">
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center opacity-40">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center opacity-50">
                   <p className="text-[10px] font-black text-gray-400 tracking-wider mb-1.5">A측</p>
                   <p className="text-[12px] font-bold text-gray-500 leading-snug">{debate.pro_side || '미정'}</p>
                 </div>
                 <div className="flex items-center justify-center pt-4">
                   <span className="text-[11px] font-black text-[#D4AF37]">vs</span>
                 </div>
-                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-center shadow-sm">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
                   <p className="text-[10px] font-black text-red-500 tracking-wider mb-1.5">B측</p>
                   <p className="text-[12px] font-bold text-red-800 leading-snug">{debate.con_side || '미정'}</p>
                   <p className="text-[9px] font-bold text-red-400 mt-1">내 입장</p>
