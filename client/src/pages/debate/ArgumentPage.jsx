@@ -14,14 +14,11 @@ const toKor = (v) => labelMap[v] || v
 const MAX_CHAR_R1 = 2000
 const MAX_CHAR_R2 = 300
 
-// ── 이미지 속 저울 모양을 그대로 재현한 뱃지 ──
+      {/* 뱃지 */}
 function JusticeBadge() {
   return (
     <div className="mb-6 relative">
-      {/* 배경 광채 효과 */}
       <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
-      
-      {/* 뱃지 */}
       <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
         <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -54,7 +51,6 @@ function SubmittedCard({ label, side, content, isMe }) {
   )
 }
 
-// ── 대기 메시지 타이핑 효과 ──
 const WAITING_MESSAGES = [
   '상대방이 신중하게 논거를 정리하고 있습니다...',
   '상대방이 강력한 주장을 준비하고 있습니다...',
@@ -121,34 +117,31 @@ function WaitingCard({ label, side, submitted }) {
   )
 }
 
-// ── 라운드 헤더 (텍스트 색상 강조 버전) ──
+// ── 라운드 헤더 ──
 function RoundHeader({ num, label, state }) {
   const isActive = state === 'active';
   const isDone = state === 'done';
 
   return (
     <div className="flex items-center gap-3">
-      {/* 라운드 숫자 아이콘 */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-500 flex-shrink-0 ${
         isDone
-          ? 'bg-gray-100 text-gray-400 border-gray-200' // 완료 시 회색
+          ? 'bg-gray-100 text-gray-400 border-gray-200'
           : isActive
             ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_8px_rgba(16,185,129,0.3)]' // 작성 중 초록색
-            : 'bg-white text-gray-200 border-gray-100' // 대기 시 연한 회색
+            : 'bg-white text-gray-200 border-gray-100' 
       }`}>{num}</div>
 
-      {/* 라운드 제목 텍스트 */}
       <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-500 ${
         isActive 
           ? 'text-[#D4AF37]'
           : isDone 
-            ? 'text-gray-400' // 다음 라운드로 넘어가면 회색
-            : 'text-gray-300' // 아직 시작 안 했을 때
+            ? 'text-gray-400' 
+            : 'text-gray-300' 
       }`}>
         {label}
       </p>
-      
-      {/* 구분선 색상도 상태에 맞게 변화 */}
+    
       <div className={`flex-1 h-px transition-colors duration-500 ${
         isActive ? 'bg-[#D4AF37]' : 'bg-gray-100'
       }`} />
@@ -268,7 +261,6 @@ export default function ArgumentPage() {
     return () => clearInterval(interval)
   }, [debate?.status, fetchData])
 
-  // 삭제된 논쟁 → 안내 후 홈으로 이동
   useEffect(() => {
     if (deleted) {
       const timer = setTimeout(() => navigate('/'), 3000)
@@ -344,7 +336,7 @@ export default function ArgumentPage() {
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           {/* ── 상단 로고 ── */}
           <JusticeBadge />
-          <p className="text-[#D4AF37] text-[11px] font-black tracking-[0.2em] mb-3">
+          <p className="text-[#D4AF37] text-[13px] font-black tracking-[0.2em] mb-3">
             모라고라 AI 법정 · 주장 제출서</p>
 
           <div className="flex gap-1.5 flex-wrap justify-center mb-3">
@@ -361,7 +353,7 @@ export default function ArgumentPage() {
             ))}
           </div>
 
-          <h1 className="text-white text-[16px] font-black italic leading-snug">
+          <h1 className="text-white text-[18px] font-black leading-snug">
             "{debate?.topic}"
           </h1>
         </div>
