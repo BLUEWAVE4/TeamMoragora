@@ -120,12 +120,13 @@ CREATE TABLE votes (
 -- 7. content_filter_logs
 CREATE TABLE content_filter_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   debate_id UUID REFERENCES debates(id),
   content_type TEXT NOT NULL,
   filter_stage INTEGER NOT NULL CHECK (filter_stage IN (1, 2, 3)),
   result TEXT NOT NULL DEFAULT 'pass',
   reason TEXT,
+  blocked_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

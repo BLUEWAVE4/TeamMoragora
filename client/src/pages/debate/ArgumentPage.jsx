@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getArguments, submitArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
+import { CircleCheck, CircleDot, Circle } from 'lucide-react'
 
 const labelMap = {
   battle: '승부', consensus: '합의', analysis: '분석',
@@ -41,7 +42,7 @@ function SubmittedCard({ label, side, content, isMe }) {
       isMe ? 'bg-[#F5F0E8] border-[#D4AF37]/30' : 'bg-white border-gray-100'
     }`}>
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-400' : 'bg-red-400'}`} />
+        <CircleCheck size={14} className={side === 'A' ? 'text-emerald-500' : 'text-red-500'} />
         <span className={`text-[10px] font-black uppercase tracking-widest ${
           side === 'A' ? 'text-emerald-600' : 'text-red-500'
         }`}>{label} {isMe ? '· 내 주장' : '· 상대방 주장'}</span>
@@ -100,7 +101,7 @@ function WaitingCard({ label, side, submitted }) {
   return (
     <div className="rounded-xl border border-dashed border-[#1B2A4A]/10 bg-[#FAFAF5] px-5 py-4 text-center">
       <div className="flex items-center justify-center gap-2 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-300' : 'bg-red-300'}`} />
+        <CircleDot size={14} className={side === 'A' ? 'text-emerald-300' : 'text-red-300'} />
         <span className={`text-[10px] font-black uppercase tracking-widest ${
           side === 'A' ? 'text-emerald-400/60' : 'text-red-400/60'
         }`}>{label}</span>
@@ -174,11 +175,12 @@ function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmit
         />
         <div className="px-5 py-2.5 border-t border-gray-50 flex items-center justify-between bg-gray-50/50">
           <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              content.length === 0 ? 'bg-gray-200'
-                : content.length > maxChar ? 'bg-red-400'
-                : 'bg-emerald-400'
-            }`} />
+            {content.length === 0
+              ? <Circle size={12} className="text-gray-300" />
+              : content.length > maxChar
+                ? <CircleDot size={12} className="text-red-400" />
+                : <CircleCheck size={12} className="text-emerald-400" />
+            }
             <span className={`text-[10px] font-bold ${
               content.length === 0 ? 'text-gray-300'
                 : content.length > maxChar ? 'text-red-500'
@@ -403,7 +405,7 @@ export default function ArgumentPage() {
           {/* 구분선 */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-100" />
-            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${r1BothDone ? 'bg-[#D4AF37]/50' : 'bg-gray-200'}`} />
+            <CircleDot size={12} className={`transition-colors duration-500 ${r1BothDone ? 'text-[#D4AF37]/50' : 'text-gray-200'}`} />
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
