@@ -58,14 +58,8 @@ export default function InvitePage() {
             // B측: 이미 참여한 논쟁 → 현재 상태에 맞는 페이지로 바로 이동
             navigate(getDebateRoute(debateData.id, debateData.status), { replace: true })
             return
-          } else if (debateData.status === 'waiting' && !debateData.opponent_id) {
-            // B측: 소환장 진입 시 자동 참여 → 진행중인 논쟁에 즉시 표시
-            try {
-              const joined = await joinByInvite(inviteCode)
-              setDebate(joined)
-            } catch (joinErr) {
-              console.warn('자동 참여 실패 (이미 참여 등):', joinErr.message)
-            }
+          } else {
+            // B측: 소환장 UI 표시 (참여 버튼 클릭 시 joinByInvite 실행)
           }
         } else {
           setIsCreator(false)
