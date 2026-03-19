@@ -5,6 +5,7 @@ const Input = ({
   placeholder,
   value,
   onChange,
+  onKeyDown,
   type = "text",
   multiline = false,
   rows = 6,
@@ -35,6 +36,7 @@ const Input = ({
           <textarea
             value={value}
             onChange={onChange}
+            onKeyDown={onKeyDown}
             placeholder={placeholder}
             rows={rows}
             maxLength={500}
@@ -78,7 +80,9 @@ const Input = ({
             type={type}
             value={value}
             onChange={onChange}
+            onKeyDown={onKeyDown}
             placeholder={placeholder}
+            enterKeyHint="next"
             className={`${sharedClasses} ${variantClasses}`}
           />
         )}

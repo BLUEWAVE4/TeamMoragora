@@ -92,6 +92,7 @@ export default function Step1Topic({
               setTopic(e.target.value);
               setError(prev => ({ ...prev, topic: "" }));
             }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
             placeholder="예: AI가 인간 일자리를 대체해야 하는가?"
           />
 
@@ -110,7 +111,7 @@ export default function Step1Topic({
 
           <div className="flex flex-col gap-4">
             <h3 className="font-serif font-bold text-primary text-lg tracking-tight">AI 논쟁 초안</h3>
-            <h5 className="font-serif font-bold text-primary text-m tracking-tight">생성된 A측/B측 입장은 자유롭게 수정 가능합니다.</h5>
+            <h5 className="font-serif text-primary text-m tracking-tight">생성된 A측/B측 입장은 자유롭게 수정 가능합니다.</h5>
             <div className="flex flex-col gap-5">
 
               {/* A측 */}
@@ -118,7 +119,13 @@ export default function Step1Topic({
                 <Card variant="base" title="A측(본인) 주장">
                   {editingSide === "pro" ? (
                     <>
-                      <textarea value={tempText} onChange={(e) => setTempText(e.target.value)} className="w-full border rounded-lg p-3 text-sm" rows={4} />
+                      <textarea
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmEdit(); } }}
+                        className="w-full border rounded-lg p-3 text-sm"
+                        rows={4}
+                      />
                       <div className="flex gap-2 mt-3 justify-end">
                         <Button variant="outline" onClick={cancelEdit}>취소</Button>
                         <Button onClick={confirmEdit}>저장</Button>
@@ -140,7 +147,13 @@ export default function Step1Topic({
                 <Card variant="base" title="B측(상대방) 주장">
                   {editingSide === "con" ? (
                     <>
-                      <textarea value={tempText} onChange={(e) => setTempText(e.target.value)} className="w-full border rounded-lg p-3 text-sm" rows={4} />
+                      <textarea
+                        value={tempText}
+                        onChange={(e) => setTempText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmEdit(); } }}
+                        className="w-full border rounded-lg p-3 text-sm"
+                        rows={4}
+                      />
                       <div className="flex gap-2 mt-3 justify-end">
                         <Button variant="outline" onClick={cancelEdit}>취소</Button>
                         <Button onClick={confirmEdit}>저장</Button>
@@ -176,7 +189,7 @@ export default function Step1Topic({
             />
           </div>
 
-          <Button variant="outline" onClick={resetTopic}>주제 다시 입력하기</Button>
+          <Button variant="outline" onClick={resetTopic}>다른 주제 입력하기</Button>
         </>
       )}
 

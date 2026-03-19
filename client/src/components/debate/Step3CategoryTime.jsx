@@ -174,8 +174,8 @@ export default function Step3CategoryTime({
       >
         <div className="space-y-4 text-sm">
           <div><span className="font-bold text-gold">주제</span>{" : "}{topic}</div>
-          <div><span className="font-bold text-gold">찬성 입장</span>{" : "}{proSide}</div>
-          <div><span className="font-bold text-gold">반대 입장</span>{" : "}{conSide}</div>
+          <div><span className="font-bold text-gold">A측(본인) 주장</span>{" : "}{proSide}</div>
+          <div><span className="font-bold text-gold">B측(상대방) 주장</span>{" : "}{conSide}</div>
           <div><span className="font-bold text-gold">목적</span>{" : "}{purpose}</div>
           <div><span className="font-bold text-gold">렌즈</span>{" : "}{lens}</div>
           <div><span className="font-bold text-gold">카테고리</span>{" : "}{category}</div>
