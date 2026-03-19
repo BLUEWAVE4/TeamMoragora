@@ -7,7 +7,8 @@ import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
-  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X
+  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X,
+  UserX, Vote, MessageCircle, ScrollText
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
@@ -427,6 +428,25 @@ export default function ProfilePage() {
     }
   };
 
+  // ===== 회원탈퇴 =====
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== '탈퇴합니다') return;
+    setIsDeleting(true);
+    try {
+      await api.delete('/profiles/me');
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (err) {
+      alert(err?.response?.data?.error || '회원탈퇴 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const resetAvatarOptions = () => setAvatarOptions({
     top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '',
     accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '',
@@ -441,7 +461,17 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-8 relative">
+
+        {/* 편집 모드일 때 우측 상단 회원탈퇴 */}
+        {isEditing && (
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="absolute top-9 right-5 text-[12px] text-gray-300 font-medium active:text-[#E63946] transition-colors"
+          >
+            회원탈퇴
+          </button>
+        )}
 
         {/* Avatar + Nickname */}
         <div className="flex flex-col items-center mb-8">
@@ -705,10 +735,94 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <div className="flex justify-center gap-8 mb-12 text-center">
+        <div className="flex justify-center gap-8 mb-12 mt-4 text-center">
           <Link to="/terms" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">이용약관</Link>
           <Link to="/privacy" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">개인정보처리방침</Link>
         </div>
+
+        {/* 회원탈퇴 확인 모달 — 모라고라 테마 */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),rgba(27,42,74,0.9))] backdrop-blur-md z-[200]"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-0 z-[201] flex items-center justify-center p-5"
+              >
+                <div className="w-full max-w-[380px] rounded-3xl shadow-2xl overflow-hidden">
+                  {/* 헤더 — navy 그라데이션 */}
+                  <div className="bg-gradient-to-b from-[#1B2A4A] to-[#16223b] px-6 pt-7 pb-6 text-center relative overflow-hidden">
+                    <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#E63946]/10 rounded-full blur-2xl" />
+                    <div className="w-16 h-16 rounded-full bg-[#E63946]/15 border-2 border-[#E63946]/30 flex items-center justify-center mx-auto mb-4">
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="1.5" strokeLinecap="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-[20px] font-serif font-black text-white tracking-tight">회원 탈퇴</h3>
+                    <p className="text-[12px] text-white/40 mt-1">이 작업은 되돌릴 수 없습니다</p>
+                  </div>
+
+                  {/* 경고 내용 — 크림 배경 */}
+                  <div className="bg-[#F5F0E8] px-6 py-5">
+                    <p className="text-[12px] font-black text-[#E63946] uppercase tracking-wider mb-3">영구 삭제 항목</p>
+                    <div className="bg-white rounded-2xl border border-[#E63946]/10 divide-y divide-[#E63946]/5 overflow-hidden mb-5">
+                      {[
+                        { icon: <UserX size={16} className="text-[#E63946]" />, text: '프로필 정보 (닉네임, 아바타)' },
+                        { icon: <Trophy size={16} className="text-[#E63946]" />, text: `누적 전적 — ${profileData?.wins || 0}승 ${profileData?.losses || 0}패 ${profileData?.draws || 0}무` },
+                        { icon: <Scale size={16} className="text-[#E63946]" />, text: `${tier.name} 등급 · ${profileData?.total_score?.toLocaleString() || 0}점` },
+                        { icon: <ScrollText size={16} className="text-[#E63946]" />, text: '모든 논쟁 기록 및 주장 내용' },
+                        { icon: <Vote size={16} className="text-[#E63946]" />, text: '시민 투표 이력 · 댓글 · 좋아요' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-3 px-4 py-3">
+                          <span className="shrink-0">{item.icon}</span>
+                          <span className="text-[12px] text-[#1B2A4A]/70 font-medium">{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] text-[#1B2A4A]/40 mb-2">
+                      탈퇴를 진행하려면 아래에 <strong className="text-[#E63946] font-black">탈퇴합니다</strong>를 입력하세요.
+                    </p>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="탈퇴합니다"
+                      className="w-full h-11 border-2 border-[#1B2A4A]/10 rounded-xl px-4 text-[13px] text-center font-bold bg-white focus:outline-none focus:border-[#E63946]/50 transition-colors placeholder:text-[#1B2A4A]/20"
+                    />
+                  </div>
+
+                  {/* 버튼 */}
+                  <div className="bg-[#F5F0E8] px-6 pb-6 pt-1 flex gap-2">
+                    <button
+                      onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                      className="flex-1 py-3.5 rounded-xl text-[14px] font-serif font-bold text-[#1B2A4A]/50 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
+                    >
+                      돌아가기
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== '탈퇴합니다' || isDeleting}
+                      className={`flex-1 py-3.5 rounded-xl text-[14px] font-serif font-bold transition-all active:scale-95 ${
+                        deleteConfirmText === '탈퇴합니다'
+                          ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/25'
+                          : 'bg-[#1B2A4A]/10 text-[#1B2A4A]/25 cursor-not-allowed'
+                      }`}
+                    >
+                      {isDeleting ? '처리 중...' : '탈퇴하기'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ─── 등급 시스템 바텀시트 ─────────────────────────────────── */}
