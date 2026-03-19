@@ -126,6 +126,8 @@ export default function TabBar() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const sheetRef = useRef(null);
   const listRef = useRef(null);
 
@@ -169,6 +171,8 @@ export default function TabBar() {
     const handleClick = (e) => {
       if (sheetRef.current && !sheetRef.current.contains(e.target)) {
         setShowSheet(false);
+        setIsEditing(false);
+        setDeleting(null);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -176,7 +180,15 @@ export default function TabBar() {
   }, [showSheet]);
 
   const hasActiveDebates = activeDebates.length > 0;
-  const hasActiveAlert = activeDebates.some(d => localStorage.getItem(`mute_debate_${d.id}`) !== '1');
+  // 마지막으로 바텀시트를 확인한 시점 vs 논쟁 목록 변경 여부로 ! 표시
+  const [hasNewActivity, setHasNewActivity] = useState(false);
+
+  useEffect(() => {
+    if (!activeDebates.length) { setHasNewActivity(false); return; }
+    const lastSeen = localStorage.getItem('tabbar_last_seen_ids') || '';
+    const currentIds = activeDebates.map(d => d.id).sort().join(',');
+    if (lastSeen !== currentIds) setHasNewActivity(true);
+  }, [activeDebates]);
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
@@ -194,6 +206,10 @@ export default function TabBar() {
     fetchActiveDebates().then((items) => {
       if (items.length > 0) {
         setShowSheet(true);
+        // 바텀시트 열면 확인 처리 → ! → + 전환
+        const currentIds = items.map(d => d.id).sort().join(',');
+        localStorage.setItem('tabbar_last_seen_ids', currentIds);
+        setHasNewActivity(false);
       } else {
         navigate('/debate/create');
       }
@@ -202,11 +218,15 @@ export default function TabBar() {
 
   const handleSelectDebate = (debate) => {
     setShowSheet(false);
+    setIsEditing(false);
+    setDeleting(null);
     navigate(getDebateRoute(debate, user.id));
   };
 
   const handleNewDebate = () => {
     setShowSheet(false);
+    setIsEditing(false);
+    setDeleting(null);
     navigate('/debate/create');
   };
 
@@ -235,47 +255,70 @@ export default function TabBar() {
             {/* 헤더 */}
             <div className="px-5 pt-2 pb-3 flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
-              <button
-                onClick={() => {
-                  const allMuted = activeDebates.every(d => localStorage.getItem(`mute_debate_${d.id}`) === '1');
-                  activeDebates.forEach(d => {
-                    if (allMuted) localStorage.removeItem(`mute_debate_${d.id}`);
-                    else localStorage.setItem(`mute_debate_${d.id}`, '1');
-                  });
-                  setActiveDebates(prev => [...prev]);
-                }}
-                className="active:scale-90 transition-all"
-              >
-                {activeDebates.every(d => localStorage.getItem(`mute_debate_${d.id}`) === '1') ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.25">
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
-                )}
-              </button>
+              {activeDebates.length > 0 && (
+                <button
+                  onClick={() => { setIsEditing(!isEditing); setDeleting(null); }}
+                  className="text-[13px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
+                >
+                  {isEditing ? '완료' : '편집'}
+                </button>
+              )}
             </div>
 
             {/* 진행중 논쟁 목록 */}
             <div ref={listRef} onScroll={handleScroll} className="px-5 pb-3 space-y-2 max-h-[40vh] overflow-y-auto">
               {activeDebates.map((debate) => {
                 const info = getStatusLabel(debate);
+                const isDeleting = deleting === debate.id;
                 return (
-                  <button
+                  <div
                     key={debate.id}
-                    onClick={() => handleSelectDebate(debate)}
-                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border-2 border-[#1B2A4A]/5 active:scale-[0.98] transition-all text-left"
+                    className="w-full flex items-center gap-2 transition-all"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
-                      <span className={`text-[11px] font-bold ${info.color}`}>{info.label}</span>
-                    </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 ml-2">
-                      <polyline points="9 6 15 12 9 18"/>
-                    </svg>
-                  </button>
+                    <button
+                      onClick={() => !isEditing && handleSelectDebate(debate)}
+                      className={`flex-1 flex items-center justify-between p-3 rounded-2xl bg-white border-2 text-left transition-all ${
+                        isDeleting ? 'border-[#FF3B30]/20 bg-red-50/30' : 'border-[#1B2A4A]/5 active:scale-[0.98]'
+                      } ${isEditing ? 'cursor-default' : ''}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
+                        <span className={`text-[11px] font-bold ${isDeleting ? 'text-[#FF3B30]' : info.color}`}>
+                          {isDeleting ? '한 번 더 누르면 삭제됩니다' : info.label}
+                        </span>
+                      </div>
+                      {!isEditing && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 ml-2">
+                          <polyline points="9 6 15 12 9 18"/>
+                        </svg>
+                      )}
+                    </button>
+                    {/* 편집 모드: 삭제 버튼 (오른쪽) */}
+                    {isEditing && (
+                      <button
+                        onClick={async () => {
+                          if (!isDeleting) { setDeleting(debate.id); return; }
+                          try {
+                            await deleteDebate(debate.id);
+                            setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
+                            setDeleting(null);
+                          } catch (err) {
+                            alert(err.message || '삭제에 실패했습니다.');
+                            setDeleting(null);
+                          }
+                        }}
+                        className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 ${
+                          isDeleting
+                            ? 'bg-[#FF3B30] text-white'
+                            : 'bg-red-50 text-[#FF3B30]'
+                        }`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 );
               })}
               {loadingMore && (
@@ -301,7 +344,7 @@ export default function TabBar() {
                 새 논쟁
               </button>
               <button
-                onClick={() => setShowSheet(false)}
+                onClick={() => { setShowSheet(false); setIsEditing(false); setDeleting(null); }}
                 className="flex-1 py-3 rounded-xl font-serif font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 hover:border-[#1B2A4A]/20 active:scale-95 transition-all duration-300"
               >
                 닫기
@@ -324,7 +367,7 @@ export default function TabBar() {
                   className={`relative flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >
-                  {item.icon(isCreateActive, hasActiveAlert && !isCreateActive)}
+                  {item.icon(isCreateActive, hasNewActivity && !isCreateActive)}
                 </button>
               );
             }

@@ -348,6 +348,7 @@ export default function JudgingPage() {
   const [voteTotalDays, setVoteTotalDays] = useState(null); // 1 | 3 | 7
   const [voteTotalMs, setVoteTotalMs]     = useState(null); // 전체 기간(ms)
 
+  const [deleted, setDeleted]    = useState(false);
   const verdictRef       = useRef(null);
   const confettiFiredRef = useRef(false);
 
@@ -428,7 +429,11 @@ if (days > 0) {
 
       } catch (e) {
         console.error(e);
-        setDebateTitle("논쟁 주제를 찾을 수 없습니다.");
+        if (e?.status === 404 || e?.response?.status === 404 || e?.message?.includes('찾을 수 없')) {
+          setDeleted(true);
+        } else {
+          setDebateTitle("논쟁 주제를 찾을 수 없습니다.");
+        }
       }
     };
     initFetch();
@@ -493,6 +498,26 @@ if (days > 0) {
       return () => clearTimeout(timer);
     }
   }, [displayCount, voteCount]);
+
+  // 삭제된 논쟁 → 안내 후 홈으로 이동
+  useEffect(() => {
+    if (deleted) {
+      const timer = setTimeout(() => navigate('/'), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleted, navigate]);
+
+  if (deleted) return (
+    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
+      <div className="w-16 h-16 rounded-full bg-[#1B2A4A]/10 flex items-center justify-center mb-5">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        </svg>
+      </div>
+      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">상대방의 요청으로 삭제된 논쟁입니다.</h1>
+      <p className="text-[13px] text-gray-400 mt-3">잠시 후 홈으로 이동됩니다.</p>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 top-16 flex justify-center bg-[#FAFAF5] z-50">

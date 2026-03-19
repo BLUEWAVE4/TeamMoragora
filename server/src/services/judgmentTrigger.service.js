@@ -31,10 +31,12 @@ export async function triggerJudgment(debateId) {
     .select('*')
     .eq('debate_id', debateId);
 
-  const sideA = args?.find((a) => a.side === 'A');
-  const sideB = args?.find((a) => a.side === 'B');
+  const r1A = args?.find((a) => a.side === 'A' && (a.round || 1) === 1);
+  const r1B = args?.find((a) => a.side === 'B' && (a.round || 1) === 1);
+  const r2A = args?.find((a) => a.side === 'A' && a.round === 2);
+  const r2B = args?.find((a) => a.side === 'B' && a.round === 2);
 
-  if (!sideA || !sideB) return;
+  if (!r1A || !r1B) return;
 
   // 2-1. 닉네임 조회
   const { data: profiles } = await supabaseAdmin
@@ -100,8 +102,10 @@ export async function triggerJudgment(debateId) {
       topic: debate.topic,
       purpose: debate.purpose,
       lens: debate.lens,
-      argumentA: sideA.content,
-      argumentB: sideB.content,
+      argumentA: r1A.content,
+      argumentB: r1B.content,
+      rebuttalA: r2A?.content || null,
+      rebuttalB: r2B?.content || null,
       nicknameA,
       nicknameB,
     }, verdictId);

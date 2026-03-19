@@ -234,6 +234,7 @@ export default function ArgumentPage() {
   const [debate, setDebate] = useState(null)
   const [args, setArgs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deleted, setDeleted] = useState(false)
   const [r1Content, setR1Content] = useState('')
   const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -251,6 +252,9 @@ export default function ArgumentPage() {
       }
     } catch (err) {
       console.error('데이터 로드 에러:', err)
+      if (err?.status === 404 || err?.response?.status === 404 || err?.message?.includes('찾을 수 없')) {
+        setDeleted(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -263,6 +267,26 @@ export default function ArgumentPage() {
     const interval = setInterval(fetchData, 3000)
     return () => clearInterval(interval)
   }, [debate?.status, fetchData])
+
+  // 삭제된 논쟁 → 안내 후 홈으로 이동
+  useEffect(() => {
+    if (deleted) {
+      const timer = setTimeout(() => navigate('/'), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [deleted, navigate])
+
+  if (deleted) return (
+    <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
+      <div className="w-16 h-16 rounded-full bg-[#1B2A4A]/10 flex items-center justify-center mb-5">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        </svg>
+      </div>
+      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">상대방의 요청으로 삭제된 논쟁입니다.</h1>
+      <p className="text-[13px] text-gray-400 mt-3">잠시 후 홈으로 이동됩니다.</p>
+    </div>
+  )
 
   if (loading || !debate) return (
     <div className="min-h-screen bg-[#FAFAF5] flex items-center justify-center">

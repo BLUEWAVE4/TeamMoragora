@@ -4,7 +4,7 @@ import { callAI } from './aiWrapper.js';
 import { AI_TEMPERATURE_JUDGE } from '../../config/constants.js';
 
 export async function judgeWithGPT(debateContext) {
-  const systemPrompt = buildSystemPrompt('gpt-4o');
+  const systemPrompt = buildSystemPrompt('gpt-4o', debateContext.lens);
   const userPrompt = buildUserPrompt(debateContext);
 
   const parsed = await callAI(

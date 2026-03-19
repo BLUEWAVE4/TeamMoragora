@@ -4,7 +4,7 @@ import { callAI } from './aiWrapper.js';
 import { AI_TEMPERATURE_JUDGE } from '../../config/constants.js';
 
 export async function judgeWithGrok(debateContext) {
-  const systemPrompt = buildSystemPrompt('grok-3-mini');
+  const systemPrompt = buildSystemPrompt('grok-3-mini', debateContext.lens);
   const userPrompt = buildUserPrompt(debateContext);
 
   const parsed = await callAI(
