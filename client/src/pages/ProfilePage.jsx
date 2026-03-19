@@ -66,7 +66,7 @@ const ProfileRadarChart = ({ data }) => {
   };
 
   const chartData = {
-    labels: data.map(d => [d.label, `(${d.val}/${d.max})`]),
+    labels: data.map(d => [d.label, `${d.val}/${d.max}`]),
     datasets: [{
       label: '내 평균',
       data: data.map(d => d.val),
@@ -96,9 +96,10 @@ const ProfileRadarChart = ({ data }) => {
         grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
         angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
         pointLabels: {
-          font: { size: 12, weight: '600', family: 'Pretendard Variable, sans-serif' },
+          font: { size: 11, weight: '600', family: 'Pretendard Variable, sans-serif' },
           color: '#1B2A4A',
-          padding: 14,
+          padding: 16,
+          callback: (label) => label,
         },
       },
     },
