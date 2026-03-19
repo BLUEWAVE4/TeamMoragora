@@ -50,7 +50,7 @@ export default function DebateCreatePage() {
       if (draft.lens)     setLens(draft.lens);
       if (draft.category) setCategory(draft.category);
       if (draft.time)     setTime(draft.time);
-      if (draft.mode && draft.step > 1)     { setMode(draft.mode); setGameStarted(true); }
+      if (draft.mode && draft.step >= 1)     { setMode(draft.mode); setGameStarted(true); }
       if (draft.step)     setStep(draft.step);
       if (draft.aiResults) setAiResults(draft.aiResults);
     } catch { /* ignore */ }
@@ -67,17 +67,6 @@ export default function DebateCreatePage() {
   }, [topic, proSide, conSide, purpose, lens, category, time, mode, step, gameStarted, aiResults]);
 
   useEffect(() => { saveDraft(); }, [saveDraft]);
-
-  // const nextStep = () => {
-  //   if (topic) {
-  //     setAiResults(prev => ({
-  //       ...prev,
-  //       [topic]: { pro: proSide, con: conSide, category, purpose, lens },
-  //     }));
-  //   }
-  //   setStep(prev => prev + 1);
-  // };
-
   const nextStep = () => {
     if (topic) {
       setAiResults(prev => ({
@@ -120,9 +109,6 @@ export default function DebateCreatePage() {
       setProSide(saved.pro);
       setConSide(saved.con);
       if (saved.category) setCategory(saved.category);
-      // purpose, lens도 복원
-      // if (saved.purpose) setPurpose(saved.purpose);
-      // if (saved.lens)    setLens(saved.lens);
       if (saved.aiPurpose) setPurpose(saved.aiPurpose);  // 캐시 복원 시 초기 purpose 세팅
       if (saved.aiLens)    setLens(saved.aiLens);
       return saved;
@@ -137,23 +123,6 @@ export default function DebateCreatePage() {
         return null;
       }
 
-      // const newResult = {
-      //   pro:      result.pro,
-      //   con:      result.con,
-      //   category: result.category,
-      //   purpose:  result.purpose,
-      //   lens:     result.lens,
-      // };
-
-      // setProSide(result.pro);
-      // setConSide(result.con);
-      // if (result.category) setCategory(result.category);
-      // // AI가 추천한 purpose, lens 세팅
-      // if (result.purpose) setPurpose(result.purpose);
-      // if (result.lens)    setLens(result.lens);
-
-      // setAiResults(prev => ({ ...prev, [topic]: newResult }));
-
       const newResult = {
   pro:       result.pro,
   con:       result.con,
@@ -162,7 +131,6 @@ export default function DebateCreatePage() {
   aiLens:    result.lens,      // ← AI 추천 전용 키
 };
 
-// 아래 set 부분도 동일하게
 setProSide(result.pro);
 setConSide(result.con);
 if (result.category) setCategory(result.category);

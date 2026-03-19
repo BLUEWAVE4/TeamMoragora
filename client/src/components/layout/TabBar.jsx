@@ -190,7 +190,9 @@ export default function TabBar() {
     if (lastSeen !== currentIds) setHasNewActivity(true);
   }, [activeDebates]);
 
-  const handleCreateClick = () => {
+  const [showDraftModal, setShowDraftModal] = useState(false);
+
+    const handleCreateClick = () => {
     if (!isLoggedIn) {
       const confirmMove = window.confirm(
         "논쟁 생성은 로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?"
@@ -202,11 +204,31 @@ export default function TabBar() {
       return;
     }
 
-    // 최신 목록 갱신 후 바텀시트 or 바로 생성
+    // ✅ 논쟁 생성 페이지에서는 드래프트 체크 없이 바로 바텀시트
+    if (isCreateActive) {
+      fetchActiveDebates().then((items) => {
+        setShowSheet(true);
+        const currentIds = items.map(d => d.id).sort().join(',');
+        localStorage.setItem('tabbar_last_seen_ids', currentIds);
+        setHasNewActivity(false);
+      });
+      return;
+    }
+
+    const draft = localStorage.getItem('debate_create_draft');
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed?.step > 1 || parsed?.mode) {
+          setShowDraftModal(true);
+          return;
+        }
+      } catch {}
+    }
+
     fetchActiveDebates().then((items) => {
       if (items.length > 0) {
         setShowSheet(true);
-        // 바텀시트 열면 확인 처리 → ! → + 전환
         const currentIds = items.map(d => d.id).sort().join(',');
         localStorage.setItem('tabbar_last_seen_ids', currentIds);
         setHasNewActivity(false);
@@ -223,7 +245,15 @@ export default function TabBar() {
     navigate(getDebateRoute(debate, user.id));
   };
 
+const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false);
+
   const handleNewDebate = () => {
+    // ✅ 논쟁 생성 페이지(Step 작성 중)이면 경고 모달
+    if (isCreateActive) {
+      setShowSheet(false);
+      setShowNewDebateWarningModal(true);
+      return;
+    }
     setShowSheet(false);
     setIsEditing(false);
     setDeleting(null);
@@ -240,6 +270,79 @@ export default function TabBar() {
 
   return (
     <>
+    {/* ===== 논쟁 작성 중 드래프트 모달 ===== */}
+    {showDraftModal && (
+      <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-6">
+        <div className="w-full max-w-sm bg-gradient-to-b from-[#F5F0E8] to-white rounded-2xl shadow-xl p-6">
+          <p className="text-[15px] font-bold text-[#1B2A4A] mb-2">작성 중인 논쟁이 있습니다</p>
+          <p className="text-[13px] text-[#1B2A4A]/50 leading-relaxed mb-6">
+            이어서 작성하시겠습니까?<br />아니오를 선택하면 기존 내용이 삭제됩니다.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                localStorage.removeItem('debate_create_draft');
+                setShowDraftModal(false);
+                fetchActiveDebates().then((items) => {
+                  if (items.length > 0) {
+                    setShowSheet(true);
+                    const currentIds = items.map(d => d.id).sort().join(',');
+                    localStorage.setItem('tabbar_last_seen_ids', currentIds);
+                    setHasNewActivity(false);
+                  } else {
+                    navigate('/debate/create');
+                  }
+                });
+              }}
+              className="flex-1 py-3 rounded-xl font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
+            >
+              아니오
+            </button>
+            <button
+              onClick={() => {
+                // 기존 드래프트 유지하고 이동
+                setShowDraftModal(false);
+                navigate('/debate/create');
+              }}
+              className="flex-1 py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] border-2 border-[#D4AF37]/30 active:scale-95 transition-all"
+            >
+              이어서 작성
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* ===== 새 논쟁 경고 모달 (Step 작성 중) ===== */}
+    {showNewDebateWarningModal && (
+      <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-6">
+        <div className="w-full max-w-sm bg-gradient-to-b from-[#F5F0E8] to-white rounded-2xl shadow-xl p-6">
+          <p className="text-[15px] font-bold text-[#1B2A4A] mb-2">작성 중인 내용이 삭제됩니다</p>
+          <p className="text-[13px] text-[#1B2A4A]/50 leading-relaxed mb-6">
+            게임 모드 선택으로 돌아가면<br />Step1, 2, 3에서 작성한 내용이 모두 삭제됩니다.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowNewDebateWarningModal(false)}
+              className="flex-1 py-3 rounded-xl font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
+            >
+              취소
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('debate_create_draft');
+                setShowNewDebateWarningModal(false);
+                setIsEditing(false);
+                setDeleting(null);
+                window.location.href = '/debate/create';
+              }}
+              className="flex-1 py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] border-2 border-[#D4AF37]/30 active:scale-95 transition-all"
+            >
+              삭제 후 새 논쟁
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
       {/* ===== 바텀시트 오버레이 ===== */}
       {showSheet && (
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center">
@@ -275,12 +378,12 @@ export default function TabBar() {
                     key={debate.id}
                     className="w-full flex items-center gap-2 transition-all"
                   >
-                    <button
-                      onClick={() => !isEditing && handleSelectDebate(debate)}
-                      className={`flex-1 flex items-center justify-between p-3 rounded-2xl bg-white border-2 text-left transition-all ${
-                        isDeleting ? 'border-[#FF3B30]/20 bg-red-50/30' : 'border-[#1B2A4A]/5 active:scale-[0.98]'
-                      } ${isEditing ? 'cursor-default' : ''}`}
-                    >
+                  <button
+                    onClick={() => !isEditing && handleSelectDebate(debate)}
+                    className={`flex-1 min-w-0 flex items-center justify-between p-3 rounded-2xl bg-white border-2 text-left transition-all ${
+                      isDeleting ? 'border-[#FF3B30]/20 bg-red-50/30' : 'border-[#1B2A4A]/5 active:scale-[0.98]'
+                    } ${isEditing ? 'cursor-default' : ''}`}
+                  >
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
                         <span className={`text-[11px] font-bold ${isDeleting ? 'text-[#FF3B30]' : info.color}`}>

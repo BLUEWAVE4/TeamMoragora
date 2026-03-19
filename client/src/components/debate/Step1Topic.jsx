@@ -110,11 +110,12 @@ export default function Step1Topic({
 
           <div className="flex flex-col gap-4">
             <h3 className="font-serif font-bold text-primary text-lg tracking-tight">AI 논쟁 초안</h3>
+            <h5 className="font-serif font-bold text-primary text-m tracking-tight">생성된 A측/B측 입장은 자유롭게 수정 가능합니다.</h5>
             <div className="flex flex-col gap-5">
 
-              {/* 찬성 */}
+              {/* A측 */}
               {proSide && (
-                <Card variant="base" title="찬성 측 주장">
+                <Card variant="base" title="A측(본인) 주장">
                   {editingSide === "pro" ? (
                     <>
                       <textarea value={tempText} onChange={(e) => setTempText(e.target.value)} className="w-full border rounded-lg p-3 text-sm" rows={4} />
@@ -134,9 +135,9 @@ export default function Step1Topic({
                 </Card>
               )}
 
-              {/* 반대 */}
+              {/* B측 */}
               {conSide && (
-                <Card variant="base" title="반대 측 주장">
+                <Card variant="base" title="B측(상대방) 주장">
                   {editingSide === "con" ? (
                     <>
                       <textarea value={tempText} onChange={(e) => setTempText(e.target.value)} className="w-full border rounded-lg p-3 text-sm" rows={4} />
