@@ -254,14 +254,18 @@ export async function joinByInvite(req, res, next) {
 
     const debate = existing;
 
+    // 원자적 업데이트: opponent_id가 아직 null인 경우에만 성공
     const { data, error } = await supabaseAdmin
       .from('debates')
       .update({ opponent_id: req.user.id, status: 'arguing' })
       .eq('id', debate.id)
+      .is('opponent_id', null)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error || !data) {
+      return res.status(409).json({ error: '이미 상대방이 참여한 논쟁입니다.' });
+    }
     res.json(data);
   } catch (err) {
     next(err);

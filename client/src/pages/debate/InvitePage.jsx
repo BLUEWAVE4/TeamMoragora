@@ -118,6 +118,22 @@ export default function InvitePage() {
     return () => clearInterval(timer)
   }, [isCreator, navigate])
 
+  // ── 4. [B측] 다른 사용자 참여 감지 ──
+  useEffect(() => {
+    if (isCreator !== false || !debate?.id || !user) return
+    if (debate.opponent_id && debate.opponent_id !== user.id) return // 이미 차단됨
+    const interval = setInterval(async () => {
+      try {
+        const updated = await getDebateByInviteCode(inviteCode)
+        if (updated.opponent_id && updated.opponent_id !== user.id) {
+          clearInterval(interval)
+          setError('이미 다른 사용자가 참여한 논쟁입니다.')
+        }
+      } catch {}
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [isCreator, debate?.id, user, inviteCode])
+
   // ── 핸들러 ──
   const handleAccept = async () => {
     const targetPath = `/invite/${inviteCode}`
@@ -138,8 +154,11 @@ export default function InvitePage() {
       const targetId = response.id || response._id
       if (targetId) navigate(getDebateRoute(targetId, response.status))
     } catch (err) {
-      const msg = err.message || ''
-      if (err.status === 400 || msg.includes('이미') || msg.includes('본인')) {
+      const msg = err?.response?.data?.error || err.message || ''
+      const status = err?.response?.status || err?.status
+      if (status === 409 || msg.includes('이미 상대방')) {
+        setError('이미 다른 사용자가 참여한 논쟁입니다.')
+      } else if (status === 400 && msg.includes('본인')) {
         navigate(getDebateRoute(debate.id, debate.status))
       } else {
         alert(msg || '참여 처리 중 오류가 발생했습니다.')
@@ -289,16 +308,17 @@ export default function InvitePage() {
           {(debate?.pro_side || debate?.con_side) && (
             <div className="px-5 pb-5">
               <div className="grid grid-cols-[1fr_28px_1fr] items-start gap-1">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
-                  <p className="text-[10px] font-black text-emerald-600 tracking-wider mb-1.5">A측</p>
-                  <p className="text-[12px] font-bold text-emerald-800 leading-snug">{debate.pro_side || '미정'}</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center opacity-40">
+                  <p className="text-[10px] font-black text-gray-400 tracking-wider mb-1.5">A측</p>
+                  <p className="text-[12px] font-bold text-gray-500 leading-snug">{debate.pro_side || '미정'}</p>
                 </div>
                 <div className="flex items-center justify-center pt-4">
                   <span className="text-[11px] font-black text-[#D4AF37]">vs</span>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-center shadow-sm">
                   <p className="text-[10px] font-black text-red-500 tracking-wider mb-1.5">B측</p>
                   <p className="text-[12px] font-bold text-red-800 leading-snug">{debate.con_side || '미정'}</p>
+                  <p className="text-[9px] font-bold text-red-400 mt-1">내 입장</p>
                 </div>
               </div>
             </div>

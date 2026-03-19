@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
-import { runParallelJudgment } from '../services/ai/judgment.service.js';
+import { runParallelJudgment, retrySingleJudgment } from '../services/ai/judgment.service.js';
 import { NotFoundError, ValidationError, ConflictError } from '../errors/index.js';
 import { env } from '../config/env.js';
 
@@ -217,6 +217,67 @@ export async function getVerdictOG(req, res, next) {
       description,
       image: 'https://team-moragora-client.vercel.app/ogCard2.png',
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 단일 AI 모델 재판결 =====
+export async function retryJudgment(req, res, next) {
+  try {
+    const { debateId, model } = req.params;
+    const validModels = ['gpt', 'gemini', 'claude'];
+    if (!validModels.includes(model)) {
+      throw new ValidationError('유효하지 않은 모델입니다. (gpt, gemini, claude)');
+    }
+
+    // verdict 조회
+    const { data: verdict } = await supabaseAdmin
+      .from('verdicts')
+      .select('id')
+      .eq('debate_id', debateId)
+      .maybeSingle();
+
+    if (!verdict) throw new NotFoundError('판결 데이터를 찾을 수 없습니다.');
+
+    // debate + arguments 조회
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('topic, purpose, lens, creator_id, opponent_id')
+      .eq('id', debateId)
+      .single();
+
+    const { data: args } = await supabaseAdmin
+      .from('arguments')
+      .select('side, content, round, user_id')
+      .eq('debate_id', debateId);
+
+    const r1A = args?.find(a => a.side === 'A' && (a.round || 1) === 1);
+    const r1B = args?.find(a => a.side === 'B' && (a.round || 1) === 1);
+    if (!r1A || !r1B) throw new NotFoundError('주장 데이터를 찾을 수 없습니다.');
+
+    const r2A = args?.find(a => a.side === 'A' && a.round === 2);
+    const r2B = args?.find(a => a.side === 'B' && a.round === 2);
+
+    // 닉네임 조회
+    const { data: profiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id, nickname')
+      .in('id', [debate.creator_id, debate.opponent_id].filter(Boolean));
+
+    const nicknameA = profiles?.find(p => p.id === debate.creator_id)?.nickname || 'A측';
+    const nicknameB = profiles?.find(p => p.id === debate.opponent_id)?.nickname || 'B측';
+
+    const debateContext = {
+      topic: debate.topic, purpose: debate.purpose, lens: debate.lens,
+      argumentA: r1A.content, argumentB: r1B.content,
+      rebuttalA: r2A?.content || null, rebuttalB: r2B?.content || null,
+      nicknameA, nicknameB,
+    };
+
+    // 단일 모델 재판결 실행
+    const result = await retrySingleJudgment(model, debateContext, verdict.id);
+    res.json(result);
   } catch (err) {
     next(err);
   }

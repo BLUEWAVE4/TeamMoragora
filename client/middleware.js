@@ -1,5 +1,5 @@
 // Vercel Edge Middleware — 소셜 크롤러에게 동적 OG 메타 태그 제공
-const API_BASE = 'https://teammoragora.onrender.com/api';
+const API_BASE = 'https://teammoragora.onrender.com';
 
 const CRAWLERS = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|kakaotalk-scrap|Slackbot|Discordbot|WhatsApp|Googlebot|bingbot|yandex|Pinterestbot/i;
 
@@ -7,18 +7,36 @@ export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
   const { pathname } = new URL(request.url);
 
-  // /moragora/:debateId 또는 /debate/:debateId 경로에서 크롤러만 처리
-  const match = pathname.match(/^\/(moragora|debate)\/([a-zA-Z0-9-]+)$/);
-  if (!match || !CRAWLERS.test(ua)) return;
+  if (!CRAWLERS.test(ua)) return;
 
-  const debateId = match[2];
+  // /invite/:inviteCode → 백엔드 OG 서버
+  const inviteMatch = pathname.match(/^\/invite\/([a-zA-Z0-9_-]+)$/);
+  if (inviteMatch) {
+    try {
+      const res = await fetch(`${API_BASE}/og/invite/${inviteMatch[1]}`);
+      if (!res.ok) return;
+      const html = await res.text();
+      return new Response(html, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    } catch {
+      return;
+    }
+  }
+
+  // /moragora/:debateId 또는 /debate/:debateId → 판결 OG
+  const debateMatch = pathname.match(/^\/(moragora|debate)\/([a-zA-Z0-9-]+)$/);
+  if (!debateMatch) return;
+
+  const debateId = debateMatch[2];
 
   try {
-    const res = await fetch(`${API_BASE}/judgments/${debateId}/og`, {
+    const res = await fetch(`${API_BASE}/api/judgments/${debateId}/og`, {
       headers: { 'Accept': 'application/json' },
     });
 
-    if (!res.ok) return; // 판결 없으면 기본 OG 사용
+    if (!res.ok) return;
 
     const og = await res.json();
     const pageUrl = request.url;
@@ -48,7 +66,7 @@ export default async function middleware(request) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   } catch {
-    return; // 에러 시 기본 SPA로 폴백
+    return;
   }
 }
 
@@ -61,5 +79,5 @@ function escapeHtml(str) {
 }
 
 export const config = {
-  matcher: ['/moragora/:path*', '/debate/:path*'],
+  matcher: ['/moragora/:path*', '/debate/:path*', '/invite/:path*'],
 };

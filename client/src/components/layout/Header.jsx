@@ -277,7 +277,7 @@ export default function Header() {
                       key={n.id}
                       onClick={() => handleNotifClick(n)}
                       className={`w-full text-left p-3.5 rounded-2xl transition-all active:scale-[0.98] ${
-                        n.is_read ? 'bg-white/60' : 'bg-white border-l-[3px] border-[#D4AF37]'
+                        n.is_read ? 'bg-white/60' : 'bg-white'
                       }`}
                     >
                       <div className="flex items-start gap-3">
