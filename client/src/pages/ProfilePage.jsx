@@ -295,6 +295,9 @@ export default function ProfilePage() {
     facialHair: '', facialHairColor: '',
   });
 
+const [showInfo, setShowInfo] = useState(false);
+
+
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
   const draws = profileData?.draws || 0;
@@ -527,77 +530,152 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="space-y-4 mb-6">
-          {/* 포인트 카드 */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
-            </div>
-            <div className="text-4xl font-bold text-black mb-5"><CountUp end={currentScore} /></div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <tier.icon size={20} style={{ color: tier.color }} />
-                  <span className="text-[16px] font-black" style={{ color: tier.color }}>{tier.name}</span>
-                </div>
-                {nextTier && (
-                  <div className="flex items-center gap-1.5 text-gray-400">
-                    <nextTier.icon size={18} /><span className="text-[16px] font-bold">{nextTier.name}</span>
-                  </div>
-                )}
-              </div>
-              <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full rounded-full" style={{ backgroundColor: tier.color }}
-                />
-              </div>
-              <div className="flex justify-end">
-                {nextTier ? (
-                  <p className="text-[16px] text-gray-400 font-bold">
-                    <span className="text-black">{(nextTier.min - currentScore).toLocaleString()}점</span> 더 모으면 {nextTier.name}
-                  </p>
-                ) : (
-                  <p className="text-[16px] text-[#FF3B30] font-black italic">최고 등급 달성!</p>
-                )}
-              </div>
+{/*========================================================================================================================================================================== */}
+
+{(() => {
+  // 무승부 제외 승/패 비율 계산
+  const winLossTotal = wins + losses;
+  const winBarWidth = winLossTotal > 0 ? (wins / winLossTotal) * 100 : 0;
+  const lossBarWidth = winLossTotal > 0 ? (losses / winLossTotal) * 100 : 0;
+
+  return (
+    <div className="px-1 space-y-3.5 mb-6">
+      
+      {/* 1. 포인트 & 티어 카드 */}
+      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50">
+        <div className="flex justify-between items-center mb-5">
+          <div className="space-y-0.5">
+            <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
+            <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-none flex items-baseline gap-1">
+              <CountUp end={currentScore} separator="," />
+              <span className="text-[16px] font-bold text-gray-300">P</span>
             </div>
           </div>
 
-          {/* 승률 카드 */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
-            <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
-            <div className="flex justify-between text-[16px] font-black mb-3 px-1">
-              <span className="text-emerald-600">{wins}승</span>
-              {draws > 0 && <span className="text-gray-400">{draws}무</span>}
-              <span className="text-[#FF3B30]">{losses}패</span>
-            </div>
-            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
-              <motion.div
-                initial={{ width: 0 }} animate={{ width: `${winRate}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
-              />
-              <motion.div
-                initial={{ width: 0 }} animate={{ width: `${lossRate}%` }}
-                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-                className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
-              />
-            </div>
-            <div className="mt-4 text-center space-y-1">
-              <p className="text-[16px] text-gray-400 font-bold">총 {totalGames}회 논쟁 참여</p>
-              {draws > 0 && (
-                <p className="text-[11px] text-[#8E8E93] font-medium">
-                  승률은 무승부를 제외하고 계산됩니다
-                </p>
-              )}
-            </div>
+          <div className="bg-gray-50/80 p-2.5 rounded-xl shadow-inner border border-white">
+            <tier.icon size={22} style={{ color: tier.color }} />
           </div>
         </div>
 
+        <div className="space-y-2">
+          {/* 티어 명칭 배치 */}
+          <div className="flex justify-between items-center px-0.5 mb-1">
+            <div className="flex items-center gap-1.5">
+              <tier.icon size={14} style={{ color: tier.color }} />
+              <span className="text-[13px] font-black" style={{ color: tier.color }}>{tier.name}</span>
+            </div>
+            {nextTier && (
+              <div className="flex items-center gap-1 opacity-40">
+                <nextTier.icon size={13} className="text-gray-400" />
+                <span className="text-[12px] font-bold text-gray-400">{nextTier.name}</span>
+              </div>
+            )}
+          </div>
+          
+          {/* ✅ 메이플스토리 스타일 경험치 바 (수치 포함) */}
+          <div className="w-full h-5 bg-gray-100 rounded-full overflow-hidden relative shadow-inner p-[1.5px]">
+            {/* 포인트 수치 텍스트 (바 위에 겹쳐서 중앙 정렬) */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+              <span className="text-[12px] font-black tracking-tight text-gray-600">
+                {currentScore.toLocaleString()} / {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
+              </span>
+            </div>
+
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+              className="h-full rounded-full shadow-sm relative"
+              style={{ backgroundColor: tier.color }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 승률 & 참여 기록 카드 (기존과 동일) */}
+      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50 relative overflow-hidden">
+        <div className="flex justify-between items-center mb-5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">전체 승률</span>
+              <button 
+                onClick={() => setShowInfo(!showInfo)}
+                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] transition-all ${
+                  showInfo ? 'bg-emerald-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                }`}
+              >
+                !
+              </button>
+            </div>
+            <div className="text-[24px] font-black text-emerald-500 tracking-tighter leading-none">
+              {winRate.toFixed(1)}<span className="text-[18px] font-bold">%</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end">
+            <span className="text-[14px] font-black text-gray-800">
+              총 <span className="text-emerald-500">{totalGames}회</span> 논쟁 참여
+            </span>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {showInfo && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-gray-50 border border-gray-100 py-2 px-3 rounded-xl flex items-center gap-2">
+                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[12px] font-medium text-gray-500">
+                  무승부는 승률 계산에서 제외되었습니다.
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="space-y-3.5">
+          <div className="flex items-center px-0.5 gap-5">
+            <div className="flex items-center gap-1.5 text-[15px] font-black">
+              <span className="text-emerald-500">{wins}승</span>
+              <span className="text-gray-300 font-bold">{draws}무</span>
+              <span className="text-[#FF3B30]">{losses}패</span>
+            </div>
+          </div>
+
+          <div className="relative w-full h-7 bg-gray-50 rounded-[10px] overflow-hidden flex p-1">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${winBarWidth}%` }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-l-[7px] rounded-r-[2px] relative flex items-center justify-center"
+            >
+              {winBarWidth > 20 && <span className="text-[12px] font-black text-white/90">WIN</span>}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+            </motion.div>
+            <div className="w-[1.5px] bg-white/20" />
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${lossBarWidth}%` }}
+              transition={{ duration: 1.2, delay: 0.1, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-[#FF4B40] to-[#FF3B30] rounded-r-[7px] rounded-l-[2px] relative flex items-center justify-center"
+            >
+              {lossBarWidth > 20 && <span className="text-[12px] font-black text-white/90">LOSS</span>}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+})()}
+        
+{/*========================================================================================================================================================================== */}
         {/* Menu Buttons */}
         <div className="space-y-3 mb-10">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
