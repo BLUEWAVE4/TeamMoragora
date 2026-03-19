@@ -533,11 +533,6 @@ const [showInfo, setShowInfo] = useState(false);
 {/*========================================================================================================================================================================== */}
 
 {(() => {
-  // 무승부 제외 승/패 비율 계산
-  const winLossTotal = wins + losses;
-  const winBarWidth = winLossTotal > 0 ? (wins / winLossTotal) * 100 : 0;
-  const lossBarWidth = winLossTotal > 0 ? (losses / winLossTotal) * 100 : 0;
-
   return (
     <div className="px-1 space-y-3.5 mb-6">
       
@@ -648,27 +643,6 @@ const [showInfo, setShowInfo] = useState(false);
             </div>
           </div>
 
-          <div className="relative w-full h-7 bg-gray-50 rounded-[10px] overflow-hidden flex p-1">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${winBarWidth}%` }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-l-[7px] rounded-r-[2px] relative flex items-center justify-center"
-            >
-              {winBarWidth > 20 && <span className="text-[12px] font-black text-white/90">WIN</span>}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-            </motion.div>
-            <div className="w-[1.5px] bg-white/20" />
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${lossBarWidth}%` }}
-              transition={{ duration: 1.2, delay: 0.1, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-[#FF4B40] to-[#FF3B30] rounded-r-[7px] rounded-l-[2px] relative flex items-center justify-center"
-            >
-              {lossBarWidth > 20 && <span className="text-[12px] font-black text-white/90">LOSS</span>}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-            </motion.div>
-          </div>
         </div>
       </div>
     </div>
