@@ -81,7 +81,7 @@ export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read
 export const markAllNotificationsRead = () => api.patch('/notifications/read-all');
 
 // == 03/19 오후 5시에 추가함(알림 삭제 / 전체 삭제 기능)
-export const deleteNotification = (id) => axiosInstance.delete(`/notifications/${id}`);
-export const deleteAllNotifications = () => axiosInstance.delete('/notifications');
+export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
+export const deleteAllNotifications = () => api.delete('/notifications');
 
 export default api;

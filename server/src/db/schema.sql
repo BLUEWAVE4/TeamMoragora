@@ -228,6 +228,16 @@ CREATE TABLE notifications (
 
 CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
 
+-- 15. verdict_ratings (판결 별점 평가)
+CREATE TABLE verdict_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  verdict_id UUID NOT NULL REFERENCES verdicts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  score NUMERIC(2,1) NOT NULL CHECK (score BETWEEN 0.5 AND 5.0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (verdict_id, user_id)
+);
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================

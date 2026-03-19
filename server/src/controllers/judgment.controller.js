@@ -283,6 +283,42 @@ export async function retryJudgment(req, res, next) {
   }
 }
 
+// ===== 판결 별점 평가 =====
+export async function rateVerdict(req, res, next) {
+  try {
+    const { debateId } = req.params;
+    const { score } = req.body;
+    const userId = req.user.id;
+
+    if (!score || score < 0.5 || score > 5 || (score * 2) % 1 !== 0) {
+      return res.status(400).json({ error: '0.5~5.0점 사이 점수를 입력해주세요. (0.5 단위)' });
+    }
+
+    // verdict 조회
+    const { data: verdict } = await supabaseAdmin
+      .from('verdicts')
+      .select('id')
+      .eq('debate_id', debateId)
+      .maybeSingle();
+
+    if (!verdict) return res.status(404).json({ error: '판결을 찾을 수 없습니다.' });
+
+    // upsert (이미 평가했으면 업데이트)
+    const { error } = await supabaseAdmin
+      .from('verdict_ratings')
+      .upsert({
+        verdict_id: verdict.id,
+        user_id: userId,
+        score,
+      }, { onConflict: 'verdict_id,user_id' });
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ===== 오늘의 논쟁 (mode='daily') 전용 피드 =====
 export async function getDailyVerdicts(req, res, next) {
   try {
