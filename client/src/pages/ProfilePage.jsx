@@ -534,10 +534,10 @@ const [showInfo, setShowInfo] = useState(false);
 
 {(() => {
   return (
-    <div className="px-1 space-y-3.5 mb-6">
-      
+    <div className="space-y-3 mb-3">
+
       {/* 1. 포인트 & 티어 카드 */}
-      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50">
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-5">
           <div className="space-y-0.5">
             <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
@@ -589,8 +589,8 @@ const [showInfo, setShowInfo] = useState(false);
         </div>
       </div>
 
-      {/* 2. 승률 & 참여 기록 카드 (기존과 동일) */}
-      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50 relative overflow-hidden">
+      {/* 2. 승률 & 참여 기록 카드 */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
         <div className="flex justify-between items-center mb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-1">
@@ -651,7 +651,7 @@ const [showInfo, setShowInfo] = useState(false);
         
 {/*========================================================================================================================================================================== */}
         {/* Menu Buttons */}
-        <div className="space-y-3 mb-10">
+        <div className="space-y-3 mb-6">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
