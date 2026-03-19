@@ -1,29 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../store/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
 import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../utils/avatar';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User,
-  Gavel,
-  FileText,
-  Scale,
-  Crown,
-  ChevronRight,
-  LogOut,
-  Edit3,
-  Trophy,
-  History,
-  MessageSquarePlus,
-  ArrowRight,
-  BarChart3,
-  Trash2
+  User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
+  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
 
+// ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -40,10 +29,9 @@ const CountUp = ({ end }) => {
   return <span>{count.toLocaleString()}</span>;
 };
 
+// ─── RadarChart ─────────────────────────────────────────────────────────────
 const RadarChart = ({ data }) => {
-  const size = 300;
-  const center = size / 2;
-  const radius = size * 0.3;
+  const size = 300; const center = size / 2; const radius = size * 0.3;
   const angleStep = (Math.PI * 2) / data.length;
   const points = data.map((d, i) => {
     const r = radius * (d.val / 100);
@@ -75,6 +63,7 @@ const RadarChart = ({ data }) => {
   );
 };
 
+// ─── Tier data ───────────────────────────────────────────────────────────────
 const TIER_LIST = [
   { name: '시민', en: 'Citizen', min: 0, max: 299, color: '#8E8E93', bg: '#F5F5F7', icon: User, desc: '논쟁의 첫 발걸음' },
   { name: '배심원', en: 'Juror', min: 300, max: 1000, color: '#007AFF', bg: '#EBF5FF', icon: Gavel, desc: '공정한 시각으로 논쟁을 바라보는 자' },
@@ -82,7 +71,6 @@ const TIER_LIST = [
   { name: '판사', en: 'Judge', min: 2001, max: 5000, color: '#FF9500', bg: '#FFF5EB', icon: Scale, desc: '논리와 이성으로 판단을 내리는 자' },
   { name: '대법관', en: 'Supreme', min: 5001, max: null, color: '#FF3B30', bg: '#FFF0EF', icon: Crown, desc: '서버 최강의 논쟁 지배자' },
 ];
-
 const getTier = (pts) => {
   for (let i = TIER_LIST.length - 1; i >= 0; i--) {
     if (pts >= TIER_LIST[i].min) return TIER_LIST[i];
@@ -90,19 +78,187 @@ const getTier = (pts) => {
   return TIER_LIST[0];
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const categoryMap = {
   daily: '일상', romance: '연애', work: '직장', education: '교육',
   social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
   culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
   사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
-
 const formatDate = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
 
+// ─── iOS-like BottomSheet ─────────────────────────────────────────────────────
+/**
+ * Reusable iOS-style bottom sheet with:
+ * - Handle drag to dismiss (velocity + distance based, like iOS)
+ * - X close button top-right
+ * - Background scroll & touch locked while open
+ */
+function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = '#F2F2F7', zIndex = 100 }) {
+  const sheetRef = useRef(null);
+  const startYRef = useRef(null);
+  const currentYRef = useRef(0);
+  const startTimeRef = useRef(null);
+  const isDraggingHandle = useRef(false);
+  const animFrameRef = useRef(null);
+
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = { overflow: document.body.style.overflow, touchAction: document.body.style.touchAction };
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    // Prevent touchmove on document (passive: false required for preventDefault)
+    const preventTouch = (e) => {
+      // Allow scrolling inside the sheet content area
+      if (sheetRef.current && sheetRef.current.contains(e.target)) return;
+      e.preventDefault();
+    };
+    document.addEventListener('touchmove', preventTouch, { passive: false });
+
+    return () => {
+      document.body.style.overflow = prev.overflow;
+      document.body.style.touchAction = prev.touchAction;
+      document.removeEventListener('touchmove', preventTouch, { passive: false });
+    };
+  }, [isOpen]);
+
+  // Reset sheet position on open
+  useEffect(() => {
+    if (isOpen && sheetRef.current) {
+      sheetRef.current.style.transform = 'translateY(0px)';
+      sheetRef.current.style.transition = '';
+    }
+  }, [isOpen]);
+
+  const applyDrag = useCallback((deltaY) => {
+    if (!sheetRef.current) return;
+    const clamped = Math.max(0, deltaY); // only allow downward
+    const resistance = clamped > 0 ? clamped * 0.85 : clamped;
+    cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = requestAnimationFrame(() => {
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = 'none';
+        sheetRef.current.style.transform = `translateY(${resistance}px)`;
+      }
+    });
+  }, []);
+
+  const handlePointerDown = useCallback((e) => {
+    isDraggingHandle.current = true;
+    startYRef.current = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+    startTimeRef.current = Date.now();
+    currentYRef.current = 0;
+  }, []);
+
+  const handlePointerMove = useCallback((e) => {
+    if (!isDraggingHandle.current || startYRef.current === null) return;
+    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+    currentYRef.current = clientY - startYRef.current;
+    applyDrag(currentYRef.current);
+  }, [applyDrag]);
+
+  const handlePointerUp = useCallback(() => {
+    if (!isDraggingHandle.current) return;
+    isDraggingHandle.current = false;
+
+    const deltaY = currentYRef.current;
+    const elapsed = Date.now() - startTimeRef.current;
+    const velocity = deltaY / elapsed; // px/ms
+
+    const DISMISS_DISTANCE = 120;
+    const DISMISS_VELOCITY = 0.5; // px/ms
+
+    const shouldDismiss = deltaY > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY;
+
+    if (shouldDismiss) {
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = 'transform 0.32s cubic-bezier(0.32, 0, 0.67, 0)';
+        sheetRef.current.style.transform = 'translateY(110%)';
+      }
+      setTimeout(onClose, 320);
+    } else {
+      // Snap back
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        sheetRef.current.style.transform = 'translateY(0px)';
+      }
+    }
+
+    startYRef.current = null;
+    currentYRef.current = 0;
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={onClose}
+            className="fixed inset-0 backdrop-blur-md"
+            style={{ backgroundColor: 'rgba(0,0,0,0.45)', zIndex }}
+          />
+
+          {/* Sheet */}
+          <div
+            className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none"
+            style={{ zIndex: zIndex + 1 }}
+          >
+            <motion.div
+              ref={sheetRef}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '110%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 240, mass: 0.9 }}
+              className="w-full max-w-[440px] rounded-t-[32px] flex flex-col shadow-2xl overflow-hidden pointer-events-auto"
+              style={{ backgroundColor: bgColor, maxHeight }}
+            >
+              {/* Handle bar + close button area */}
+              <div
+                className="relative flex items-center justify-center px-5 pt-4 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing select-none"
+                onMouseDown={handlePointerDown}
+                onMouseMove={handlePointerMove}
+                onMouseUp={handlePointerUp}
+                onMouseLeave={handlePointerUp}
+                onTouchStart={handlePointerDown}
+                onTouchMove={handlePointerMove}
+                onTouchEnd={handlePointerUp}
+              >
+                {/* Drag handle */}
+                <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.18)' }} />
+
+                {/* X close button */}
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onClose}
+                  className="absolute right-4 top-8 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}
+                >
+                  <X size={16} strokeWidth={2.5} style={{ color: 'rgba(0,0,0,0.45)' }} />
+                </button>
+              </div>
+
+              {/* Content slot — passed as children */}
+              {children}
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── VerdictModal (kept as-is, separate full-screen modal) ──────────────────
 function VerdictModal({ verdict, onClose }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -138,6 +294,7 @@ function VerdictModal({ verdict, onClose }) {
   );
 }
 
+// ─── ProfilePage ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -161,11 +318,10 @@ export default function ProfilePage() {
   const [setupSaving, setSetupSaving] = useState(false);
   const [showAvatarEdit, setShowAvatarEdit] = useState(false);
   const [avatarOptions, setAvatarOptions] = useState({
-    top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '',
+    top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '',
+    accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '',
+    facialHair: '', facialHairColor: '',
   });
-
-  const tierDragControls = useDragControls();
-  const analysisDragControls = useDragControls();
 
   const wins = profileData?.wins || 0;
   const losses = profileData?.losses || 0;
@@ -179,22 +335,6 @@ export default function ProfilePage() {
   const progress = nextTier
     ? Math.min(100, Math.max(0, ((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
     : 100;
-
-  // ✅ 바텀시트가 열릴 때 배경 스크롤 및 터치 완전 차단
-  useEffect(() => {
-    const isAnySheetOpen = isTierSheetOpen || isSheetOpen || showAvatarEdit || showProfileSetup;
-    if (isAnySheetOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-    };
-  }, [isTierSheetOpen, isSheetOpen, showAvatarEdit, showProfileSetup]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -287,6 +427,12 @@ export default function ProfilePage() {
     }
   };
 
+  const resetAvatarOptions = () => setAvatarOptions({
+    top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '',
+    accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '',
+    facialHair: '', facialHairColor: '',
+  });
+
   if (!user) return (
     <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7] text-[16px]">
       로그인이 필요합니다.
@@ -296,8 +442,9 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
       <div className="max-w-md mx-auto px-5 pt-8">
+
+        {/* Avatar + Nickname */}
         <div className="flex flex-col items-center mb-8">
-          {/* 아바타 */}
           <div
             className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
             onClick={() => {
@@ -326,7 +473,9 @@ export default function ProfilePage() {
             }}
           >
             <img
-              src={avatarOptions.top ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions) : (profileData?.avatar_url || getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON)}
+              src={avatarOptions.top
+                ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions)
+                : (profileData?.avatar_url || getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON)}
               alt="avatar"
               className="w-full h-full object-cover"
             />
@@ -337,7 +486,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* 닉네임 + 편집 */}
           <div className="flex flex-col items-center w-full">
             <div className="flex flex-col items-center">
               <div className="relative flex items-center justify-center">
@@ -356,7 +504,7 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <>
                       <button onClick={handleUpdateNickname} className="text-[#D4AF37] text-[18px] font-black px-2 py-1 rounded-lg active:bg-[#D4AF37]/10 transition-all whitespace-nowrap">저장</button>
-                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
+                      <button onClick={() => { setIsEditing(false); setNewNickname(profileData?.nickname || ''); resetAvatarOptions(); }} className="text-gray-400 text-[18px] font-bold px-2 py-1 rounded-lg active:bg-gray-100 transition-all whitespace-nowrap">취소</button>
                     </>
                   ) : profileData && (
                     <button onClick={() => setIsEditing(true)} className="text-gray-300 active:text-gray-500 transition-colors p-1">
@@ -371,24 +519,20 @@ export default function ProfilePage() {
                 style={{ backgroundColor: profileData ? tier.color : '#D1D5DB' }}
               >
                 {profileData ? (
-                  <>
-                    <tier.icon size={14} /> {tier.name}
-                    <ChevronRight size={14} strokeWidth={3} />
-                  </>
+                  <><tier.icon size={14} /> {tier.name}<ChevronRight size={14} strokeWidth={3} /></>
                 ) : '\u00A0'}
               </button>
             </div>
           </div>
         </div>
 
+        {/* Stats Cards */}
         <div className="space-y-4 mb-6">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
             </div>
-            <div className="text-4xl font-bold text-black mb-5">
-              <CountUp end={currentScore} />
-            </div>
+            <div className="text-4xl font-bold text-black mb-5"><CountUp end={currentScore} /></div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -397,18 +541,15 @@ export default function ProfilePage() {
                 </div>
                 {nextTier && (
                   <div className="flex items-center gap-1.5 text-gray-400">
-                    <nextTier.icon size={18} />
-                    <span className="text-[16px] font-bold">{nextTier.name}</span>
+                    <nextTier.icon size={18} /><span className="text-[16px] font-bold">{nextTier.name}</span>
                   </div>
                 )}
               </div>
               <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
+                  initial={{ width: 0 }} animate={{ width: `${progress}%` }}
                   transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full rounded-full"
-                  style={{ backgroundColor: tier.color }}
+                  className="h-full rounded-full" style={{ backgroundColor: tier.color }}
                 />
               </div>
               <div className="flex justify-end">
@@ -433,14 +574,12 @@ export default function ProfilePage() {
             </div>
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${winRate}%` }}
+                initial={{ width: 0 }} animate={{ width: `${winRate}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
               />
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${lossRate}%` }}
+                initial={{ width: 0 }} animate={{ width: `${lossRate}%` }}
                 transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
                 className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
               />
@@ -449,6 +588,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Menu Buttons */}
         <div className="space-y-3 mb-10">
           <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
             className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
@@ -472,19 +612,18 @@ export default function ProfilePage() {
           </motion.button>
         </div>
 
+        {/* Debate History */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4 ml-2 mr-2">
             <div className="flex items-center gap-2">
               <History size={20} className="text-[#8E8E93]" />
               <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
             </div>
-            <button
-              onClick={() => setIsListEditing(!isListEditing)}
-              className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
-            >
+            <button onClick={() => setIsListEditing(!isListEditing)} className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity">
               {isListEditing ? '완료' : '편집'}
             </button>
           </div>
+
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
@@ -517,9 +656,7 @@ export default function ProfilePage() {
                               result === '승리' ? 'bg-blue-50 text-[#007AFF]'
                               : result === '패배' ? 'bg-red-50 text-[#FF3B30]'
                               : 'bg-gray-100 text-gray-500'
-                            }`}>
-                              {result}
-                            </span>
+                            }`}>{result}</span>
                           )}
                           <span className="text-[16px] text-gray-400 font-medium">{formatDate(debate.created_at)}</span>
                         </div>
@@ -528,24 +665,16 @@ export default function ProfilePage() {
                       <div className="flex items-center flex-shrink-0 ml-2">
                         <AnimatePresence mode="wait">
                           {isListEditing ? (
-                            <motion.button
-                              key="delete-action"
-                              initial={{ opacity: 0, scale: 0.8, x: 10 }}
-                              animate={{ opacity: 1, scale: 1, x: 0 }}
-                              exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                            <motion.button key="delete-action"
+                              initial={{ opacity: 0, scale: 0.8, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: 10 }}
                               onClick={(e) => handleDeleteDebate(debate.id, e)}
-                              className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-[#FF3B30] active:scale-90 transition-all"
-                            >
+                              className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-[#FF3B30] active:scale-90 transition-all">
                               <Trash2 size={18} strokeWidth={2.5} />
                             </motion.button>
                           ) : (
-                            <motion.div
-                              key="default-view"
-                              initial={{ opacity: 0, x: -5 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -5 }}
-                              className="flex items-center gap-2 text-[#C7C7CC]"
-                            >
+                            <motion.div key="default-view"
+                              initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
+                              className="flex items-center gap-2 text-[#C7C7CC]">
                               <span className="text-[16px] font-semibold text-gray-300">{category}</span>
                               <ChevronRight size={20} strokeWidth={3} />
                             </motion.div>
@@ -559,16 +688,17 @@ export default function ProfilePage() {
               {(() => {
                 const filteredLen = (searchQuery
                   ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
-                  : myJudgments
-                ).length;
+                  : myJudgments).length;
                 const remaining = filteredLen - displayCount;
                 return remaining > 0 ? (
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)} className="w-full py-4 bg-white rounded-b-2xl border-x border-b border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDisplayCount(prev => prev + 5)}
+                    className="w-full py-4 bg-white rounded-b-2xl border-x border-b border-gray-100 shadow-sm text-[16px] font-bold text-gray-500 flex items-center justify-center gap-2 active:bg-gray-50 transition-colors">
                     5개 더보기 ({remaining}) <ArrowRight size={18} className="rotate-90 text-gray-300" />
                   </motion.button>
                 ) : null;
               })()}
-              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout} className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
+                className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
                 로그아웃
               </motion.button>
             </>
@@ -581,464 +711,347 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 등급 시스템 바텀시트 */}
-      <AnimatePresence>
-        {isTierSheetOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsTierSheetOpen(false)}
-              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
-              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md"
-            />
-            <motion.div
-              drag="y"
-              dragControls={tierDragControls}
-              dragListener={false}
-              dragConstraints={{ top: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_, info) => { if (info.offset.y > 100) setIsTierSheetOpen(false); }}
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
-              className="fixed bottom-0 left-0 right-0 bg-[#F2F2F7] z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
-            >
-              {/* 핸들: 여기서만 드래그 가능 */}
-              <div
-                onPointerDown={(e) => tierDragControls.start(e)}
-                className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
-              >
-                <div className="w-14 h-1.5 bg-gray-300 rounded-full mx-auto" />
+      {/* ─── 등급 시스템 바텀시트 ─────────────────────────────────── */}
+      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="80vh" bgColor="#F2F2F7" zIndex={100}>
+        <div className="px-6 overflow-y-auto flex-1 pb-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-[26px] font-black text-black leading-tight">등급 시스템</h3>
+              <p className="text-[16px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Point Milestones</p>
+            </div>
+          </div>
+          <div className="space-y-4 mb-10">
+            {[...TIER_LIST].reverse().map((t) => {
+              const isCurrent = t.name === tier.name;
+              return (
+                <motion.div key={t.name}
+                  className="rounded-[28px] p-6 flex items-center gap-5 border-2 transition-all shadow-sm"
+                  style={{ backgroundColor: isCurrent ? 'white' : 'rgba(255,255,255,0.6)', borderColor: isCurrent ? t.color : 'transparent' }}
+                >
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.bg }}>
+                    <t.icon size={32} style={{ color: t.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
+                    <p className="text-[16px] text-gray-500 font-bold leading-tight">{t.desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+          <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px]">확인</button>
+        </div>
+      </BottomSheet>
+
+      {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
+      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#ffffff" zIndex={100}>
+        <div className="px-6 overflow-y-auto flex-1 pb-16">
+          <div className="flex justify-between items-end mb-8">
+            <h3 className="text-[26px] font-black text-black">논리 분석</h3>
+            <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
+          </div>
+          <div className="bg-[#F9F9F9] rounded-[32px] mb-8 border border-gray-50 overflow-hidden shadow-inner">
+            <RadarChart data={[
+              { label: '논거 구성', val: 92 },
+              { label: '논리 일관', val: 88 },
+              { label: '인용 근거', val: 85 },
+              { label: '반박력', val: 78 },
+              { label: '감정 제어', val: 71 },
+            ]} />
+          </div>
+          <div className="bg-[#F2F2F7] rounded-[32px] p-8 mb-10">
+            <h4 className="text-[16px] font-black text-gray-400 uppercase mb-5 tracking-widest">강점 리포트</h4>
+            <ul className="text-[17px] font-bold text-black/80 space-y-5">
+              <li className="flex items-start gap-4">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
+                <span><span className="text-black font-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</span>
+              </li>
+              <li className="flex items-start gap-4">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
+                <span><span className="text-black font-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</span>
+              </li>
+            </ul>
+          </div>
+          <button onClick={() => setIsSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">분석 완료</button>
+        </div>
+      </BottomSheet>
+
+      {/* ─── 아바타 커스터마이징 바텀시트 ──────────────────────────── */}
+      <BottomSheet isOpen={showAvatarEdit} onClose={() => { setShowAvatarEdit(false); resetAvatarOptions(); }} maxHeight="80vh" bgColor="#ffffff" zIndex={300}>
+        <div className="px-5 pb-2 border-b border-gray-100 shrink-0">
+          <h3 className="text-[16px] font-black text-[#1B2A4A] pb-2">아바타 꾸미기</h3>
+        </div>
+        {/* Preview */}
+        <div className="flex justify-center py-4 shrink-0">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
+            <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
+          {/* 헤어스타일 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">헤어스타일</p>
+            <div className="flex gap-2 flex-wrap">
+              {(profileData?.gender === 'male' ? MALE_STYLES : FEMALE_STYLES).map(s => (
+                <button key={s} onClick={() => setAvatarOptions(prev => ({ ...prev, top: s }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { top: s })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 피부색 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
+            <div className="flex gap-2">
+              {SKIN_COLORS.map(c => (
+                <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, skinColor: c }))}
+                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.skinColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  style={{ backgroundColor: `#${c}` }} />
+              ))}
+            </div>
+          </div>
+          {/* 머리색 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
+            <div className="flex gap-2 flex-wrap">
+              {HAIR_COLORS.map(c => (
+                <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, hairColor: c }))}
+                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.hairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  style={{ backgroundColor: `#${c}` }} />
+              ))}
+            </div>
+          </div>
+          {/* 의상 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
+            <div className="flex gap-2 flex-wrap">
+              {CLOTHING_OPTIONS.map(c => (
+                <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothing: c }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { clothing: c })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 액세서리 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: '' }))}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.accessories ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                없음
+              </button>
+              {ACCESSORIES_OPTIONS.map(a => (
+                <button key={a} onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: a }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { accessories: a })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 눈 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
+            <div className="flex gap-2 flex-wrap">
+              {EYES_OPTIONS.map(e => (
+                <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { eyes: e })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 눈썹 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
+            <div className="flex gap-2 flex-wrap">
+              {EYEBROWS_OPTIONS.map(e => (
+                <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { eyebrows: e })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 입 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
+            <div className="flex gap-2 flex-wrap">
+              {MOUTH_OPTIONS.map(m => (
+                <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  <img src={buildAvatarUrl(user.id, profileData?.gender, { mouth: m })} alt="" className="w-full h-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 수염 (남성만) */}
+          {profileData?.gender === 'male' && (
+            <div>
+              <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: '' }))}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                  없음
+                </button>
+                {FACIAL_HAIR_OPTIONS.map(f => (
+                  <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
+                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                    <img src={buildAvatarUrl(user.id, profileData?.gender, { facialHair: f })} alt="" className="w-full h-full" />
+                  </button>
+                ))}
               </div>
-              <div className="px-6 overflow-y-auto flex-1 pb-16">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className="text-[26px] font-black text-black leading-tight">등급 시스템</h3>
-                    <p className="text-[16px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Point Milestones</p>
+              {avatarOptions.facialHair && (
+                <div className="mt-2">
+                  <p className="text-[11px] text-[#1B2A4A]/30 mb-1">수염 색상</p>
+                  <div className="flex gap-2">
+                    {FACIAL_HAIR_COLORS.map(c => (
+                      <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHairColor: c }))}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                        style={{ backgroundColor: `#${c}` }} />
+                    ))}
                   </div>
                 </div>
-                <div className="space-y-4 mb-10">
-                  {[...TIER_LIST].reverse().map((t) => {
-                    const isCurrent = t.name === tier.name;
-                    return (
-                      <motion.div key={t.name}
-                        className="rounded-[28px] p-6 flex items-center gap-5 border-2 transition-all shadow-sm"
-                        style={{ backgroundColor: isCurrent ? 'white' : 'rgba(255,255,255,0.6)', borderColor: isCurrent ? t.color : 'transparent' }}
-                      >
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.bg }}>
-                          <t.icon size={32} style={{ color: t.color }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
-                          <p className="text-[16px] text-gray-500 font-bold leading-tight">{t.desc}</p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-                <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px]">확인</button>
+              )}
+            </div>
+          )}
+          {/* 의상 색상 */}
+          <div>
+            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
+            <div className="flex gap-2 flex-wrap">
+              {CLOTHES_COLORS.map(c => (
+                <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothesColor: c }))}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  style={{ backgroundColor: `#${c}` }} />
+              ))}
+            </div>
+          </div>
+          {/* 액세서리 색상 */}
+          {avatarOptions.accessories && (
+            <div>
+              <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
+              <div className="flex gap-2">
+                {ACCESSORIES_COLORS.map(c => (
+                  <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, accessoriesColor: c }))}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                    style={{ backgroundColor: `#${c}` }} />
+                ))}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+          )}
+          {/* 저장 */}
+          <button
+            onClick={async () => {
+              const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);
+              await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+              setShowAvatarEdit(false);
+              window.location.reload();
+            }}
+            className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.97] transition-all"
+          >
+            아바타 저장
+          </button>
+        </div>
+      </BottomSheet>
 
-      {/* 논리 분석 바텀시트 */}
-      <AnimatePresence>
-        {isSheetOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsSheetOpen(false)}
-              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
-              className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-md"
-            />
-            <motion.div
-              drag="y"
-              dragControls={analysisDragControls}
-              dragListener={false}
-              dragConstraints={{ top: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_, info) => { if (info.offset.y > 100) setIsSheetOpen(false); }}
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
-              className="fixed bottom-0 left-0 right-0 bg-white z-[101] rounded-t-[40px] max-h-[92vh] flex flex-col shadow-2xl"
-            >
-              {/* 핸들: 여기서만 드래그 가능 */}
-              <div
-                onPointerDown={(e) => analysisDragControls.start(e)}
-                className="w-full py-6 flex-shrink-0 cursor-grab active:cursor-grabbing"
-              >
-                <div className="w-14 h-1.5 bg-gray-200 rounded-full mx-auto" />
+      {/* ─── 프로필 설정 바텀시트 ────────────────────────────────── */}
+      <BottomSheet isOpen={showProfileSetup} onClose={() => setShowProfileSetup(false)} maxHeight="auto" bgColor="#ffffff" zIndex={300}>
+        <div className="px-5 pb-2">
+          <h3 className="text-[18px] font-black text-[#1B2A4A] mb-1">프로필을 완성해주세요</h3>
+          <p className="text-[12px] text-[#1B2A4A]/40 mb-4">더 나은 서비스를 위해 기본 정보를 입력해주세요</p>
+        </div>
+        <div className="px-5 pb-8 space-y-4">
+          {!profileData?.nickname && (
+            <div>
+              <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">닉네임</label>
+              <input
+                value={setupNickname}
+                onChange={(e) => setSetupNickname(e.target.value)}
+                placeholder="2자 이상 입력"
+                maxLength={20}
+                className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+              />
+            </div>
+          )}
+          {!profileData?.gender && (
+            <div>
+              <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">성별</label>
+              <div className="flex gap-2">
+                {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }].map(g => (
+                  <button key={g.key} onClick={() => setSetupGender(g.key)}
+                    className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
+                      setupGender === g.key
+                        ? 'bg-[#1B2A4A] text-[#D4AF37] border-[#1B2A4A]'
+                        : 'bg-white text-[#1B2A4A]/40 border-[#1B2A4A]/10'
+                    }`}>{g.label}</button>
+                ))}
               </div>
-              <div className="px-6 overflow-y-auto flex-1 pb-16">
-                <div className="flex justify-between items-end mb-8">
-                  <h3 className="text-[26px] font-black text-black">논리 분석</h3>
-                  <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
-                </div>
-                <div className="bg-[#F9F9F9] rounded-[32px] mb-8 border border-gray-50 overflow-hidden shadow-inner">
-                  <RadarChart data={[
-                    { label: '논거 구성', val: 92 },
-                    { label: '논리 일관', val: 88 },
-                    { label: '인용 근거', val: 85 },
-                    { label: '반박력', val: 78 },
-                    { label: '감정 제어', val: 71 },
-                  ]} />
-                </div>
-                <div className="bg-[#F2F2F7] rounded-[32px] p-8 mb-10">
-                  <h4 className="text-[16px] font-black text-gray-400 uppercase mb-5 tracking-widest">강점 리포트</h4>
-                  <ul className="text-[17px] font-bold text-black/80 space-y-5">
-                    <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
-                      <span><span className="text-black font-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</span>
-                    </li>
-                    <li className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
-                      <span><span className="text-black font-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</span>
-                    </li>
-                  </ul>
-                </div>
-                <button onClick={() => setIsSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">분석 완료</button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+          )}
+          {!profileData?.age && (
+            <div>
+              <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">나이</label>
+              <input
+                value={setupAge}
+                onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); if (v.length <= 2) setSetupAge(v); }}
+                placeholder="예: 25"
+                maxLength={2}
+                inputMode="numeric"
+                className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
+              />
+            </div>
+          )}
+          <button
+            onClick={async () => {
+              setSetupSaving(true);
+              try {
+                const updates = {};
+                if (setupNickname.trim() && !profileData?.nickname) updates.nickname = setupNickname.trim();
+                if (setupGender && !profileData?.gender) updates.gender = setupGender;
+                if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
+                if (Object.keys(updates).length > 0) {
+                  await supabase.from('profiles').update(updates).eq('id', user.id);
+                  if (updates.nickname) {
+                    await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
+                  }
+                }
+                setShowProfileSetup(false);
+                window.location.reload();
+              } catch (e) {
+                alert('저장 중 오류가 발생했습니다.');
+              } finally {
+                setSetupSaving(false);
+              }
+            }}
+            disabled={setupSaving || (
+              (!profileData?.nickname && setupNickname.trim().length < 2) ||
+              (!profileData?.gender && !setupGender) ||
+              (!profileData?.age && setupAge.length < 1)
+            )}
+            className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] disabled:opacity-30 active:scale-[0.97] transition-all"
+          >
+            {setupSaving ? '저장 중...' : '프로필 저장'}
+          </button>
+          <button onClick={() => setShowProfileSetup(false)} className="w-full py-2 text-[12px] text-[#1B2A4A]/30 font-bold">
+            나중에 하기
+          </button>
+        </div>
+      </BottomSheet>
 
-      {/* 판결 상세 모달 */}
+      {/* ─── 판결 상세 모달 ──────────────────────────────────────── */}
       <AnimatePresence>
-        {selectedVerdict && (
-          <VerdictModal verdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />
-        )}
+        {selectedVerdict && <VerdictModal verdict={selectedVerdict} onClose={() => setSelectedVerdict(null)} />}
       </AnimatePresence>
 
       {/* 판결 로딩 오버레이 */}
       {verdictLoading && (
         <div className="fixed inset-0 bg-black/30 z-[199] flex items-center justify-center">
-          <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
-
-      {/* 아바타 커스터마이징 바텀시트 */}
-      <AnimatePresence>
-        {showAvatarEdit && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }}
-              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
-              className="fixed inset-0 bg-black/40 z-[300]"
-            />
-            <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
-              <motion.div
-                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
-                className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl pointer-events-auto"
-              >
-                <div className="px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
-                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[16px] font-black text-[#1B2A4A]">아바타 꾸미기</h3>
-                    <button onClick={() => { setShowAvatarEdit(false); setAvatarOptions({ top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '', accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '', facialHair: '', facialHairColor: '' }); }} className="text-[12px] text-gray-400 font-bold">닫기</button>
-                  </div>
-                </div>
-                {/* 프리뷰 */}
-                <div className="flex justify-center py-4 shrink-0">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
-                    <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
-                  {/* 헤어스타일 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">헤어스타일</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {(profileData?.gender === 'male' ? MALE_STYLES : FEMALE_STYLES).map(s => (
-                        <button key={s} onClick={() => setAvatarOptions(prev => ({ ...prev, top: s }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { top: s })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 피부색 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
-                    <div className="flex gap-2">
-                      {SKIN_COLORS.map(c => (
-                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, skinColor: c }))}
-                          className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.skinColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
-                          style={{ backgroundColor: `#${c}` }} />
-                      ))}
-                    </div>
-                  </div>
-                  {/* 머리색 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {HAIR_COLORS.map(c => (
-                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, hairColor: c }))}
-                          className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.hairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
-                          style={{ backgroundColor: `#${c}` }} />
-                      ))}
-                    </div>
-                  </div>
-                  {/* 의상 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {CLOTHING_OPTIONS.map(c => (
-                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothing: c }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { clothing: c })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 액세서리 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <button onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: '' }))}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.accessories ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
-                        없음
-                      </button>
-                      {ACCESSORIES_OPTIONS.map(a => (
-                        <button key={a} onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: a }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { accessories: a })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 눈 모양 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {EYES_OPTIONS.map(e => (
-                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyes: e })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 눈썹 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {EYEBROWS_OPTIONS.map(e => (
-                        <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { eyebrows: e })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 입 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {MOUTH_OPTIONS.map(m => (
-                        <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
-                          className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                          <img src={buildAvatarUrl(user.id, profileData?.gender, { mouth: m })} alt="" className="w-full h-full" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 수염 (남성만) */}
-                  {profileData?.gender === 'male' && (
-                    <div>
-                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
-                      <div className="flex gap-2 flex-wrap">
-                        <button onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: '' }))}
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
-                          없음
-                        </button>
-                        {FACIAL_HAIR_OPTIONS.map(f => (
-                          <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
-                            className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
-                            <img src={buildAvatarUrl(user.id, profileData?.gender, { facialHair: f })} alt="" className="w-full h-full" />
-                          </button>
-                        ))}
-                      </div>
-                      {avatarOptions.facialHair && (
-                        <div className="mt-2">
-                          <p className="text-[11px] text-[#1B2A4A]/30 mb-1">수염 색상</p>
-                          <div className="flex gap-2">
-                            {FACIAL_HAIR_COLORS.map(c => (
-                              <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHairColor: c }))}
-                                className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
-                                style={{ backgroundColor: `#${c}` }} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {/* 의상 색상 */}
-                  <div>
-                    <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {CLOTHES_COLORS.map(c => (
-                        <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothesColor: c }))}
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
-                          style={{ backgroundColor: `#${c}` }} />
-                      ))}
-                    </div>
-                  </div>
-                  {/* 액세서리 색상 */}
-                  {avatarOptions.accessories && (
-                    <div>
-                      <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
-                      <div className="flex gap-2">
-                        {ACCESSORIES_COLORS.map(c => (
-                          <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, accessoriesColor: c }))}
-                            className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
-                            style={{ backgroundColor: `#${c}` }} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* 저장 */}
-                  <button
-                    onClick={async () => {
-                      const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);
-                      await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
-                      setShowAvatarEdit(false);
-                      window.location.reload();
-                    }}
-                    className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.97] transition-all"
-                  >
-                    아바타 저장
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ===== 프로필 미완성 설정 바텀시트 ===== */}
-      <AnimatePresence>
-        {showProfileSetup && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onTouchMove={(e) => e.preventDefault()} // ✅ 백드롭 터치 스크롤 차단
-              className="fixed inset-0 bg-black/40 z-[300]"
-            />
-            <div className="fixed inset-0 z-[301] flex items-end justify-center pointer-events-none">
-              <motion.div
-                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                onTouchStart={(e) => e.stopPropagation()} // ✅ 터치 이벤트 배경 전파 차단
-                className="w-full max-w-[440px] bg-white rounded-t-2xl shadow-xl pointer-events-auto"
-              >
-                <div className="px-5 pt-4 pb-2">
-                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-                  <h3 className="text-[18px] font-black text-[#1B2A4A] mb-1">프로필을 완성해주세요</h3>
-                  <p className="text-[12px] text-[#1B2A4A]/40 mb-4">더 나은 서비스를 위해 기본 정보를 입력해주세요</p>
-                </div>
-                <div className="px-5 pb-6 space-y-4">
-                  {/* 닉네임 */}
-                  {!profileData?.nickname && (
-                    <div>
-                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">닉네임</label>
-                      <input
-                        value={setupNickname}
-                        onChange={(e) => setSetupNickname(e.target.value)}
-                        placeholder="2자 이상 입력"
-                        maxLength={20}
-                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
-                      />
-                    </div>
-                  )}
-                  {/* 성별 */}
-                  {!profileData?.gender && (
-                    <div>
-                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">성별</label>
-                      <div className="flex gap-2">
-                        {[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }].map(g => (
-                          <button
-                            key={g.key}
-                            onClick={() => setSetupGender(g.key)}
-                            className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
-                              setupGender === g.key
-                                ? 'bg-[#1B2A4A] text-[#D4AF37] border-[#1B2A4A]'
-                                : 'bg-white text-[#1B2A4A]/40 border-[#1B2A4A]/10'
-                            }`}
-                          >{g.label}</button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* 나이 */}
-                  {!profileData?.age && (
-                    <div>
-                      <label className="text-[12px] font-bold text-[#1B2A4A]/50 mb-1 block">나이</label>
-                      <input
-                        value={setupAge}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9]/g, '');
-                          if (v.length <= 2) setSetupAge(v);
-                        }}
-                        placeholder="예: 25"
-                        maxLength={2}
-                        inputMode="numeric"
-                        className="w-full h-10 px-3 rounded-lg border border-[#1B2A4A]/10 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30"
-                      />
-                    </div>
-                  )}
-                  {/* 저장 버튼 */}
-                  <button
-                    onClick={async () => {
-                      setSetupSaving(true);
-                      try {
-                        const updates = {};
-                        if (setupNickname.trim() && !profileData?.nickname) updates.nickname = setupNickname.trim();
-                        if (setupGender && !profileData?.gender) updates.gender = setupGender;
-                        if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
-                        if (Object.keys(updates).length > 0) {
-                          await supabase.from('profiles').update(updates).eq('id', user.id);
-                          if (updates.nickname) {
-                            await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
-                          }
-                        }
-                        setShowProfileSetup(false);
-                        window.location.reload();
-                      } catch (e) {
-                        alert('저장 중 오류가 발생했습니다.');
-                      } finally {
-                        setSetupSaving(false);
-                      }
-                    }}
-                    disabled={setupSaving || (
-                      (!profileData?.nickname && setupNickname.trim().length < 2) ||
-                      (!profileData?.gender && !setupGender) ||
-                      (!profileData?.age && setupAge.length < 1)
-                    )}
-                    className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] disabled:opacity-30 active:scale-[0.97] transition-all"
-                  >
-                    {setupSaving ? '저장 중...' : '프로필 저장'}
-                  </button>
-                  <button
-                    onClick={() => setShowProfileSetup(false)}
-                    className="w-full py-2 text-[12px] text-[#1B2A4A]/30 font-bold"
-                  >
-                    나중에 하기
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
