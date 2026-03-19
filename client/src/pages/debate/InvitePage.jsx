@@ -54,6 +54,10 @@ export default function InvitePage() {
           setIsCreator(amICreator)
           if (amICreator) {
             sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
+          } else if (debateData.opponent_id === user.id) {
+            // B측: 이미 참여한 논쟁 → 현재 상태에 맞는 페이지로 바로 이동
+            navigate(getDebateRoute(debateData.id, debateData.status), { replace: true })
+            return
           } else if (debateData.status === 'waiting' && !debateData.opponent_id) {
             // B측: 소환장 진입 시 자동 참여 → 진행중인 논쟁에 즉시 표시
             try {
@@ -163,7 +167,7 @@ export default function InvitePage() {
         objectType: 'feed',
         content: {
           title: debate?.topic || '모라고라 논쟁 초대',
-          description: '논쟁에 참여해주세요!',
+          description: `${creatorNickname} 님께서 ${debate?.topic || '모라고라 AI 토론'}(으)로 논쟁을 신청하셨습니다.`,
           imageUrl: '',
           link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
         },
@@ -391,10 +395,10 @@ export default function InvitePage() {
               카카오톡으로 소환장 발송
             </button>
             <button
-              onClick={handleNativeShare}
+              onClick={handleCopy}
               className="w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 text-[#1B2A4A] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all"
             >
-              링크 복사
+              {isCopied ? '복사 완료!' : '링크 복사'}
             </button>
           </div>
         </div>

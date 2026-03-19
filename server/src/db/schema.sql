@@ -13,7 +13,6 @@ CREATE TABLE profiles (
   losses INTEGER NOT NULL DEFAULT 0,
   draws INTEGER NOT NULL DEFAULT 0,
   total_score INTEGER NOT NULL DEFAULT 0,
-  xp INTEGER NOT NULL DEFAULT 0,
   tier TEXT NOT NULL DEFAULT '시민'
     CHECK (tier IN ('시민', '배심원', '변호사', '판사', '대법관')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -85,6 +84,8 @@ CREATE TABLE verdicts (
   final_score_b NUMERIC(5,2) NOT NULL DEFAULT 0,
   citizen_vote_count INTEGER NOT NULL DEFAULT 0,
   is_citizen_applied BOOLEAN NOT NULL DEFAULT false,
+  nickname_a TEXT,
+  nickname_b TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

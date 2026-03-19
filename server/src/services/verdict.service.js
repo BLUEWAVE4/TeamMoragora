@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
-import { grantDebateXP, settleVoteXP } from './xp.service.js';
+import { grantDebateXP, settleVoteXP, getTierByScore } from './xp.service.js';
 import { VERDICT_AI_WEIGHT, VERDICT_CITIZEN_WEIGHT, CITIZEN_VOTE_THRESHOLD } from '../config/constants.js';
 
 // 복합 판결 계산: AI 판결 즉시 저장 (시민 투표는 마감 후 합산)
@@ -187,6 +187,7 @@ async function applyResult(userId, result, score) {
 
   // total_score: 누적 점수 (해당 논쟁에서 받은 최종 점수 합산)
   update.total_score = profile.total_score + score;
+  update.tier = getTierByScore(update.total_score);
 
   await supabaseAdmin
     .from('profiles')

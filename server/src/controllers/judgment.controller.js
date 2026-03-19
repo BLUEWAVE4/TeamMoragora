@@ -230,7 +230,7 @@ export async function getDailyVerdicts(req, res, next) {
     // daily 모드만 가져오기 위해 넉넉하게 조회 후 필터
     const { data, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname))')
+      .select('*, debate:debates!debate_id(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .limit(100);
 

@@ -16,10 +16,35 @@ const AI_JUDGES = [
   { id: 'claude', name: '클로드', model: 'claude-sonnet-4-20250514', type: 'anthropic' },
 ];
 
-// 랜덤으로 2개 선택 (A측, B측 각각 다른 판사)
-function pickTwoJudges() {
-  const shuffled = [...AI_JUDGES].sort(() => Math.random() - 0.5);
-  return { judgeA: shuffled[0], judgeB: shuffled[1] };
+// 최근 등장 이력 기반 공정 배정 (최근에 안 나온 AI 우선)
+async function pickTwoJudges() {
+  // 최근 5개 daily 논쟁의 description에서 등장한 AI 이름 추출
+  const { data: recent } = await supabaseAdmin
+    .from('debates')
+    .select('description')
+    .eq('mode', 'daily')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // 각 AI의 마지막 등장 인덱스 (0=가장 최근, 높을수록 오래됨)
+  const lastSeen = {};
+  AI_JUDGES.forEach(j => { lastSeen[j.id] = 999; }); // 기본값: 아주 오래 전
+
+  (recent || []).forEach((d, i) => {
+    AI_JUDGES.forEach(j => {
+      if (d.description?.includes(j.name) && lastSeen[j.id] > i) {
+        lastSeen[j.id] = i;
+      }
+    });
+  });
+
+  // 오래 안 나온 순으로 정렬 + 동률이면 랜덤
+  const sorted = [...AI_JUDGES].sort((a, b) => {
+    const diff = lastSeen[b.id] - lastSeen[a.id];
+    return diff !== 0 ? diff : Math.random() - 0.5;
+  });
+
+  return { judgeA: sorted[0], judgeB: sorted[1] };
 }
 
 // 1. Claude Sonnet으로 논쟁 주제 생성
@@ -164,8 +189,8 @@ export async function createDailyDebate() {
   const topicData = await generateDailyTopic();
   console.log(`[DailyDebate] 주제: ${topicData.topic}`);
 
-  // 2) AI 판사 2명 랜덤 배정
-  const { judgeA, judgeB } = pickTwoJudges();
+  // 2) AI 판사 2명 공정 배정 (최근 미등장 AI 우선)
+  const { judgeA, judgeB } = await pickTwoJudges();
   console.log(`[DailyDebate] A측: ${judgeA.name}, B측: ${judgeB.name}`);
 
   // 3) 시스템 유저 확인

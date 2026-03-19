@@ -76,6 +76,8 @@ export async function triggerJudgment(debateId) {
         final_score_a: 0,
         final_score_b: 0,
         is_citizen_applied: false,
+        nickname_a: nicknameA,
+        nickname_b: nicknameB,
       })
       .select('id')
       .single();

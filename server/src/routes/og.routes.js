@@ -10,14 +10,13 @@ router.get('/invite/:inviteCode', async (req, res) => {
 
     const { data: debate } = await supabaseAdmin
       .from('debates')
-      .select('topic, category, purpose, lens')
+      .select('topic, category, purpose, lens, creator:profiles!creator_id(nickname)')
       .eq('invite_code', inviteCode)
       .maybeSingle();
 
     const topic = debate?.topic || '모라고라 AI 토론';
-    const category = debate?.category || '';
-    const purpose = debate?.purpose || '';
-    const description = `${category ? `[${category}] ` : ''}${purpose ? `${purpose} ` : ''}토론에 참여해보세요!`;
+    const nickname = debate?.creator?.nickname || '누군가';
+    const description = `${nickname} 님께서 ${topic}(으)로 논쟁을 신청하셨습니다.`;
 
     const clientUrl = env.CLIENT_URL;
     const ogImage = `${clientUrl}/og-image.png`;

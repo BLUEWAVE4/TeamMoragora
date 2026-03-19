@@ -76,6 +76,10 @@ function getStatusLabel(debate) {
     const remaining = deadline ? getTimeRemaining(deadline) : '';
     return { label: `시민 투표 진행중${remaining ? `(${remaining})` : ''}`, color: 'text-emerald-600' };
   }
+  // arguing 상태지만 양측 주장이 모두 제출된 경우 → 판결 대기중
+  if (debate.status === 'arguing' && debate.argument_count >= 4) {
+    return { label: '판결 대기중', color: 'text-purple-600' };
+  }
   return STATUS_MAP[debate.status] || STATUS_MAP.waiting;
 }
 

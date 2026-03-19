@@ -93,6 +93,23 @@ export async function getMyActiveDebates(req, res, next) {
     const hasMore = items.length > limit;
     if (hasMore) items.pop();
 
+    // arguing 상태 논쟁에 주장 수 추가 (판결 대기 판별용)
+    const arguingIds = items.filter(d => d.status === 'arguing').map(d => d.id);
+    if (arguingIds.length > 0) {
+      const { data: argCounts } = await supabaseAdmin
+        .from('arguments')
+        .select('debate_id')
+        .in('debate_id', arguingIds);
+
+      const countMap = {};
+      (argCounts || []).forEach(a => {
+        countMap[a.debate_id] = (countMap[a.debate_id] || 0) + 1;
+      });
+      items.forEach(d => {
+        if (d.status === 'arguing') d.argument_count = countMap[d.id] || 0;
+      });
+    }
+
     res.json({ items, hasMore });
   } catch (err) {
     next(err);
@@ -103,7 +120,7 @@ export async function listDebates(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('*, creator:profiles!creator_id(nickname)')
+      .select('*, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
       .limit(20);
@@ -130,8 +147,9 @@ export async function getDebateByInviteCode(req, res, next) {
     }
 
     // 이미 상대방이 확정된 논쟁 → 생성자/참여자 외 접근 차단
+    // 비로그인 사용자는 일단 통과 (로그인 후 참여 플로우를 위해)
     const userId = req.user?.id;
-    if (data.opponent_id && userId !== data.creator_id && userId !== data.opponent_id) {
+    if (data.opponent_id && userId && userId !== data.creator_id && userId !== data.opponent_id) {
       return res.status(403).json({ error: '이미 참여자가 확정된 논쟁입니다.' });
     }
 
