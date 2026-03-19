@@ -21,7 +21,7 @@ export async function getMyVerdicts(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('*, verdicts(*)')
+      .select('*, verdicts(*, ai_judgments(*))')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
       .eq('status', 'completed')
       .order('created_at', { ascending: false });
