@@ -362,24 +362,23 @@ export default function DebateCard({ feed, formatTime }) {
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-          {hasTimer && timerExpired && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-bold">투표 마감</span>
-          )}
+          
         </div>
 
-        {/* 투표 진행 바 (vote_duration 있을 때만) */}
+        
+
+ {/* 투표 진행 바 (vote_duration 있을 때만) */}
         {hasTimer && (
           <div className="px-4 pb-2">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] font-bold text-[#1B2A4A]/30 uppercase tracking-wider">
                 {timerExpired ? '투표 마감' : '투표 진행 중'}
               </span>
-              {!timerExpired && timeLeft && (
-                <span className="text-[9px] font-bold" style={{ color: barColor }}>
-                  {timeLeft.label}
-                </span>
-              )}
             </div>
+
+
+
+
             <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
               {timerExpired ? (
                 <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
@@ -396,6 +395,11 @@ export default function DebateCard({ feed, formatTime }) {
             </div>
           </div>
         )}
+
+        
+
+
+
 
         {/* 투표 섹션 */}
         <div className="px-4 pb-4 pt-1">
