@@ -162,7 +162,7 @@ export default function InvitePage() {
         content: {
           title: debate?.topic || '모라고라 논쟁 초대',
           description: `${creatorNickname} 님께서 ${debate?.topic || '모라고라 AI 토론'}(으)로 논쟁을 신청하셨습니다.`,
-          imageUrl: '',
+          imageUrl: 'https://team-moragora-client.vercel.app/ogCard2.png',
           link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
         },
         buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
