@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 import { useAuth } from "../../store/AuthContext";
 import { getMyActiveDebates, deleteDebate } from "../../services/api";
 
@@ -165,9 +167,10 @@ export default function TabBar() {
     }
   }, [hasMore, loadingMore, activeDebates, fetchActiveDebates]);
 
-  // 바텀시트 바깥 클릭 닫기
+  // 바텀시트 바깥 클릭 닫기 + 외부 스크롤 차단
   useEffect(() => {
     if (!showSheet) return;
+    document.body.style.overflow = 'hidden';
     const handleClick = (e) => {
       if (sheetRef.current && !sheetRef.current.contains(e.target)) {
         setShowSheet(false);
@@ -176,7 +179,10 @@ export default function TabBar() {
       }
     };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.body.style.overflow = '';
+    };
   }, [showSheet]);
 
   const hasActiveDebates = activeDebates.length > 0;
@@ -287,37 +293,47 @@ export default function TabBar() {
                           {isDeleting ? '한 번 더 누르면 삭제됩니다' : info.label}
                         </span>
                       </div>
-                      {!isEditing && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 ml-2">
-                          <polyline points="9 6 15 12 9 18"/>
-                        </svg>
-                      )}
+                      <div className="flex items-center shrink-0 ml-2">
+                        <AnimatePresence mode="wait">
+                          {isEditing ? (
+                            <motion.button
+                              key="delete-btn"
+                              initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                              animate={{ opacity: 1, scale: 1, x: 0 }}
+                              exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!isDeleting) { setDeleting(debate.id); return; }
+                                try {
+                                  await deleteDebate(debate.id);
+                                  setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
+                                  setDeleting(null);
+                                } catch (err) {
+                                  alert(err.message || '삭제에 실패했습니다.');
+                                  setDeleting(null);
+                                }
+                              }}
+                              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90 ${
+                                isDeleting ? 'bg-[#FF3B30] text-white' : 'bg-red-50 text-[#FF3B30]'
+                              }`}
+                            >
+                              <Trash2 size={18} strokeWidth={2.5} />
+                            </motion.button>
+                          ) : (
+                            <motion.div
+                              key="arrow"
+                              initial={{ opacity: 0, x: -5 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -5 }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
+                                <polyline points="9 6 15 12 9 18"/>
+                              </svg>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </button>
-                    {/* 편집 모드: 삭제 버튼 (오른쪽) */}
-                    {isEditing && (
-                      <button
-                        onClick={async () => {
-                          if (!isDeleting) { setDeleting(debate.id); return; }
-                          try {
-                            await deleteDebate(debate.id);
-                            setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
-                            setDeleting(null);
-                          } catch (err) {
-                            alert(err.message || '삭제에 실패했습니다.');
-                            setDeleting(null);
-                          }
-                        }}
-                        className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 ${
-                          isDeleting
-                            ? 'bg-[#FF3B30] text-white'
-                            : 'bg-red-50 text-[#FF3B30]'
-                        }`}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        </svg>
-                      </button>
-                    )}
                   </div>
                 );
               })}

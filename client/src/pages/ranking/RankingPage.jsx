@@ -414,7 +414,7 @@ export default function RankingPage() {
   const myIsOutsideTop10 = myRankIndex >= 10;
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#F3F1EC] font-sans">
       <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
