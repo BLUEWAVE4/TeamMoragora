@@ -26,6 +26,7 @@ export default function Step1Topic({
     "일상","연애","직장","교육","사회",
     "정치","기술","철학","문화","기타",
   ];
+  
 
   useEffect(() => {
     if (hasDraft) setShowDraft(true);
@@ -197,7 +198,7 @@ export default function Step1Topic({
               • <b>카테고리</b><br />
               • <b>목적</b><br />
               • <b>렌즈</b><br /><br />
-              의 초안을 추천합니다. 생성된 내용은 자유롭게 변경할 수 있습니다.
+              의 초안을 생성합니다. 생성된 내용은 자유롭게 변경할 수 있습니다.
             </p>
             <button onClick={() => setShowHelpModal(false)} className="mt-6 w-full py-2 rounded-xl bg-gold text-white">확인</button>
           </div>

@@ -119,11 +119,9 @@ export default function Step3CategoryTime({
 
       </div>
 
-      {/* TIME SELECT */}
       {timerType === "limit" && (
-        <div className="flex flex-col gap-4 border border-gold/30 rounded-xl p-5 bg-[#FFFCF3]">
-
-          {/* header */}
+        <div className="flex flex-col gap-4">
+        
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
               <span className="font-semibold text-sm text-gray-800">시민 투표 마감 시간</span>
@@ -147,8 +145,8 @@ export default function Step3CategoryTime({
             </div>
           </div>
 
-          {/* ⭐ 마감 예정일 미리보기 */}
-          {time && (
+          {/* 마감 예정일 미리보기 */}
+          {/* {time && (
             <div className="flex items-center gap-2 bg-gold/10 border border-gold/30 rounded-lg px-4 py-3">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500 font-medium">투표 마감 예정</span>
@@ -157,30 +155,7 @@ export default function Step3CategoryTime({
                 </span>
               </div>
             </div>
-          )}
-
-          {/* ⭐ 타이머 시각화 바 */}
-          {time && (
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>지금</span>
-                <span>{time}일 후 마감</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-gold to-yellow-300 rounded-full transition-all duration-500"
-                  style={{ width: "100%" }}
-                />
-              </div>
-              <div className="flex justify-center mt-1">
-                <span className="text-xs text-gray-500">
-                  {time === "1" && "빠른 결론! 24시간 투표"}
-                  {time === "3" && "3일간 활발한 토론"}
-                  {time === "7" && "1주일 충분한 숙의"}
-                </span>
-              </div>
-            </div>
-          )}
+          )} */}
 
         </div>
       )}

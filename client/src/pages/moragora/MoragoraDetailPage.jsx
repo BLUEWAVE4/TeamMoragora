@@ -125,7 +125,7 @@ export default function MoragoraDetailPage() {
           {/* 타이머 */}
           {timeLeft && (
             <div className="text-gold text-xl font-bold tracking-wider">
-              투표 종료 까지 {timeLeft.label}
+              {timeLeft.expired ? "투표 종료" : `투표 종료 까지 ${timeLeft.label}`}
             </div>
           )}
         </div>
