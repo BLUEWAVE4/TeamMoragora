@@ -163,7 +163,7 @@ export default function NicknamePage() {
                 type="button"
                 onClick={handleCheckDuplicate}
                 disabled={nickname.trim().length < 2 || isChecking}
-                className="px-5 rounded-[18px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[13px] disabled:bg-gray-100 disabled:text-gray-300 transition-all active:scale-95 shrink-0 shadow-md shadow-[#1B2A4A]/10"
+                className="px-5 rounded-[18px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[13px] disabled:bg-gray-100 disabled:text-gray-300 transition-all active:scale-95 shrink-0 shadow-md shadow-[#1B2A4A]/10 cursor-pointer"
               >
                 {isChecking ? '...' : '중복확인'}
               </button>
@@ -199,7 +199,7 @@ export default function NicknamePage() {
                   key={item}
                   type="button"
                   onClick={() => setGender(item)}
-                  className={`flex-1 py-4 rounded-[18px] font-black text-[15px] transition-all duration-300 active:scale-[0.96] ${
+                  className={`cursor-pointer flex-1 py-4 rounded-[18px] font-black text-[15px] transition-all duration-300 active:scale-[0.96] ${
                     gender === item
                       ? 'bg-[#1B2A4A] text-[#D4AF37] shadow-lg shadow-[#1B2A4A]/20'
                       : 'bg-white text-gray-400 border border-gray-100'
@@ -229,12 +229,12 @@ export default function NicknamePage() {
                 <button
                   type="button"
                   onClick={() => adjustAge(1)}
-                  className="px-5 py-2.5 hover:bg-gray-100 active:bg-gray-200 text-[12px] text-gray-400 border-b border-gray-100 transition-colors"
+                  className="px-5 py-2.5 hover:bg-gray-100 active:bg-gray-200 text-[12px] text-gray-400 border-b border-gray-100 transition-colors cursor-pointer"
                 >▲</button>
                 <button
                   type="button"
                   onClick={() => adjustAge(-1)}
-                  className="px-5 py-2.5 hover:bg-gray-100 active:bg-gray-200 text-[12px] text-gray-400 transition-colors"
+                  className="px-5 py-2.5 hover:bg-gray-100 active:bg-gray-200 text-[12px] text-gray-400 transition-colors cursor-pointer"
                 >▼</button>
               </div>
             </div>
@@ -259,11 +259,9 @@ export default function NicknamePage() {
               ) : (
                 <>
                   <span>모라고라 시작하기</span>
-                  
                 </>
               )}
             </button>
-            {/* 하단에 있던 중복 확인 문구는 삭제했습니다. */}
           </div>
         </form>
       </div>
