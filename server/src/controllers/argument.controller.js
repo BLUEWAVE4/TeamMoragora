@@ -3,6 +3,7 @@ import { preprocessArgument } from '../services/preprocessor.service.js';
 import { filterByDictionary, filterByAI } from '../services/contentFilter.service.js';
 import { generateCounterArgument } from '../services/ai/solo.service.js';
 import { triggerJudgment } from '../services/judgmentTrigger.service.js';
+import { createNotification } from '../services/notification.service.js';
 import { CATEGORY_ALL_STAGES } from '../config/constants.js';
 import { NotFoundError, ValidationError, ConflictError, ForbiddenError } from '../errors/index.js';
 
@@ -46,7 +47,7 @@ export async function submitArgument(req, res, next) {
     // === 논쟁 조회 및 권한/중복 검증 ===
     const { data: debate } = await supabaseAdmin
       .from('debates')
-      .select('category, creator_id, opponent_id, status')
+      .select('topic, category, creator_id, opponent_id, status')
       .eq('id', debateId)
       .single();
 
@@ -134,6 +135,18 @@ export async function submitArgument(req, res, next) {
     const response = { ...data };
     if (result.warnings.length > 0) {
       response.warnings = result.warnings;
+    }
+
+    // 상대방에게 주장 제출 알림
+    const opponentId = side === 'A' ? debate.opponent_id : debate.creator_id;
+    if (opponentId && opponentId !== userId) {
+      createNotification({
+        userId: opponentId,
+        type: 'argument_submitted',
+        title: roundNum === 1 ? '상대방이 주장을 제출했습니다' : '상대방이 반박을 제출했습니다',
+        message: `"${debate.topic || ''}"`,
+        link: `/debate/${debateId}/argument`,
+      });
     }
 
     // 2라운드 양측 주장 모두 제출 완료 시 비동기로 AI 판결 트리거

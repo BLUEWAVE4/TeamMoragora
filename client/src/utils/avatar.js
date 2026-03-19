@@ -61,6 +61,7 @@ export function buildAvatarUrl(userId, gender, options = {}) {
   const params = new URLSearchParams({ seed: userId });
 
   if (options.top) params.set('top', options.top);
+  if (options.noHair) params.set('topProbability', '0');
   if (options.skinColor) params.set('skinColor', options.skinColor);
   if (options.hairColor) params.set('hairColor', options.hairColor);
   if (options.clothing) params.set('clothing', options.clothing);

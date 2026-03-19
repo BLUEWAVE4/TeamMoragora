@@ -213,6 +213,20 @@ CREATE TABLE analytics_events (
 CREATE INDEX idx_analytics_events_name ON analytics_events(event_name);
 CREATE INDEX idx_analytics_events_created ON analytics_events(created_at);
 
+-- 14. notifications (알림)
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  link TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================

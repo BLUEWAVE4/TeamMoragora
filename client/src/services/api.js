@@ -74,4 +74,10 @@ export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
 export const submitFeedback = (data) => api.post('/feedbacks', data);
 export const getMyFeedbacks = () => api.get('/feedbacks/me');
 
+// ===== 알림 =====
+export const getNotifications = () => api.get('/notifications');
+export const getUnreadCount = () => api.get('/notifications/unread-count');
+export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.patch('/notifications/read-all');
+
 export default api;

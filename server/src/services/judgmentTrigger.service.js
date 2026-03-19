@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from './ai/judgment.service.js';
 import { env } from '../config/env.js';
+import { createNotifications } from './notification.service.js';
 
 // 양측 주장 제출 완료 시 비동기로 AI 판결 실행
 export async function triggerJudgment(debateId) {
@@ -134,6 +135,16 @@ export async function triggerJudgment(debateId) {
     .from('debates')
     .update({ status: 'voting', vote_deadline: voteDeadline.toISOString() })
     .eq('id', debateId);
+
+  // 8. 양측에 판결 완료 알림
+  const participants = [debate.creator_id, debate.opponent_id].filter(Boolean);
+  await createNotifications(participants.map(uid => ({
+    user_id: uid,
+    type: 'verdict_complete',
+    title: 'AI 판결이 완료되었습니다',
+    message: `"${debate.topic}" 판결 결과를 확인하세요.`,
+    link: `/debate/${debateId}/judging`,
+  })));
 
   console.log(`[triggerJudgment] 판결 완료 → voting (debate: ${debateId})`);
 }
