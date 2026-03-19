@@ -527,62 +527,73 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats Cards — 한 줄 2열 */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* Stats Cards */}
+        <div className="space-y-4 mb-6">
           {/* 포인트 카드 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
-            <div className="text-[28px] font-black text-black mt-1 leading-tight"><CountUp end={currentScore} /></div>
-            <div className="mt-3 space-y-2">
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight">총 포인트</span>
+            </div>
+            <div className="text-4xl font-bold text-black mb-5"><CountUp end={currentScore} /></div>
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <tier.icon size={14} style={{ color: tier.color }} />
-                  <span className="text-[12px] font-black" style={{ color: tier.color }}>{tier.name}</span>
+                <div className="flex items-center gap-2">
+                  <tier.icon size={20} style={{ color: tier.color }} />
+                  <span className="text-[16px] font-black" style={{ color: tier.color }}>{tier.name}</span>
                 </div>
                 {nextTier && (
-                  <span className="text-[10px] text-gray-300 font-bold">{nextTier.name}</span>
+                  <div className="flex items-center gap-1.5 text-gray-400">
+                    <nextTier.icon size={18} /><span className="text-[16px] font-bold">{nextTier.name}</span>
+                  </div>
                 )}
               </div>
-              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }} animate={{ width: `${progress}%` }}
                   transition={{ duration: 1, ease: "easeOut" }}
                   className="h-full rounded-full" style={{ backgroundColor: tier.color }}
                 />
               </div>
-              {nextTier ? (
-                <p className="text-[10px] text-gray-400 font-bold text-right">
-                  <span className="text-black">{(nextTier.min - currentScore).toLocaleString()}</span>점 남음
-                </p>
-              ) : (
-                <p className="text-[10px] text-[#FF3B30] font-black text-right">최고 등급!</p>
-              )}
+              <div className="flex justify-end">
+                {nextTier ? (
+                  <p className="text-[16px] text-gray-400 font-bold">
+                    <span className="text-black">{(nextTier.min - currentScore).toLocaleString()}점</span> 더 모으면 {nextTier.name}
+                  </p>
+                ) : (
+                  <p className="text-[16px] text-[#FF3B30] font-black italic">최고 등급 달성!</p>
+                )}
+              </div>
             </div>
           </div>
 
           {/* 승률 카드 */}
-          <div className="bg-white rounded-[20px] p-4 shadow-sm border border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">전체 승률</span>
-            <div className="text-[28px] font-black text-emerald-600 mt-1 leading-tight">{winRate.toFixed(1)}%</div>
-            <div className="mt-3 space-y-2">
-              <div className="flex justify-between text-[12px] font-black px-0.5">
-                <span className="text-emerald-600">{wins}승</span>
-                {draws > 0 && <span className="text-gray-400">{draws}무</span>}
-                <span className="text-[#FF3B30]">{losses}패</span>
-              </div>
-              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
-                <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${winRate}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
-                />
-                <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${lossRate}%` }}
-                  transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-                  className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
-                />
-              </div>
-              <p className="text-[10px] text-gray-400 font-bold text-center">총 {totalGames}회 참여</p>
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
+            <span className="text-[16px] font-bold text-gray-500 uppercase tracking-tight mb-2 block">전체 승률</span>
+            <div className="text-4xl font-bold text-emerald-600 mb-5">{winRate.toFixed(1)}%</div>
+            <div className="flex justify-between text-[16px] font-black mb-3 px-1">
+              <span className="text-emerald-600">{wins}승</span>
+              {draws > 0 && <span className="text-gray-400">{draws}무</span>}
+              <span className="text-[#FF3B30]">{losses}패</span>
+            </div>
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
+              <motion.div
+                initial={{ width: 0 }} animate={{ width: `${winRate}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
+              />
+              <motion.div
+                initial={{ width: 0 }} animate={{ width: `${lossRate}%` }}
+                transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
+                className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
+              />
+            </div>
+            <div className="mt-4 text-center space-y-1">
+              <p className="text-[16px] text-gray-400 font-bold">총 {totalGames}회 논쟁 참여</p>
+              {draws > 0 && (
+                <p className="text-[11px] text-[#8E8E93] font-medium">
+                  승률은 무승부를 제외하고 계산됩니다
+                </p>
+              )}
             </div>
           </div>
         </div>
