@@ -415,7 +415,7 @@ export default function DebateCard({ feed, formatTime }) {
                 ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {(myVote || isCompleted) && totalVotes > 0 && (
+              {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
@@ -426,7 +426,7 @@ export default function DebateCard({ feed, formatTime }) {
                   }`}>{isCompleted || timerExpired ? '마감' : 'A측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
-                {(myVote || isCompleted) && (
+                {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-bold text-[#1B2A4A]/80">{agreePercent}%</span>
                     <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.agree}표</span>
@@ -443,7 +443,7 @@ export default function DebateCard({ feed, formatTime }) {
                 ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {(myVote || isCompleted) && totalVotes > 0 && (
+              {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
@@ -454,7 +454,7 @@ export default function DebateCard({ feed, formatTime }) {
                   }`}>{isCompleted || timerExpired ? '마감' : 'B측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
-                {(myVote || isCompleted) && (
+                {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-bold text-[#1B2A4A]/80">{disagreePercent}%</span>
                     <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.disagree}표</span>
