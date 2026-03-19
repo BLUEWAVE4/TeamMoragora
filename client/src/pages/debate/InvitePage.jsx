@@ -311,6 +311,7 @@ export default function InvitePage() {
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center opacity-50">
                   <p className="text-[10px] font-black text-gray-400 tracking-wider mb-1.5">A측</p>
                   <p className="text-[12px] font-bold text-gray-500 leading-snug">{debate.pro_side || '미정'}</p>
+                  <p className="text-[9px] font-bold border-gray-200 mt-1">상대 입장</p>
                 </div>
                 <div className="flex items-center justify-center pt-4">
                   <span className="text-[11px] font-black text-[#D4AF37]">vs</span>

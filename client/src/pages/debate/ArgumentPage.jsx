@@ -370,7 +370,9 @@ export default function ArgumentPage() {
                 isCreator ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'
               }`}>
                 <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-wider mb-1">A측</p>
-                <p className={`text-[12px] font-bold leading-tight ${isCreator ? 'text-emerald-700' : 'text-gray-400'}`}>
+                <p className={`text-[12px] font-bold leading-tight ${isCreator 
+                  ? 'text-emerald-700' 
+                  : 'text-gray-400 p-2'}`}>
                   {debate.pro_side || '미정'}
                 </p>
                 {isCreator && <p className="text-[9px] text-emerald-500/60 font-bold mt-0.5">내 입장</p>}
@@ -380,7 +382,9 @@ export default function ArgumentPage() {
                 !isCreator ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
               }`}>
                 <p className="text-[10px] font-black text-red-400/70 uppercase tracking-wider mb-1">B측</p>
-                <p className={`text-[12px] font-bold leading-tight ${!isCreator ? 'text-red-700' : 'text-gray-400'}`}>
+                <p className={`text-[12px] font-bold leading-tight ${!isCreator 
+                  ? 'text-red-700' 
+                  : 'text-gray-400 p-2'}`}>
                   {debate.con_side || '미정'}
                 </p>
                 {!isCreator && <p className="text-[9px] text-red-400/60 font-bold mt-0.5">내 입장</p>}
