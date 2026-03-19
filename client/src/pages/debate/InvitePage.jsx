@@ -262,7 +262,7 @@ export default function InvitePage() {
               },
               {
                 label: '발신인',
-                value: `${creatorNickname} 드림`// ✅ debate.creator.nickname
+                value: `${creatorNickname} 드림`
               },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center gap-4 text-[14px]">
@@ -284,8 +284,8 @@ export default function InvitePage() {
 
           {/* 논쟁 주제 */}
           <div className="mx-5 my-5 bg-[#F5F0E8] border-l-4 border-[#D4AF37] px-4 py-4 rounded-r-xl">
-            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
-            <p className="text-[#1B2A4A] text-[16px] font-black italic leading-snug">
+            <p className="text-[13px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
+            <p className="text-[#1B2A4A] text-[16px] font-black leading-snug">
               "{debate?.topic}"
             </p>
           </div>
@@ -328,7 +328,7 @@ export default function InvitePage() {
           </div>
           <button
             onClick={handleAccept}
-            className="w-full h-[52px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[16px] rounded-xl active:scale-[0.97] transition-all tracking-wide"
+            className="w-full h-[52px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[16px] rounded-xl active:scale-[0.97] transition-all tracking-wide cursor-pointer"
           >
             {user ? '출석 · 논쟁 참여하기' : '로그인하고 참여하기'}
           </button>
@@ -363,8 +363,19 @@ export default function InvitePage() {
     </div>
   </div>
           </div>
-          <p className="text-white text-[16px] font-black mb-1">논쟁 개시 대기 중</p>
-          <p className="text-white/40 text-[13px]">상대방의 출석을 기다리고 있습니다</p>
+        {/* 상황별 타이틀 변경 */}
+        <p className="text-white text-[16px] font-black mb-1">
+        {opponentWriting ? '논쟁 진행 중' : isOpponentJoined ? '논쟁 준비 완료' : '논쟁 개시 대기 중'}
+        </p>
+  
+        {/* 상황별 설명 문구 변경 */}
+        <p className="text-white/40 text-[13px]">
+        {opponentWriting 
+         ? '상대방이 주장을 작성하고 있습니다.' 
+         : isOpponentJoined 
+         ? '이제 아래 버튼을 눌러 논쟁을 시작하세요.' 
+         : '상대방의 출석을 기다리고 있습니다.'}
+        </p>
         </div>
 
         {/* 바디 */}
@@ -372,8 +383,8 @@ export default function InvitePage() {
 
           {/* 논쟁 주제 */}
           <div className="mx-5 my-5 bg-[#F5F0E8] border-l-4 border-[#D4AF37] px-4 py-4 rounded-r-xl">
-            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
-            <p className="text-[#1B2A4A] text-[16px] font-black italic leading-snug">
+            <p className="text-[13px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
+            <p className="text-[#1B2A4A] text-[16px] font-black leading-snug">
               "{debate?.topic}"
             </p>
           </div>
@@ -390,13 +401,13 @@ export default function InvitePage() {
           <div className="px-5 pb-5 flex flex-col gap-3">
             <button
               onClick={handleKakaoShare}
-              className="w-full h-[52px] bg-[#FEE500] text-[#3c1e1e] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all"
+              className="w-full h-[52px] bg-[#FEE500] text-[#3c1e1e] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer"
             >
               카카오톡으로 소환장 발송
             </button>
             <button
               onClick={handleCopy}
-              className="w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 text-[#1B2A4A] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all"
+              className="w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 text-[#1B2A4A] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer"
             >
               {isCopied ? '복사 완료!' : '링크 복사'}
             </button>
@@ -405,24 +416,23 @@ export default function InvitePage() {
 
         {/* 푸터 - 상태 버튼 */}
         <div className="bg-[#F5F0E8] px-5 py-4 border-t border-[#1B2A4A]/10">
-          <button
-            onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
-            disabled={!isOpponentJoined}
-            className={`w-full h-[52px] font-black text-[15px] rounded-xl transition-all duration-500 flex items-center justify-center gap-2 ${
-              isOpponentJoined
-                ? 'bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.98]'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            {isOpponentJoined && (
-              <div className={`w-1.5 h-1.5 rounded-full animate-pulse`} />
-            )}
-            <span>
-              {opponentWriting ? '상대방이 주장 작성 중...'
-                : isOpponentJoined ? '논쟁 시작하기'
-                : '상대방 출석 대기 중...'}
-            </span>
-          </button>
+<button
+  onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
+  disabled={!isOpponentJoined}
+  className={`w-full h-[52px] font-black text-[15px] rounded-xl transition-all duration-500 flex items-center justify-center gap-2 ${
+    isOpponentJoined
+      ? 'bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.98] cursor-pointer shadow-lg' 
+      : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
+  }`}
+>
+  <span>
+    {opponentWriting 
+      ? '상대방이 주장 작성 중...'
+      : isOpponentJoined 
+        ? '논쟁 시작하기'
+        : '상대방 출석 대기 중...'}
+  </span>
+</button>
         </div>
       </div>
     </div>
