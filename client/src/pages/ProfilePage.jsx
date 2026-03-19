@@ -502,148 +502,137 @@ const [showInfo, setShowInfo] = useState(false);
 
 {/*========================================================================================================================================================================== */}
 
+{/*========================================================================================================================================================================== */}
+
+{/*========================================================================================================================================================================== */}
+
 {(() => {
-  // 무승부 제외 승/패 비율 계산
-  const winLossTotal = wins + losses;
-  const winBarWidth = winLossTotal > 0 ? (wins / winLossTotal) * 100 : 0;
-  const lossBarWidth = winLossTotal > 0 ? (losses / winLossTotal) * 100 : 0;
-
   return (
-    <div className="px-1 space-y-3.5 mb-6">
+    <div className="px-2 space-y-6 mb-10">
       
-      {/* 1. 포인트 & 티어 카드 */}
-      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50">
-        <div className="flex justify-between items-center mb-5">
-          <div className="space-y-0.5">
-            <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
-            <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-none flex items-baseline gap-1">
-              <CountUp end={currentScore} separator="," />
-              <span className="text-[16px] font-bold text-gray-300">P</span>
-            </div>
-          </div>
-          
-          <div className="bg-gray-50/80 p-2.5 rounded-xl shadow-inner border border-white">
-            <tier.icon size={22} style={{ color: tier.color }} />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {/* 티어 명칭 배치 */}
-          <div className="flex justify-between items-center px-0.5 mb-1">
-            <div className="flex items-center gap-1.5">
-              <tier.icon size={14} style={{ color: tier.color }} />
-              <span className="text-[13px] font-black" style={{ color: tier.color }}>{tier.name}</span>
-            </div>
-            {nextTier && (
-              <div className="flex items-center gap-1 opacity-40">
-                <nextTier.icon size={13} className="text-gray-400" />
-                <span className="text-[12px] font-bold text-gray-400">{nextTier.name}</span>
+      {/* 1. 포인트 & 티어 카드 (iOS 위젯 스타일) */}
+      <div className="bg-white/80 backdrop-blur-2xl rounded-[38px] p-7 shadow-[0_20px_40px_rgba(0,0,0,0.04)] border border-white/60 relative overflow-hidden">
+        {/* 은은한 배경 그라데이션 포인트 */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: tier.color }} />
+        
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-10">
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] leading-none">Activity Points</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[34px] font-black text-gray-900 tracking-tight">
+                  <CountUp end={currentScore} separator="," />
+                </span>
+                <span className="text-[16px] font-black text-gray-300">P</span>
               </div>
-            )}
-          </div>
-          
-          {/* ✅ 메이플스토리 스타일 경험치 바 (수치 포함) */}
-          <div className="w-full h-5 bg-gray-100 rounded-full overflow-hidden relative shadow-inner p-[1.5px]">
-            {/* 포인트 수치 텍스트 (바 위에 겹쳐서 중앙 정렬) */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <span className="text-[12px] font-black tracking-tight text-gray-600">
-                {currentScore.toLocaleString()} / {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
-              </span>
             </div>
+            
+            <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-[26px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.02),0_10px_20px_rgba(0,0,0,0.05)] border border-white">
+              <tier.icon size={28} style={{ color: tier.color }} />
+            </div>
+          </div>
 
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full rounded-full shadow-sm relative"
-              style={{ backgroundColor: tier.color }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-            </motion.div>
+          <div className="space-y-5">
+            <div className="flex justify-between items-end px-1">
+              <div className="space-y-0.5">
+                <span className="text-[13px] font-black tracking-tight block" style={{ color: tier.color }}>{tier.name}</span>
+                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Current Rank</span>
+              </div>
+              {nextTier && (
+                <div className="text-right">
+                  <span className="text-[12px] font-bold text-gray-400">{nextTier.name}</span>
+                  <span className="text-[10px] font-bold text-gray-200 uppercase tracking-widest block">Next Goal</span>
+                </div>
+              )}
+            </div>
+            
+            {/* iOS 스타일 씬(Thin) 프로그레스 바 */}
+            <div className="relative">
+              <div className="w-full h-[7px] bg-gray-100/80 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 2, ease: [0.23, 1, 0.32, 1] }}
+                  className="h-full rounded-full relative"
+                  style={{ backgroundColor: tier.color }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+                </motion.div>
+              </div>
+              {/* 바 하단 수치 */}
+              <div className="mt-3 flex justify-between items-center px-1">
+                <span className="text-[11px] font-black text-gray-400">{Math.floor(progress)}%</span>
+                <span className="text-[11px] font-bold text-gray-300 tracking-tighter">
+                  {currentScore.toLocaleString()} / {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. 승률 & 참여 기록 카드 (기존과 동일) */}
-      <div className="bg-white rounded-[26px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-50 relative overflow-hidden">
-        <div className="flex justify-between items-center mb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">전체 승률</span>
-              <button 
-                onClick={() => setShowInfo(!showInfo)}
-                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] transition-all ${
-                  showInfo ? 'bg-emerald-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                }`}
-              >
-                !
-              </button>
-            </div>
-            <div className="text-[24px] font-black text-emerald-500 tracking-tighter leading-none">
-              {winRate.toFixed(1)}<span className="text-[18px] font-bold">%</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end">
-            <span className="text-[14px] font-black text-gray-800">
-              총 <span className="text-emerald-500">{totalGames}회</span> 논쟁 참여
-            </span>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-gray-50 border border-gray-100 py-2 px-3 rounded-xl flex items-center gap-2">
-                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[12px] font-medium text-gray-500">
-                  무승부는 승률 계산에서 제외되었습니다.
-                </span>
+      {/* 2. 승률 스코어보드 (Apple Health 스타일) */}
+      <div className="bg-gray-50/50 rounded-[40px] p-1.5 border border-gray-100/50">
+        <div className="bg-white rounded-[34px] p-7 shadow-[0_15px_35px_rgba(0,0,0,0.02)] border border-white">
+          <div className="flex justify-between items-center mb-10">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+                <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Summary</span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="text-[38px] font-black text-gray-900 tracking-tighter leading-none">
+                {winRate.toFixed(1)}<span className="text-emerald-500 text-[24px] ml-0.5">%</span>
+              </div>
+            </div>
 
-        <div className="space-y-3.5">
-          <div className="flex items-center px-0.5 gap-5">
-            <div className="flex items-center gap-1.5 text-[15px] font-black">
-              <span className="text-emerald-500">{wins}승</span>
-              <span className="text-gray-300 font-bold">{draws}무</span>
-              <span className="text-[#FF3B30]">{losses}패</span>
+            {/* iOS 피트니스 링 스타일 커스텀 */}
+            <div className="relative flex items-center justify-center w-16 h-16">
+               <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="#F2F2F7" strokeWidth="7" fill="transparent" />
+                  <motion.circle 
+                    cx="32" cy="32" r="28" stroke="url(#winGradient)" strokeWidth="7" fill="transparent" 
+                    strokeDasharray="175.9"
+                    initial={{ strokeDashoffset: 175.9 }}
+                    animate={{ strokeDashoffset: 175.9 - (175.9 * winRate) / 100 }}
+                    transition={{ duration: 1.8, ease: "easeOut" }}
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="winGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#34D399" />
+                      <stop offset="100%" stopColor="#10B981" />
+                    </linearGradient>
+                  </defs>
+               </svg>
+               <div className="absolute flex flex-col items-center">
+                  <span className="text-[10px] font-black text-gray-900">{totalGames}</span>
+                  <span className="text-[6px] font-black text-gray-400">GAMES</span>
+               </div>
             </div>
           </div>
 
-          <div className="relative w-full h-7 bg-gray-50 rounded-[10px] overflow-hidden flex p-1">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${winBarWidth}%` }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-l-[7px] rounded-r-[2px] relative flex items-center justify-center"
-            >
-              {winBarWidth > 20 && <span className="text-[12px] font-black text-white/90">WIN</span>}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-            </motion.div>
-            <div className="w-[1.5px] bg-white/20" />
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${lossBarWidth}%` }}
-              transition={{ duration: 1.2, delay: 0.1, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-[#FF4B40] to-[#FF3B30] rounded-r-[7px] rounded-l-[2px] relative flex items-center justify-center"
-            >
-              {lossBarWidth > 20 && <span className="text-[12px] font-black text-white/90">LOSS</span>}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-            </motion.div>
+          {/* iOS 세그먼트 스코어 카드 */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'WINS', value: wins, color: 'text-emerald-500', bg: 'bg-emerald-50/40' },
+              { label: 'DRAWS', value: draws, color: 'text-gray-400', bg: 'bg-gray-100/40' },
+              { label: 'LOSS', value: losses, color: 'text-red-500', bg: 'bg-red-50/40' }
+            ].map((item, i) => (
+              <div key={i} className={`${item.bg} backdrop-blur-sm rounded-[24px] py-4 border border-white/50 flex flex-col items-center shadow-[0_4px_12px_rgba(0,0,0,0.01)]`}>
+                <span className={`text-[20px] font-black ${item.color} tracking-tight`}>{item.value}</span>
+                <span className="text-[9px] font-black text-gray-400 tracking-widest mt-0.5">{item.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     </div>
   );
 })()}
+
+{/*========================================================================================================================================================================== */}
+
+{/*========================================================================================================================================================================== */}
         
 {/*========================================================================================================================================================================== */}
         {/* Menu Buttons */}
