@@ -39,7 +39,8 @@ export default function InvitePage() {
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
   const [isCreator, setIsCreator] = useState(null)
 
-  const shareUrl = `${window.location.origin}/invite/${inviteCode}`
+  const shareOrigin = import.meta.env.VITE_CLIENT_URL || window.location.origin
+  const shareUrl = `${shareOrigin}/invite/${inviteCode}`
   const creatorNickname = debate?.creator?.nickname || '논쟁 생성자'
 
   // ── 1. 초대 정보 로드 + B측 자동 참여 ──
