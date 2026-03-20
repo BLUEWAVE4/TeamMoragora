@@ -3,6 +3,7 @@ import Input from "../common/Input";
 import Button from "../common/Button";
 import Card from "../common/Card";
 import { HelpCircle } from "lucide-react";
+import MoragoraModal from "../common/MoragoraModal";
 
 export default function Step1Topic({
   topic, setTopic,
@@ -18,6 +19,9 @@ export default function Step1Topic({
   const [editingSide, setEditingSide] = useState(null);
   const [tempText, setTempText] = useState("");
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
+  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
 
   const hasDraft = !!(topic && aiResults[topic] && proSide && conSide);
   const [showDraft, setShowDraft] = useState(hasDraft);
@@ -33,7 +37,7 @@ export default function Step1Topic({
   }, [hasDraft]);
 
   const handleNext = async () => {
-    if (editingSide) { alert("수정을 완료해주세요."); return; }
+    if (editingSide) { showModal('수정을 완료해주세요', '현재 편집 중인 항목을 저장한 후\n다음 단계로 진행할 수 있습니다.'); return; }
 
     // ── 초안 표시 상태 → 카테고리 확인 후 Step2 이동 ──
     if (showDraft) {
@@ -218,6 +222,14 @@ export default function Step1Topic({
           </div>
         </div>
       )}
+
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type={modalState.type}
+      />
 
     </div>
   );

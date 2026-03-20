@@ -4,6 +4,7 @@ import { useAuth } from '../../store/AuthContext';
 import { trackEvent } from '../../services/analytics';
 import { supabase } from '../../services/supabase';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import MoragoraModal from '../../components/common/MoragoraModal';
 
 export default function NicknamePage() {
   const { user, updateProfile } = useAuth();
@@ -16,6 +17,10 @@ export default function NicknamePage() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState(null);
   const [lastCheckedNickname, setLastCheckedNickname] = useState('');
+
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
 
   const isInvalid =
     nickname.trim().length < 2 ||
@@ -54,7 +59,7 @@ export default function NicknamePage() {
       }
     } catch (error) {
       console.error('Nickname check error:', error);
-      alert('중복 확인 중 오류가 발생했습니다.');
+      showModal('중복 확인 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setIsChecking(false);
     }
@@ -89,7 +94,7 @@ export default function NicknamePage() {
       sessionStorage.removeItem('redirectAfterLogin');
       navigate(target, { replace: true });
     } catch (error) {
-      alert('프로필 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+      showModal('프로필 설정 중 오류가 발생했습니다', '다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -262,6 +267,12 @@ export default function NicknamePage() {
           </div>
         </form>
       </div>
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+      />
     </div>
   );
 }

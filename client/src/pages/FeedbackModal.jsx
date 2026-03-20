@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback, getMyFeedbacks } from '../services/api';
+import MoragoraModal from '../components/common/MoragoraModal';
 
 const RATING_ITEMS = [
   { key: 'satisfaction', label: '전반적 만족도', desc: '모라고라 서비스를 전반적으로 어떻게 평가하시나요?' },
@@ -125,6 +126,9 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
+  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
 
   // 기존 피드백 불러오기
   useEffect(() => {
@@ -157,7 +161,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
     : null;
 
   const handleSubmit = async () => {
-    if (!allRated) return alert('모든 평가 항목에 별점을 매겨주세요.');
+    if (!allRated) return showModal('평가를 완료해주세요', '모든 평가 항목에 별점을 매겨주세요.');
     setSubmitting(true);
     try {
       await submitFeedback({
@@ -168,7 +172,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
       });
       setSubmitted(true);
     } catch (err) {
-      alert('제출 실패: ' + err.message);
+      showModal('제출에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setSubmitting(false);
     }
@@ -185,6 +189,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -317,5 +322,13 @@ export default function FeedbackModal({ isOpen, onClose }) {
         </>
       )}
     </AnimatePresence>
+    <MoragoraModal
+      isOpen={modalState.isOpen}
+      onClose={closeModal}
+      title={modalState.title}
+      description={modalState.description}
+      type={modalState.type}
+    />
+    </>
   );
 }

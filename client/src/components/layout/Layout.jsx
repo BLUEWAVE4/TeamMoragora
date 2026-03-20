@@ -5,7 +5,7 @@ import TabBar from './TabBar';    // 하단 탭바 불러오기
 
 export default function Layout() {
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#F8F9FA] relative shadow-x">
+    <div className="app-container max-w-md mx-auto min-h-screen bg-[#F8F9FA] relative shadow-x">
 
       {/* 상단 헤더 — 내부에서 경로별 숨김/표시 처리 */}
       <Header />

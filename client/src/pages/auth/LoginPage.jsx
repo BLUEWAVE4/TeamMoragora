@@ -1,12 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import MoragoraModal from '../../components/common/MoragoraModal';
 import kakaoBtn from '../../assets/KakaoLoginButton.svg';
 import googleBtn from '../../assets/GoogleLoginButton.svg';
 
 export default function LoginPage({ isKakaoOnly = false }) {
   const { user, signInWithKakao, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
 
   const ua = navigator.userAgent.toLowerCase();
   const isKakaoTalk = ua.includes('kakao');
@@ -32,11 +37,7 @@ export default function LoginPage({ isKakaoOnly = false }) {
   // 2. 구글 로그인 핸들러
   const handleGoogleLogin = () => {
   if (isAndroid && isInApp) {
-      alert(
-        "💡 브라우저 전환 안내\n\n" +
-        "안정적인 구글 로그인을 위해 'Chrome' 브라우저로 이동합니다.\n" +
-        "확인 버튼을 누르면 로그인 화면이 열립니다."
-      );
+      showModal('로그인 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
       
       const url = new URL(window.location.href);
       window.location.href =
@@ -46,7 +47,7 @@ export default function LoginPage({ isKakaoOnly = false }) {
     }
 
     if (isIos && isInApp) {
-      alert("앱 내부에서는 구글 로그인이 제한됩니다.\n하단 메뉴에서 'Safari로 열기'를 선택해 주세요.");
+      showModal('외부 브라우저에서 열어주세요', "앱 내부에서는 구글 로그인이 제한됩니다.\n하단 메뉴에서 'Safari로 열기'를 선택해주세요.");
       return;
     }
 
@@ -76,6 +77,7 @@ export default function LoginPage({ isKakaoOnly = false }) {
   if (user) return null;
 
   return (
+    <>
     <div className="relative flex flex-col min-h-screen w-full overflow-hidden bg-[#1a2744]">
       {/* 배경 패턴 */}
       <div className="absolute inset-0 opacity-[0.04]"
@@ -163,5 +165,13 @@ export default function LoginPage({ isKakaoOnly = false }) {
         </div>
       </div>
     </div>
+
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+      />
+    </>
   );
 }

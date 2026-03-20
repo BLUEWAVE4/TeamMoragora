@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDebate, generateDebateSides } from "../../services/api";
+import MoragoraModal from '../../components/common/MoragoraModal';
 
 const DRAFT_KEY = 'debate_create_draft';
 
@@ -34,6 +35,10 @@ export default function DebateCreatePage() {
 
   const [showBackModal, setShowBackModal] = useState(false);
   const [aiLoading,     setAiLoading]     = useState(false);
+
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
+  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
 
   // ⭐ topic별 AI 결과 저장 (purpose, lens 포함)
   const [aiResults, setAiResults] = useState({});
@@ -101,7 +106,7 @@ export default function DebateCreatePage() {
   };
 
   const handleGenerateSides = async () => {
-    if (!topic.trim()) { alert("주제를 입력하세요"); return null; }
+    if (!topic.trim()) { showModal('주제를 입력해주세요', '논쟁 주제는 필수 입력 항목입니다.'); return null; }
 
     // 이미 생성된 topic이면 재사용
     if (aiResults[topic]) {
@@ -119,7 +124,7 @@ export default function DebateCreatePage() {
       const result = await generateDebateSides({ topic });
 
       if (result.unavailable) {
-        alert("해당 주제는 자동완성이 어려워 직접 수정을 부탁드립니다.");
+        showModal('자동완성이 어렵습니다', '해당 주제는 AI 자동완성이 어려워\n직접 수정을 부탁드립니다.');
         return null;
       }
 
@@ -142,7 +147,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
     } catch (err) {
       console.error(err);
-      alert("AI 생성 실패");
+      showModal('AI 생성에 실패했습니다', '잠시 후 다시 시도해주세요.', 'error');
       return null;
     } finally {
       setAiLoading(false);
@@ -179,7 +184,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
     } catch (err) {
       console.error(err);
-      alert("생성 실패");
+      showModal('논쟁 생성에 실패했습니다', '잠시 후 다시 시도해주세요.', 'error');
     }
   };
 
@@ -250,6 +255,14 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
           }}>예</Button>
         </div>
       </Modal>
+
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type={modalState.type}
+      />
     </div>
   );
 }

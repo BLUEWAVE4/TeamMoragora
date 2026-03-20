@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getArguments, submitArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { CircleCheck, CircleDot, Circle } from 'lucide-react'
+import MoragoraModal from '../../components/common/MoragoraModal'
 
 const labelMap = {
   battle: '승부', consensus: '합의', analysis: '분석',
@@ -233,6 +234,9 @@ export default function ArgumentPage() {
   const [r1Content, setR1Content] = useState('')
   const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' })
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description })
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' })
 
   const fetchData = useCallback(async () => {
     try {
@@ -322,7 +326,7 @@ export default function ArgumentPage() {
       const updatedArgs = await getArguments(debateId)
       if (updatedArgs.length >= 4) navigate(`/debate/${debateId}/judging`)
     } catch (err) {
-      alert(err.message || '제출에 실패했습니다.')
+      showModal('제출에 실패했습니다', '네트워크 상태를 확인하고 다시 시도해주세요.')
     } finally {
       setIsSubmitting(false)
     }
@@ -443,6 +447,14 @@ export default function ArgumentPage() {
         </div>
 
       </div>
+
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </div>
   )
 }

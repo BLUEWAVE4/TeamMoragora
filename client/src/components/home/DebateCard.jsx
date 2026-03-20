@@ -5,6 +5,8 @@ import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../s
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import LoginPromptModal from '../common/LoginPromptModal';
+import MoragoraModal from '../common/MoragoraModal';
 
 // created_at + vote_duration(일) → 카운트다운 훅
 function useVoteCountdown(createdAt, voteDuration) {
@@ -84,6 +86,10 @@ export default function DebateCard({ feed, formatTime }) {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [isSendingComment, setIsSendingComment] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [sideUsers, setSideUsers] = useState({ A: null, B: null });
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
@@ -216,7 +222,7 @@ export default function DebateCard({ feed, formatTime }) {
 
   const handleVote = async (side) => {
     const debateId = feed?.debate_id || debateData?.id;
-    if (!user) { alert('로그인이 필요합니다.'); return; }
+    if (!user) { setShowLoginModal(true); return; }
     if (isVoting || !canVote || isParticipant) return;
     const isCanceling = myVote === side;
     const prevVote = myVote;
@@ -242,13 +248,13 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (err) {
       setMyVote(prevVote);
       setVoteCounts(prevCounts);
-      alert('투표 처리에 실패했습니다.');
+      showModal('투표 처리에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally { setIsVoting(false); }
   };
 
   const handleLike = async () => {
     const debateId = feed?.debate_id || debateData?.id;
-    if (!user) { alert('로그인이 필요합니다.'); return; }
+    if (!user) { setShowLoginModal(true); return; }
     if (isLiking) return;
     const prevLiked = liked;
     const prevCount = likeCount;
@@ -275,7 +281,7 @@ export default function DebateCard({ feed, formatTime }) {
       setComments(prev => [...prev, data]);
       setCommentText('');
       setLocalCommentCount(prev => prev + 1);
-    } catch (e) { alert('실패'); } finally { setIsSendingComment(false); }
+    } catch (e) { showModal('댓글 작성에 실패했습니다', '잠시 후 다시 시도해주세요.'); } finally { setIsSendingComment(false); }
   };
 
   // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
@@ -607,6 +613,14 @@ export default function DebateCard({ feed, formatTime }) {
           </>
         )}
       </AnimatePresence>
+      <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </>
   );
 }

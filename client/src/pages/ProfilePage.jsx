@@ -8,10 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
   Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X,
-  UserX, Vote, MessageCircle, ScrollText
+  UserX, Vote, MessageCircle, ScrollText, Sun, Moon
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
+import MoragoraModal from '../components/common/MoragoraModal';
 
 // ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
@@ -96,9 +97,9 @@ const ProfileRadarChart = ({ data }) => {
         grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
         angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
         pointLabels: {
-          font: { size: 11, weight: '600', family: 'Pretendard Variable, sans-serif' },
+          font: { size: 15, weight: '700', family: 'Pretendard Variable, sans-serif' },
           color: '#1B2A4A',
-          padding: 16,
+          padding: 12,
           callback: (label) => label,
         },
       },
@@ -337,6 +338,12 @@ export default function ProfilePage() {
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('moragora-theme') === 'dark';
+    }
+    return false;
+  });
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
@@ -357,6 +364,11 @@ export default function ProfilePage() {
     facialHair: '', facialHairColor: '',
   });
 
+const [modal, setModal] = useState({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
+const showModal = (type, title, description, onConfirm = null) => setModal({ isOpen: true, type, title, description, onConfirm });
+const closeModal = () => setModal({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
+const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
 const [showInfo, setShowInfo] = useState(false);
 
 
@@ -367,6 +379,29 @@ const [showInfo, setShowInfo] = useState(false);
   const totalGames = wins + losses + draws;     // 총 참여 횟수 (무승부 포함)
   const winRate = totalForRate > 0 ? (wins / totalForRate) * 100 : 0;
   const lossRate = totalForRate > 0 ? (losses / totalForRate) * 100 : 0;
+
+  // 종합 논리력 점수 계산 (verdicts → ai_judgments → score_detail_a/b)
+  const logicScores = (() => {
+    if (!myJudgments || myJudgments.length === 0 || !user) return { logic: 0, evidence: 0, persuasion: 0, consistency: 0, expression: 0 };
+    const myScores = { logic: [], evidence: [], persuasion: [], consistency: [], expression: [] };
+    myJudgments.forEach(d => {
+      const verdict = Array.isArray(d.verdicts) ? d.verdicts[0] : d.verdicts;
+      if (!verdict?.ai_judgments) return;
+      const mySide = d.creator_id === user.id ? 'a' : 'b';
+      (verdict.ai_judgments || []).forEach(j => {
+        const detail = mySide === 'a' ? j.score_detail_a : j.score_detail_b;
+        if (detail) {
+          Object.keys(myScores).forEach(k => {
+            if (detail[k] != null) myScores[k].push(detail[k]);
+          });
+        }
+      });
+    });
+    const avg = (arr) => arr.length > 0 ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : 0;
+    return Object.fromEntries(Object.entries(myScores).map(([k, v]) => [k, avg(v)]));
+  })();
+  const totalAvg = Math.round(Object.values(logicScores).reduce((s, v) => s + v, 0) / 5);
+
   const currentScore = profileData?.total_score || 0;
   const tier = getTier(currentScore);
   const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
@@ -417,7 +452,7 @@ const [showInfo, setShowInfo] = useState(false);
       setIsEditing(false);
       window.location.reload();
     } catch (err) {
-      alert('변경 중 오류가 발생했습니다.');
+      showModal('error', '변경 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -430,34 +465,37 @@ const [showInfo, setShowInfo] = useState(false);
       setSelectedVerdict(data);
     } catch (err) {
       console.error('판결 데이터 로드 실패:', err);
-      alert('판결 데이터를 불러올 수 없습니다.');
+      showModal('error', '판결 데이터를 불러올 수 없습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setVerdictLoading(false);
     }
   };
 
-  const handleDeleteDebate = async (debateId, e) => {
+  const handleDeleteDebate = (debateId, e) => {
     e.stopPropagation();
-    if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
-    try {
-      await api.delete(`/profiles/me/verdicts/${debateId}`);
-      setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
-    } catch (err) {
-      console.error('삭제 실패:', err);
-      alert('삭제 처리 중 오류가 발생했습니다.');
-    }
+    setPendingDeleteId(debateId);
+    showModal('danger', '논쟁 기록을 삭제하시겠습니까?', '리스트에서 삭제되며\n복원할 수 없습니다.', async () => {
+      try {
+        await api.delete(`/profiles/me/verdicts/${debateId}`);
+        setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
+      } catch (err) {
+        console.error('삭제 실패:', err);
+        showModal('error', '삭제 처리 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
+      }
+    });
   };
 
-  const handleLogout = async () => {
-    if (!window.confirm("로그아웃 하시겠습니까?")) return;
-    try {
-      await api.post('/auth/logout');
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    } catch (err) {
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    }
+  const handleLogout = () => {
+    showModal('confirm', '로그아웃 하시겠습니까?', '다시 로그인하면 이전 데이터를\n그대로 이용할 수 있습니다.', async () => {
+      try {
+        await api.post('/auth/logout');
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      } catch (err) {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }
+    });
   };
 
   // ===== 회원탈퇴 =====
@@ -473,7 +511,7 @@ const [showInfo, setShowInfo] = useState(false);
       await supabase.auth.signOut();
       window.location.href = '/';
     } catch (err) {
-      alert(err?.response?.data?.error || '회원탈퇴 처리 중 오류가 발생했습니다.');
+      showModal('error', '회원탈퇴 처리 중 오류가 발생했습니다', err?.response?.data?.error || '잠시 후 다시 시도해주세요.');
     } finally {
       setIsDeleting(false);
     }
@@ -495,15 +533,33 @@ const [showInfo, setShowInfo] = useState(false);
     <div className="min-h-screen bg-[#F3F1EC] pb-40 font-sans overflow-x-hidden">
       <div className="max-w-md mx-auto px-5 pt-8 relative">
 
-        {/* 편집 모드일 때 우측 상단 회원탈퇴 */}
-        {isEditing && (
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="absolute top-9 right-5 text-[12px] text-gray-300 font-medium active:text-[#E63946] transition-colors"
-          >
-            회원탈퇴
-          </button>
-        )}
+        {/* 우측 상단 */}
+        <div className="absolute top-9 right-5 flex items-center gap-3">
+          {isEditing && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="text-[12px] text-gray-300 font-medium active:text-[#E63946] transition-colors"
+            >
+              회원탈퇴
+            </button>
+          )}
+          {!isEditing && (
+            <button
+              onClick={() => {
+                const next = !isDark;
+                setIsDark(next);
+                localStorage.setItem('moragora-theme', next ? 'dark' : 'light');
+                document.getElementById('root')?.classList.toggle('dark', next);
+              }}
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/60 border border-gray-200 active:scale-90 transition-all shadow-sm"
+            >
+              {isDark
+                ? <Sun size={18} strokeWidth={2.2} className="text-[#D4AF37]" />
+                : <Moon size={18} strokeWidth={2.2} className="text-[#1B2A4A]/50" />
+              }
+            </button>
+          )}
+        </div>
 
         {/* Avatar + Nickname */}
         <div className="flex flex-col items-center mb-8">
@@ -574,15 +630,6 @@ const [showInfo, setShowInfo] = useState(false);
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => setIsTierSheetOpen(true)}
-                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform min-w-[60px] justify-center"
-                style={{ backgroundColor: profileData ? tier.color : '#D1D5DB' }}
-              >
-                {profileData ? (
-                  <><tier.icon size={14} /> {tier.name}<ChevronRight size={14} strokeWidth={3} /></>
-                ) : '\u00A0'}
-              </button>
             </div>
           </div>
         </div>
@@ -593,146 +640,153 @@ const [showInfo, setShowInfo] = useState(false);
   return (
     <div className="space-y-3 mb-3">
 
-      {/* 1. 포인트 & 티어 카드 */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-5">
-          <div className="space-y-0.5">
-            <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
-            <div className="text-[20px] font-black text-gray-900 tracking-tighter leading-none flex items-baseline gap-1">
+      {/* 1. 승률 & 총포인트 나란히 */}
+      <div className="flex gap-3">
+        {/* 승률 카드 */}
+        <div className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">전체 승률</span>
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-all ${
+                showInfo ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'
+              }`}
+            >!</button>
+          </div>
+          <div className="text-[22px] font-black text-emerald-500 tracking-tighter leading-none mb-2">
+            {winRate.toFixed(1)}<span className="text-[16px] font-bold">%</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[13px] font-black">
+            <span className="text-gray-300 font-bold">{wins}승</span>
+            <span className="text-gray-300 font-bold">{draws}무</span>
+            <span className="text-gray-300 font-bold">{losses}패</span>
+          </div>
+        </div>
+
+        {/* 총포인트 카드 */}
+        <button onClick={() => setIsTierSheetOpen(true)}
+          className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-left">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
+          </div>
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[22px] font-black tracking-tighter leading-none" style={{ color: tier.color }}>{tier.name}</span>
+            <div className="text-[13px] font-black text-gray-400 flex items-baseline gap-1">
               <CountUp end={currentScore} separator="," />
-              <span className="text-[16px] font-bold text-gray-300">P</span>
+              <span className="text-[12px] font-bold text-gray-300">P</span>
             </div>
           </div>
-
-          <div className="bg-gray-50/80 p-2.5 rounded-xl shadow-inner border border-white">
-            <tier.icon size={22} style={{ color: tier.color }} />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {/* 티어 명칭 배치 */}
-          <div className="flex justify-between items-center px-0.5 mb-1">
-            <div className="flex items-center gap-1.5">
-              <tier.icon size={14} style={{ color: tier.color }} />
-              <span className="text-[13px] font-black" style={{ color: tier.color }}>{tier.name}</span>
+          {nextTier && (
+            <div className="flex items-center justify-between text-[11px] font-bold text-gray-300">
+              <span>[{nextTier.name}</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span>{nextTier.min.toLocaleString()}P]</span>
             </div>
-            {nextTier && (
-              <div className="flex items-center gap-1 opacity-40">
-                <nextTier.icon size={13} className="text-gray-400" />
-                <span className="text-[12px] font-bold text-gray-400">{nextTier.name}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* ✅ 메이플스토리 스타일 경험치 바 (수치 포함) */}
-          <div className="w-full h-5 bg-gray-100 rounded-full overflow-hidden relative shadow-inner p-[1.5px]">
-            {/* 포인트 수치 텍스트 (바 위에 겹쳐서 중앙 정렬) */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <span className="text-[12px] font-black tracking-tight text-gray-600">
-                {currentScore.toLocaleString()} / {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
-              </span>
-            </div>
-
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full rounded-full shadow-sm relative"
-              style={{ backgroundColor: tier.color }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-            </motion.div>
-          </div>
-        </div>
+          )}
+        </button>
       </div>
 
-      {/* 2. 승률 & 참여 기록 카드 */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
-        <div className="flex justify-between items-center mb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <span className="text-[14px] font-bold text-gray-400 uppercase tracking-tight">전체 승률</span>
-              <button 
-                onClick={() => setShowInfo(!showInfo)}
-                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] transition-all ${
-                  showInfo ? 'bg-emerald-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                }`}
-              >
-                !
-              </button>
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mt-2"
+          >
+            <div className="bg-gray-50 border border-gray-100 py-2 px-3 rounded-xl flex items-center gap-2">
+              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[12px] font-medium text-gray-500">무승부는 승률 계산에서 제외되었습니다.</span>
             </div>
-            <div className="text-[24px] font-black text-emerald-500 tracking-tighter leading-none">
-              {winRate.toFixed(1)}<span className="text-[18px] font-bold">%</span>
-            </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div className="flex flex-col items-end">
-            <span className="text-[14px] font-black text-gray-800">
-              총 <span className="text-emerald-500">{totalGames}회</span> 논쟁 참여
+      {/* 3. 논리력 카드 */}
+      <motion.button whileTap={{ scale: 0.97 }} onClick={() => setIsSheetOpen(true)}
+        className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 text-left overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#1B2A4A] to-[#2a3f6a]">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[12px] font-bold text-white/50 uppercase tracking-tight">논리력</span>
+            <span className="text-[20px] font-black text-[#D4AF37] tracking-tighter leading-none">
+              {totalAvg}<span className="text-[14px] font-bold text-white/30">/20</span>
             </span>
           </div>
-        </div>
-
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-gray-50 border border-gray-100 py-2 px-3 rounded-xl flex items-center gap-2">
-                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[12px] font-medium text-gray-500">
-                  무승부는 승률 계산에서 제외되었습니다.
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="space-y-3.5">
-          <div className="flex items-center px-0.5 gap-5">
-            <div className="flex items-center gap-1.5 text-[15px] font-black">
-              <span className="text-emerald-500">{wins}승</span>
-              <span className="text-gray-300 font-bold">{draws}무</span>
-              <span className="text-[#FF3B30]">{losses}패</span>
-            </div>
+          <div className="flex items-center gap-1 text-[12px] font-bold text-white/40">
+            상세 <ChevronRight size={12} className="text-white/30" />
           </div>
-
         </div>
-      </div>
+        <div className="w-full px-2 py-2 flex items-center justify-center">
+          <div className="w-full" style={{ minHeight: '300px' }}>
+          <ProfileRadarChart data={[
+            { label: '논리', val: logicScores.logic, max: 20 },
+            { label: '근거', val: logicScores.evidence, max: 20 },
+            { label: '설득', val: logicScores.persuasion, max: 20 },
+            { label: '일관', val: logicScores.consistency, max: 20 },
+            { label: '표현', val: logicScores.expression, max: 20 },
+          ]} />
+          </div>
+        </div>
+        {/* 강점 / 약점 */}
+        {totalAvg > 0 && (() => {
+          const items = [
+            { label: '논리 구조', val: logicScores.logic },
+            { label: '근거 품질', val: logicScores.evidence },
+            { label: '설득력', val: logicScores.persuasion },
+            { label: '일관성', val: logicScores.consistency },
+            { label: '표현력', val: logicScores.expression },
+          ].sort((a, b) => b.val - a.val);
+          const top = items.slice(0, 2);
+          const bottom = items.slice(-1);
+          const strengthDesc = {
+            '논리 구조': '논리적 연결이 탄탄합니다.',
+            '근거 품질': '데이터와 사례를 잘 활용합니다.',
+            '설득력': '설득하는 능력이 뛰어납니다.',
+            '일관성': '논지가 일관됩니다.',
+            '표현력': '명확한 표현을 사용합니다.',
+          };
+          const weakDesc = {
+            '논리 구조': '논리적 연결을 보강해보세요.',
+            '근거 품질': '구체적 근거를 더 활용해보세요.',
+            '설득력': '반론 대응을 준비해보세요.',
+            '일관성': '논지의 일관성을 유지해보세요.',
+            '표현력': '더 간결한 표현을 시도해보세요.',
+          };
+          return (
+            <div className="px-4 pb-4 space-y-3">
+              <div>
+                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-2">강점</p>
+                {top.map(s => (
+                  <div key={s.label} className="flex items-start gap-2 mb-1.5">
+                    <div className="w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span className="text-[12px] text-gray-500"><strong className="text-gray-700">{s.label}</strong> {strengthDesc[s.label]}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-[#E63946] uppercase tracking-wider mb-2">개선점</p>
+                {bottom.map(w => (
+                  <div key={w.label} className="flex items-start gap-2 mb-1.5">
+                    <div className="w-4 h-4 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#E63946"/></svg>
+                    </div>
+                    <span className="text-[12px] text-gray-500"><strong className="text-gray-700">{w.label}</strong> {weakDesc[w.label]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+      </motion.button>
     </div>
   );
 })()}
-        
-{/*========================================================================================================================================================================== */}
-        {/* Menu Buttons */}
-        <div className="space-y-3 mb-6">
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
-            className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <BarChart3 size={22} className="text-[#007AFF]" />
-              </div>
-              <span className="text-[17px] font-bold text-black">나의 논리 프로필 분석</span>
-            </div>
-            <ChevronRight size={20} className="text-[#C7C7CC]" />
-          </motion.button>
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
-            className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                <Edit3 size={22} className="text-gray-400" />
-              </div>
-              <span className="text-[17px] font-bold text-black">서비스 평가하기</span>
-            </div>
-            <ChevronRight size={20} className="text-[#C7C7CC]" />
-          </motion.button>
-        </div>
+
 
         {/* Debate History */}
-        <div className="mb-12">
+        <div className="mb-12 mt-[30px]">
           <div className="flex items-center justify-between mb-4 ml-2 mr-2">
             <div className="flex items-center gap-2">
               <History size={20} className="text-[#8E8E93]" />
@@ -816,12 +870,24 @@ const [showInfo, setShowInfo] = useState(false);
                   </motion.button>
                 ) : null;
               })()}
-              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
-                className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
-                로그아웃
-              </motion.button>
             </>
           )}
+
+          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
+            className="w-full mt-3 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                <Edit3 size={22} className="text-gray-400" />
+              </div>
+              <span className="text-[17px] font-bold text-black">서비스 평가하기</span>
+            </div>
+            <ChevronRight size={20} className="text-[#C7C7CC]" />
+          </motion.button>
+
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
+            className="w-full mt-5 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+            로그아웃
+          </motion.button>
         </div>
 
         <div className="flex justify-center gap-8 mb-12 mt-4 text-center">
@@ -1329,7 +1395,7 @@ const [showInfo, setShowInfo] = useState(false);
                 setShowProfileSetup(false);
                 window.location.reload();
               } catch (e) {
-                alert('저장 중 오류가 발생했습니다.');
+                showModal('error', '저장 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
               } finally {
                 setSetupSaving(false);
               }
@@ -1362,6 +1428,16 @@ const [showInfo, setShowInfo] = useState(false);
       )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+
+      <MoragoraModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        description={modal.description}
+        type={modal.type}
+        confirmText={modal.type === 'confirm' ? '로그아웃' : undefined}
+        onConfirm={modal.onConfirm ? () => { modal.onConfirm(); closeModal(); } : undefined}
+      />
     </div>
   );
 }

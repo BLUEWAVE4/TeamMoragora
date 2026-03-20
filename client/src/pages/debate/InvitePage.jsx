@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getDebateByInviteCode, joinByInvite, getArguments } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { ShieldBan } from 'lucide-react'
+import MoragoraModal from '../../components/common/MoragoraModal'
 
 const INVITE_TIMEOUT = 300
 
@@ -38,6 +39,9 @@ export default function InvitePage() {
   const [opponentWriting, setOpponentWriting] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
   const [isCreator, setIsCreator] = useState(null)
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' })
+  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type })
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' })
 
   const shareOrigin = import.meta.env.VITE_CLIENT_URL || window.location.origin
   const shareUrl = `${shareOrigin}/invite/${inviteCode}`
@@ -108,7 +112,7 @@ export default function InvitePage() {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer)
-          alert('초대 유효 시간이 만료되었습니다.')
+          showModal('초대 유효 시간이 만료되었습니다', '상대방에게 새 초대 링크를 요청해주세요.', 'error')
           navigate('/')
           return 0
         }
@@ -161,7 +165,7 @@ export default function InvitePage() {
       } else if (status === 400 && msg.includes('본인')) {
         navigate(getDebateRoute(debate.id, debate.status))
       } else {
-        alert(msg || '참여 처리 중 오류가 발생했습니다.')
+        showModal('참여 처리 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.', 'error')
       }
     }
   }
@@ -189,7 +193,7 @@ export default function InvitePage() {
       })
     } else {
       handleCopy()
-      alert('카카오톡 공유가 불가하여 링크가 복사되었습니다.')
+      showModal('링크가 복사되었습니다', '카카오톡 공유가 불가하여\n초대 링크가 클립보드에 복사되었습니다.')
     }
   }
 
@@ -350,6 +354,13 @@ export default function InvitePage() {
           </button>
         </div>
       </div>
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type={modalState.type}
+      />
     </div>
   )
 
@@ -451,6 +462,13 @@ export default function InvitePage() {
 </button>
         </div>
       </div>
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type={modalState.type}
+      />
     </div>
   )
 }

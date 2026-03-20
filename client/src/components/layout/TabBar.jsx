@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from "../../store/AuthContext";
 import { getMyActiveDebates, deleteDebate } from "../../services/api";
+import MoragoraModal from '../common/MoragoraModal';
 
 // --- 아이콘 컴포넌트 세트 ---
 
@@ -197,16 +198,16 @@ export default function TabBar() {
   }, [activeDebates]);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
+  const [modal, setModal] = useState({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
+  const showModal = (type, title, description, onConfirm) => setModal({ isOpen: true, type, title, description, onConfirm });
+  const closeModal = () => setModal({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
 
     const handleCreateClick = () => {
     if (!isLoggedIn) {
-      const confirmMove = window.confirm(
-        "논쟁 생성은 로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?"
-      );
-      if (confirmMove) {
+      showModal('login', '로그인이 필요합니다', '논쟁 생성은 로그인이 필요한 서비스입니다.\n로그인 후 이용할 수 있습니다.', () => {
         sessionStorage.setItem('redirectAfterLogin', '/debate/create');
         navigate('/login');
-      }
+      });
       return;
     }
 
@@ -412,7 +413,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
                                   setActiveDebates(prev => prev.filter(d => d.id !== debate.id));
                                   setDeleting(null);
                                 } catch (err) {
-                                  alert(err.message || '삭제에 실패했습니다.');
+                                  showModal('error', '삭제에 실패했습니다', '잠시 후 다시 시도해주세요.');
                                   setDeleting(null);
                                 }
                               }}
@@ -524,6 +525,15 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
           animation: slide-up 0.25s ease-out;
         }
       `}</style>
+
+      <MoragoraModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        description={modal.description}
+        type={modal.type}
+        onConfirm={modal.onConfirm ? () => { modal.onConfirm(); closeModal(); } : undefined}
+      />
     </>
   );
 }

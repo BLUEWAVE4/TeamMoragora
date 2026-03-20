@@ -10,6 +10,7 @@ import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler,
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 import { supabase } from "../../services/supabase";
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
+import MoragoraModal from '../common/MoragoraModal';
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
@@ -82,6 +83,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [argSide, setArgSide] = useState(null); // winnerSide 기반 초기화
   const [showVoteInfo, setShowVoteInfo] = useState(false);
 
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+
   // ===== 댓글 상태 =====
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
@@ -138,7 +143,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
     } catch (err) {
-      alert(err.message || '댓글 작성에 실패했습니다.');
+      showModal('댓글 작성 실패', err.message || '댓글 작성에 실패했습니다.');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -149,7 +154,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (err) {
-      alert(err.message || '삭제에 실패했습니다.');
+      showModal('삭제 실패', err.message || '삭제에 실패했습니다.');
     }
   };
 
@@ -205,7 +210,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         setMyVote(prevVote);
         setLiveVoteA(prevA);
         setLiveVoteB(prevB);
-        alert(err.message || '투표에 실패했습니다.');
+        showModal('투표 실패', err.message || '투표에 실패했습니다.');
       }
     }
     setIsVoting(false);
@@ -1088,6 +1093,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       </div>
         );
       })()}
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </div>
   );
 }
