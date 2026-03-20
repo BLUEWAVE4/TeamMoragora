@@ -39,32 +39,194 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* ===== 다크모드 (앱 컨테이너 내부만 적용) ===== */
-.dark .app-container {
-  background-color: #0f1419;
+/* ===== 다크모드 CSS 변수 오버라이드 ===== */
+.dark {
+  --color-bg: #0f1419;
+  --color-surface: #14202e;
+  --color-surface-alt: #1a2332;
+  --color-primary: #d0cdc5;
+}
+
+/* ===== 다크모드 (앱 컨테이너 + 오버레이/모달/바텀시트 전부 적용) ===== */
+/* 공통 셀렉터: .dark 내부 전체 */
+.dark .app-container,
+.dark [class*="fixed"] {
   color: #e0ddd5;
 }
-.dark .app-container .bg-\[\#F8F9FA\] { background-color: #0f1419; }
-.dark .app-container .bg-\[\#F3F1EC\] { background-color: #0f1419; }
-.dark .app-container .bg-\[\#F2F2F7\] { background-color: #0f1419; }
-.dark .app-container .bg-white { background-color: #1a2332; }
-.dark .app-container .bg-gray-100 { background-color: #1e2a3a; }
+.dark .app-container {
+  background-color: #0f1419;
+}
+
+/* 배경 */
+.dark .bg-\[\#F8F9FA\] { background-color: #0f1419; }
+.dark .bg-\[\#F3F1EC\] { background-color: #0f1419; }
+.dark .bg-\[\#F2F2F7\] { background-color: #0f1419; }
+.dark .bg-\[\#FAFAF5\] { background-color: #0f1419; }
+.dark .bg-\[\#F5F0E8\] { background-color: #14202e; }
+.dark .bg-white { background-color: #1a2332; }
+.dark .bg-gray-100 { background-color: #1e2a3a; }
+.dark .bg-gray-50 { background-color: #1e2a3a; }
+.dark .bg-blue-50 { background-color: rgba(0,122,255,0.15); }
+.dark .bg-emerald-50 { background-color: rgba(5,150,105,0.12); }
+.dark .bg-red-50 { background-color: rgba(230,57,70,0.12); }
+.dark .bg-emerald-50\/50 { background-color: rgba(5,150,105,0.08); }
+.dark .bg-red-50\/50 { background-color: rgba(230,57,70,0.08); }
+
 /* 텍스트 */
-.dark .app-container .text-black { color: #e0ddd5; }
-.dark .app-container .text-\[\#1B2A4A\] { color: #e0ddd5; }
-.dark .app-container .text-\[\#1A1A2E\] { color: #e0ddd5; }
-.dark .app-container .text-gray-400 { color: #8b8b8b; }
-.dark .app-container .text-gray-500 { color: #9a9a9a; }
-/* 아이콘/뱃지 배경 */
-.dark .app-container .bg-gray-50 { background-color: #1e2a3a; }
-.dark .app-container .bg-blue-50 { background-color: rgba(0,122,255,0.15); }
+.dark .text-black { color: #e0ddd5; }
+.dark .text-\[\#1B2A4A\] { color: #e0ddd5; }
+.dark .text-\[\#1A1A2E\] { color: #e0ddd5; }
+.dark .text-gray-300 { color: #6a6a6a; }
+/* ArgumentPage textarea 하단 구분선 */
+.dark .border-gray-50 { border-color: #2a3545; }
+/* ArgumentPage textarea 하단 바 */
+.dark .bg-gray-50\/50 { background-color: rgba(26,35,50,0.5); }
+/* ArgumentPage placeholder/counter */
+.dark .text-\[\#1B2A4A\]\/25 { color: rgba(224,221,213,0.4); }
+.dark .text-gray-400 { color: #8b8b8b; }
+.dark .text-gray-500 { color: #9a9a9a; }
+.dark .text-gray-600 { color: #a0a0a0; }
+.dark .text-gray-700 { color: #b0b0b0; }
+.dark .text-gray-800 { color: #c0c0c0; }
+.dark .text-gray-900 { color: #e0ddd5; }
+/* opacity 변형 텍스트 — [#1B2A4A]/XX */
+.dark [class*="text-\[#1B2A4A\]\/"] { color: rgba(224,221,213,0.85); }
+.dark .text-primary { color: #e0ddd5; }
+
+/* 헤더 검색창 */
+.dark .bg-gray-100\/80 { background-color: rgba(224,221,213,0.06); }
+
+/* 헤더 브랜드/아이콘 */
+.dark .text-\[\#2D3350\] { color: #e0ddd5; }
+.dark [class*="text-\[#2D3350\]\/"] { color: rgba(224,221,213,0.7); }
+/* white opacity 변형 (이미 밝으므로 유지) */
+
+/* 카드/본문 배경 보강 */
+.dark .bg-\[\#FFF9E6\] { background-color: #1e2a3a; }
+.dark .bg-\[\#FFFDF5\] { background-color: #1e2a3a; }
+.dark .bg-amber-50 { background-color: rgba(212,175,55,0.1); }
+.dark .bg-orange-50 { background-color: rgba(217,119,6,0.1); }
+.dark .bg-purple-50 { background-color: rgba(139,92,246,0.1); }
+
+/* white opacity 변형 */
+.dark .bg-white\/70 { background-color: rgba(26,35,50,0.9); }
+.dark .bg-white\/80 { background-color: rgba(15,20,25,0.9); }
+.dark .bg-white\/95 { background-color: rgba(15,20,25,0.95); }
+.dark .bg-white\/60 { background-color: rgba(26,35,50,0.7); }
+
+/* [#1B2A4A] 배경 opacity 변형 — 다크모드에서 밝은 톤으로 */
+.dark [class*="bg-\[#1B2A4A\]\/"] { background-color: rgba(224,221,213,0.08); }
+
+/* [#1B2A4A] 테두리 opacity 변형 */
+.dark [class*="border-\[#1B2A4A\]\/"] { border-color: rgba(224,221,213,0.1); }
+
+/* 투표 바/카테고리 배경 */
+.dark .bg-\[\#E6394615\] { background-color: rgba(230,57,70,0.1); }
+.dark .bg-\[\#05966910\] { background-color: rgba(5,150,105,0.1); }
+
+/* 금색 배경 버튼 → 다크모드에서 금색 유지 + 어두운 텍스트 + 네이비 테두리 */
+.dark .bg-\[\#D4AF37\] { background-color: #D4AF37; color: #1B2A4A; border: 2px solid #1B2A4A; }
+
+/* 새 논쟁 버튼 — 다크모드에서 호버/터치 시 텍스트를 닫기와 동일하게 */
+.dark .bg-\[\#1B2A4A\]:hover,
+.dark .bg-\[\#1B2A4A\]:active { background-color: #2a3f6a; color: #ffffff; }
+
+/* 배경으로 쓰이는 primary/navy — 어두운 톤 유지 */
+.dark .bg-\[\#1B2A4A\] { background-color: #2a3f6a; }
+.dark .bg-primary { background-color: #1a2332; border-color: #2a3545; }
+.dark [class*="bg-primary\/"] { background-color: rgba(208,205,197,0.06); }
+
+/* 홈피드 하단 아이콘/텍스트 */
+.dark .text-\[\#8E8E93\] { color: #8b8b8b; }
+.dark .text-\[\#C7C7CC\] { color: #555; }
+.dark .text-\[\#007AFF\] { color: #4da6ff; }
+
+/* 탭바/헤더 */
+.dark .bg-white\/95 { background-color: rgba(15,20,25,0.95); }
+.dark .border-t.border-gray-100 { border-color: #2a3545; }
+
+/* 홈 배경 */
+.dark .bg-\[\#F8F9FA\] { background-color: #0f1419; }
+
 /* 테두리 */
-.dark .app-container .border-gray-100 { border-color: #2a3545; }
-.dark .app-container .border-gray-200 { border-color: #2a3545; }
-.dark .app-container .border-white { border-color: #2a3545; }
+.dark .border-gray-100 { border-color: #2a3545; }
+.dark .border-gray-200 { border-color: #2a3545; }
+.dark .border-white { border-color: #2a3545; }
+.dark .divide-gray-50 > :not(:last-child) { border-color: #2a3545; }
+
 /* 그림자 */
-.dark .app-container .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-.dark .app-container .shadow-inner { box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
+.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.dark .shadow-md { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.dark .shadow-xl { box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.dark .shadow-2xl { box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+.dark .shadow-inner { box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
+
+/* 입력 필드 */
+.dark input, .dark textarea, .dark select {
+  background-color: #1a2332;
+  color: #e0ddd5;
+  border-color: #344050;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: rgba(224,221,213,0.3);
+}
+
+/* 커스텀 테마 색상 (surface/surface-alt) */
+.dark .bg-surface { background-color: #14202e; }
+.dark .bg-surface-alt { background-color: #1a2332; }
+.dark .bg-gradient-to-b.from-surface { background: linear-gradient(to bottom, #14202e, #1a2332); }
+
+/* 판결 카드 배경 */
+.dark .bg-emerald-50\/80 { background-color: rgba(5,150,105,0.12); }
+.dark .bg-emerald-50\/50 { background-color: rgba(5,150,105,0.08); }
+.dark .bg-red-50\/80 { background-color: rgba(230,57,70,0.12); }
+.dark .bg-red-50\/50 { background-color: rgba(230,57,70,0.08); }
+.dark .border-emerald-100 { border-color: rgba(5,150,105,0.2); }
+.dark .border-emerald-200 { border-color: rgba(5,150,105,0.25); }
+.dark .border-emerald-200\/50 { border-color: rgba(5,150,105,0.15); }
+.dark .border-emerald-200\/30 { border-color: rgba(5,150,105,0.1); }
+.dark .border-red-100 { border-color: rgba(230,57,70,0.2); }
+.dark .border-red-200 { border-color: rgba(230,57,70,0.25); }
+.dark .border-red-200\/50 { border-color: rgba(230,57,70,0.15); }
+.dark .border-red-200\/30 { border-color: rgba(230,57,70,0.1); }
+
+/* outline 버튼 — 다크모드에서 테두리 어둡게 */
+.dark .border-primary { border-color: #2a3545; }
+
+/* 다크모드에서 금색 텍스트 유틸리티 */
+.dark .dark-gold { color: #D4AF37; }
+
+/* 위자드 버튼 — 다크모드에서 뒤로 톤다운, 다음 강조 */
+.dark .bg-accent { background-color: #1a2332; color: rgba(224,221,213,0.5); border-color: #2a3545; box-shadow: none; }
+.dark .bg-primary.border-2 { background-color: #D4AF37; color: #1B2A4A; border-color: #D4AF37; }
+
+/* 마이페이지 — 다크모드에서 강조색 톤다운 */
+.dark .text-emerald-500 { color: #059669a0; }
+.dark .text-\[\#007AFF\] { color: #4da6ff80; }
+
+/* 논쟁 생성 모드 카드 이미지 — 다크모드에서 밝기 조정 */
+.dark .brightness-110 { filter: brightness(0.7); }
+.dark .brightness-75 { filter: brightness(1.4); }
+
+/* 논쟁 생성 페이지 보강 */
+.dark .bg-gold { background-color: #D4AF37; }
+.dark .text-gold-light { color: #D4AF37; }
+.dark .bg-gold-light { background-color: #2a2510; }
+.dark .text-gold { color: #D4AF37; }
+.dark .border-gold { border-color: #D4AF37; }
+.dark [class*="border-gold\/"] { border-color: rgba(212,175,55,0.3); }
+.dark [class*="bg-gold\/"] { background-color: rgba(212,175,55,0.1); }
+.dark [class*="shadow-gold\/"] { --tw-shadow-color: rgba(212,175,55,0.1); }
+
+/* Step3 시간 설정 카드 선택 배경 */
+.dark .bg-\[\#FFF9E8\] { background-color: rgba(212,175,55,0.08); }
+
+/* 추가 배경 오버라이드 */
+.dark .bg-\[\#F3F1EC\] { background-color: #0f1419; }
+.dark .active\:bg-gray-50:active { background-color: #1e2a3a; }
+
+/* 바텀시트/모달 배경 */
+.dark .bg-gradient-to-b.from-\[\#F5F0E8\] { background: linear-gradient(to bottom, #14202e, #1a2332); }
 
 /* 스크롤바 숨김 기능 (준민님 코드 유지) */
 @layer utilities {

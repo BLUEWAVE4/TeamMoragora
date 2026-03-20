@@ -2,7 +2,7 @@ import React from 'react';
 
 const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
   // 베이스 스타일
-  const baseStyles = "relative px-8 py-3 font-serif font-bold rounded-xl uppercase transition-all duration-300 border-2 rounded-sm shadow-md active:transform active:scale-95";
+  const baseStyles = "relative px-8 py-3 font-sans font-bold rounded-xl uppercase transition-all duration-300 border-2 rounded-sm shadow-md active:transform active:scale-95";
 
   // 아고라 테마별 변형 스타일
   const variants = {

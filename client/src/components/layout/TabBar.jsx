@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from "../../store/AuthContext";
+import { useTheme } from "../../store/ThemeContext";
 import { getMyActiveDebates, deleteDebate } from "../../services/api";
 import MoragoraModal from '../common/MoragoraModal';
 
@@ -20,26 +21,28 @@ const TrophyIcon = ({ active }) => (
   </svg>
 );
 
-const PlusIcon = ({ active, pulse }) => {
+const PlusIcon = ({ active, pulse, isDark }) => {
   // 진행중 논쟁 있으면 말풍선(진행중) 아이콘
   if (pulse) {
+    const cls = isDark ? 'animate-stroke-pulse-dark' : 'animate-stroke-pulse';
     return (
       <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
         <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
-          fill="none" strokeWidth="1.8" className="animate-stroke-pulse" />
+          fill="none" strokeWidth="1.8" className={cls} />
         {/* 느낌표 */}
-        <line x1="21" y1="14" x2="21" y2="23" strokeWidth="2.5" strokeLinecap="round" className="animate-stroke-pulse" />
-        <circle cx="21" cy="27" r="1.5" className="animate-stroke-pulse" fill="currentColor" />
+        <line x1="21" y1="14" x2="21" y2="23" strokeWidth="2.5" strokeLinecap="round" className={cls} />
+        <circle cx="21" cy="27" r="1.5" className={cls} fill="currentColor" />
       </svg>
     );
   }
 
+  const color = isDark ? '#D4AF37' : '#1B2A4A';
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
       <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
-        fill={active ? '#1B2A4A' : 'none'} stroke={active ? '#1B2A4A' : '#1B2A4A'} strokeWidth="1.8" />
-      <line x1="21" y1="13" x2="21" y2="29" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
-      <line x1="13" y1="21" x2="29" y2="21" stroke={active ? 'white' : '#1B2A4A'} strokeWidth="2" strokeLinecap="round" />
+        fill={active ? color : 'none'} stroke={color} strokeWidth="1.8" />
+      <line x1="21" y1="13" x2="21" y2="29" stroke={active ? (isDark ? '#1B2A4A' : 'white') : color} strokeWidth="2" strokeLinecap="round" />
+      <line x1="13" y1="21" x2="29" y2="21" stroke={active ? (isDark ? '#1B2A4A' : 'white') : color} strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 };
@@ -120,6 +123,7 @@ export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { isDark } = useTheme();
 
   const isLoggedIn = !!user;
   const isCreateActive = location.pathname === '/debate/create';
@@ -213,12 +217,9 @@ export default function TabBar() {
 
     // ✅ 논쟁 생성 페이지에서는 드래프트 체크 없이 바로 바텀시트
     if (isCreateActive) {
-      fetchActiveDebates().then((items) => {
-        setShowSheet(true);
-        const currentIds = items.map(d => d.id).sort().join(',');
-        localStorage.setItem('tabbar_last_seen_ids', currentIds);
-        setHasNewActivity(false);
-      });
+      setShowSheet(true);
+      setHasNewActivity(false);
+      fetchActiveDebates(); // 백그라운드 갱신
       return;
     }
 
@@ -233,16 +234,22 @@ export default function TabBar() {
       } catch {}
     }
 
-    fetchActiveDebates().then((items) => {
-      if (items.length > 0) {
-        setShowSheet(true);
-        const currentIds = items.map(d => d.id).sort().join(',');
-        localStorage.setItem('tabbar_last_seen_ids', currentIds);
-        setHasNewActivity(false);
-      } else {
-        navigate('/debate/create');
-      }
-    });
+    // 캐시된 데이터로 즉시 열고, 백그라운드에서 갱신
+    if (activeDebates.length > 0) {
+      setShowSheet(true);
+      setHasNewActivity(false);
+      fetchActiveDebates(); // 백그라운드 갱신
+    } else {
+      // 캐시 없으면 한 번만 조회
+      fetchActiveDebates().then((items) => {
+        if (items.length > 0) {
+          setShowSheet(true);
+          setHasNewActivity(false);
+        } else {
+          navigate('/debate/create');
+        }
+      });
+    }
   };
 
   const handleSelectDebate = (debate) => {
@@ -270,7 +277,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
     { to: '/ranking', icon: (active) => <TrophyIcon active={active} /> },
-    { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} /> },
+    { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} isDark={isDark} /> },
     { to: '/moragora', icon: (active) => <HallIcon active={active} /> },
     { to: '/profile', icon: (active) => <UserIcon active={active} /> }
   ];
@@ -352,13 +359,52 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
     )}
       {/* ===== 바텀시트 오버레이 ===== */}
       {showSheet && (
-        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center">
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center" onClick={(e) => { if (e.target === e.currentTarget) { setShowSheet(false); setIsEditing(false); setDeleting(null); } }}>
           <div
             ref={sheetRef}
             className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl shadow-xl animate-slide-up pb-[env(safe-area-inset-bottom,0px)]"
           >
-            {/* 핸들 */}
-            <div className="flex justify-center pt-3 pb-1">
+            {/* 핸들 — 드래그로 닫기 */}
+            <div
+              className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing"
+              onTouchStart={(e) => { sheetRef.current._startY = e.touches[0].clientY; sheetRef.current._startTime = Date.now(); }}
+              onTouchMove={(e) => {
+                const dy = e.touches[0].clientY - sheetRef.current._startY;
+                if (dy > 0) sheetRef.current.style.transform = `translateY(${dy * 0.85}px)`;
+              }}
+              onTouchEnd={(e) => {
+                const dy = e.changedTouches[0].clientY - sheetRef.current._startY;
+                const elapsed = Date.now() - sheetRef.current._startTime;
+                const velocity = dy / Math.max(elapsed, 1);
+                if (dy > 100 || velocity > 0.5) {
+                  sheetRef.current.style.transition = 'transform 0.3s ease-out';
+                  sheetRef.current.style.transform = 'translateY(110%)';
+                  setTimeout(() => { setShowSheet(false); setIsEditing(false); setDeleting(null); }, 300);
+                } else {
+                  sheetRef.current.style.transition = 'transform 0.3s ease-out';
+                  sheetRef.current.style.transform = 'translateY(0)';
+                }
+              }}
+              onMouseDown={(e) => { sheetRef.current._startY = e.clientY; sheetRef.current._dragging = true; }}
+              onMouseMove={(e) => {
+                if (!sheetRef.current._dragging) return;
+                const dy = e.clientY - sheetRef.current._startY;
+                if (dy > 0) sheetRef.current.style.transform = `translateY(${dy * 0.85}px)`;
+              }}
+              onMouseUp={(e) => {
+                if (!sheetRef.current._dragging) return;
+                sheetRef.current._dragging = false;
+                const dy = e.clientY - sheetRef.current._startY;
+                if (dy > 100) {
+                  sheetRef.current.style.transition = 'transform 0.3s ease-out';
+                  sheetRef.current.style.transform = 'translateY(110%)';
+                  setTimeout(() => { setShowSheet(false); setIsEditing(false); setDeleting(null); }, 300);
+                } else {
+                  sheetRef.current.style.transition = 'transform 0.3s ease-out';
+                  sheetRef.current.style.transform = 'translateY(0)';
+                }
+              }}
+            >
               <div className="w-10 h-1 rounded-full bg-[#1B2A4A]/15" />
             </div>
 
@@ -456,7 +502,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
             <div className="px-5 py-3 flex gap-2">
               <button
                 onClick={handleNewDebate}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-serif font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] border-2 border-[#D4AF37]/30 hover:bg-[#D4AF37] hover:text-[#1B2A4A] active:scale-95 transition-all duration-300 shadow-md"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-sans font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] border-2 border-[#D4AF37]/30 hover:bg-[#D4AF37] hover:text-[#1B2A4A] active:scale-95 transition-all duration-300 shadow-md"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/>
@@ -465,7 +511,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
               </button>
               <button
                 onClick={() => { setShowSheet(false); setIsEditing(false); setDeleting(null); }}
-                className="flex-1 py-3 rounded-xl font-serif font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 hover:border-[#1B2A4A]/20 active:scale-95 transition-all duration-300"
+                className="flex-1 py-3 rounded-xl font-sans font-bold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 hover:border-[#1B2A4A]/20 active:scale-95 transition-all duration-300"
               >
                 닫기
               </button>
@@ -516,6 +562,13 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
         }
         .animate-stroke-pulse {
           animation: stroke-pulse 2s ease-in-out infinite;
+        }
+        @keyframes stroke-pulse-dark {
+          0%, 100% { stroke: #D4AF37; opacity: 0.3; }
+          50% { stroke: #D4AF37; opacity: 1; }
+        }
+        .animate-stroke-pulse-dark {
+          animation: stroke-pulse-dark 2s ease-in-out infinite;
         }
         @keyframes slide-up {
           from { transform: translateY(100%); }

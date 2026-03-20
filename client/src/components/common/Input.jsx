@@ -14,7 +14,7 @@ const Input = ({
 }) => {
 
   const sharedClasses =
-    "w-full px-5 py-4 rounded-2xl font-serif text-primary border border-gold/20 shadow-inner outline-none transition-all duration-300 placeholder:text-primary/30 focus:border-gold focus:ring-4 focus:ring-gold/10 hover:border-gold/40";
+    "w-full px-5 py-4 rounded-2xl font-sans text-primary border border-gold/20 shadow-inner outline-none transition-all duration-300 placeholder:text-primary/30 focus:border-gold focus:ring-4 focus:ring-gold/10 hover:border-gold/40";
 
   const variantClasses = multiline
     ? "bg-gradient-to-b from-surface-alt to-surface resize-none"
@@ -24,7 +24,7 @@ const Input = ({
     <div className={`flex flex-col gap-2 w-full ${className}`}>
 
       {label && (
-        <label className="text-primary font-serif font-bold text-[11px] uppercase tracking-[0.2em] ml-2 opacity-80">
+        <label className="text-primary font-sans font-bold text-[11px] uppercase tracking-[0.2em] ml-2 opacity-80">
           {label}
         </label>
       )}
@@ -60,7 +60,7 @@ const Input = ({
                 <option
                   key={opt.value || opt}
                   value={opt.value || opt}
-                  className="bg-surface text-primary font-serif"
+                  className="bg-surface text-primary font-sans"
                 >
                   {opt.label || opt}
                 </option>
@@ -93,7 +93,7 @@ const Input = ({
       </div>
 
       {multiline && (
-        <p className="text-[10px] text-right text-primary/40 font-serif mt-1 tracking-widest">
+        <p className="text-[10px] text-right text-primary/40 font-sans mt-1 tracking-widest">
           {value?.length || 0} / 500 CHARACTERS
         </p>
       )}

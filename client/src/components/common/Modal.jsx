@@ -21,7 +21,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         <div className="bg-gradient-to-b from-primary to-[#16223b] p-8 text-gold-light">
           {/* 헤더 */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-serif font-bold tracking-tighter uppercase border-b border-gold/30 pb-2">
+            <h2 className="text-3xl font-sans font-bold tracking-tighter uppercase border-b border-gold/30 pb-2">
               {title}
             </h2>
             <button 

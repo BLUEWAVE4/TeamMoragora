@@ -1,5 +1,5 @@
 // // // // 담당: 서우주 (프론트A) - 32h
-// // // // 3단계 위자드 UI: 목적 → 렌즈 → 주제
+// // // // 3단계 위자드 UI: 목적 → 기준 → 주제
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -115,7 +115,7 @@ export default function DebateCreatePage() {
       setConSide(saved.con);
       if (saved.category) setCategory(saved.category);
       if (saved.aiPurpose) setPurpose(saved.aiPurpose);  // 캐시 복원 시 초기 purpose 세팅
-      if (saved.aiLens)    setLens(saved.aiLens);
+      // lens는 미선택 기본값 유지
       return saved;
     }
 
@@ -140,7 +140,7 @@ setProSide(result.pro);
 setConSide(result.con);
 if (result.category) setCategory(result.category);
 if (result.purpose)  setPurpose(result.purpose);
-if (result.lens)     setLens(result.lens);
+// lens는 미선택(기본값)으로 유지 — 사용자가 2단계에서 직접 선택
 
 setAiResults(prev => ({ ...prev, [topic]: newResult }));
       return newResult;
@@ -192,7 +192,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
     <div className="min-h-screen flex justify-center px-4 pt-6 pb-28 bg-[#FAFAF5]">
       <div className="w-full max-w-md mt-16">
 
-        <h2 className="text-2xl font-bold mb-4 text-center">논쟁 생성하기</h2>
+        <h2 className="text-2xl font-bold mb-[16px] text-center">논쟁 생성하기</h2>
 
         {!gameStarted && <ModeSelector onStart={handleModeStart} />}
 
@@ -240,21 +240,21 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
       </div>
 
-      <Modal
+      <MoragoraModal
         isOpen={showBackModal}
         onClose={() => setShowBackModal(false)}
         title="모드를 다시 선택하시겠습니까?"
-      >
-        <div className="flex gap-3 justify-end mt-6">
-          <Button variant="outline" onClick={() => setShowBackModal(false)}>아니오</Button>
-          <Button onClick={() => {
+        description="현재 작성 중인 내용이 모두 초기화됩니다."
+        type="confirm"
+        confirmText="예"
+        cancelText="아니오"
+        onConfirm={() => {
             resetDebateState();
             setGameStarted(false);
             setMode(null);
             setShowBackModal(false);
-          }}>예</Button>
-        </div>
-      </Modal>
+          }}
+      />
 
       <MoragoraModal
         isOpen={modalState.isOpen}

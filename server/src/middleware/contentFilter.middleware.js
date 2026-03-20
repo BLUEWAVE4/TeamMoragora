@@ -61,10 +61,7 @@ export async function contentFilterMiddleware(req, res, next) {
     });
   }
 
-  // 일상/연애 카테고리는 Stage 1만 적용
-  if (CATEGORY_STAGE1_ONLY.includes(category)) return next();
-
-  // Stage 2: AI 콘텐츠 필터 (GPT-4o)
+  // Stage 2: AI 콘텐츠 필터 (GPT-4o) — 모든 카테고리
   const aiResult = await filterByAI(content);
   if (aiResult.action === 'block') {
     saveFilterLog({ userId, debateId, contentType: 'argument', stage: 2, reason: aiResult.reason, result: 'block', content });
@@ -75,18 +72,17 @@ export async function contentFilterMiddleware(req, res, next) {
     });
   }
 
-  // 직장/교육 카테고리는 Stage 2까지
-  if (CATEGORY_STAGE1_2.includes(category)) return next();
-
-  // Stage 3: AI 게이트키퍼 (주제 적합성)
-  const gateResult = await filterByGatekeeper(content, topic);
-  if (gateResult.action === 'block') {
-    saveFilterLog({ userId, debateId, contentType: 'argument', stage: 3, reason: gateResult.reason, result: 'block', content });
-    return res.status(400).json({
-      error: '주제와 관련 없는 내용입니다.',
-      stage: 3,
-      reason: gateResult.reason,
-    });
+  // Stage 3: AI 게이트키퍼 (주제 적합성) — 모든 카테고리
+  if (topic) {
+    const gateResult = await filterByGatekeeper(content, topic);
+    if (gateResult.action === 'block') {
+      saveFilterLog({ userId, debateId, contentType: 'argument', stage: 3, reason: gateResult.reason, result: 'block', content });
+      return res.status(400).json({
+        error: '주제와 관련 없는 내용입니다.',
+        stage: 3,
+        reason: gateResult.reason,
+      });
+    }
   }
 
   next();

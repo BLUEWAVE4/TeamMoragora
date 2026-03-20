@@ -106,7 +106,7 @@ function ModeSelector({ onStart }) {
   return (
     <div className="flex flex-col items-center">
 
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="text-xl font-bold mb-4 mt-[80px]">
         게임 모드
       </h2>
 
@@ -198,7 +198,7 @@ function ModeSelector({ onStart }) {
       </div>
 
       <Button
-        className="mt-6 w-full max-w-[260px]"
+        className="mt-50 w-full max-w-[260px]"
         onClick={handleGameStart}
       >
         게임 시작

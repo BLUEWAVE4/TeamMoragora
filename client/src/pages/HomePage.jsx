@@ -216,7 +216,7 @@ export default function HomePage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-        <span className="text-[13px] font-serif font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+        <span className="text-[13px] font-sans font-bold text-[#1B2A4A]/30">불러오는 중...</span>
       </div>
     </div>
   );
@@ -240,7 +240,7 @@ export default function HomePage() {
         )}
 
         {!hasNext && feeds.length > 0 && (
-          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-serif font-bold py-8">
+          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-sans font-bold py-8">
             모든 논쟁을 확인했습니다
           </p>
         )}

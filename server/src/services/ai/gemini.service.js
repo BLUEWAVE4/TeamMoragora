@@ -4,7 +4,7 @@ import { callAI } from './aiWrapper.js';
 import { AI_TEMPERATURE_JUDGE } from '../../config/constants.js';
 
 export async function judgeWithGemini(debateContext) {
-  const systemPrompt = buildSystemPrompt('gemini-2.5-flash', debateContext.lens);
+  const systemPrompt = buildSystemPrompt('gemini-2.5-flash', debateContext.lens, debateContext.purpose);
   const userPrompt = buildUserPrompt(debateContext);
 
   const parsed = await callAI(

@@ -256,14 +256,7 @@ export default function InvitePage() {
             </div>
           </div>
         </div>
-          <p className="text-white text-[16px] font-black tracking-[0.2em] mb-1">모라고라 AI 법정 · 논쟁 소환장</p>
-          <span className={`mt-2 px-3 py-1 text-[12px] font-black font-mono rounded-full border ${
-            timeLeft < 60
-              ? 'bg-red-500/20 border-red-400/40 text-red-300'
-              : 'bg-white/10 border-white/20 text-white/50'
-          }`}>
-            {formatTime(timeLeft)}
-          </span>
+          <p className="text-white text-[16px] font-black tracking-[0.2em] mb-1">모라고라 · 논쟁 소환장</p>
         </div>
 
         {/* 바디 */}
@@ -289,19 +282,13 @@ export default function InvitePage() {
               </div>
             ))}
             <div className="flex items-center gap-4 text-[14px]">
-              <span className="text-gray-400 font-medium w-16 shrink-0">논쟁 유형</span>
-              <div className="flex gap-2 flex-wrap">
-                {[debate?.purpose, debate?.lens, debate?.category].filter(Boolean).map((v) => (
-                  <span key={v} className="bg-[#F5F0E8] border border-[#D4AF37]/30 text-[#8B6914] text-[11px] font-bold px-2.5 py-1 rounded-full">
-                    {toKor(v)}
-                  </span>
-                ))}
-              </div>
+              <span className="text-gray-400 font-medium w-16 shrink-0">논쟁 목적</span>
+              <span className="text-[#1B2A4A] font-bold">{toKor(debate?.purpose) || '승부'}</span>
             </div>
           </div>
 
           {/* 논쟁 주제 */}
-          <div className="mx-5 my-5 bg-[#F5F0E8] border-l-4 border-[#D4AF37] px-4 py-4 rounded-r-xl">
+          <div className="mx-5 my-5 bg-[#F5F0E8] px-4 py-4 rounded-xl">
             <p className="text-[13px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
             <p className="text-[#1B2A4A] text-[16px] font-black leading-snug">
               "{debate?.topic}"
@@ -329,23 +316,10 @@ export default function InvitePage() {
             </div>
           )}
 
-          {/* 안내 문구 */}
-          <div className="px-5 pb-5">
-            <p className="text-[13px] text-gray-500 leading-relaxed">
-              귀하는 위 논쟁의 <strong className="text-[#1B2A4A]">B측 참여자</strong>로 지정되었습니다.<br/>
-              아래 버튼을 통해 출석 의사를 밝혀주시기 바랍니다.
-            </p>
-          </div>
         </div>
 
         {/* 푸터 */}
         <div className="bg-[#F5F0E8] px-5 py-4 border-t border-[#1B2A4A]/10">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] text-gray-400 font-black tracking-widest">모라고라 AI 법정</span>
-            <span className="text-[10px] text-[#8B6914] font-black border border-[#D4AF37]/40 bg-white px-2.5 py-1 rounded-full">
-              AI 판결 예정
-            </span>
-          </div>
           <button
             onClick={handleAccept}
             className="w-full h-[52px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[16px] rounded-xl active:scale-[0.97] transition-all tracking-wide cursor-pointer"
@@ -370,46 +344,30 @@ export default function InvitePage() {
       <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
 
         {/* 헤더 */}
-        <div className="bg-[#1B2A4A] pt-8 pb-7 px-6 flex flex-col items-center text-center relative overflow-hidden">
+        <div className="bg-[#1B2A4A] py-8 px-6 flex items-center justify-center relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
-          <div className="relative w-14 h-14 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mb-4">
-          {/* 뱃지 */}
-   <div className="mt-2 mb-4 relative">
-    <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
-    <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
-      <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-          <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
-          <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
-        </svg>
-      </div>
-    </div>
-  </div>
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
+            <div className="relative w-[76px] h-[76px] rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5">
+              <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A]">
+                <svg width="37" height="37" viewBox="0 2 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M9 21H15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M6 8L12 6L18 8" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M3 14C3 14 3 17 6 17C9 17 9 14 9 14L6 8L3 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+                  <path d="M15 14C15 14 15 17 18 17C21 17 21 14 21 14L18 8L15 14Z" fill="#D4AF37" fillOpacity="0.2" stroke="#D4AF37" strokeWidth="1.2"/>
+                  <circle cx="12" cy="6" r="1" fill="#D4AF37"/>
+                </svg>
+              </div>
+            </div>
           </div>
-        {/* 상황별 타이틀 변경 */}
-        <p className="text-white text-[16px] font-black mb-1">
-        {opponentWriting ? '논쟁 진행 중' : isOpponentJoined ? '논쟁 준비 완료' : '논쟁 개시 대기 중'}
-        </p>
-  
-        {/* 상황별 설명 문구 변경 */}
-        <p className="text-white/40 text-[13px]">
-        {opponentWriting 
-         ? '상대방이 주장을 작성하고 있습니다.' 
-         : isOpponentJoined 
-         ? '이제 아래 버튼을 눌러 논쟁을 시작하세요.' 
-         : '상대방의 출석을 기다리고 있습니다.'}
-        </p>
         </div>
 
         {/* 바디 */}
         <div className="bg-white">
 
           {/* 논쟁 주제 */}
-          <div className="mx-5 my-5 bg-[#F5F0E8] border-l-4 border-[#D4AF37] px-4 py-4 rounded-r-xl">
+          <div className="mx-5 my-5 bg-[#F5F0E8] px-4 py-4 rounded-xl">
             <p className="text-[13px] text-gray-400 font-black uppercase tracking-widest mb-2">논쟁 주제</p>
             <p className="text-[#1B2A4A] text-[16px] font-black leading-snug">
               "{debate?.topic}"
@@ -434,7 +392,7 @@ export default function InvitePage() {
             </button>
             <button
               onClick={handleCopy}
-              className="w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 text-[#1B2A4A] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer"
+              className={`w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer ${isCopied ? 'text-[#D4AF37]' : 'text-[#1B2A4A]'}`}
             >
               {isCopied ? '복사 완료!' : '링크 복사'}
             </button>

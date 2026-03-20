@@ -154,7 +154,8 @@ function RoundHeader({ num, label, state }) {
 // ── 라운드 입력 폼 ──
 function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmitting }) {
   const maxChar = roundNum === 1 ? MAX_CHAR_R1 : MAX_CHAR_R2
-  const isInvalid = content.length === 0 || content.length > maxChar
+  const minChar = 10
+  const isInvalid = content.trim().length < minChar || content.length > maxChar
 
   return (
     <div className={`flex flex-col gap-3 transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
@@ -176,18 +177,19 @@ function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmit
         />
         <div className="px-5 py-2.5 border-t border-gray-50 flex items-center justify-between bg-gray-50/50">
           <div className="flex items-center gap-1.5">
-            {content.length === 0
+            {content.trim().length < minChar
               ? <Circle size={12} className="text-gray-300" />
               : content.length > maxChar
                 ? <CircleDot size={12} className="text-red-400" />
                 : <CircleCheck size={12} className="text-emerald-400" />
             }
             <span className={`text-[10px] font-bold ${
-              content.length === 0 ? 'text-gray-300'
+              content.trim().length < minChar ? 'text-gray-300'
                 : content.length > maxChar ? 'text-red-500'
                 : 'text-emerald-500'
             }`}>
-              {content.length === 0 ? '내용을 입력해주세요'
+              {content.trim().length === 0 ? '내용을 입력해주세요'
+                : content.trim().length < minChar ? `${minChar}자 이상 입력해주세요`
                 : content.length > maxChar ? '글자 수 초과'
                 : '제출 가능'}
             </span>
@@ -326,7 +328,23 @@ export default function ArgumentPage() {
       const updatedArgs = await getArguments(debateId)
       if (updatedArgs.length >= 4) navigate(`/debate/${debateId}/judging`)
     } catch (err) {
-      showModal('제출에 실패했습니다', '네트워크 상태를 확인하고 다시 시도해주세요.')
+      const serverMsg = err?.response?.data?.error || err?.message || '';
+      const reason = err?.response?.data?.reason || '';
+      const stage = err?.response?.data?.stage;
+
+      if (stage === 1) {
+        const isPersonalInfo = reason?.includes('개인정보');
+        showModal(
+          isPersonalInfo ? '개인정보가 포함되어 있습니다' : '부적절한 표현이 포함되어 있습니다',
+          isPersonalInfo ? '전화번호, 주민번호, 이메일 등 개인정보는 포함할 수 없습니다.' : (reason || '비속어나 부적절한 표현을 수정해주세요.')
+        );
+      } else if (stage === 2) {
+        showModal('유해한 콘텐츠가 감지되었습니다', reason || '내용을 수정한 후 다시 제출해주세요.');
+      } else if (stage === 3) {
+        showModal('주제와 관련 없는 내용입니다', '논쟁 주제에 맞는 주장을 작성해주세요.');
+      } else {
+        showModal('제출에 실패했습니다', serverMsg || '네트워크 상태를 확인하고 다시 시도해주세요.');
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -342,24 +360,7 @@ export default function ArgumentPage() {
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           {/* ── 상단 로고 ── */}
           <JusticeBadge />
-          <p className="text-[#D4AF37] text-[13px] font-black tracking-[0.2em] mb-3">
-            모라고라 AI 법정 · 주장 제출서</p>
-
-          <div className="flex gap-1.5 flex-wrap justify-center mb-3">
-            {[
-              { value: debate?.purpose },
-              { value: debate?.lens },
-            ].filter(({ value }) => value).map(({ value }, i) => (
-              <span 
-                key={i} 
-                className="flex items-center bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-[#D4AF37]"
-              >
-                {toKor(value)}
-              </span>
-            ))}
-          </div>
-
-          <h1 className="text-white text-[18px] font-black leading-snug">
+          <h1 className="text-white text-[18px] font-black leading-snug mt-3">
             "{debate?.topic}"
           </h1>
         </div>
@@ -436,15 +437,6 @@ export default function ArgumentPage() {
           </p>
         </div>
 
-        {/* ── 푸터 ── */}
-        <div className="mx-4 bg-[#F5F0E8] rounded-b-2xl px-5 py-3 border-t border-[#1B2A4A]/5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-black tracking-widest">모라고라 AI 법정</span>
-            <span className="text-[10px] text-[#8B6914] font-black border border-[#D4AF37]/40 bg-white px-2.5 py-1 rounded-full">
-              AI 판결 예정
-            </span>
-          </div>
-        </div>
 
       </div>
 

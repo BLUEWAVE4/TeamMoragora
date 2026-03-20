@@ -98,7 +98,7 @@ export default function Step3CategoryTime({
 
         {/* 시간 설정 */}
         <label
-          onClick={() => setTimerType("limit")}
+          onClick={() => { setTimerType("limit"); if (!time) setTime("1"); }}
           className={`border rounded-xl p-4 cursor-pointer transition
             ${timerType === "limit"
               ? "border-gold bg-[#FFF9E8]"
@@ -121,42 +121,17 @@ export default function Step3CategoryTime({
 
       {timerType === "limit" && (
         <div className="flex flex-col gap-4">
-        
           <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm text-gray-800">시민 투표 마감 시간</span>
-            </div>
-            {errorTime && (
-              <span className="text-xs text-red-500">{errorTime}</span>
-            )}
+            <span className="font-semibold text-sm text-gray-800">시민 투표 마감 시간</span>
+            {errorTime && <span className="text-xs text-red-500">{errorTime}</span>}
           </div>
-
-          {/* select */}
-          <div className="flex items-center gap-3">
-            <div className="w-full">
-              <Input
-                value={time}
-                onChange={(e) => {
-                  setTime(e.target.value);
-                  setErrorTime("");
-                }}
-                options={timeOptions}
-              />
-            </div>
+          <div className="w-full">
+            <Input
+              value={time}
+              onChange={(e) => { setTime(e.target.value); setErrorTime(""); }}
+              options={timeOptions}
+            />
           </div>
-
-          {/* 마감 예정일 미리보기 */}
-          {/* {time && (
-            <div className="flex items-center gap-2 bg-gold/10 border border-gold/30 rounded-lg px-4 py-3">
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-500 font-medium">투표 마감 예정</span>
-                <span className="text-sm font-bold text-gray-800">
-                  {getDeadlinePreview()} 까지
-                </span>
-              </div>
-            </div>
-          )} */}
-
         </div>
       )}
 
@@ -167,38 +142,60 @@ export default function Step3CategoryTime({
       </div>
 
       {/* CONFIRM MODAL */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="논쟁 생성 확인"
-      >
-        <div className="space-y-4 text-sm">
-          <div><span className="font-bold text-gold">주제</span>{" : "}{topic}</div>
-          <div><span className="font-bold text-gold">A측(본인) 주장</span>{" : "}{proSide}</div>
-          <div><span className="font-bold text-gold">B측(상대방) 주장</span>{" : "}{conSide}</div>
-          <div><span className="font-bold text-gold">목적</span>{" : "}{purpose}</div>
-          <div><span className="font-bold text-gold">렌즈</span>{" : "}{lens}</div>
-          <div><span className="font-bold text-gold">카테고리</span>{" : "}{category}</div>
-          <div>
-            <span className="font-bold text-gold">시민 투표</span>{" : "}
-            {timerType === "limit" ? (
-              <span>
-                {time}일간 진행
-                {getDeadlinePreview() && (
-                  <span className="text-xs text-gray-400 ml-1">
-                    ({getDeadlinePreview()} 마감)
-                  </span>
-                )}
-              </span>
-            ) : "시간 제한 없음"}
-          </div>
-        </div>
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl bg-white"
+            style={{ animation: 'modal-pop 0.2s ease-out' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2a3f6a] px-5 py-3">
+              <p className="text-[13px] font-extrabold text-[#D4AF37] tracking-[0.05em]">논쟁 생성 확인</p>
+            </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>취소</Button>
-          <Button variant="gold" onClick={handleSubmit}>논쟁 생성</Button>
+            <div className="px-5 pt-4 pb-2 space-y-2.5 text-[13px]">
+              <div><span className="font-bold text-primary/50">주제</span> <span className="text-primary">{topic}</span></div>
+              <div className="pl-3"><span className="font-bold text-primary/50">본인 주장</span> <span className="text-primary">{proSide}</span></div>
+              <div className="pl-3"><span className="font-bold text-primary/50">상대 주장</span> <span className="text-primary">{conSide}</span></div>
+              <div><span className="font-bold text-primary/50">목적</span> <span className="text-primary">{purpose}</span></div>
+              <div><span className="font-bold text-primary/50">기준</span> <span className="text-primary">{lens || '미선택'}</span></div>
+              <div>
+                <span className="font-bold text-primary/50">시민 투표</span>{' '}
+                <span className="text-primary">
+                  {timerType === "limit" ? (
+                    <>
+                      {time}일간 진행
+                      {getDeadlinePreview() && (
+                        <span className="text-primary/40 ml-1 text-[11px]">({getDeadlinePreview()} 마감)</span>
+                      )}
+                    </>
+                  ) : "없음"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 px-5 pt-4 pb-5">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-3 rounded-xl font-extrabold text-[14px] text-[#1B2A4A]/40 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="flex-1 py-3 rounded-xl font-extrabold text-[14px] bg-[#D4AF37] text-[#1B2A4A] border-2 border-[#D4AF37]/50 active:scale-95 transition-all"
+              >
+                논쟁 생성
+              </button>
+            </div>
+          </div>
+          <style>{`@keyframes modal-pop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
         </div>
-      </Modal>
+      )}
 
     </div>
   );

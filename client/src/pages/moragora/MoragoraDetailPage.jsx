@@ -11,6 +11,7 @@ export default function MoragoraDetailPage() {
   const [debate, setDebate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // 데이터 불러오기
   useEffect(() => {
@@ -134,12 +135,24 @@ export default function MoragoraDetailPage() {
         <div className="px-5 -mt-5 pb-6">
           <VerdictContent verdictData={verdict} topic={topic} />
 
-          <button
-            onClick={() => navigate(-1)}
-            className="w-full mt-5 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
-          >
-            돌아가기
-          </button>
+          <div className="space-y-2 mt-5">
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="w-full py-4 bg-[#D4AF37] text-[#1B2A4A] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+            >
+              {copied ? '링크 복사 완료!' : '판결문 공유하기'}
+            </button>
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+            >
+              돌아가기
+            </button>
+          </div>
         </div>
 
       </div>

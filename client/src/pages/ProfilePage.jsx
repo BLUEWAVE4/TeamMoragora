@@ -13,6 +13,7 @@ import {
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
 import MoragoraModal from '../components/common/MoragoraModal';
+import { useTheme } from '../store/ThemeContext';
 
 // ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
@@ -36,7 +37,7 @@ import { Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler);
 
-const ProfileRadarChart = ({ data }) => {
+const ProfileRadarChart = ({ data, isDark }) => {
   // data: [{ label, val, max }]
   const bandPlugin = {
     id: 'profileRadarBands',
@@ -91,14 +92,14 @@ const ProfileRadarChart = ({ data }) => {
           stepSize: 5,
           display: true,
           backdropColor: 'transparent',
-          color: 'rgba(27, 42, 74, 0.25)',
+          color: isDark ? 'rgba(224,221,213,0.2)' : 'rgba(27, 42, 74, 0.25)',
           font: { size: 9 },
         },
-        grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
-        angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
+        grid: { color: isDark ? 'rgba(224,221,213,0.08)' : 'rgba(27, 42, 74, 0.06)', circular: true },
+        angleLines: { color: isDark ? 'rgba(224,221,213,0.08)' : 'rgba(27, 42, 74, 0.06)' },
         pointLabels: {
           font: { size: 15, weight: '700', family: 'Pretendard Variable, sans-serif' },
-          color: '#1B2A4A',
+          color: isDark ? '#e0ddd5' : '#1B2A4A',
           padding: 12,
           callback: (label) => label,
         },
@@ -332,18 +333,13 @@ function VerdictModal({ verdict, onClose }) {
 // ─── ProfilePage ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [profileData, setProfileData] = useState(null);
   const [myJudgments, setMyJudgments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('moragora-theme') === 'dark';
-    }
-    return false;
-  });
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
@@ -543,22 +539,6 @@ const [showInfo, setShowInfo] = useState(false);
               회원탈퇴
             </button>
           )}
-          {!isEditing && (
-            <button
-              onClick={() => {
-                const next = !isDark;
-                setIsDark(next);
-                localStorage.setItem('moragora-theme', next ? 'dark' : 'light');
-                document.getElementById('root')?.classList.toggle('dark', next);
-              }}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/60 border border-gray-200 active:scale-90 transition-all shadow-sm"
-            >
-              {isDark
-                ? <Sun size={18} strokeWidth={2.2} className="text-[#D4AF37]" />
-                : <Moon size={18} strokeWidth={2.2} className="text-[#1B2A4A]/50" />
-              }
-            </button>
-          )}
         </div>
 
         {/* Avatar + Nickname */}
@@ -664,13 +644,13 @@ const [showInfo, setShowInfo] = useState(false);
         </div>
 
         {/* 총포인트 카드 */}
-        <button onClick={() => setIsTierSheetOpen(true)}
+        <div
           className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-left">
           <div className="flex items-center gap-1 mb-2">
             <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">총 포인트</span>
           </div>
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[22px] font-black tracking-tighter leading-none" style={{ color: tier.color }}>{tier.name}</span>
+            <span className="text-[22px] font-black tracking-tighter leading-none" style={{ color: tier.color, opacity: isDark ? 0.6 : 1 }}>{tier.name}</span>
             <div className="text-[13px] font-black text-gray-400 flex items-baseline gap-1">
               <CountUp end={currentScore} separator="," />
               <span className="text-[12px] font-bold text-gray-300">P</span>
@@ -683,7 +663,7 @@ const [showInfo, setShowInfo] = useState(false);
               <span>{nextTier.min.toLocaleString()}P]</span>
             </div>
           )}
-        </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -702,84 +682,29 @@ const [showInfo, setShowInfo] = useState(false);
         )}
       </AnimatePresence>
 
-      {/* 3. 논리력 카드 */}
-      <motion.button whileTap={{ scale: 0.97 }} onClick={() => setIsSheetOpen(true)}
-        className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 text-left overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#1B2A4A] to-[#2a3f6a]">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[12px] font-bold text-white/50 uppercase tracking-tight">논리력</span>
-            <span className="text-[20px] font-black text-[#D4AF37] tracking-tighter leading-none">
-              {totalAvg}<span className="text-[14px] font-bold text-white/30">/20</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-[12px] font-bold text-white/40">
-            상세 <ChevronRight size={12} className="text-white/30" />
-          </div>
-        </div>
-        <div className="w-full px-2 py-2 flex items-center justify-center">
-          <div className="w-full" style={{ minHeight: '300px' }}>
-          <ProfileRadarChart data={[
-            { label: '논리', val: logicScores.logic, max: 20 },
-            { label: '근거', val: logicScores.evidence, max: 20 },
-            { label: '설득', val: logicScores.persuasion, max: 20 },
-            { label: '일관', val: logicScores.consistency, max: 20 },
-            { label: '표현', val: logicScores.expression, max: 20 },
-          ]} />
-          </div>
-        </div>
-        {/* 강점 / 약점 */}
-        {totalAvg > 0 && (() => {
-          const items = [
-            { label: '논리 구조', val: logicScores.logic },
-            { label: '근거 품질', val: logicScores.evidence },
-            { label: '설득력', val: logicScores.persuasion },
-            { label: '일관성', val: logicScores.consistency },
-            { label: '표현력', val: logicScores.expression },
-          ].sort((a, b) => b.val - a.val);
-          const top = items.slice(0, 2);
-          const bottom = items.slice(-1);
-          const strengthDesc = {
-            '논리 구조': '논리적 연결이 탄탄합니다.',
-            '근거 품질': '데이터와 사례를 잘 활용합니다.',
-            '설득력': '설득하는 능력이 뛰어납니다.',
-            '일관성': '논지가 일관됩니다.',
-            '표현력': '명확한 표현을 사용합니다.',
-          };
-          const weakDesc = {
-            '논리 구조': '논리적 연결을 보강해보세요.',
-            '근거 품질': '구체적 근거를 더 활용해보세요.',
-            '설득력': '반론 대응을 준비해보세요.',
-            '일관성': '논지의 일관성을 유지해보세요.',
-            '표현력': '더 간결한 표현을 시도해보세요.',
-          };
-          return (
-            <div className="px-4 pb-4 space-y-3">
-              <div>
-                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-2">강점</p>
-                {top.map(s => (
-                  <div key={s.label} className="flex items-start gap-2 mb-1.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    </div>
-                    <span className="text-[12px] text-gray-500"><strong className="text-gray-700">{s.label}</strong> {strengthDesc[s.label]}</span>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-[#E63946] uppercase tracking-wider mb-2">개선점</p>
-                {bottom.map(w => (
-                  <div key={w.label} className="flex items-start gap-2 mb-1.5">
-                    <div className="w-4 h-4 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#E63946"/></svg>
-                    </div>
-                    <span className="text-[12px] text-gray-500"><strong className="text-gray-700">{w.label}</strong> {weakDesc[w.label]}</span>
-                  </div>
-                ))}
-              </div>
+      {/* 3. 나의 논리 프로필 + 서비스 평가하기 */}
+      <div className="space-y-3">
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
+          className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <BarChart3 size={22} className="text-[#007AFF]" />
             </div>
-          );
-        })()}
-      </motion.button>
+            <span className="text-[17px] font-bold text-black">나의 논리 프로필</span>
+          </div>
+          <ChevronRight size={20} className="text-[#C7C7CC]" />
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
+          className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+              <Edit3 size={22} className="text-gray-400" />
+            </div>
+            <span className="text-[17px] font-bold text-black">서비스 평가하기</span>
+          </div>
+          <ChevronRight size={20} className="text-[#C7C7CC]" />
+        </motion.button>
+      </div>
     </div>
   );
 })()}
@@ -873,17 +798,6 @@ const [showInfo, setShowInfo] = useState(false);
             </>
           )}
 
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsFeedbackOpen(true)}
-            className="w-full mt-3 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                <Edit3 size={22} className="text-gray-400" />
-              </div>
-              <span className="text-[17px] font-bold text-black">서비스 평가하기</span>
-            </div>
-            <ChevronRight size={20} className="text-[#C7C7CC]" />
-          </motion.button>
-
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
             className="w-full mt-5 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
             로그아웃
@@ -919,7 +833,7 @@ const [showInfo, setShowInfo] = useState(false);
                         <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                       </svg>
                     </div>
-                    <h3 className="text-[20px] font-serif font-black text-white tracking-tight">회원 탈퇴</h3>
+                    <h3 className="text-[20px] font-sans font-black text-white tracking-tight">회원 탈퇴</h3>
                     <p className="text-[12px] text-white/40 mt-1">이 작업은 되돌릴 수 없습니다</p>
                   </div>
 
@@ -957,14 +871,14 @@ const [showInfo, setShowInfo] = useState(false);
                   <div className="bg-[#F5F0E8] px-6 pb-6 pt-1 flex gap-2">
                     <button
                       onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
-                      className="flex-1 py-3.5 rounded-xl text-[14px] font-serif font-bold text-[#1B2A4A]/50 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
+                      className="flex-1 py-3.5 rounded-xl text-[14px] font-sans font-bold text-[#1B2A4A]/50 bg-white border-2 border-[#1B2A4A]/10 active:scale-95 transition-all"
                     >
                       돌아가기
                     </button>
                     <button
                       onClick={handleDeleteAccount}
                       disabled={deleteConfirmText !== '탈퇴합니다' || isDeleting}
-                      className={`flex-1 py-3.5 rounded-xl text-[14px] font-serif font-bold transition-all active:scale-95 ${
+                      className={`flex-1 py-3.5 rounded-xl text-[14px] font-sans font-bold transition-all active:scale-95 ${
                         deleteConfirmText === '탈퇴합니다'
                           ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/25'
                           : 'bg-[#1B2A4A]/10 text-[#1B2A4A]/25 cursor-not-allowed'
@@ -981,7 +895,7 @@ const [showInfo, setShowInfo] = useState(false);
       </div>
 
       {/* ─── 등급 시스템 바텀시트 ─────────────────────────────────── */}
-      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="80vh" bgColor="#F2F2F7" zIndex={100}>
+      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
         <div className="px-6 overflow-y-auto flex-1 pb-16">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -1013,7 +927,7 @@ const [showInfo, setShowInfo] = useState(false);
       </BottomSheet>
 
       {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
-      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#F5F0E8" zIndex={100}>
+      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor={isDark ? '#0f1419' : '#F5F0E8'} zIndex={100}>
         {(() => {
           // 완료된 논쟁에서 내 score_detail 평균 계산
           // verdicts는 UNIQUE FK이므로 배열이 아닌 단일 객체
@@ -1058,19 +972,75 @@ const [showInfo, setShowInfo] = useState(false);
           const sorted = [...radarData].sort((a, b) => b.val - a.val);
           const strengths = sorted.slice(0, 2);
           const weaknesses = sorted.slice(-1);
-          const LABEL_DESC = {
-            '논리 구조': '전제→근거→결론 연결이 탄탄합니다.',
-            '근거 품질': '구체적 데이터와 사례를 잘 활용합니다.',
-            '설득력': '상대를 설득하는 능력이 뛰어납니다.',
-            '일관성': '처음부터 끝까지 논지가 일관됩니다.',
-            '표현력': '명확하고 적절한 표현을 사용합니다.',
+          const DESC_BY_RANGE = {
+            '논리 구조': [
+              [0, '주장만 있고 이유가 빠져 있어요. "왜?"라는 질문에 답하는 연습부터 시작해보세요.'],
+              [2, '하고 싶은 말은 보이지만, 근거 없이 결론으로 건너뛰는 경향이 있어요.'],
+              [4, '논리의 뼈대가 잡히기 시작했어요. 전제와 결론 사이를 한 문장씩 채워보세요.'],
+              [6, '기본 흐름은 갖췄지만, 중간에 "그래서?"라는 빈칸이 남아 있어요.'],
+              [8, '논리가 대체로 이어지지만, 한두 곳에서 비약이 느껴져요.'],
+              [10, '무난한 논리력이에요. 상대가 어떤 반론을 할지 미리 떠올려보면 한 단계 올라갈 수 있어요.'],
+              [12, '꽤 짜임새 있는 논증이에요. 세부 연결 고리를 하나만 더 보강하면 훨씬 단단해져요.'],
+              [14, '전제→근거→결론 흐름이 자연스럽게 이어져요. 읽는 사람이 고개를 끄덕이게 됩니다.'],
+              [16, '반박을 예상하고 미리 막아두는 수준이에요. 상대가 허점을 찾기 어렵습니다.'],
+              [18, '빈틈없는 논증입니다. 어떤 각도에서 봐도 논리가 무너지지 않아요.'],
+            ],
+            '근거 품질': [
+              [0, '주장을 뒷받침하는 근거가 아직 없어요. 경험이나 사례 하나만 넣어도 달라져요.'],
+              [2, '"나는 그렇게 생각해"로 끝나는 경우가 많아요. 왜 그렇게 생각하는지 사례를 들어보세요.'],
+              [4, '근거를 넣으려는 시도는 보여요. 좀 더 구체적인 숫자나 출처를 찾아보세요.'],
+              [6, '일상적 사례를 활용하고 있지만, 객관성이 아쉬워요.'],
+              [8, '나쁘지 않은 근거예요. 한 가지만 더 — 출처나 통계를 곁들이면 신뢰도가 확 올라가요.'],
+              [10, '적절한 근거를 제시하고 있어요. 다양한 관점의 사례를 섞으면 더 풍성해져요.'],
+              [12, '데이터와 사례를 잘 섞어 쓰고 있어요. 출처 명시까지 하면 완벽에 가까워요.'],
+              [14, '구체적이고 신뢰도 높은 근거를 활용해요. 주장에 무게감이 실립니다.'],
+              [16, '다양한 각도에서 풍부한 근거를 제시해요. 상대가 반박하기 어려운 수준이에요.'],
+              [18, '학술 논문 수준의 근거력이에요. 데이터, 사례, 전문가 의견을 완벽하게 엮어냅니다.'],
+            ],
+            '설득력': [
+              [0, '자기 주장을 전달하는 것 자체가 어려운 단계예요. 핵심 메시지 하나에 집중해보세요.'],
+              [2, '하고 싶은 말은 있지만, 상대에게 와닿지 않아요. 상대의 입장에서 한 번 읽어보세요.'],
+              [4, '설득의 시도는 있지만, 논리와 감정 중 한쪽에만 치우쳐 있어요.'],
+              [6, '기본적인 전달력은 있어요. 다만 상대의 반론에 부딪히면 무너지기 쉬워요.'],
+              [8, '나름 설득력 있지만, "그래서 뭐?"라는 느낌이 남을 수 있어요. 마무리를 강하게 해보세요.'],
+              [10, '평균 이상의 설득력이에요. 감정에만 호소하지 않고 논리도 갖추고 있어요.'],
+              [12, '꽤 설득력 있는 주장이에요. 반론 하나만 미리 막아두면 훨씬 강력해져요.'],
+              [14, '논리와 공감을 잘 조합해요. 읽는 사람이 자연스럽게 동의하게 됩니다.'],
+              [16, '상대를 움직이는 힘이 있어요. 반대 의견인 사람도 "일리가 있네"라고 느껴요.'],
+              [18, '압도적인 설득력이에요. 주장을 듣고 나면 생각이 바뀌는 경험을 하게 됩니다.'],
+            ],
+            '일관성': [
+              [0, '주장이 문장마다 달라져요. 내가 무엇을 말하고 싶은지 먼저 정리해보세요.'],
+              [2, '처음과 끝의 주장이 달라요. 결론을 먼저 정하고 거꾸로 쓰는 연습을 해보세요.'],
+              [4, '큰 줄기는 있지만, 세부 주장들이 서로 충돌하는 부분이 있어요.'],
+              [6, '대체로 일관되지만, 예시를 들 때 논점이 살짝 벗어나요.'],
+              [8, '흐름은 유지되고 있어요. 다만 반박할 때 원래 입장이 흔들리는 순간이 있어요.'],
+              [10, '일관성이 나쁘지 않아요. 감정적으로 흥분했을 때도 논점을 놓지 않으면 좋겠어요.'],
+              [12, '꾸준히 같은 방향을 가리키고 있어요. 예외 상황에서도 입장을 유지하면 완벽해요.'],
+              [14, '처음부터 끝까지 한 방향이에요. 읽는 사람이 혼란 없이 따라갈 수 있어요.'],
+              [16, '반박이 들어와도 논지가 흔들리지 않아요. 단단한 중심축이 있는 글이에요.'],
+              [18, '철벽 일관성이에요. 어떤 공격에도 논점이 미동하지 않습니다.'],
+            ],
+            '표현력': [
+              [0, '문장이 잘 이어지지 않아요. 짧은 문장으로 하나씩 써보는 것부터 시작해보세요.'],
+              [2, '전달하려는 뜻은 있지만, 문장이 어색해서 읽기 힘들어요.'],
+              [4, '기본적인 전달은 되지만, 같은 표현이 반복되거나 문장이 길어요.'],
+              [6, '읽을 수는 있지만, 인상에 남는 표현이 없어요. 핵심 문장 하나를 강렬하게 만들어보세요.'],
+              [8, '괜찮은 표현력이에요. 군더더기를 줄이면 훨씬 깔끔해져요.'],
+              [10, '무난하게 읽히는 글이에요. 비유나 예시를 한두 개 넣으면 생동감이 살아나요.'],
+              [12, '깔끔하고 읽기 편해요. 때때로 눈에 띄는 좋은 표현이 보여요.'],
+              [14, '명확하고 인상적인 표현을 구사해요. 읽는 재미가 있는 글이에요.'],
+              [16, '글에 리듬이 있어요. 핵심을 찌르는 한 문장이 오래 기억에 남아요.'],
+              [18, '문장 하나하나가 정교해요. 논쟁문이면서도 읽는 즐거움을 줍니다.'],
+            ],
           };
-          const WEAK_DESC = {
-            '논리 구조': '논리적 연결을 더 보강해보세요.',
-            '근거 품질': '구체적 근거와 데이터를 더 활용해보세요.',
-            '설득력': '반론 대응을 더 준비해보세요.',
-            '일관성': '논지의 일관성을 유지해보세요.',
-            '표현력': '더 명확하고 간결한 표현을 시도해보세요.',
+          const getDesc = (label, val) => {
+            const ranges = DESC_BY_RANGE[label] || [];
+            let desc = ranges[0]?.[1] || '';
+            for (const [min, text] of ranges) {
+              if (val >= min) desc = text;
+            }
+            return desc;
           };
 
           const hasData = completedDebates.length > 0;
@@ -1093,12 +1063,12 @@ const [showInfo, setShowInfo] = useState(false);
                   {/* 종합 점수 */}
                   <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] rounded-2xl p-5 mb-4 text-center">
                     <p className="text-[11px] text-white/40 font-bold uppercase tracking-wider mb-1">종합 논리력</p>
-                    <p className="text-[36px] font-black text-[#D4AF37]">{totalAvg}<span className="text-[16px] text-white/40">/20</span></p>
+                    <p className="text-[36px] font-black text-[#D4AF37]">{Object.values(scores).reduce((s, v) => s + v, 0)}<span className="text-[16px] text-white/40">/100</span></p>
                   </div>
 
                   {/* 레이더 차트 */}
                   <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
-                    <ProfileRadarChart data={radarData} />
+                    <ProfileRadarChart data={radarData} isDark={isDark} />
                   </div>
 
                   {/* 항목별 점수 바 */}
@@ -1134,7 +1104,7 @@ const [showInfo, setShowInfo] = useState(false);
                           <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                           </div>
-                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{s.label}:</strong> {LABEL_DESC[s.label]}</span>
+                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{s.label}:</strong> {getDesc(s.label, s.val)}</span>
                         </div>
                       ))}
                     </div>
@@ -1145,7 +1115,7 @@ const [showInfo, setShowInfo] = useState(false);
                           <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#E63946"/></svg>
                           </div>
-                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{w.label}:</strong> {WEAK_DESC[w.label]}</span>
+                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{w.label}:</strong> {getDesc(w.label, w.val)}</span>
                         </div>
                       ))}
                     </div>
@@ -1166,12 +1136,12 @@ const [showInfo, setShowInfo] = useState(false);
       </BottomSheet>
 
       {/* ─── 아바타 커스터마이징 바텀시트 ──────────────────────────── */}
-      <BottomSheet isOpen={showAvatarEdit} onClose={() => { setShowAvatarEdit(false); resetAvatarOptions(); }} maxHeight="80vh" bgColor="#ffffff" zIndex={300}>
+      <BottomSheet isOpen={showAvatarEdit} onClose={() => { setShowAvatarEdit(false); resetAvatarOptions(); }} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#ffffff'} zIndex={300}>
         <div className="px-5 pb-2 border-b border-gray-100 shrink-0">
           <h3 className="text-[16px] font-black text-[#1B2A4A] pb-2">아바타 꾸미기</h3>
         </div>
         <div className="flex justify-center py-4 shrink-0">
-          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md border border-gray-200">
             <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
           </div>
         </div>

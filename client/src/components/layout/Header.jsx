@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
+import { useTheme } from '../../store/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, getUnreadCount } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,7 +30,7 @@ const SEARCH_CONFIG = {
   '/profile': { placeholder: '최근 논쟁 기록 검색', param: 'q' },
 };
 
-const HIDE_PATHS = ['/debate/create', '/moragora/'];
+const HIDE_PATHS = ['/debate/create', '/moragora/', '/argument'];
 
 const NOTIF_ICON = {
   verdict_complete: '⚖️',
@@ -52,6 +54,7 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,6 +231,15 @@ export default function Header() {
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
+                </button>
+                <button
+                  onClick={toggleTheme}
+                  className="w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-all"
+                >
+                  {isDark
+                    ? <Sun size={18} strokeWidth={2.2} className="text-[#D4AF37]" />
+                    : <Moon size={18} strokeWidth={2.2} className="text-[#2D3350]/50" />
+                  }
                 </button>
               </div>
             </>
