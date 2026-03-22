@@ -181,6 +181,7 @@ export default function TabBar() {
         setShowSheet(false);
         setIsEditing(false);
         setDeleting(null);
+        markAsSeen();
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -193,6 +194,14 @@ export default function TabBar() {
   const hasActiveDebates = activeDebates.length > 0;
   // 마지막으로 바텀시트를 확인한 시점 vs 논쟁 목록 변경 여부로 ! 표시
   const [hasNewActivity, setHasNewActivity] = useState(false);
+
+  const markAsSeen = useCallback(() => {
+    setHasNewActivity(false);
+    if (activeDebates.length > 0) {
+      const currentIds = activeDebates.map(d => d.id).sort().join(',');
+      localStorage.setItem('tabbar_last_seen_ids', currentIds);
+    }
+  }, [activeDebates]);
 
   useEffect(() => {
     if (!activeDebates.length) { setHasNewActivity(false); return; }
@@ -218,7 +227,7 @@ export default function TabBar() {
     // ✅ 논쟁 생성 페이지에서는 드래프트 체크 없이 바로 바텀시트
     if (isCreateActive) {
       setShowSheet(true);
-      setHasNewActivity(false);
+      markAsSeen();
       fetchActiveDebates(); // 백그라운드 갱신
       return;
     }
@@ -237,14 +246,14 @@ export default function TabBar() {
     // 캐시된 데이터로 즉시 열고, 백그라운드에서 갱신
     if (activeDebates.length > 0) {
       setShowSheet(true);
-      setHasNewActivity(false);
+      markAsSeen();
       fetchActiveDebates(); // 백그라운드 갱신
     } else {
       // 캐시 없으면 한 번만 조회
       fetchActiveDebates().then((items) => {
         if (items.length > 0) {
           setShowSheet(true);
-          setHasNewActivity(false);
+          markAsSeen();
         } else {
           navigate('/debate/create');
         }
