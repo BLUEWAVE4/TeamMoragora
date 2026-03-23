@@ -897,7 +897,6 @@ export default function RankingPage() {
         </div>
       </BottomSheet>
 
-<<<<<<< HEAD
       {/* ─── 논쟁 랭킹 점수 산정 기준 바텀시트 ──────────────────── */}
       <BottomSheet isOpen={isHallInfoOpen} onClose={() => setIsHallInfoOpen(false)} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
         <div className="px-6 overflow-y-auto flex-1 pb-16">
