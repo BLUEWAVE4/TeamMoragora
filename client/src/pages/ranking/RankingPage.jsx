@@ -378,6 +378,7 @@ export default function RankingPage() {
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const { isDark } = useTheme();
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
+  const [isHallInfoOpen, setIsHallInfoOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -448,14 +449,12 @@ export default function RankingPage() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h1 className="text-[24px] font-black text-[#1B2A4A]">명예의 전당</h1>
-                {activeTab === 'user' && (
-                  <button
-                    onClick={() => setIsTierSheetOpen(true)}
-                    className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all"
-                  >
-                    <Info size={20} />
-                  </button>
-                )}
+                <button
+                  onClick={() => activeTab === 'user' ? setIsTierSheetOpen(true) : setIsHallInfoOpen(true)}
+                  className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all"
+                >
+                  <Info size={20} />
+                </button>
               </div>
               <div className="flex bg-gray-100 rounded-xl p-1">
                 <button
@@ -747,6 +746,58 @@ export default function RankingPage() {
             })}
           </div>
           <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-2xl text-[18px] active:scale-95 transition-all shadow-lg">확인</button>
+        </div>
+      </BottomSheet>
+
+      {/* ─── 논쟁 랭킹 점수 산정 기준 바텀시트 ──────────────────── */}
+      <BottomSheet isOpen={isHallInfoOpen} onClose={() => setIsHallInfoOpen(false)} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
+        <div className="px-6 overflow-y-auto flex-1 pb-16">
+          <h3 className="text-[22px] font-black text-[#1B2A4A] mb-2">논쟁 랭킹 산정 기준</h3>
+          <p className="text-[13px] text-gray-400 mb-6">AI 판결 품질과 참여도를 종합하여 순위를 결정합니다</p>
+
+          <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+            <p className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider mb-3">최종 점수 공식</p>
+            <div className="bg-[#1B2A4A] rounded-xl p-4 mb-3">
+              <p className="text-[14px] font-mono font-bold text-[#D4AF37] text-center">AI 점수 × 70% + 참여 점수 × 30%</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-3">AI 점수 (70%)</p>
+            <p className="text-[13px] text-gray-600 leading-relaxed">3개 AI 모델(GPT, Gemini, Claude)이 부여한 양측 점수의 합산입니다. 논쟁의 논리적 품질이 높을수록 점수가 올라갑니다.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[12px] font-bold text-gray-400">범위</span>
+              <span className="text-[13px] font-black text-[#1B2A4A]">0 ~ 200점</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-3">참여 점수 (30%)</p>
+            <div className="space-y-2.5">
+              {[
+                { label: '좋아요', weight: '×3', desc: '시민들의 공감' },
+                { label: '댓글', weight: '×2', desc: '시민 의견 참여' },
+                { label: '시민 투표', weight: '×1', desc: '투표 참여 수' },
+                { label: '조회수', weight: '×0.1', desc: '관심도 반영' },
+              ].map(item => (
+                <div key={item.label} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-[#1B2A4A]">{item.label}</span>
+                    <span className="text-[11px] text-gray-400">{item.desc}</span>
+                  </div>
+                  <span className="text-[13px] font-black text-emerald-600">{item.weight}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[#FFF9E5] rounded-2xl p-4 mb-6 border border-[#D4AF37]/20">
+            <p className="text-[12px] text-[#1B2A4A]/70 leading-relaxed">
+              💡 <strong>팁:</strong> 논리적으로 탄탄한 주장을 작성하면 AI 점수가 올라가고, 다른 시민들의 관심을 받으면 참여 점수가 올라갑니다.
+            </p>
+          </div>
+
+          <button onClick={() => setIsHallInfoOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-2xl text-[18px] active:scale-95 transition-all shadow-lg">확인</button>
         </div>
       </BottomSheet>
 
