@@ -183,34 +183,37 @@ export async function generateSoloArgument(req, res, next) {
     if (debate.status !== 'arguing') throw new ValidationError('주장 제출 단계가 아닙니다.');
     if (debate.creator_id !== req.user.id) throw new ForbiddenError('논쟁 생성자만 솔로 모드를 사용할 수 있습니다.');
 
-    // A측 주장 조회
-    const { data: sideA } = await supabaseAdmin
+    // A측 주장 전체 조회 (라운드별)
+    const { data: aArgs } = await supabaseAdmin
       .from('arguments')
-      .select('content')
+      .select('content, round')
       .eq('debate_id', debateId)
       .eq('side', 'A')
-      .single();
+      .order('round', { ascending: true });
 
-    if (!sideA) throw new ValidationError('먼저 A측 주장을 제출해주세요.');
+    if (!aArgs?.length) throw new ValidationError('먼저 A측 주장을 제출해주세요.');
 
-    // 이미 B측 주장이 있으면 거부
-    const { data: existingB } = await supabaseAdmin
+    // B측 기존 주장 조회
+    const { data: bArgs } = await supabaseAdmin
       .from('arguments')
-      .select('id')
+      .select('content, round')
       .eq('debate_id', debateId)
       .eq('side', 'B')
-      .maybeSingle();
+      .order('round', { ascending: true });
 
-    if (existingB) throw new ConflictError('이미 B측 주장이 존재합니다.');
+    // 다음 생성할 라운드 결정
+    const nextRound = (bArgs?.length || 0) + 1;
+    const latestA = aArgs.find(a => (a.round || 1) === nextRound);
+    if (!latestA) throw new ValidationError('A측 주장이 먼저 필요합니다.');
 
-    // AI 반대 주장 생성
+    // AI 반대 주장 생성 (이전 주장 컨텍스트 포함)
     const aiResult = await generateCounterArgument({
       topic: debate.topic,
       category: debate.category,
-      sideA_argument: sideA.content,
+      sideA_argument: latestA.content,
     });
 
-    // B측으로 저장 (user_id는 creator — 솔로 모드이므로)
+    // B측으로 저장
     const { data, error } = await supabaseAdmin
       .from('arguments')
       .insert({
@@ -218,18 +221,21 @@ export async function generateSoloArgument(req, res, next) {
         user_id: req.user.id,
         content: aiResult.content,
         side: 'B',
+        round: nextRound,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    // 솔로 모드: B측 생성 완료 → 비동기로 AI 판결 트리거
-    triggerJudgment(debateId).catch((err) =>
-      console.error(`[Auto-Judgment] 솔로 판결 트리거 실패 (debate: ${debateId}):`, err.message)
-    );
+    // R2(반박)까지 완료 시 판결 트리거
+    if (nextRound >= 2) {
+      triggerJudgment(debateId).catch((err) =>
+        console.error(`[Auto-Judgment] 솔로 판결 트리거 실패 (debate: ${debateId}):`, err.message)
+      );
+    }
 
-    res.status(201).json({ ...data, ai_generated: true });
+    res.status(201).json({ ...data, ai_generated: true, round: nextRound });
   } catch (err) {
     next(err);
   }

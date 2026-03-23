@@ -325,16 +325,19 @@ export default function ArgumentPage() {
       if (round === 1) setR1Content('')
       else setR2Content('')
 
-      // 연습 모드: A측 제출 후 AI(소크라테스)가 B측 자동 생성 → 판결
+      // 연습 모드: 각 라운드 제출 후 AI(소크라테스) B측 자동 생성
       if (debate?.mode === 'solo') {
-        showModal('소크라테스가 반박을 준비하고 있습니다...', 'AI가 상대 주장을 작성 중입니다. 잠시만 기다려주세요.', 'info')
         try {
           await generateSoloArgument(debateId)
-          closeModal()
-          navigate(`/debate/${debateId}/judging`)
+          if (round === 2) {
+            // R2 반박까지 완료 → 판결
+            navigate(`/debate/${debateId}/judging`)
+            return
+          }
+          // R1 → AI B측 R1 생성 완료 → 반박 단계로 갱신
+          await fetchData()
           return
         } catch (soloErr) {
-          closeModal()
           showModal('AI 주장 생성에 실패했습니다', '다시 시도해주세요.', 'error')
           return
         }
