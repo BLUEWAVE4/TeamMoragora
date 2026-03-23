@@ -238,6 +238,25 @@ CREATE TABLE verdict_ratings (
   UNIQUE (verdict_id, user_id)
 );
 
+-- 16. chat_messages (실시간 채팅 논쟁)
+CREATE TABLE chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  nickname TEXT NOT NULL,
+  content TEXT NOT NULL,
+  side TEXT NOT NULL CHECK (side IN ('A', 'B')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_chat_messages_debate ON chat_messages(debate_id, created_at);
+
+-- [ALTER] debates 테이블 채팅 모드 확장 (이미 테이블이 존재하므로 ALTER로 적용)
+-- ALTER TABLE debates ADD COLUMN chat_started_at TIMESTAMPTZ;
+-- ALTER TABLE debates DROP CONSTRAINT debates_status_check;
+-- ALTER TABLE debates ADD CONSTRAINT debates_status_check CHECK (status IN ('waiting', 'both_joined', 'arguing', 'chatting', 'judging', 'voting', 'completed'));
+-- ALTER TABLE debates DROP CONSTRAINT debates_mode_check;
+-- ALTER TABLE debates ADD CONSTRAINT debates_mode_check CHECK (mode IN ('duo', 'solo', 'daily', 'chat'));
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================
@@ -301,6 +320,11 @@ CREATE POLICY "debate_likes_delete" ON debate_likes FOR DELETE USING (auth.uid()
 -- feedbacks: 본인만 작성/읽기
 CREATE POLICY "feedbacks_insert" ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "feedbacks_read" ON feedbacks FOR SELECT USING (auth.uid() = user_id);
+
+-- chat_messages: 누구나 읽기, 본인만 작성
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "chat_messages_read" ON chat_messages FOR SELECT USING (true);
+CREATE POLICY "chat_messages_insert" ON chat_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- page_views / analytics_events: 누구나 INSERT, 읽기는 service_role만
 ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;

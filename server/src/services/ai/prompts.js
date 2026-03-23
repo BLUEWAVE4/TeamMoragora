@@ -422,3 +422,44 @@ export function buildGatekeeperPrompt(content, topic) {
 반드시 아래 JSON 형식으로만 응답하세요:
 { "action": "pass" | "block", "reason": "사유" }`;
 }
+
+// ========== 채팅 모드 User Prompt 빌더 ==========
+
+export function buildChatUserPrompt({ topic, purpose, lens, messages, nicknameA, nicknameB }) {
+  const purposeDesc = PURPOSE_MAP[purpose] || PURPOSE_MAP.battle;
+  const lensDesc = LENS_WEIGHT_DESC[lens] || LENS_WEIGHT_DESC.general;
+  const nameA = nicknameA || 'A측';
+  const nameB = nicknameB || 'B측';
+
+  // 채팅 로그 포맷팅
+  const chatLines = (messages || []).map(msg => {
+    const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const sideLabel = msg.side === 'A' ? `A(${msg.nickname})` : `B(${msg.nickname})`;
+    return `${sideLabel} ${time}: ${msg.content}`;
+  }).join('\n');
+
+  return `아래 논쟁에 대해 판결을 내려주세요.
+
+## 논쟁 정보
+- 주제: ${topic}
+- 판결 목적: ${purposeDesc}
+- 분석 렌즈: ${lensDesc}
+- 찬성측(A): ${nameA}
+- 반대측(B): ${nameB}
+- 형식: 실시간 채팅 논쟁
+
+## 채팅 로그
+${chatLines}
+
+## 채팅 모드 평가 지침
+- 채팅은 짧은 메시지의 연속이므로, 개별 메시지가 아닌 전체 흐름을 평가하세요.
+- 상대 주장에 대한 즉각적인 반박 능력을 설득력(persuasion)에 반영하세요.
+- 채팅 특성상 문장이 짧고 비격식적일 수 있으므로, 표현(expression) 채점은 핵심 전달력 위주로 평가하세요.
+- 논점 이탈 없이 주제에 집중하는 일관성(consistency)을 중시하세요.
+
+주의: 판결문(verdict_text, verdict_sections)에서 "A측/B측" 대신 반드시 "${nameA}", "${nameB}" 닉네임을 사용하세요.`;
+}

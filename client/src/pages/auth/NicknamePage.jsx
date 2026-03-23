@@ -167,12 +167,16 @@ export default function NicknamePage() {
                 </div>
               </div>
               <button
-                type="button"
-                onClick={handleCheckDuplicate}
-                disabled={nickname.trim().length < 2 || isChecking}
-                className="px-5 rounded-[18px] bg-[#1B2A4A] text-[#D4AF37] font-black text-[13px] disabled:bg-gray-100 disabled:text-gray-300 transition-all active:scale-95 shrink-0 shadow-md shadow-[#1B2A4A]/10 cursor-pointer"
-              >
-                {isChecking ? '...' : '중복확인'}
+              type="button"
+              onClick={handleCheckDuplicate}
+              disabled={nickname.trim().length < 2 || isChecking}
+              className={`px-5 rounded-[18px] font-black text-[13px] transition-all active:scale-95 shrink-0 shadow-md transition-colors ${
+              nickname.trim().length < 2 || isChecking
+              ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none' 
+              : 'bg-[#1B2A4A] text-[#D4AF37] shadow-[#1B2A4A]/10 cursor-pointer hover:bg-[#25365d]' 
+               }`}
+                 >
+               {isChecking ? '...' : '중복확인'}
               </button>
             </div>
             

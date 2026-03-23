@@ -46,6 +46,7 @@ export const generateDebateSides = (data) =>
 // ===== 주장 (Arguments) =====
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
 export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
+export const generateSoloArgument = (debateId) => api.post(`/arguments/${debateId}/solo`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);

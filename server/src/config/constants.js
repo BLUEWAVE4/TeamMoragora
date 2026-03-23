@@ -30,6 +30,12 @@ export const CONFIDENCE_MIN = 0.50;
 export const CONFIDENCE_MAX = 1.00;
 export const CONFIDENCE_DEFAULT = 0.65;
 
+// ===== 채팅 모드 =====
+export const CHAT_TIME_LIMIT = 300;       // 5분 (초)
+export const CHAT_MAX_MESSAGES = 30;      // 1인당 최대 메시지 수
+export const CHAT_MAX_LENGTH = 200;       // 메시지 최대 글자수
+export const CHAT_COOLDOWN = 1000;        // 전송 쿨다운 (ms)
+
 // 카테고리 그룹 (콘텐츠 필터 단계 결정용)
 // Stage 1만: 가벼운 주제 (비속어 사전 필터만)
 export const CATEGORY_STAGE1_ONLY = ['daily', 'romance', '일상', '연애', '기타'];

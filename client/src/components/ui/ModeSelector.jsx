@@ -5,7 +5,7 @@ import Button from "../common/Button";
 function ModeSelector({ onStart }) {
 
   const [selectedIdx, setSelectedIdx] = useState(1);
-  const [showRandomModal, setShowRandomModal] = useState(false);
+  // const [showRandomModal, setShowRandomModal] = useState(false);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   const startX = useRef(0);
@@ -25,9 +25,9 @@ function ModeSelector({ onStart }) {
       img: "/fight2.webp"
     },
     {
-      key: "random",
-      label: "랜덤 매칭",
-      desc: "랜덤으로 상대가 매칭되어 예상치 못한 논쟁이 펼쳐집니다.",
+      key: "chat",
+      label: "실시간 논쟁",
+      desc: "기다림 없는 실시간 채팅 형식으로 상대와 뜨겁게 설전합니다.",
       img: "/random2.webp"
     }
   ];
@@ -95,18 +95,17 @@ function ModeSelector({ onStart }) {
     if (selectedMode.key === "random") {
       setShowRandomModal(true);
       return;
-    } else if (selectedMode.key === "practice") {
-      setShowPracticeModal(true);
-      return;
     }
 
-    onStart(selectedMode.key);
+    // practice → solo로 매핑
+    const modeKey = selectedMode.key === "practice" ? "solo" : selectedMode.key;
+    onStart(modeKey);
   };
 
   return (
     <div className="flex flex-col items-center">
 
-      <h2 className="text-xl font-bold mb-4 mt-[80px]">
+      <h2 className="text-xl font-bold mb-4 mt-[20px]">
         게임 모드
       </h2>
 
@@ -198,13 +197,13 @@ function ModeSelector({ onStart }) {
       </div>
 
       <Button
-        className="mt-50 w-full max-w-[260px]"
+        className="mt-20 w-full max-w-[260px]"
         onClick={handleGameStart}
       >
         게임 시작
       </Button>
 
-      <Modal
+      {/* <Modal
         isOpen={showRandomModal}
         onClose={() => setShowRandomModal(false)}
         title="랜덤 매칭 안내"
@@ -217,7 +216,7 @@ function ModeSelector({ onStart }) {
           </Button>
         </div>
 
-      </Modal>
+      </Modal> */}
 
       <Modal
         isOpen={showPracticeModal}

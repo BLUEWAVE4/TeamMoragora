@@ -185,10 +185,7 @@ export default function HomePage() {
 
 
   const getProcessedFeeds = () => {
-  let result = feeds.filter(f => {
-    const voteDuration = f.debate?.vote_duration ?? null;
-    return voteDuration !== null && voteDuration !== 0;
-  });
+  let result = [...feeds];
   return result.sort((a, b) => {
     const aData = a.debate || {};
     const bData = b.debate || {};

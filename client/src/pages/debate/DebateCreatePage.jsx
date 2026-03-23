@@ -178,6 +178,12 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
       const result = await createDebate(data);
       localStorage.removeItem(DRAFT_KEY);
 
+      if (mode === 'solo') {
+        // 연습 모드: 초대 스킵 → 바로 주장 작성
+        navigate(`/debate/${result.id}/argument`);
+        return;
+      }
+
       const inviteCode = result?.invite_code;
       sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
       navigate(`/invite/${inviteCode}`);
@@ -196,7 +202,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
         {!gameStarted && <ModeSelector onStart={handleModeStart} />}
 
-        {gameStarted && mode === "battle" && (
+        {gameStarted && (mode === "battle" || mode === "solo") && (
           <>
             <StepWizard currentStep={step} total={3} />
 
