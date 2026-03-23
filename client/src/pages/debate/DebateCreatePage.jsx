@@ -100,7 +100,16 @@ export default function DebateCreatePage() {
     localStorage.removeItem(DRAFT_KEY);
   };
 
+  // const handleModeStart = (selectedMode) => {
+  //   setMode(selectedMode);
+  //   setGameStarted(true);
+  // };
+
   const handleModeStart = (selectedMode) => {
+    // if (selectedMode === "chat") {
+    //   navigate('/debate/chat/room');  // 바로 ChatRoom으로 이동
+    //   return;
+    // }
     setMode(selectedMode);
     setGameStarted(true);
   };
@@ -178,9 +187,14 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
       const result = await createDebate(data);
       localStorage.removeItem(DRAFT_KEY);
 
-      const inviteCode = result?.invite_code;
-      sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
-      navigate(`/invite/${inviteCode}`);
+      if (mode === 'chat') {
+        const debateId = result?.id;
+        navigate(`/debate/${debateId}/chat`);
+      } else {
+        const inviteCode = result?.invite_code;
+        sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
+        navigate(`/invite/${inviteCode}`);
+      }
 
     } catch (err) {
       console.error(err);
@@ -196,7 +210,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
         {!gameStarted && <ModeSelector onStart={handleModeStart} />}
 
-        {gameStarted && mode === "battle" && (
+        {gameStarted && (mode === "battle" || mode === "chat") && (
           <>
             <StepWizard currentStep={step} total={3} />
 
