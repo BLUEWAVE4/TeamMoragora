@@ -79,7 +79,8 @@ import NicknamePage from './pages/auth/NicknamePage';
 import JudgingPage from './pages/debate/JudgingPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
-import ChatRoom from './pages/debate/ChatRoom'; // ← 추가
+import ChatRoom from './pages/debate/ChatRoom';
+import DebateLobbyPage from './pages/debate/DebateLobbyPage';
 
 export default function App() {
   const location = useLocation();
@@ -101,6 +102,7 @@ export default function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/debate/lobby/:inviteCode" element={<DebateLobbyPage />} />
         <Route path="/debate/:debateId" element={<DebateDetailPage />} />
 
         {/* Protected */}
@@ -113,6 +115,7 @@ export default function App() {
           <Route path="/debate/:debateId/judging" element={<JudgingPage />} />
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/debate/lobby" element={<DebateLobbyPage />} />
         </Route>
       </Route>
     </Routes>

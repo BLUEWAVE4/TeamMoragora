@@ -111,6 +111,12 @@ export default function DebateCreatePage() {
     //   return;
     // }
     setMode(selectedMode);
+    if (selectedMode === 'chat') {
+      // 🚀 실시간 논쟁 루트: '대기실' 컴포넌트로 바로 이동
+      // (아직 방을 안 만들었으니 inviteCode가 없는 상태로 이동)
+      navigate('/debate/lobby'); 
+      return;
+    }
     setGameStarted(true);
   };
 
