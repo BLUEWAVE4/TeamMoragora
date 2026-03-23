@@ -381,15 +381,14 @@ export async function getHallOfFame(req, res, next) {
     }
 
     // 종합 점수 계산 + 정렬
-    // 참여 점수 = 좋아요 + 시민투표수 + 조회수
-    // AI 품질 점수 = (ai_score_a + ai_score_b) / 200 * 참여점수 최대값
+    // AI 점수 70% + 참여 점수 30%
     const scored = items.map(v => {
       const likes = likeMap[v.debate_id] || 0;
       const commentCount = commentMap[v.debate_id] || 0;
       const voteCount = (v.citizen_score_a || 0) + (v.citizen_score_b || 0);
       const viewCount = v.debate?.view_count || 0;
-      const participationScore = likes + voteCount + viewCount + commentCount;
-      const aiQuality = ((v.ai_score_a || 0) + (v.ai_score_b || 0)) / 200; // 0~1
+      const participationScore = likes * 3 + commentCount * 2 + voteCount + viewCount * 0.1;
+      const aiScore = (v.ai_score_a || 0) + (v.ai_score_b || 0); // 0~200
       return {
         ...v,
         _likes: likes,
@@ -397,8 +396,8 @@ export async function getHallOfFame(req, res, next) {
         _votes: voteCount,
         _views: viewCount,
         _participationScore: participationScore,
-        _aiQuality: aiQuality,
-        _hallScore: participationScore * 0.5 + (aiQuality * participationScore) * 0.5,
+        _aiScore: aiScore,
+        _hallScore: aiScore * 0.7 + participationScore * 0.3,
       };
     });
 
