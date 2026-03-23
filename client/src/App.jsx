@@ -36,7 +36,7 @@ export default function App() {
         {/* 카카오 전용 랜딩 페이지 경로 추가 */}
         <Route path="/login/kakao" element={<LoginPage isKakaoOnly={true} />} />
         <Route path="/invite/:inviteCode" element={<InvitePage />} />
-        <Route path="/moragora" element={<MoragoraFeedPage />} />
+        <Route path="/moragora" element={<RankingPage />} />
         <Route path="/moragora/:debateId" element={<MoragoraDetailPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

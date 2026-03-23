@@ -381,6 +381,9 @@ export default function RankingPage() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('user'); // 'user' | 'debate'
+  const [hallData, setHallData] = useState([]);
+  const [hallLoading, setHallLoading] = useState(false);
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -396,6 +399,22 @@ export default function RankingPage() {
     };
     fetchRankings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'debate') return;
+    const fetchHall = async () => {
+      try {
+        setHallLoading(true);
+        const res = await api.get('/judgments/hall?limit=20');
+        setHallData(res);
+      } catch (err) {
+        console.error('명예의 전당 불러오기 실패:', err);
+      } finally {
+        setHallLoading(false);
+      }
+    };
+    fetchHall();
+  }, [activeTab]);
 
   const myRankIndex = rankings.findIndex(r => r.id === user?.id);
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
@@ -426,16 +445,99 @@ export default function RankingPage() {
           </div>
         ) : (
           <>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-[24px] font-black text-[#1B2A4A]">랭킹</h1>
-              <button
-                onClick={() => setIsTierSheetOpen(true)}
-                className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all"
-              >
-                <Info size={20} />
-              </button>
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-[24px] font-black text-[#1B2A4A]">명예의 전당</h1>
+                {activeTab === 'user' && (
+                  <button
+                    onClick={() => setIsTierSheetOpen(true)}
+                    className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-[#1B2A4A]/40 active:scale-90 transition-all"
+                  >
+                    <Info size={20} />
+                  </button>
+                )}
+              </div>
+              <div className="flex bg-gray-100 rounded-xl p-1">
+                <button
+                  onClick={() => setActiveTab('user')}
+                  className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-all ${
+                    activeTab === 'user' ? 'bg-white text-[#1B2A4A] shadow-sm' : 'text-[#1B2A4A]/40'
+                  }`}
+                >유저 랭킹</button>
+                <button
+                  onClick={() => setActiveTab('debate')}
+                  className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-all ${
+                    activeTab === 'debate' ? 'bg-white text-[#1B2A4A] shadow-sm' : 'text-[#1B2A4A]/40'
+                  }`}
+                >논쟁 랭킹</button>
+              </div>
             </div>
 
+            {/* ===== 논쟁 랭킹 탭 ===== */}
+            {activeTab === 'debate' && (
+              <div>
+                {hallLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : hallData.length === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-[15px] font-bold text-[#1B2A4A]/30">아직 등록된 논쟁이 없습니다</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {hallData.map((v, idx) => {
+                      const d = v.debate || {};
+                      const creator = d.creator || {};
+                      const cat = categoryMap[d.category] || d.category || '';
+                      const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
+                      const winColor = v.winner_side === 'A' ? '#059669' : v.winner_side === 'B' ? '#E63946' : '#D4AF37';
+                      return (
+                        <motion.div
+                          key={v.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.03 }}
+                          onClick={() => window.location.href = `/moragora/${d.id}`}
+                          className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.98] transition-all"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[12px] font-black text-[#D4AF37]">#{idx + 1}</span>
+                              <img
+                                src={getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
+                                className="w-6 h-6 rounded-full"
+                                alt=""
+                              />
+                              <span className="text-[13px] font-bold text-[#1B2A4A]">{creator.nickname || '익명'}</span>
+                              {creator.tier && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: findTierByScore(0).bg, color: findTierByScore(0).color }}>
+                                  {creator.tier}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${winColor}15`, color: winColor }}>
+                              {winLabel}
+                            </span>
+                          </div>
+                          <p className="text-[14px] font-bold text-[#1B2A4A] mb-2 leading-snug">{d.topic}</p>
+                          <div className="flex items-center gap-2 text-[11px] text-[#1B2A4A]/40">
+                            {cat && <span className="bg-gray-50 px-2 py-0.5 rounded font-semibold">{cat}</span>}
+                            <span>♥ {v._likes || 0}</span>
+                            <span>💬 {v._comments || 0}</span>
+                            <span>👁 {v._views || 0}</span>
+                            <span className="ml-auto font-bold text-[#D4AF37]">AI {v._aiScore || ((v.ai_score_a || 0) + (v.ai_score_b || 0))}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ===== 유저 랭킹 탭 ===== */}
+            {activeTab === 'user' && <>
             {/* Podium */}
             {podiumData.length >= 3 && (
               <div className="flex justify-center items-end gap-2 h-[380px] mb-8 pt-6">
@@ -597,6 +699,7 @@ export default function RankingPage() {
                 </>
               )}
             </div>
+          </>}
           </>
         )}
       </div>
