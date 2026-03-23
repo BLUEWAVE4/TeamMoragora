@@ -529,66 +529,58 @@ const [showInfo, setShowInfo] = useState(false);
 
 {/*========================================================================================================================================================================== */}
 
-{/*========================================================================================================================================================================== */}
 
 {(() => {
   return (
-    <div className="px-2 space-y-6 mb-10">
+    <div className="px-1 space-y-4 mb-10">
       
-      {/* 1. 포인트 & 티어 카드 (iOS 위젯 스타일) */}
-      <div className="bg-white/80 backdrop-blur-2xl rounded-[38px] p-7 shadow-[0_20px_40px_rgba(0,0,0,0.04)] border border-white/60 relative overflow-hidden">
-        {/* 은은한 배경 그라데이션 포인트 */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: tier.color }} />
-        
+      {/* 1. 포인트 & 티어 카드 (가독성 강화 XP 바) */}
+      <div className="relative bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 overflow-hidden active:scale-[0.98] transition-transform">
         <div className="relative z-10">
-          <div className="flex justify-between items-start mb-10">
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] leading-none">Activity Points</span>
+          <div className="flex justify-between items-center mb-5">
+            <div className="space-y-0.5">
               <div className="flex items-baseline gap-1">
-                <span className="text-[34px] font-black text-gray-900 tracking-tight">
+                <span className="text-[32px] font-black text-gray-900 tracking-tighter">
                   <CountUp end={currentScore} separator="," />
                 </span>
-                <span className="text-[16px] font-black text-gray-300">P</span>
+                <span className="text-[14px] font-bold text-gray-400">P</span>
               </div>
             </div>
-            
-            <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-[26px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.02),0_10px_20px_rgba(0,0,0,0.05)] border border-white">
-              <tier.icon size={28} style={{ color: tier.color }} />
+            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-gray-50 flex items-center justify-center">
+              <tier.icon size={24} style={{ color: tier.color }} />
             </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-3">
             <div className="flex justify-between items-end px-1">
-              <div className="space-y-0.5">
-                <span className="text-[13px] font-black tracking-tight block" style={{ color: tier.color }}>{tier.name}</span>
-                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Current Rank</span>
-              </div>
+              <span className="text-[14px] font-heavy tracking-tight" style={{ color: tier.color }}>{tier.name}</span>
               {nextTier && (
-                <div className="text-right">
-                  <span className="text-[12px] font-bold text-gray-400">{nextTier.name}</span>
-                  <span className="text-[10px] font-bold text-gray-200 uppercase tracking-widest block">Next Goal</span>
-                </div>
+                <span className="text-[13px] font-bold text-gray-500">NEXT: {nextTier.min.toLocaleString()}P</span>
               )}
             </div>
-            
-            {/* iOS 스타일 씬(Thin) 프로그레스 바 */}
-            <div className="relative">
-              <div className="w-full h-[7px] bg-gray-100/80 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)]">
+
+            <div className="relative w-full">
+              <div className="w-full h-3.5 bg-gray-200/50 rounded-full overflow-hidden border border-white/40 relative p-[1px]">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
-                  transition={{ duration: 2, ease: [0.23, 1, 0.32, 1] }}
+                  transition={{ duration: 1.5, ease: "circOut" }}
                   className="h-full rounded-full relative"
-                  style={{ backgroundColor: tier.color }}
+                  style={{
+                    background: 'linear-gradient(to right, #FFD500, #FFAB00)',
+                    boxShadow: '0 1px 3px rgba(255, 171, 0, 0.3)'
+                  }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+                  <div className="absolute top-0 left-0 w-full h-[35%] bg-white/40 rounded-full" />
                 </motion.div>
               </div>
-              {/* 바 하단 수치 */}
-              <div className="mt-3 flex justify-between items-center px-1">
-                <span className="text-[11px] font-black text-gray-400">{Math.floor(progress)}%</span>
-                <span className="text-[11px] font-bold text-gray-300 tracking-tighter">
-                  {currentScore.toLocaleString()} / {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
+              
+              <div className="mt-2.5 flex justify-between items-center px-1">
+                <span className="text-[13px] font-black text-gray-500 tracking-tighter">
+                  {progress.toFixed(2)}%
+                </span>
+                <span className="text-[11px] font-bold text-gray-400 tracking-tight">
+                  {currentScore.toLocaleString()} <span className="text-gray-600">/</span> {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
                 </span>
               </div>
             </div>
@@ -596,68 +588,53 @@ const [showInfo, setShowInfo] = useState(false);
         </div>
       </div>
 
-      {/* 2. 승률 스코어보드 (Apple Health 스타일) */}
-      <div className="bg-gray-50/50 rounded-[40px] p-1.5 border border-gray-100/50">
-        <div className="bg-white rounded-[34px] p-7 shadow-[0_15px_35px_rgba(0,0,0,0.02)] border border-white">
-          <div className="flex justify-between items-center mb-10">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
-                <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Summary</span>
-              </div>
-              <div className="text-[38px] font-black text-gray-900 tracking-tighter leading-none">
-                {winRate.toFixed(1)}<span className="text-emerald-500 text-[24px] ml-0.5">%</span>
-              </div>
+      {/* 2. 승률 스코어보드 (그래프 제거, 데이터 집중형 디자인) */}
+      <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 active:scale-[0.98] transition-transform">
+        
+        {/* 요약 섹션 */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-1 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+              <span className="text-[16px] font-bold text-gray-400 uppercase tracking-widest">전적</span>
             </div>
-
-            {/* iOS 피트니스 링 스타일 커스텀 */}
-            <div className="relative flex items-center justify-center w-16 h-16">
-               <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" stroke="#F2F2F7" strokeWidth="7" fill="transparent" />
-                  <motion.circle 
-                    cx="32" cy="32" r="28" stroke="url(#winGradient)" strokeWidth="7" fill="transparent" 
-                    strokeDasharray="175.9"
-                    initial={{ strokeDashoffset: 175.9 }}
-                    animate={{ strokeDashoffset: 175.9 - (175.9 * winRate) / 100 }}
-                    transition={{ duration: 1.8, ease: "easeOut" }}
-                    strokeLinecap="round"
-                  />
-                  <defs>
-                    <linearGradient id="winGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#34D399" />
-                      <stop offset="100%" stopColor="#10B981" />
-                    </linearGradient>
-                  </defs>
-               </svg>
-               <div className="absolute flex flex-col items-center">
-                  <span className="text-[10px] font-black text-gray-900">{totalGames}</span>
-                  <span className="text-[6px] font-black text-gray-400">GAMES</span>
-               </div>
+            <div className="flex items-baseline leading-none">
+              <span className="text-[32px] font-black text-gray-900 tracking-tighter">
+                {winRate.toFixed(1)}
+              </span>
+              <span className="text-[20px] font-bold text-blue-500 ml-1">%</span>
             </div>
           </div>
-
-          {/* iOS 세그먼트 스코어 카드 */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'WINS', value: wins, color: 'text-emerald-500', bg: 'bg-emerald-50/40' },
-              { label: 'DRAWS', value: draws, color: 'text-gray-400', bg: 'bg-gray-100/40' },
-              { label: 'LOSS', value: losses, color: 'text-red-500', bg: 'bg-red-50/40' }
-            ].map((item, i) => (
-              <div key={i} className={`${item.bg} backdrop-blur-sm rounded-[24px] py-4 border border-white/50 flex flex-col items-center shadow-[0_4px_12px_rgba(0,0,0,0.01)]`}>
-                <span className={`text-[20px] font-black ${item.color} tracking-tight`}>{item.value}</span>
-                <span className="text-[9px] font-black text-gray-400 tracking-widest mt-0.5">{item.label}</span>
-              </div>
-            ))}
+          
+          <div className="bg-gray-50/80 px-4 py-2.5 rounded-2xl border border-gray-100/50 text-right">
+            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</p>
+            <p className="text-[22px] font-black text-gray-900 leading-none">{totalGames}</p>
           </div>
         </div>
+
+        {/* 상세 스코어 그리드: 디자인 통일 및 패배(Loss) 레드 강조 */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: '승리', value: wins, textColor: 'text-blue-600', bg: 'bg-blue-50/40', border: 'border-blue-100/50' },
+            { label: '무승부', value: draws, textColor: 'text-gray-500', bg: 'bg-gray-50/60', border: 'border-gray-200/50' },
+            { label: '패배', value: losses, textColor: 'text-red-600', bg: 'bg-red-50/40', border: 'border-red-100/50' } 
+          ].map((item, i) => (
+            <div key={i} className={`${item.bg} ${item.border} rounded-[24px] py-4 flex flex-col items-center border shadow-[0_4px_12px_rgba(0,0,0,0.01)]`}>
+              <span className={`text-[24px] font-black ${item.textColor} tracking-tight leading-none`}>
+                {item.value}
+              </span>
+              <span className="text-[10px] font-bold text-gray-400 mt-2">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
+
     </div>
   );
 })()}
 
-{/*========================================================================================================================================================================== */}
-
-{/*========================================================================================================================================================================== */}
         
 {/*========================================================================================================================================================================== */}
         {/* Menu Buttons */}
