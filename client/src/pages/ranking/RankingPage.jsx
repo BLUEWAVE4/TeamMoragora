@@ -385,6 +385,8 @@ export default function RankingPage() {
   const [activeTab, setActiveTab] = useState('user'); // 'user' | 'debate'
   const [hallData, setHallData] = useState([]);
   const [hallLoading, setHallLoading] = useState(false);
+  const [hallVisible, setHallVisible] = useState(10);
+  const [hallLoadingMore, setHallLoadingMore] = useState(false);
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -485,12 +487,60 @@ export default function RankingPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {hallData.map((v, idx) => {
+                    {/* === 1위 하이라이트 카드 === */}
+                    {hallData[0] && (() => {
+                      const v = hallData[0];
                       const d = v.debate || {};
                       const creator = d.creator || {};
                       const cat = categoryMap[d.category] || d.category || '';
                       const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
                       const winColor = v.winner_side === 'A' ? '#059669' : v.winner_side === 'B' ? '#E63946' : '#D4AF37';
+                      return (
+                        <motion.div
+                          key={v.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          onClick={() => window.location.href = `/moragora/${d.id}`}
+                          className="relative bg-gradient-to-br from-[#1B2A4A] to-[#2D4470] rounded-2xl p-5 shadow-lg cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/10 rounded-full -translate-y-8 translate-x-8" />
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-[14px] font-black text-[#D4AF37]">👑 #1</span>
+                            <img
+                              src={getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
+                              className="w-7 h-7 rounded-full border-2 border-[#D4AF37]/40"
+                              alt=""
+                            />
+                            <span className="text-[14px] font-bold text-white">{creator.nickname || '익명'}</span>
+                            {creator.tier && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#D4AF37]/20 text-[#D4AF37]">
+                                {creator.tier}
+                              </span>
+                            )}
+                            <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${winColor}25`, color: winColor }}>
+                              {winLabel}
+                            </span>
+                          </div>
+                          <p className="text-[16px] font-bold text-white mb-3 leading-snug">{d.topic}</p>
+                          <div className="flex items-center gap-3 text-[11px] text-white/50">
+                            {cat && <span className="bg-white/10 px-2 py-0.5 rounded font-semibold">{cat}</span>}
+                            <span>♥ {v._likes || 0}</span>
+                            <span>💬 {v._comments || 0}</span>
+                            <span>👁 {v._views || 0}</span>
+                            <span className="ml-auto font-bold text-[#D4AF37]">AI {v._aiScore || ((v.ai_score_a || 0) + (v.ai_score_b || 0))}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
+
+                    {/* === 2위~ 카드 === */}
+                    {hallData.slice(1, hallVisible).map((v, idx) => {
+                      const d = v.debate || {};
+                      const creator = d.creator || {};
+                      const cat = categoryMap[d.category] || d.category || '';
+                      const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
+                      const winColor = v.winner_side === 'A' ? '#059669' : v.winner_side === 'B' ? '#E63946' : '#D4AF37';
+                      const rank = idx + 2;
                       return (
                         <motion.div
                           key={v.id}
@@ -502,7 +552,7 @@ export default function RankingPage() {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-[12px] font-black text-[#D4AF37]">#{idx + 1}</span>
+                              <span className={`text-[12px] font-black ${rank <= 3 ? 'text-[#D4AF37]' : 'text-gray-400'}`}>#{rank}</span>
                               <img
                                 src={getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
                                 className="w-6 h-6 rounded-full"
@@ -530,6 +580,28 @@ export default function RankingPage() {
                         </motion.div>
                       );
                     })}
+
+                    {/* === 더 보기 (5개씩 lazy load) === */}
+                    {hallVisible < hallData.length && (
+                      <div className="flex justify-center py-4">
+                        {hallLoadingMore ? (
+                          <div className="w-7 h-7 border-3 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setHallLoadingMore(true);
+                              setTimeout(() => {
+                                setHallVisible(prev => prev + 5);
+                                setHallLoadingMore(false);
+                              }, 500);
+                            }}
+                            className="px-6 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-bold text-[#1B2A4A]/50 active:scale-95 transition-all"
+                          >
+                            더 보기 ({Math.min(5, hallData.length - hallVisible)}개)
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
