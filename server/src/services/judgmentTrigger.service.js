@@ -172,10 +172,26 @@ export async function triggerJudgment(debateId) {
   await updateCompositeVerdict(verdictId, judgments);
 
   // 7. voting 상태 + 투표 마감시간 설정 (debate.vote_duration 일 단위, 없으면 기본값)
-  const durationMs = debate.vote_duration
-    ? debate.vote_duration * 24 * 60 * 60 * 1000
-    : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
+  // const durationMs = debate.vote_duration
+  //   ? debate.vote_duration * 24 * 60 * 60 * 1000
+  //   : env.VOTE_DURATION_HOURS * 60 * 60 * 1000;
+  // const voteDeadline = new Date(Date.now() + durationMs);
+  if (debate.vote_duration) {
+  // 시간 설정된 경우 → voting 상태 + 마감시간 설정
+  const durationMs = debate.vote_duration * 24 * 60 * 60 * 1000;
   const voteDeadline = new Date(Date.now() + durationMs);
+
+    await supabaseAdmin
+      .from('debates')
+      .update({ status: 'voting', vote_deadline: voteDeadline.toISOString() })
+      .eq('id', debateId);
+  } else {
+    // 시간 미설정 → 바로 completed
+    await supabaseAdmin
+      .from('debates')
+      .update({ status: 'completed' })
+      .eq('id', debateId);
+  }
 
   await supabaseAdmin
     .from('debates')

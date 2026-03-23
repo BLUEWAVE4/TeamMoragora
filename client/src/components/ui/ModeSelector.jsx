@@ -5,7 +5,7 @@ import Button from "../common/Button";
 function ModeSelector({ onStart }) {
 
   const [selectedIdx, setSelectedIdx] = useState(1);
-  const [showRandomModal, setShowRandomModal] = useState(false);
+  // const [showRandomModal, setShowRandomModal] = useState(false);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   const startX = useRef(0);
@@ -92,13 +92,13 @@ function ModeSelector({ onStart }) {
 
   const handleGameStart = () => {
 
-    if (selectedMode.key === "random") {
-      setShowRandomModal(true);
-      return;
-    } else if (selectedMode.key === "practice") {
-      setShowPracticeModal(true);
-      return;
-    }
+    // if (selectedMode.key === "random") {
+    //   setShowRandomModal(true);
+    //   return;
+    // } else if (selectedMode.key === "practice") {
+    //   setShowPracticeModal(true);
+    //   return;
+    // }
 
     onStart(selectedMode.key);
   };
@@ -204,7 +204,7 @@ function ModeSelector({ onStart }) {
         게임 시작
       </Button>
 
-      <Modal
+      {/* <Modal
         isOpen={showRandomModal}
         onClose={() => setShowRandomModal(false)}
         title="랜덤 매칭 안내"
@@ -217,7 +217,7 @@ function ModeSelector({ onStart }) {
           </Button>
         </div>
 
-      </Modal>
+      </Modal> */}
 
       <Modal
         isOpen={showPracticeModal}
