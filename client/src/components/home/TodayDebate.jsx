@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import LoginPromptModal from '../common/LoginPromptModal';
+import MoragoraModal from '../common/MoragoraModal';
 
 // 개별 카드 컴포넌트
 function DebateBannerCard({ item }) {
@@ -24,6 +26,10 @@ function DebateBannerCard({ item }) {
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const [voteExpired, setVoteExpired] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
 
   useEffect(() => {
     if (!debateId) return;
@@ -67,7 +73,7 @@ function DebateBannerCard({ item }) {
   }, [item?.debate?.created_at, item?.created_at, item?.debate?.vote_duration]);
 
   const handleVote = async (side) => {
-    if (!user) { alert('로그인이 필요합니다.'); return; }
+    if (!user) { setShowLoginModal(true); return; }
     if (isVoting || !isVotingStatus || isParticipant || voteExpired) return;
 
     const isCanceling = myVote === side;
@@ -94,7 +100,7 @@ function DebateBannerCard({ item }) {
       setMyVote(prevVote);
       prevVote ? localStorage.setItem(storageKey, prevVote) : localStorage.removeItem(storageKey);
       setVoteCounts(prevCounts);
-      alert(err?.message || '투표 처리에 실패했습니다.');
+      showModal('투표 처리에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setIsVoting(false);
     }
@@ -425,6 +431,14 @@ function DebateBannerCard({ item }) {
         </>
       )}
     </AnimatePresence>, document.body)}
+    <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
+    <MoragoraModal
+      isOpen={modalState.isOpen}
+      onClose={closeModal}
+      title={modalState.title}
+      description={modalState.description}
+      type="error"
+    />
     </>
   );
 }
@@ -516,46 +530,22 @@ export default function TodayDebate({ items = [] }) {
 
       </div>
 
-      {/* < ● ● ● > 인디케이터 + 화살표 통합 */}
+      {/* 인디케이터 dots */}
       {validItems.length > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <button
-            onClick={() => goTo(currentIndex - 1)}
-            disabled={currentIndex === 0}
-            className={`w-6 h-6 flex items-center justify-center rounded-full transition-all active:scale-90 ${
-              currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-60 hover:opacity-100'
-            }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2.5" strokeLinecap="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <div className="flex items-center gap-1.5">
-            {validItems.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i)}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width: i === currentIndex ? '20px' : '6px',
-                  height: '6px',
-                  backgroundColor: i === currentIndex ? '#1B2A4A' : '#D4AF37',
-                  opacity: i === currentIndex ? 1 : 0.3,
-                }}
-              />
-            ))}
-          </div>
-          <button
-            onClick={() => goTo(currentIndex + 1)}
-            disabled={currentIndex === validItems.length - 1}
-            className={`w-6 h-6 flex items-center justify-center rounded-full transition-all active:scale-90 ${
-              currentIndex === validItems.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-60 hover:opacity-100'
-            }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2.5" strokeLinecap="round">
-              <polyline points="9 6 15 12 9 18"/>
-            </svg>
-          </button>
+        <div className="flex justify-center gap-1.5 mt-3">
+          {validItems.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === currentIndex ? '20px' : '6px',
+                height: '6px',
+                backgroundColor: i === currentIndex ? '#1B2A4A' : '#D4AF37',
+                opacity: i === currentIndex ? 1 : 0.3,
+              }}
+            />
+          ))}
         </div>
       )}
     </div>

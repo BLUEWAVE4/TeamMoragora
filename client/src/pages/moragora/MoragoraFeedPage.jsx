@@ -63,12 +63,12 @@ export default function MoragoraFeedPage() {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
             </div>
             <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-[11px] font-bold text-[#D4AF37]/70">이달의 최고 논쟁</span>
+              <span className="text-[13px] font-bold text-[#D4AF37]/70">이달의 최고 논쟁</span>
             </div>
-            <h3 className="text-[16px] font-bold text-white leading-snug mb-3">
+            <h3 className="text-[18px] font-bold text-white leading-snug mb-3">
               {featured.debate?.topic}
             </h3>
-            <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold">
+            <div className="flex items-center gap-2 text-[12px] text-white/40 font-bold">
               <span>{CATEGORY_LABELS[featured.debate?.category] || '일상'}</span>
               <span>·</span>
               <span>{featured.debate?.creator?.nickname || '익명'}</span>
@@ -77,7 +77,7 @@ export default function MoragoraFeedPage() {
                 {featured.winner_side === 'draw' ? '무승부' : `${featured.winner_side === 'A' ? 'A' : 'B'}측 승리`}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-2 text-[9px] text-white/25">
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-white/25">
               <span>♡ {featured._likes || 0}</span>
               <span>투표 {featured._votes || 0}</span>
               <span>조회 {featured._views || 0}</span>
@@ -100,7 +100,7 @@ export default function MoragoraFeedPage() {
               <button
                 key={v.id}
                 onClick={() => navigate(`/moragora/${v.debate_id}`)}
-                className="w-full flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100 active:scale-[0.98] transition-all text-left"
+                className="w-full flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-[0.98] transition-all text-left"
               >
                 <div className="w-8 text-center flex-shrink-0">
                   <span className="text-[16px] font-black text-[#1B2A4A]/15 italic">{idx + 2}</span>
@@ -113,15 +113,15 @@ export default function MoragoraFeedPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{category}</span>
+                  <p className="text-[15px] font-bold text-[#1B2A4A] truncate">{debate.topic}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[12px] text-[#1B2A4A]/40 font-bold">{category}</span>
                     <span className="text-[#1B2A4A]/15">·</span>
-                    <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{debate.creator?.nickname || '익명'}</span>
+                    <span className="text-[12px] text-[#1B2A4A]/40 font-bold">{debate.creator?.nickname || '익명'}</span>
                     <span className="text-[#1B2A4A]/15">·</span>
-                    <span className={`text-[10px] font-bold ${winColor}`}>{winText}</span>
+                    <span className={`text-[12px] font-bold ${winColor}`}>{winText}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-[9px] text-[#1B2A4A]/25">
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] text-[#1B2A4A]/25">
                     <span>♡ {v._likes || 0}</span>
                     <span>투표 {v._votes || 0}</span>
                     <span>조회 {v._views || 0}</span>

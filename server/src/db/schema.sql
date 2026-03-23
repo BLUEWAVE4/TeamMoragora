@@ -120,12 +120,13 @@ CREATE TABLE votes (
 -- 7. content_filter_logs
 CREATE TABLE content_filter_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   debate_id UUID REFERENCES debates(id),
   content_type TEXT NOT NULL,
   filter_stage INTEGER NOT NULL CHECK (filter_stage IN (1, 2, 3)),
   result TEXT NOT NULL DEFAULT 'pass',
   reason TEXT,
+  blocked_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -212,6 +213,30 @@ CREATE TABLE analytics_events (
 
 CREATE INDEX idx_analytics_events_name ON analytics_events(event_name);
 CREATE INDEX idx_analytics_events_created ON analytics_events(created_at);
+
+-- 14. notifications (알림)
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  link TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
+
+-- 15. verdict_ratings (판결 별점 평가)
+CREATE TABLE verdict_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  verdict_id UUID NOT NULL REFERENCES verdicts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  score NUMERIC(2,1) NOT NULL CHECK (score BETWEEN 0.5 AND 5.0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (verdict_id, user_id)
+);
 
 -- ============================================
 -- Row Level Security (RLS)

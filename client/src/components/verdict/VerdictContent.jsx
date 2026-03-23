@@ -10,6 +10,7 @@ import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler,
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 import { supabase } from "../../services/supabase";
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
+import MoragoraModal from '../common/MoragoraModal';
 
 // 유튜브 스타일 상대 시간
 const timeAgo = (dateStr) => {
@@ -33,14 +34,19 @@ const fallbackAvatar = (name, color) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="${color}22"/><text x="32" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="${color}">${(name || '?')[0]}</text></svg>`)}`;
 
 const CATEGORY_LABELS = {
-  daily: '일상', relationship: '연애', food: '음식', culture: '문화',
-  tech: '기술', sports: '스포츠', politics: '정치', philosophy: '철학',
-  humor: '유머', other: '기타',
+  daily: '일상', relationship: '연애', romance: '연애', food: '음식', culture: '문화',
+  tech: '기술', technology: '기술', sports: '스포츠', politics: '정치', philosophy: '철학',
+  humor: '유머', other: '기타', work: '직장', education: '교육', society: '사회',
+  '일상': '일상', '연애': '연애', '직장': '직장', '교육': '교육', '사회': '사회',
+  '정치': '정치', '기술': '기술', '철학': '철학', '문화': '문화', '기타': '기타',
 };
 
 const LENS_LABELS = {
   general: '종합', logic: '논리', emotion: '감정', practical: '실용',
   ethics: '윤리', humor: '유머', custom: '자유설정',
+  '도덕': '도덕', '법률': '법률', '실용': '실용', '사회': '사회',
+  '사실': '사실', '권리': '권리', '공익': '공익',
+  '일반': '종합', '논리': '논리', '감정': '감정', '현실': '실용', '윤리': '윤리',
 };
 
 const DETAIL_LABELS = {
@@ -51,7 +57,7 @@ const DETAIL_LABELS = {
   expression: '표현력',
 };
 
-// 렌즈 → 평가항목 매핑 (해당 렌즈가 강조하는 criterion)
+// 기준 → 평가항목 매핑 (해당 기준가 강조하는 criterion)
 const LENS_CRITERION_MAP = {
   logic: 'logic',
   emotion: 'persuasion',
@@ -81,6 +87,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null); // winnerSide 기반 초기화
   const [showVoteInfo, setShowVoteInfo] = useState(false);
+
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
 
   // ===== 댓글 상태 =====
   const [comments, setComments] = useState([]);
@@ -138,7 +148,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
     } catch (err) {
-      alert(err.message || '댓글 작성에 실패했습니다.');
+      showModal('댓글 작성 실패', err.message || '댓글 작성에 실패했습니다.');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -149,7 +159,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (err) {
-      alert(err.message || '삭제에 실패했습니다.');
+      showModal('삭제 실패', err.message || '삭제에 실패했습니다.');
     }
   };
 
@@ -205,7 +215,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         setMyVote(prevVote);
         setLiveVoteA(prevA);
         setLiveVoteB(prevB);
-        alert(err.message || '투표에 실패했습니다.');
+        showModal('투표 실패', err.message || '투표에 실패했습니다.');
       }
     }
     setIsVoting(false);
@@ -235,6 +245,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   if (!verdictData) return null;
 
   const debateData = verdictData.debate || verdictData.debates || {};
+  const purpose = debateData.purpose || 'battle';
+  const isConsensus = purpose === '합의' || purpose === 'consensus';
+  const isAnalysis = purpose === '분석' || purpose === 'analysis';
+  const isBattle = !isConsensus && !isAnalysis;
 
   // AI judgments 가공
   const rawJudgments = verdictData.ai_judgments || [];
@@ -343,14 +357,16 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       {/* ===== 복합 판결 카드 ===== */}
       <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-lg overflow-hidden border border-gold/10">
         <div className="p-6">
-          {/* 승자 */}
+          {/* 승자 / 합의 / 분석 */}
           <div className="text-center mb-5">
             <GoLaw className="mx-auto text-4xl text-gold mb-2" />
-            <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-[3px] mb-1">복합 판결</p>
-            <p className="text-2xl font-sans font-extrabold text-primary">
-              {winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? 'A측 승리' : 'B측 승리'}
+            <p className="text-[11px] font-sans font-bold text-primary/40 uppercase tracking-[3px] mb-1">
+              {isConsensus ? '합의 판결' : isAnalysis ? '분석 판결' : '복합 판결'}
             </p>
-            {winnerSide !== 'draw' && (
+            <p className="text-2xl font-sans font-extrabold text-primary">
+              {isConsensus ? '중립' : isAnalysis ? '분석완료' : winnerSide === 'draw' ? '무승부' : winnerSide === 'A' ? 'A측 승리' : 'B측 승리'}
+            </p>
+            {isBattle && winnerSide !== 'draw' && (
               <p className="text-[13px] font-bold mt-1.5 px-3 py-1 rounded-full inline-block" style={{
                 color: winnerSide === 'A' ? '#059669' : '#E63946',
                 backgroundColor: winnerSide === 'A' ? 'rgba(5,150,105,0.08)' : 'rgba(230,57,70,0.08)',
@@ -360,7 +376,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             )}
           </div>
 
-          {/* 최종 점수 — 스코어보드 */}
+          {/* 최종 점수 — 스코어보드 (승부 모드만) */}
+          {isBattle &&
           <div className="relative bg-gradient-to-b from-[#1B2A4A] to-[#0f1a2e] rounded-xl overflow-hidden border border-gold/20 shadow-[0_0_25px_rgba(212,175,55,0.12)]">
 
             <div className="px-5 pt-4 pb-5">
@@ -457,12 +474,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               })()}
             </div>
           </div>
+          }
 
         </div>
       </div>
 
-      {/* ===== 항목별 점수 비교 (레이더 차트) ===== */}
-      {judges.length > 0 && (() => {
+      {/* ===== 항목별 점수 비교 (레이더 차트) — 승부 모드만 ===== */}
+      {isBattle && judges.length > 0 && (() => {
         const labels = Object.values(DETAIL_LABELS).map(l => [l, '20점']);
         const keys = Object.keys(DETAIL_LABELS);
         const isAvgMode = chartMode === 'avg';
@@ -650,10 +668,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       })()}
 
       {/* ===== AI 판결문 탭 ===== */}
+      {/* 합의/분석 모드: 제목 변경 */}
       {judges.length > 0 && (
         <div ref={verdictTabRef} className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm overflow-hidden border border-gold/10">
           <div className="p-4 pb-0">
-            <h3 className="text-[14px] font-sans font-bold text-primary mb-3">AI 판결문</h3>
+            <h3 className="text-[14px] font-sans font-bold text-primary mb-3">
+              {isConsensus ? 'AI 합의문' : isAnalysis ? 'AI 분석문' : 'AI 판결문'}
+            </h3>
 
             {/* 탭 버튼 */}
             <div className="flex gap-1 bg-primary/5 rounded-xl p-1 border border-gold/10">
@@ -694,25 +715,31 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           {/* 선택된 판사 카드 */}
           {currentJudge && (
             <div className="p-4">
-              {/* 점수 비교 — 우세한 쪽 강조 */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <div className={`text-center p-3 rounded-xl border-2 transition-all ${
-                  currentJudge.score_a > currentJudge.score_b
-                    ? 'bg-emerald-50 border-emerald-500 shadow-sm shadow-emerald-200'
-                    : 'bg-emerald-50/50 border-emerald-100'
-                }`}>
-                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>A측</p>
-                  <p className={`text-xl font-black font-sans ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600' : 'text-emerald-600/30'}`}>{currentJudge.score_a}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
+              {/* 점수 비교 — 승부 모드만 표시 */}
+              {isBattle ? (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className={`text-center p-3 rounded-xl border-2 transition-all ${
+                    currentJudge.score_a > currentJudge.score_b
+                      ? 'bg-emerald-50 border-emerald-500 shadow-sm shadow-emerald-200'
+                      : 'bg-emerald-50/50 border-emerald-100'
+                  }`}>
+                    <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600/60' : 'text-emerald-600/30'}`}>A측</p>
+                    <p className={`text-xl font-black font-sans ${currentJudge.score_a >= currentJudge.score_b ? 'text-emerald-600' : 'text-emerald-600/30'}`}>{currentJudge.score_a}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
+                  </div>
+                  <div className={`text-center p-3 rounded-xl border-2 transition-all ${
+                    currentJudge.score_b > currentJudge.score_a
+                      ? 'bg-red-50 border-red-500 shadow-sm shadow-red-200'
+                      : 'bg-red-50/50 border-red-100'
+                  }`}>
+                    <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>B측</p>
+                    <p className={`text-xl font-black font-sans ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500' : 'text-red-500/30'}`}>{currentJudge.score_b}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
+                  </div>
                 </div>
-                <div className={`text-center p-3 rounded-xl border-2 transition-all ${
-                  currentJudge.score_b > currentJudge.score_a
-                    ? 'bg-red-50 border-red-500 shadow-sm shadow-red-200'
-                    : 'bg-red-50/50 border-red-100'
-                }`}>
-                  <p className={`text-[10px] font-sans font-semibold mb-0.5 ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500/60' : 'text-red-500/30'}`}>B측</p>
-                  <p className={`text-xl font-black font-sans ${currentJudge.score_b >= currentJudge.score_a ? 'text-red-500' : 'text-red-500/30'}`}>{currentJudge.score_b}<span className="text-[11px] font-semibold opacity-40"> / 100</span></p>
+              ) : (
+                <div className="text-center p-3 mb-4 rounded-xl bg-gold/5 border border-gold/15">
+                  <p className="text-[13px] font-bold text-gold">{isConsensus ? '중립 — 합의 도출' : '분석완료'}</p>
                 </div>
-              </div>
+              )}
 
               {/* 판결문 — 요약/상세 토글 (항상 표시) */}
               {(currentJudge.verdict_text || currentJudge.verdict_sections?.length > 0) && (
@@ -830,7 +857,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
           <div className="flex items-center gap-2 p-4 pb-0">
             <span className="text-[14px] font-sans font-bold text-primary">논쟁</span>
             {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
-            {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 렌즈</span>}
+            {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 기준</span>}
           </div>
 
           {/* A측/B측 토글 */}
@@ -1088,6 +1115,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       </div>
         );
       })()}
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </div>
   );
 }

@@ -21,9 +21,8 @@ export async function getMyVerdicts(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('*, verdicts(*)')
+      .select('*, verdicts(*, ai_judgments(*))')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
-      .eq('status', 'completed')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -77,6 +76,29 @@ export async function deleteMyDebate(req, res, next) {
       .eq('id', debateId);
 
     if (delErr) throw delErr;
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 회원탈퇴 =====
+export async function deleteAccount(req, res, next) {
+  try {
+    const userId = req.user.id;
+
+    // profiles 삭제 → FK CASCADE로 debates(creator), arguments, votes, comments, xp_logs 등 자동 삭제
+    const { error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (profileErr) throw profileErr;
+
+    // Supabase Auth 유저 삭제
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authErr) console.error('[deleteAccount] auth 삭제 실패:', authErr.message);
+
     res.json({ success: true });
   } catch (err) {
     next(err);

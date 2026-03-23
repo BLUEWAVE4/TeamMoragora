@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { createNotifications } from '../services/notification.service.js';
 
 // ===== 댓글 목록 조회 =====
 export async function getComments(req, res, next) {
@@ -60,6 +61,28 @@ export async function createComment(req, res, next) {
 
     if (error) throw error;
     data.is_liked = false;
+
+    // 논쟁 당사자에게 댓글 알림 (본인 제외)
+    const { data: debate } = await supabaseAdmin
+      .from('debates')
+      .select('topic, creator_id, opponent_id')
+      .eq('id', debateId)
+      .single();
+    if (debate) {
+      const recipients = [debate.creator_id, debate.opponent_id]
+        .filter(uid => uid && uid !== req.user.id);
+      if (recipients.length > 0) {
+        const nickname = data.user?.nickname || '누군가';
+        createNotifications(recipients.map(uid => ({
+          user_id: uid,
+          type: 'comment',
+          title: `${nickname}님이 의견을 남겼습니다`,
+          message: content.trim().slice(0, 50),
+          link: `/moragora/${debateId}`,
+        })));
+      }
+    }
+
     res.status(201).json(data);
   } catch (err) {
     next(err);

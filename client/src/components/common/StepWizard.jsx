@@ -25,7 +25,7 @@ const StepWizard = ({ currentStep = 1 }) => {
             <div key={step} className="relative z-10 flex flex-col items-center">
               <div
                 className={`
-                  w-12 h-12 rounded-full flex items-center justify-center font-serif font-bold text-lg
+                  w-12 h-12 rounded-full flex items-center justify-center font-sans font-bold text-lg
                   transition-all duration-500 border-2
                   ${isActive 
                     ? "bg-primary text-gold border-gold shadow-[0_0_20px_rgba(212,175,55,0.6)] scale-125" 
@@ -43,7 +43,7 @@ const StepWizard = ({ currentStep = 1 }) => {
                 absolute -bottom-8 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap
                 ${isActive ? "text-primary opacity-100" : "text-primary/40"}
               `}>
-                {step === 1 ? "주제 & 카테고리" : step === 2 ? "목적 & 렌즈" : "시간"}
+                {step === 1 ? "주제" : step === 2 ? "목적 & 기준" : "시간"}
               </span>
             </div>
           );

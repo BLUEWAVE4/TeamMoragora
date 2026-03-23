@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
+import { useTheme } from '../../store/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
@@ -171,7 +172,7 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
 }
 
 // ─── PlayerProfileSheet ───────────────────────────────────────────────────────
-function PlayerProfileSheet({ player, rank, onClose }) {
+function PlayerProfileSheet({ player, rank, onClose, isDark }) {
   const [debates, setDebates] = useState([]);
   const [loadingDebates, setLoadingDebates] = useState(true);
   const [visibleDebatesCount, setVisibleDebatesCount] = useState(5);
@@ -218,7 +219,7 @@ function PlayerProfileSheet({ player, rank, onClose }) {
   const currentDebates = debates.slice(0, visibleDebatesCount);
 
   return (
-    <BottomSheet isOpen onClose={onClose} maxHeight="80vh" bgColor="#F2F2F7" zIndex={100}>
+    <BottomSheet isOpen onClose={onClose} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
       <div className="px-5 pb-32 overflow-y-auto flex-1 overscroll-contain">
         {/* 프로필 헤더 */}
         <div className="flex items-center gap-4 mb-6 pt-2">
@@ -375,6 +376,7 @@ export default function RankingPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
+  const { isDark } = useTheme();
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [rankings, setRankings] = useState([]);
@@ -408,13 +410,15 @@ export default function RankingPage() {
     tierData: findTierByScore(r.total_score),
     color: idx === 0 ? 'from-[#FFD700] to-[#FF9500]' : idx === 1 ? 'from-[#C0C0C0] to-[#8E8E93]' : 'from-[#CD7F32] to-[#A2845E]',
     trophyColor: idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32',
-    podiumBg: idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]',
+    podiumBg: isDark
+      ? (idx === 0 ? 'bg-gradient-to-b from-[#2a2a1a] to-[#1a1a10]' : idx === 1 ? 'bg-gradient-to-b from-[#252530] to-[#1a1a22]' : 'bg-gradient-to-b from-[#2a2218] to-[#1a1810]')
+      : (idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]'),
   }));
   const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
   const myIsOutsideTop10 = myRankIndex >= 10;
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#F3F1EC] font-sans">
       <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -537,20 +541,20 @@ export default function RankingPage() {
                     style={{
                       borderWidth: isListMe ? 2 : 1,
                       borderStyle: 'solid',
-                      borderColor: isListMe ? playerTier.color : '#F3F4F6',
-                      backgroundColor: isListMe ? `${playerTier.color}08` : 'white',
+                      borderColor: isListMe ? playerTier.color : (isDark ? '#2a3545' : '#F3F4F6'),
+                      backgroundColor: isListMe ? `${playerTier.color}08` : (isDark ? '#1a2332' : 'white'),
                       boxShadow: isListMe ? '0 4px 12px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.06)',
                     }}
                   >
                     <div className="w-9 flex items-center justify-center mr-3">
-                      <span className="text-[18px] font-black italic" style={{ color: isListMe ? playerTier.color : 'rgba(0,0,0,0.15)' }}>{rank}</span>
+                      <span className="text-[18px] font-black italic" style={{ color: isListMe ? playerTier.color : (isDark ? 'rgba(224,221,213,0.2)' : 'rgba(0,0,0,0.15)') }}>{rank}</span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
                       <img src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[14px] font-bold truncate" style={{ color: isListMe ? playerTier.color : 'black' }}>{player.nickname}</span>
+                        <span className="text-[14px] font-bold truncate" style={{ color: isListMe ? playerTier.color : (isDark ? '#e0ddd5' : 'black') }}>{player.nickname}</span>
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-white flex-shrink-0" style={{ backgroundColor: playerTier.color }}>{playerTier.name}</span>
                       </div>
                       <div className="text-[12px] font-bold text-gray-400">{player.wins}승 {player.losses}패 · {player.total_score?.toLocaleString()} XP</div>
@@ -598,16 +602,16 @@ export default function RankingPage() {
       </div>
 
       {/* ─── 등급 시스템 바텀시트 ─────────────────────────────── */}
-      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="88vh" bgColor="#F2F2F7" zIndex={100}>
+      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="88vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
         <div className="px-5 overflow-y-auto flex-1 overscroll-contain pb-12">
           <div className="flex items-center justify-between mb-10">
             <div>
               <p className="text-[16px] font-bold text-gray-400 uppercase tracking-widest mb-1">Point System</p>
               <h3 className="text-[28px] font-black text-black">등급 시스템</h3>
             </div>
-            <div className="flex flex-col items-center px-4 py-3 rounded-2xl mt-5" style={{ backgroundColor: currentTier.bg }}>
-              <currentTier.icon size={32} style={{ color: currentTier.color }} />
-              <span className="text-[16px] font-black mt-2" style={{ color: currentTier.color }}>{currentTier.name}</span>
+            <div className="flex flex-col items-center px-4 py-3 rounded-2xl mt-5" style={{ backgroundColor: isDark ? `${currentTier.color}15` : currentTier.bg }}>
+              <currentTier.icon size={32} style={{ color: currentTier.color, opacity: isDark ? 0.7 : 1 }} />
+              <span className="text-[16px] font-black mt-2" style={{ color: currentTier.color, opacity: isDark ? 0.7 : 1 }}>{currentTier.name}</span>
             </div>
           </div>
           <div className="space-y-4 mb-10">
@@ -617,10 +621,10 @@ export default function RankingPage() {
                 <motion.div key={t.name}
                   initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-5 flex items-center gap-4 border-2 transition-all shadow-sm"
-                  style={{ backgroundColor: isCurrent ? t.bg : 'white', borderColor: isCurrent ? t.color : 'transparent' }}
+                  className={`rounded-2xl p-5 flex items-center gap-4 border-2 transition-all shadow-sm ${!isCurrent ? 'bg-white' : ''}`}
+                  style={{ backgroundColor: isCurrent ? (isDark ? `${t.color}15` : t.bg) : undefined, borderColor: isCurrent ? t.color : (isDark ? '#2a3545' : 'transparent') }}
                 >
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ backgroundColor: t.bg }}>
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ backgroundColor: isDark ? `${t.color}20` : t.bg }}>
                     <t.icon size={32} style={{ color: t.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -650,6 +654,7 @@ export default function RankingPage() {
             player={selectedPlayer.player}
             rank={selectedPlayer.rank}
             onClose={() => setSelectedPlayer(null)}
+            isDark={isDark}
           />
         )}
       </AnimatePresence>

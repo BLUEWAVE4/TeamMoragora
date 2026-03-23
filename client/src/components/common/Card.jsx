@@ -29,13 +29,13 @@ const Card = ({
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-white/10 via-transparent to-transparent transition-opacity duration-700" />
 
         {subtitle && (
-          <p className="relative z-10 text-[11px] uppercase tracking-[0.4em] mb-2 opacity-70 font-serif font-bold">
+          <p className="relative z-10 text-[11px] uppercase tracking-[0.4em] mb-2 opacity-70 font-sans font-bold">
             {subtitle}
           </p>
         )}
 
         {title && (
-          <h3 className="relative z-10 text-2xl font-bold font-serif mb-5 tracking-tight border-b border-current/10 pb-3">
+          <h3 className="relative z-10 text-2xl font-bold font-sans mb-5 tracking-tight border-b border-current/10 pb-3">
             {title}
           </h3>
         )}

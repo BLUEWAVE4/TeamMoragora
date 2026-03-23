@@ -10,20 +10,26 @@ const PURPOSE_MAP = {
   analysis: '분석 — 양측 논리를 객관적으로 정리하고 비교합니다.',
 };
 
-// 렌즈별 배점 조정 (5항목 합계 = 100)
+// 기준별 배점 조정 (5항목 합계 = 100)
 const LENS_WEIGHTS = {
   general:   { logic: 20, evidence: 20, persuasion: 20, consistency: 20, expression: 20 },
-  logic:     { logic: 28, evidence: 24, persuasion: 16, consistency: 16, expression: 16 },
-  emotion:   { logic: 16, evidence: 16, persuasion: 28, consistency: 16, expression: 24 },
-  practical: { logic: 16, evidence: 28, persuasion: 20, consistency: 20, expression: 16 },
-  ethics:    { logic: 20, evidence: 16, persuasion: 16, consistency: 28, expression: 20 },
+  도덕:      { logic: 20, evidence: 16, persuasion: 16, consistency: 28, expression: 20 },
+  법률:      { logic: 24, evidence: 24, persuasion: 16, consistency: 24, expression: 12 },
+  실용:      { logic: 16, evidence: 28, persuasion: 20, consistency: 20, expression: 16 },
+  사회:      { logic: 20, evidence: 20, persuasion: 24, consistency: 16, expression: 20 },
+  사실:      { logic: 24, evidence: 28, persuasion: 16, consistency: 20, expression: 12 },
+  권리:      { logic: 20, evidence: 20, persuasion: 20, consistency: 24, expression: 16 },
+  공익:      { logic: 20, evidence: 20, persuasion: 24, consistency: 20, expression: 16 },
 };
 
 const LENS_WEIGHT_DESC = {
-  logic: '논리/팩트 관점 — 논리 구조(logic)와 근거 품질(evidence)에 높은 배점을 적용합니다.',
-  emotion: '관계/감정 관점 — 설득력(persuasion)과 표현 적절성(expression)에 높은 배점을 적용합니다.',
-  practical: '실용/비용 관점 — 근거 품질(evidence)에 높은 배점을 적용합니다. 현실 적용 가능성과 구체적 데이터를 중시합니다.',
-  ethics: '윤리/가치 관점 — 일관성(consistency)에 높은 배점을 적용합니다. 윤리적 원칙의 일관된 적용을 중시합니다.',
+  도덕: '윤리·도덕적 관점 — 행위의 옳고 그름, 의무와 책임, 공정성과 정의의 관점에서 판단합니다. 일관성(consistency)에 높은 배점을 적용합니다.',
+  법률: '법·제도적 관점 — 현행법 기준의 합법성, 헌법적 가치, 절차적 정당성을 기준으로 판단합니다. 논리(logic)와 근거(evidence)에 높은 배점을 적용합니다.',
+  실용: '실용·경제적 관점 — 비용 대비 효과, 현실적 실현 가능성, 장기적 지속 가능성을 중심으로 판단합니다. 근거(evidence)에 높은 배점을 적용합니다.',
+  사회: '사회·문화적 관점 — 공동체에 미치는 영향, 집단 간 형평성, 해당 사회의 문화적 맥락을 고려합니다. 설득력(persuasion)에 높은 배점을 적용합니다.',
+  사실: '과학·사실적 관점 — 데이터와 연구 근거, 인과관계, 전문가 합의를 기반으로 판단합니다. 근거(evidence)에 가장 높은 배점을 적용합니다.',
+  권리: '권리·자유 관점 — 개인의 자율성과 선택권, 소수자·취약계층의 권리 보호, 프라이버시를 중심으로 판단합니다. 일관성(consistency)에 높은 배점을 적용합니다.',
+  공익: '공익·정치적 관점 — 사회 전체의 이익, 민주적 가치, 국제적 맥락에서의 국익을 기준으로 판단합니다. 설득력(persuasion)에 높은 배점을 적용합니다.',
   general: '5개 항목을 균등하게(각 20점) 평가하세요. 특정 항목에 가중치를 두지 않습니다.',
 };
 
@@ -196,9 +202,76 @@ const JUDGE_C_CHARACTER = `당신은 "Judge C"입니다. AI 논쟁 판결 서비
 // Grok은 대체 판사 — Judge G 스타일 기반
 const JUDGE_GROK_CHARACTER = JUDGE_G_CHARACTER.replace('Judge G', 'Judge X (대체 판사)');
 
+// ========== 합의 모드 가이드라인 ==========
+
+const CONSENSUS_GUIDELINES = `
+## 합의 판결 원칙
+1. 승패를 가리지 않습니다. 양측의 주장에서 타당한 부분을 추출하여 합의점을 도출합니다.
+2. 양측의 공통 관심사와 가치를 찾아냅니다.
+3. 서로 다른 의견이 어떻게 양립할 수 있는지 제안합니다.
+4. 감정적 대립보다 건설적 해결에 초점을 맞춥니다.
+
+## 분석 항목
+양측 주장 각각에 대해 다음을 분석합니다:
+- 핵심 논점 정리
+- 타당한 부분과 보완이 필요한 부분
+- 양측이 공유하는 전제와 가치
+
+## 응답 형식 (반드시 아래 JSON만 출력, JSON 외 텍스트 금지)
+{
+  "winner_side": "draw",
+  "score_a": 0,
+  "score_b": 0,
+  "score_detail_a": { "logic": 0, "evidence": 0, "persuasion": 0, "consistency": 0, "expression": 0 },
+  "score_detail_b": { "logic": 0, "evidence": 0, "persuasion": 0, "consistency": 0, "expression": 0 },
+  "verdict_text": "양측 주장의 합의점과 종합 결론을 3~5문장으로 작성. 두 사람의 의견을 종합하여 실질적인 합의안을 제시합니다.",
+  "verdict_sections": [
+    { "criterion": "common_ground", "text": "양측이 공유하는 공통 관심사와 가치" },
+    { "criterion": "side_a_merit", "text": "A측 주장에서 합의에 기여하는 타당한 부분" },
+    { "criterion": "side_b_merit", "text": "B측 주장에서 합의에 기여하는 타당한 부분" },
+    { "criterion": "synthesis", "text": "양측 의견을 종합한 합의안" },
+    { "criterion": "next_step", "text": "합의를 발전시키기 위한 제안" }
+  ],
+  "confidence": 0.50
+}`;
+
+// ========== 분석 모드 가이드라인 ==========
+
+const ANALYSIS_GUIDELINES = `
+## 분석 판결 원칙
+1. 승패를 가리지 않습니다. 양측의 논쟁 구조와 논리를 객관적으로 분석합니다.
+2. 각 주장의 논리적 강점과 약점을 구조적으로 정리합니다.
+3. 논쟁의 핵심 쟁점과 양측의 접근 방식 차이를 분석합니다.
+4. 비교가 아닌 개별 분석에 초점을 맞춥니다.
+
+## 분석 항목
+양측 주장 각각에 대해 다음을 분석합니다:
+- 논증 구조 (전제 → 근거 → 결론)
+- 사용된 논거의 유형과 품질
+- 논리적 허점이나 비약
+- 표현과 설득 전략
+
+## 응답 형식 (반드시 아래 JSON만 출력, JSON 외 텍스트 금지)
+{
+  "winner_side": "draw",
+  "score_a": 0,
+  "score_b": 0,
+  "score_detail_a": { "logic": 0, "evidence": 0, "persuasion": 0, "consistency": 0, "expression": 0 },
+  "score_detail_b": { "logic": 0, "evidence": 0, "persuasion": 0, "consistency": 0, "expression": 0 },
+  "verdict_text": "논쟁의 전체 구조와 핵심 쟁점을 3~5문장으로 요약합니다.",
+  "verdict_sections": [
+    { "criterion": "core_issue", "text": "이 논쟁의 핵심 쟁점과 양측의 접근 방식 차이" },
+    { "criterion": "side_a_analysis", "text": "A측 논증 구조 분석: 강점, 약점, 논리적 특징" },
+    { "criterion": "side_b_analysis", "text": "B측 논증 구조 분석: 강점, 약점, 논리적 특징" },
+    { "criterion": "logic_gaps", "text": "양측에서 발견되는 논리적 허점이나 비약" },
+    { "criterion": "insight", "text": "이 논쟁에서 얻을 수 있는 통찰과 시사점" }
+  ],
+  "confidence": 0.50
+}`;
+
 // ========== System Prompt 빌더 ==========
 
-export function buildSystemPrompt(judge, lens = 'general') {
+export function buildSystemPrompt(judge, lens = 'general', purpose = 'battle') {
   const CHARACTER_MAP = {
     'gpt-4o': JUDGE_G_CHARACTER,
     'gemini-2.5-flash': JUDGE_M_CHARACTER,
@@ -207,9 +280,17 @@ export function buildSystemPrompt(judge, lens = 'general') {
   };
 
   const character = CHARACTER_MAP[judge] || JUDGE_G_CHARACTER;
-  const w = LENS_WEIGHTS[lens] || LENS_WEIGHTS.general;
 
-  // 루브릭 배점을 렌즈에 따라 동적 삽입
+  // 합의/분석 모드는 별도 가이드라인 사용
+  if (purpose === 'consensus') {
+    return `${character}\n${CONSENSUS_GUIDELINES}`;
+  }
+  if (purpose === 'analysis') {
+    return `${character}\n${ANALYSIS_GUIDELINES}`;
+  }
+
+  // 승부 모드: 기존 루브릭 + 렌즈 배점
+  const w = LENS_WEIGHTS[lens] || LENS_WEIGHTS.general;
   const dynamicRubric = SHARED_GUIDELINES
     .replace(/논리 구조 \(logic\)/g, `논리 구조 (logic) — ${w.logic}점 만점`)
     .replace(/근거 품질 \(evidence\)/g, `근거 품질 (evidence) — ${w.evidence}점 만점`)

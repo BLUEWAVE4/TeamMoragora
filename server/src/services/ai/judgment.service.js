@@ -168,3 +168,33 @@ export async function runParallelJudgment(debateContext, verdictId) {
   console.log(`[AI] 판결 완료: ${judgments.length}개 성공 (${judgments.map(j => j.ai_model).join(', ')})`);
   return judgments;
 }
+
+// ===== 단일 모델 재판결 =====
+
+const MODEL_FN_MAP = {
+  gpt: { fn: judgeWithGPT, name: 'GPT-4o', aiModel: 'gpt-4o' },
+  gemini: { fn: judgeWithGemini, name: 'Gemini', aiModel: 'gemini-2.5-flash' },
+  claude: { fn: judgeWithClaude, name: 'Claude', aiModel: 'claude-sonnet' },
+};
+
+export async function retrySingleJudgment(model, debateContext, verdictId) {
+  const config = MODEL_FN_MAP[model];
+  if (!config) throw new Error(`알 수 없는 모델: ${model}`);
+
+  console.log(`[AI] ${config.name} 재판결 시작...`);
+
+  // 기존 해당 모델 판결 삭제
+  await supabaseAdmin
+    .from('ai_judgments')
+    .delete()
+    .eq('verdict_id', verdictId)
+    .eq('ai_model', config.aiModel);
+
+  // 재판결 실행
+  const result = await callWithRetry(() => config.fn(debateContext), config.name);
+  const validated = validateAndCorrectVerdict(result);
+  await saveJudgmentImmediately(verdictId, validated);
+
+  console.log(`[AI] ${config.name} 재판결 완료: A=${validated.score_a} B=${validated.score_b}`);
+  return validated;
+}

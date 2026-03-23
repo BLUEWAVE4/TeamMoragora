@@ -4,6 +4,7 @@ import { useAuth } from '../../store/AuthContext';
 import { trackEvent } from '../../services/analytics';
 import { supabase } from '../../services/supabase';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import MoragoraModal from '../../components/common/MoragoraModal';
 
 export default function NicknamePage() {
   const { user, updateProfile } = useAuth();
@@ -17,6 +18,10 @@ export default function NicknamePage() {
   const [isAvailable, setIsAvailable] = useState(null);
   const [lastCheckedNickname, setLastCheckedNickname] = useState('');
 
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+
   const isInvalid =
     nickname.trim().length < 2 ||
     !gender ||
@@ -24,8 +29,10 @@ export default function NicknamePage() {
     isAvailable !== true ||
     nickname !== lastCheckedNickname;
 
-  const handleNicknameChange = (e) => {
-    setNickname(e.target.value);
+ const handleNicknameChange = (e) => {
+  const filteredValue = e.target.value.replace(/[^ㄱ-ㅎ가-힣a-zA-Z0-9]/g, '');
+  setNickname(filteredValue);
+    
     if (isAvailable !== null) {
       setIsAvailable(null);
       setLastCheckedNickname('');
@@ -52,7 +59,7 @@ export default function NicknamePage() {
       }
     } catch (error) {
       console.error('Nickname check error:', error);
-      alert('중복 확인 중 오류가 발생했습니다.');
+      showModal('중복 확인 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
       setIsChecking(false);
     }
@@ -87,7 +94,7 @@ export default function NicknamePage() {
       sessionStorage.removeItem('redirectAfterLogin');
       navigate(target, { replace: true });
     } catch (error) {
-      alert('프로필 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+      showModal('프로필 설정 중 오류가 발생했습니다', '다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -169,23 +176,18 @@ export default function NicknamePage() {
               </button>
             </div>
             
-            {/* 메시지 영역 - 여기에 통합함 */}
-            <div className="h-5 ml-1 flex items-center">
-              {nickname.length > 0 && nickname.length < 2 && (
-                <span className="text-[11px] text-red-400 font-bold">최소 2자 이상 입력해주세요.</span>
-              )}
-              {nickname.length >= 2 && isAvailable === null && (
-                <span className="text-[11px] text-orange-500 font-bold">
-                중복 확인을 마쳐야 시작할 수 있습니다.
-                </span>
-              )}
-              {isAvailable === true && nickname === lastCheckedNickname && (
-                <span className="text-[11px] text-emerald-500 font-bold">사용 가능한 닉네임입니다 ✓</span>
-              )}
-              {isAvailable === false && (
-                <span className="text-[11px] text-red-500 font-bold">이미 존재하는 닉네임입니다.</span>
-              )}
-            </div>
+            {/* 메시지 영역 */}
+          <div className="h-5 ml-1 flex items-center">
+           {nickname.length > 0 && nickname.length < 2 ? (
+          <span className="text-[11px] text-red-400 font-bold">최소 2자 이상 입력해주세요.</span>
+          ) : isAvailable === null && nickname.length >= 2 ? (
+          <span className="text-[11px] text-orange-500 font-bold">중복 확인이 필요합니다.(공백/특수문자 제외)</span>
+          ) : isAvailable === true && nickname === lastCheckedNickname ? (
+          <span className="text-[11px] text-emerald-500 font-bold">사용 가능한 닉네임입니다.</span>
+          ) : isAvailable === false ? (
+          <span className="text-[11px] text-red-500 font-bold">이미 사용 중인 닉네임입니다.</span>
+          ) : null}
+          </div>
           </div>
 
           {/* 성별 */}
@@ -248,7 +250,7 @@ export default function NicknamePage() {
               className={`w-full h-[60px] rounded-[20px] font-black text-[17px] transition-all duration-500 flex items-center justify-center gap-2 ${
                 isInvalid || isLoading
                   ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-                  : 'bg-[#1B2A4A] text-[#D4AF37] shadow-xl shadow-[#1B2A4A]/20 active:scale-[0.98]'
+                  : 'bg-[#1B2A4A] text-[#D4AF37] shadow-xl shadow-[#1B2A4A]/20 active:scale-[0.98] cursor-pointer'
               }`}
             >
               {isLoading ? (
@@ -265,6 +267,12 @@ export default function NicknamePage() {
           </div>
         </form>
       </div>
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+      />
     </div>
   );
 }

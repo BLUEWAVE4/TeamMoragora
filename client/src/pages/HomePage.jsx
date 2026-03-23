@@ -183,20 +183,23 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
+
   const getProcessedFeeds = () => {
-    let result = [...feeds];
-    return result.sort((a, b) => {
-      const aData = a.debate || {};
-      const bData = b.debate || {};
-      switch (sortBy) {
-        case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
-        // ✅ 핵심 수정: feed 최상위에 주입된 comments_count 사용
-        case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
-        case '조회순': return (b.views_count || 0) - (a.views_count || 0);
-        case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
-      }
-    });
-  };
+  let result = feeds.filter(f => {
+    const voteDuration = f.debate?.vote_duration ?? null;
+    return voteDuration !== null && voteDuration !== 0;
+  });
+  return result.sort((a, b) => {
+    const aData = a.debate || {};
+    const bData = b.debate || {};
+    switch (sortBy) {
+      case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
+      case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
+      case '조회순': return (b.views_count || 0) - (a.views_count || 0);
+      case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
+    }
+  });
+};
 
   const formatTime = (dateString) => {
     const now = new Date();
@@ -213,7 +216,7 @@ export default function HomePage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-        <span className="text-[13px] font-serif font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+        <span className="text-[13px] font-sans font-bold text-[#1B2A4A]/30">불러오는 중...</span>
       </div>
     </div>
   );
@@ -237,7 +240,7 @@ export default function HomePage() {
         )}
 
         {!hasNext && feeds.length > 0 && (
-          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-serif font-bold py-8">
+          <p className="text-center text-[12px] text-[#1B2A4A]/20 font-sans font-bold py-8">
             모든 논쟁을 확인했습니다
           </p>
         )}

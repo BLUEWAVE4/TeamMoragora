@@ -43,7 +43,7 @@ const VERDICT_TOOL = {
 };
 
 export async function judgeWithClaude(debateContext) {
-  const systemPrompt = buildSystemPrompt('claude-sonnet', debateContext.lens);
+  const systemPrompt = buildSystemPrompt('claude-sonnet', debateContext.lens, debateContext.purpose);
   const userPrompt = buildUserPrompt(debateContext);
 
   const response = await Promise.race([

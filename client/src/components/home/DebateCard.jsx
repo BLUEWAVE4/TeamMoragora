@@ -5,6 +5,9 @@ import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../s
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import LoginPromptModal from '../common/LoginPromptModal';
+import MoragoraModal from '../common/MoragoraModal';
+import { useTheme } from '../../store/ThemeContext';
 
 // created_at + vote_duration(일) → 카운트다운 훅
 function useVoteCountdown(createdAt, voteDuration) {
@@ -31,6 +34,7 @@ function useVoteCountdown(createdAt, voteDuration) {
 
 export default function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const debateData = feed?.debate || feed || {};
@@ -84,6 +88,10 @@ export default function DebateCard({ feed, formatTime }) {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [isSendingComment, setIsSendingComment] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [sideUsers, setSideUsers] = useState({ A: null, B: null });
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
@@ -216,7 +224,7 @@ export default function DebateCard({ feed, formatTime }) {
 
   const handleVote = async (side) => {
     const debateId = feed?.debate_id || debateData?.id;
-    if (!user) { alert('로그인이 필요합니다.'); return; }
+    if (!user) { setShowLoginModal(true); return; }
     if (isVoting || !canVote || isParticipant) return;
     const isCanceling = myVote === side;
     const prevVote = myVote;
@@ -242,13 +250,13 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (err) {
       setMyVote(prevVote);
       setVoteCounts(prevCounts);
-      alert('투표 처리에 실패했습니다.');
+      showModal('투표 처리에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally { setIsVoting(false); }
   };
 
   const handleLike = async () => {
     const debateId = feed?.debate_id || debateData?.id;
-    if (!user) { alert('로그인이 필요합니다.'); return; }
+    if (!user) { setShowLoginModal(true); return; }
     if (isLiking) return;
     const prevLiked = liked;
     const prevCount = likeCount;
@@ -275,7 +283,7 @@ export default function DebateCard({ feed, formatTime }) {
       setComments(prev => [...prev, data]);
       setCommentText('');
       setLocalCommentCount(prev => prev + 1);
-    } catch (e) { alert('실패'); } finally { setIsSendingComment(false); }
+    } catch (e) { showModal('댓글 작성에 실패했습니다', '잠시 후 다시 시도해주세요.'); } finally { setIsSendingComment(false); }
   };
 
   // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
@@ -335,8 +343,12 @@ export default function DebateCard({ feed, formatTime }) {
             <span className="text-[13px] font-bold text-[#1B2A4A] truncate">{creatorNickname}</span>
             {(() => {
               const tier = debateData?.creator?.tier || '시민';
-              const tierColor = { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
-              const tierBg = { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
+              const tierColor = isDark
+                ? { '시민': '#6b6b6b', '배심원': '#4da6ff80', '변호사': '#c084fc80', '판사': '#f59e0b80', '대법관': '#f8717180' }
+                : { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
+              const tierBg = isDark
+                ? { '시민': '#2a2a2a', '배심원': '#1a2a40', '변호사': '#2a1a35', '판사': '#2a2210', '대법관': '#2a1515' }
+                : { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
               return (
                 <span
                   className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0"
@@ -357,7 +369,7 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 카테고리 + 목적 + 렌즈 뱃지 + 타이머 뱃지 */}
+        {/* 카테고리 + 목적 + 기준 뱃지 + 타이머 뱃지 */}
         <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
@@ -415,7 +427,7 @@ export default function DebateCard({ feed, formatTime }) {
                 ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {(myVote || isCompleted) && totalVotes > 0 && (
+              {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
@@ -426,7 +438,7 @@ export default function DebateCard({ feed, formatTime }) {
                   }`}>{isCompleted || timerExpired ? '마감' : 'A측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
-                {(myVote || isCompleted) && (
+                {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-bold text-[#1B2A4A]/80">{agreePercent}%</span>
                     <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.agree}표</span>
@@ -443,7 +455,7 @@ export default function DebateCard({ feed, formatTime }) {
                 ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/10'}
                 ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {(myVote || isCompleted) && totalVotes > 0 && (
+              {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
@@ -454,7 +466,7 @@ export default function DebateCard({ feed, formatTime }) {
                   }`}>{isCompleted || timerExpired ? '마감' : 'B측'}</span>
                   <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
-                {(myVote || isCompleted) && (
+                {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-bold text-[#1B2A4A]/80">{disagreePercent}%</span>
                     <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.disagree}표</span>
@@ -469,21 +481,26 @@ export default function DebateCard({ feed, formatTime }) {
         <div className="px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-5">
             {/* 좋아요 */}
-            <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.5}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/60">{likeCount}</span>
-            </button>
-            <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/60">{localCommentCount}</span>
-            </button>
-            <div className="flex items-center gap-1.5">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.4">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <span className="text-[12px] font-bold text-[#1B2A4A]/50">{viewCount}</span>
-            </div>
+            {(() => {
+              const iconStroke = isDark ? '#a0a0a0' : '#1B2A4A';
+              return (<>
+                <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                  <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.7}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/60">{likeCount}</span>
+                </button>
+                <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                  <svg fill="none" stroke={iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.7"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/60">{localCommentCount}</span>
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <svg fill="none" stroke={iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.6">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/50">{viewCount}</span>
+                </div>
+              </>);
+            })()}
           </div>
           <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
         </div>
@@ -607,6 +624,14 @@ export default function DebateCard({ feed, formatTime }) {
           </>
         )}
       </AnimatePresence>
+      <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </>
   );
 }

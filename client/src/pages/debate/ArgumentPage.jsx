@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getArguments, submitArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
+import { CircleCheck, CircleDot, Circle } from 'lucide-react'
+import MoragoraModal from '../../components/common/MoragoraModal'
 
 const labelMap = {
   battle: '승부', consensus: '합의', analysis: '분석',
@@ -14,14 +16,11 @@ const toKor = (v) => labelMap[v] || v
 const MAX_CHAR_R1 = 2000
 const MAX_CHAR_R2 = 300
 
-// ── 이미지 속 저울 모양을 그대로 재현한 뱃지 ──
+      {/* 뱃지 */}
 function JusticeBadge() {
   return (
     <div className="mb-6 relative">
-      {/* 배경 광채 효과 */}
       <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-2xl scale-150" />
-      
-      {/* 뱃지 */}
       <div className="relative w-20 h-20 rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#ffffff10] to-transparent p-1.5 shadow-2xl">
         <div className="w-full h-full rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#1B2A4A] shadow-[inner_0_0_15px_rgba(212,175,55,0.2)]">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,7 +43,7 @@ function SubmittedCard({ label, side, content, isMe }) {
       isMe ? 'bg-[#F5F0E8] border-[#D4AF37]/30' : 'bg-white border-gray-100'
     }`}>
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-400' : 'bg-red-400'}`} />
+        <CircleCheck size={14} className={side === 'A' ? 'text-emerald-500' : 'text-red-500'} />
         <span className={`text-[10px] font-black uppercase tracking-widest ${
           side === 'A' ? 'text-emerald-600' : 'text-red-500'
         }`}>{label} {isMe ? '· 내 주장' : '· 상대방 주장'}</span>
@@ -54,7 +53,6 @@ function SubmittedCard({ label, side, content, isMe }) {
   )
 }
 
-// ── 대기 메시지 타이핑 효과 ──
 const WAITING_MESSAGES = [
   '상대방이 신중하게 논거를 정리하고 있습니다...',
   '상대방이 강력한 주장을 준비하고 있습니다...',
@@ -104,7 +102,7 @@ function WaitingCard({ label, side, submitted }) {
   return (
     <div className="rounded-xl border border-dashed border-[#1B2A4A]/10 bg-[#FAFAF5] px-5 py-4 text-center">
       <div className="flex items-center justify-center gap-2 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${side === 'A' ? 'bg-emerald-300' : 'bg-red-300'}`} />
+        <CircleDot size={14} className={side === 'A' ? 'text-emerald-300' : 'text-red-300'} />
         <span className={`text-[10px] font-black uppercase tracking-widest ${
           side === 'A' ? 'text-emerald-400/60' : 'text-red-400/60'
         }`}>{label}</span>
@@ -121,34 +119,31 @@ function WaitingCard({ label, side, submitted }) {
   )
 }
 
-// ── 라운드 헤더 (텍스트 색상 강조 버전) ──
+// ── 라운드 헤더 ──
 function RoundHeader({ num, label, state }) {
   const isActive = state === 'active';
   const isDone = state === 'done';
 
   return (
     <div className="flex items-center gap-3">
-      {/* 라운드 숫자 아이콘 */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-500 flex-shrink-0 ${
         isDone
-          ? 'bg-gray-100 text-gray-400 border-gray-200' // 완료 시 회색
+          ? 'bg-gray-100 text-gray-400 border-gray-200'
           : isActive
             ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_8px_rgba(16,185,129,0.3)]' // 작성 중 초록색
-            : 'bg-white text-gray-200 border-gray-100' // 대기 시 연한 회색
+            : 'bg-white text-gray-200 border-gray-100' 
       }`}>{num}</div>
 
-      {/* 라운드 제목 텍스트 */}
       <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-500 ${
         isActive 
           ? 'text-[#D4AF37]'
           : isDone 
-            ? 'text-gray-400' // 다음 라운드로 넘어가면 회색
-            : 'text-gray-300' // 아직 시작 안 했을 때
+            ? 'text-gray-400' 
+            : 'text-gray-300' 
       }`}>
         {label}
       </p>
-      
-      {/* 구분선 색상도 상태에 맞게 변화 */}
+    
       <div className={`flex-1 h-px transition-colors duration-500 ${
         isActive ? 'bg-[#D4AF37]' : 'bg-gray-100'
       }`} />
@@ -159,7 +154,8 @@ function RoundHeader({ num, label, state }) {
 // ── 라운드 입력 폼 ──
 function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmitting }) {
   const maxChar = roundNum === 1 ? MAX_CHAR_R1 : MAX_CHAR_R2
-  const isInvalid = content.length === 0 || content.length > maxChar
+  const minChar = 10
+  const isInvalid = content.trim().length < minChar || content.length > maxChar
 
   return (
     <div className={`flex flex-col gap-3 transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
@@ -181,17 +177,19 @@ function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmit
         />
         <div className="px-5 py-2.5 border-t border-gray-50 flex items-center justify-between bg-gray-50/50">
           <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              content.length === 0 ? 'bg-gray-200'
-                : content.length > maxChar ? 'bg-red-400'
-                : 'bg-emerald-400'
-            }`} />
+            {content.trim().length < minChar
+              ? <Circle size={12} className="text-gray-300" />
+              : content.length > maxChar
+                ? <CircleDot size={12} className="text-red-400" />
+                : <CircleCheck size={12} className="text-emerald-400" />
+            }
             <span className={`text-[10px] font-bold ${
-              content.length === 0 ? 'text-gray-300'
+              content.trim().length < minChar ? 'text-gray-300'
                 : content.length > maxChar ? 'text-red-500'
                 : 'text-emerald-500'
             }`}>
-              {content.length === 0 ? '내용을 입력해주세요'
+              {content.trim().length === 0 ? '내용을 입력해주세요'
+                : content.trim().length < minChar ? `${minChar}자 이상 입력해주세요`
                 : content.length > maxChar ? '글자 수 초과'
                 : '제출 가능'}
             </span>
@@ -238,6 +236,9 @@ export default function ArgumentPage() {
   const [r1Content, setR1Content] = useState('')
   const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' })
+  const showModal = (title, description) => setModalState({ isOpen: true, title, description })
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' })
 
   const fetchData = useCallback(async () => {
     try {
@@ -268,7 +269,6 @@ export default function ArgumentPage() {
     return () => clearInterval(interval)
   }, [debate?.status, fetchData])
 
-  // 삭제된 논쟁 → 안내 후 홈으로 이동
   useEffect(() => {
     if (deleted) {
       const timer = setTimeout(() => navigate('/'), 3000)
@@ -328,7 +328,23 @@ export default function ArgumentPage() {
       const updatedArgs = await getArguments(debateId)
       if (updatedArgs.length >= 4) navigate(`/debate/${debateId}/judging`)
     } catch (err) {
-      alert(err.message || '제출에 실패했습니다.')
+      const serverMsg = err?.response?.data?.error || err?.message || '';
+      const reason = err?.response?.data?.reason || '';
+      const stage = err?.response?.data?.stage;
+
+      if (stage === 1) {
+        const isPersonalInfo = reason?.includes('개인정보');
+        showModal(
+          isPersonalInfo ? '개인정보가 포함되어 있습니다' : '부적절한 표현이 포함되어 있습니다',
+          isPersonalInfo ? '전화번호, 주민번호, 이메일 등 개인정보는 포함할 수 없습니다.' : (reason || '비속어나 부적절한 표현을 수정해주세요.')
+        );
+      } else if (stage === 2) {
+        showModal('유해한 콘텐츠가 감지되었습니다', reason || '내용을 수정한 후 다시 제출해주세요.');
+      } else if (stage === 3) {
+        showModal('주제와 관련 없는 내용입니다', '논쟁 주제에 맞는 주장을 작성해주세요.');
+      } else {
+        showModal('제출에 실패했습니다', serverMsg || '네트워크 상태를 확인하고 다시 시도해주세요.');
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -344,24 +360,7 @@ export default function ArgumentPage() {
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-lg" />
           {/* ── 상단 로고 ── */}
           <JusticeBadge />
-          <p className="text-[#D4AF37] text-[11px] font-black tracking-[0.2em] mb-3">
-            모라고라 AI 법정 · 주장 제출서</p>
-
-          <div className="flex gap-1.5 flex-wrap justify-center mb-3">
-            {[
-              { value: debate?.purpose },
-              { value: debate?.lens },
-            ].filter(({ value }) => value).map(({ value }, i) => (
-              <span 
-                key={i} 
-                className="flex items-center bg-[#D4AF37]/15 border border-[#D4AF37]/25 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-[#D4AF37]"
-              >
-                {toKor(value)}
-              </span>
-            ))}
-          </div>
-
-          <h1 className="text-white text-[16px] font-black italic leading-snug">
+          <h1 className="text-white text-[18px] font-black leading-snug mt-3">
             "{debate?.topic}"
           </h1>
         </div>
@@ -376,7 +375,9 @@ export default function ArgumentPage() {
                 isCreator ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'
               }`}>
                 <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-wider mb-1">A측</p>
-                <p className={`text-[12px] font-bold leading-tight ${isCreator ? 'text-emerald-700' : 'text-gray-400'}`}>
+                <p className={`text-[12px] font-bold leading-tight ${isCreator 
+                  ? 'text-emerald-700' 
+                  : 'text-gray-400 p-2'}`}>
                   {debate.pro_side || '미정'}
                 </p>
                 {isCreator && <p className="text-[9px] text-emerald-500/60 font-bold mt-0.5">내 입장</p>}
@@ -386,7 +387,9 @@ export default function ArgumentPage() {
                 !isCreator ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
               }`}>
                 <p className="text-[10px] font-black text-red-400/70 uppercase tracking-wider mb-1">B측</p>
-                <p className={`text-[12px] font-bold leading-tight ${!isCreator ? 'text-red-700' : 'text-gray-400'}`}>
+                <p className={`text-[12px] font-bold leading-tight ${!isCreator 
+                  ? 'text-red-700' 
+                  : 'text-gray-400 p-2'}`}>
                   {debate.con_side || '미정'}
                 </p>
                 {!isCreator && <p className="text-[9px] text-red-400/60 font-bold mt-0.5">내 입장</p>}
@@ -411,7 +414,7 @@ export default function ArgumentPage() {
           {/* 구분선 */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-100" />
-            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${r1BothDone ? 'bg-[#D4AF37]/50' : 'bg-gray-200'}`} />
+            <CircleDot size={12} className={`transition-colors duration-500 ${r1BothDone ? 'text-[#D4AF37]/50' : 'text-gray-200'}`} />
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
@@ -434,17 +437,16 @@ export default function ArgumentPage() {
           </p>
         </div>
 
-        {/* ── 푸터 ── */}
-        <div className="mx-4 bg-[#F5F0E8] rounded-b-2xl px-5 py-3 border-t border-[#1B2A4A]/5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-black tracking-widest">모라고라 AI 법정</span>
-            <span className="text-[10px] text-[#8B6914] font-black border border-[#D4AF37]/40 bg-white px-2.5 py-1 rounded-full">
-              AI 판결 예정
-            </span>
-          </div>
-        </div>
 
       </div>
+
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </div>
   )
 }

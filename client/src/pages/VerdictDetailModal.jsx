@@ -26,6 +26,7 @@ const DETAIL_LABELS = {
 export default function VerdictDetailModal({ selectedVerdict, onClose }) {
   const [activeJudge, setActiveJudge] = useState(0);
   const [animated, setAnimated] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 100);
@@ -337,13 +338,27 @@ export default function VerdictDetailModal({ selectedVerdict, onClose }) {
             </div>
           )}
 
-          {/* --- Close Button --- */}
-          <button
-            onClick={onClose}
-            className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
-          >
-            판결 리포트 닫기
-          </button>
+          {/* --- Share + Close Buttons --- */}
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                const debateId = debateData.id || selectedVerdict.debate_id;
+                const shareUrl = `${window.location.origin}/debate/${debateId}/judging`;
+                await navigator.clipboard.writeText(shareUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="flex-1 py-4 bg-[#D4AF37] text-[#1B2A4A] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+            >
+              {copied ? '링크 복사 완료!' : '판결문 공유하기'}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-4 bg-[#1B2A4A] text-[#D4AF37] rounded-2xl font-bold text-base tracking-wider shadow-lg active:scale-[0.97] transition-transform"
+            >
+              닫기
+            </button>
+          </div>
         </div>
       </div>
     </div>

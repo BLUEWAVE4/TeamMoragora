@@ -5,8 +5,9 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
+import api, { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
+import { useAuth } from '../../store/AuthContext';
 import VerdictContent from '../../components/verdict/VerdictContent';
 import { AI_JUDGES, MODEL_MAP } from '../../constants/judges';
 import confetti from 'canvas-confetti';
@@ -270,16 +271,16 @@ const VoteStatusPanel = ({ deadline, totalMs, totalDays, voteCount }) => {
   );
 };
 
-const ModelCard = ({ judgeKey, status, score, onClick }) => {
+const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) => {
   const judge = AI_JUDGES[judgeKey];
   const isDone = status === 'done';
   const isFailed = status === 'failed';
-  const isActive = status === 'active';
+  const isActive = status === 'active' || isRetrying;
   const displayA = useCountUp(isDone && score ? score.a : null);
   const displayB = useCountUp(isDone && score ? score.b : null);
   const analysisMsg = useTypingMessage(ANALYSIS_MESSAGES);
 
-  const avatarSrc = isFailed ? judge.avatarFailed
+  const avatarSrc = isFailed && !isRetrying ? judge.avatarFailed
     : isDone ? judge.avatarDone
     : isActive ? judge.avatarActive
     : judge.avatar;
@@ -289,7 +290,7 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
       onClick={isDone ? onClick : undefined}
       className={`flex-1 rounded-2xl overflow-hidden transition-all duration-500 ${
         isDone ? 'bg-white/[0.08] backdrop-blur-sm border border-white/10 cursor-pointer active:scale-95'
-          : isFailed ? 'bg-red-900/15 border border-red-500/20'
+          : isFailed && !isRetrying ? 'bg-red-900/15 border border-red-500/20'
           : isActive ? 'bg-white/[0.04] border border-white/5'
           : 'bg-white/[0.03] border border-white/5 opacity-40'
       }`}
@@ -313,13 +314,21 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
               <span className="text-white/30">:</span>
               <span className={displayB >= displayA ? 'text-red-400' : 'text-red-400/40'}>{String(displayB).padStart(2, '0')}</span>
             </span>
-          ) : isActive ? (
+          ) : isRetrying || isActive ? (
             <span className="text-[10px] text-white/40 font-medium h-4 flex items-center">
               {analysisMsg}
               <span className="inline-block w-[1px] h-[10px] bg-white/40 ml-[1px] animate-pulse" />
             </span>
           ) : isFailed ? (
-            <span className="text-[11px] text-red-400/80 font-semibold">실패</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRetry?.(); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 text-[10px] font-bold text-red-400 active:scale-90 transition-all"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+              </svg>
+              재시도
+            </button>
           ) : null}
         </div>
       </div>
@@ -330,6 +339,7 @@ const ModelCard = ({ judgeKey, status, score, onClick }) => {
 export default function JudgingPage() {
   const { debateId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [judgeStatus, setJudgeStatus]   = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores]   = useState({ gpt: null, gemini: null, claude: null });
@@ -342,6 +352,10 @@ export default function JudgingPage() {
   const [verdictData, setVerdictData]   = useState(null);
   const [copied, setCopied]             = useState(false);
   const [debateArgs, setDebateArgs]     = useState([]);
+  const [retrying, setRetrying]         = useState({ gpt: false, gemini: false, claude: false });
+  const [debateInfo, setDebateInfo]     = useState(null);
+  const [rating, setRating]             = useState(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   // ===== 투표 타이머 관련 상태 =====
   const [voteDeadline, setVoteDeadline]   = useState(null); // Date 객체
@@ -374,6 +388,7 @@ export default function JudgingPage() {
     const initFetch = async () => {
       try {
         const data = await getDebate(debateId);
+        setDebateInfo(data);
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
@@ -550,9 +565,33 @@ if (days > 0) {
 
           {/* ===== AI 판사 카드 ===== */}
           <div className="flex gap-2 mt-8 shrink-0">
-            <ModelCard judgeKey="gpt"    status={judgeStatus.gpt}    score={judgeScores.gpt}    onClick={() => verdictRef.current?.scrollToJudge('gpt')} />
-            <ModelCard judgeKey="gemini" status={judgeStatus.gemini} score={judgeScores.gemini} onClick={() => verdictRef.current?.scrollToJudge('gemini')} />
-            <ModelCard judgeKey="claude" status={judgeStatus.claude} score={judgeScores.claude} onClick={() => verdictRef.current?.scrollToJudge('claude')} />
+            {['gpt', 'gemini', 'claude'].map(key => (
+              <ModelCard
+                key={key}
+                judgeKey={key}
+                status={judgeStatus[key]}
+                score={judgeScores[key]}
+                isRetrying={retrying[key]}
+                onClick={() => verdictRef.current?.scrollToJudge(key)}
+                onRetry={async () => {
+                  setRetrying(prev => ({ ...prev, [key]: true }));
+                  setJudgeStatus(prev => ({ ...prev, [key]: 'active' }));
+                  try {
+                    const res = await api.post(`/judgments/${debateId}/retry/${key}`);
+                    const result = res.data || res;
+                    setJudgeStatus(prev => ({ ...prev, [key]: 'done' }));
+                    setJudgeScores(prev => ({ ...prev, [key]: { a: result.score_a, b: result.score_b } }));
+                    // 판결 데이터 갱신 (VerdictContent 자동 반영)
+                    const updatedVerdict = await getVerdict(debateId);
+                    if (updatedVerdict) setVerdictData(updatedVerdict);
+                  } catch {
+                    setJudgeStatus(prev => ({ ...prev, [key]: 'failed' }));
+                  } finally {
+                    setRetrying(prev => ({ ...prev, [key]: false }));
+                  }
+                }}
+              />
+            ))}
           </div>
 
           {/* ===== 투표 상태 패널 =====
@@ -647,6 +686,93 @@ if (days > 0) {
           {isAllDone && verdictData && (
             <div className="mt-8">
               <VerdictContent ref={verdictRef} verdictData={verdictData} topic={debateTitle} />
+              {/* 별점 평가 — 작성자/참여자만 (0.5단위) */}
+              {user && debateInfo && (user.id === debateInfo.creator_id || user.id === debateInfo.opponent_id) && (
+                <div className="mt-5 bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+                  {ratingSubmitted ? (
+                    <div className="text-center">
+                      <p className="text-[14px] font-bold text-[#D4AF37]">평가해주셔서 감사합니다!</p>
+                      <div className="flex justify-center gap-1 mt-2">
+                        {[1,2,3,4,5].map(s => {
+                          const filled = rating >= s;
+                          const half = !filled && rating >= s - 0.5;
+                          return (
+                            <svg key={s} width="20" height="20" viewBox="0 0 24 24" stroke="#D4AF37" strokeWidth="2" fill="none">
+                              {filled ? (
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37"/>
+                              ) : half ? (
+                                <>
+                                  <defs><clipPath id={`rh${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath></defs>
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" clipPath={`url(#rh${s})`}/>
+                                </>
+                              ) : (
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                              )}
+                            </svg>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[12px] text-white/30 mt-1">{rating}점</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-[12px] text-white/40 font-bold mb-3">이 판결에 만족하셨나요?</p>
+                      <div className="flex justify-center mb-3">
+                        {[1,2,3,4,5].map(s => (
+                          <div key={s} className="relative w-9 h-9 flex-shrink-0">
+                            {/* 왼쪽 반 = 0.5 */}
+                            <button
+                              onClick={() => setRating(s - 0.5)}
+                              className="absolute left-0 top-0 w-1/2 h-full z-10"
+                            />
+                            {/* 오른쪽 반 = 1.0 */}
+                            <button
+                              onClick={() => setRating(s)}
+                              className="absolute right-0 top-0 w-1/2 h-full z-10"
+                            />
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="transition-all pointer-events-none">
+                              {rating >= s ? (
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2"/>
+                              ) : rating >= s - 0.5 ? (
+                                <>
+                                  <defs>
+                                    <clipPath id={`sl${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath>
+                                    <clipPath id={`sr${s}`}><rect x="12" y="0" width="12" height="24"/></clipPath>
+                                  </defs>
+                                  {/* 왼쪽 반: gold 채움 + gold 외곽 */}
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2" clipPath={`url(#sl${s})`}/>
+                                  {/* 오른쪽 반: 빈 + 비활성 외곽 */}
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" clipPath={`url(#sr${s})`}/>
+                                </>
+                              ) : (
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="rgba(255,255,255,0.2)" strokeWidth="2"/>
+                              )}
+                            </svg>
+                          </div>
+                        ))}
+                      </div>
+                      {rating > 0 && (
+                        <>
+                          <p className="text-[13px] text-[#D4AF37] font-bold mb-2">{rating}점</p>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await api.post(`/judgments/${debateId}/rate`, { score: rating });
+                                setRatingSubmitted(true);
+                              } catch { setRatingSubmitted(true); }
+                            }}
+                            className="px-6 py-2 bg-[#D4AF37] text-[#1B2A4A] font-bold text-[13px] rounded-xl active:scale-95 transition-all"
+                          >
+                            평가 제출
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   const url = `${window.location.origin}/debate/${debateId}`;
@@ -665,7 +791,7 @@ if (days > 0) {
               </button>
               <button
                 onClick={() => navigate('/')}
-                className="w-full mt-3 py-4 rounded-xl font-sans font-bold text-base border-2 border-white/20 text-white/50 hover:border-white/40 hover:text-white/70 active:scale-95 transition-all duration-300"
+                className="w-full mt-3 py-4 rounded-xl font-sans font-bold text-base uppercase tracking-wider bg-primary text-gold shadow-md active:scale-95 transition-all duration-300"
               >
                 판결 닫기
               </button>
