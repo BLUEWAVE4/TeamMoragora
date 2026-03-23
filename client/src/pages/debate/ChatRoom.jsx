@@ -56,7 +56,8 @@ export default function ChatRoom() {
   const [mySide, setMySide] = useState(null); // 'A' | 'B'
   const [myNickname, setMyNickname] = useState('');
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
+//   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // ── 메시지 ──
   const [messages, setMessages] = useState([]);
@@ -314,7 +315,7 @@ export default function ChatRoom() {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col bg-[#0f1829]"
+      className="flex min-h-screen flex-col bg-[#0f1829]"
       style={{ paddingBottom: keyboardHeight }}
     >
       {/* ━━━━━ 헤더 ━━━━━ */}
