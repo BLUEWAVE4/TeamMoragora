@@ -39,6 +39,28 @@ const findTierByScore = (score) => {
   return TIER_LIST[0];
 };
 
+// ─── CountUp 컴포넌트 ──────────────────────────────────────────────────────────
+function CountUp({ end, separator = ',' }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const duration = 1200;
+    const step = 16;
+    const increment = end / (duration / step);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, step);
+    return () => clearInterval(timer);
+  }, [end]);
+  return <>{separator ? count.toLocaleString() : count}</>;
+}
+
 // ─── Reusable iOS BottomSheet ─────────────────────────────────────────────────
 function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = '#F2F2F7', zIndex = 100 }) {
   const sheetRef = useRef(null);
@@ -181,9 +203,15 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
   const wins = player?.wins || 0;
   const losses = player?.losses || 0;
   const draws = player?.draws || 0;
-  const totalForRate = wins + losses;         // 승률 계산용 (무승부 제외)
-  const totalGames = wins + losses + draws;   // 총 참여 횟수 (무승부 포함)
-  const winRate = totalForRate > 0 ? ((wins / totalForRate) * 100).toFixed(1) : '0.0';
+  const totalForRate = wins + losses;
+  const totalGames = wins + losses + draws;
+  const winRate = totalForRate > 0 ? (wins / totalForRate) * 100 : 0;
+
+  const currentScore = player?.total_score || 0;
+  const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
+  const progress = nextTier
+    ? Math.min(100, Math.round(((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
+    : 100;
 
   useEffect(() => {
     if (!player?.id) return;
@@ -221,6 +249,7 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
   return (
     <BottomSheet isOpen onClose={onClose} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
       <div className="px-5 pb-32 overflow-y-auto flex-1 overscroll-contain">
+
         {/* 프로필 헤더 */}
         <div className="flex items-center gap-4 mb-6 pt-2">
           <div className="relative">
@@ -247,69 +276,116 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
           </div>
         </div>
 
-        {/* 승률 카드 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-[16px] font-bold text-gray-500 uppercase">전체 승률</span>
+        {/* ── 새 디자인: 포인트/티어 + 승률 카드 ── */}
+        <div className="space-y-4 mb-6">
+
+          {/* 1. 포인트 & 티어 진행도 카드 */}
+          <div className="relative bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-5">
+                <div className="space-y-0.5">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[32px] font-black text-gray-900 tracking-tighter">
+                      <CountUp end={currentScore} separator="," />
+                    </span>
+                    <span className="text-[14px] font-bold text-gray-400">P</span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-gray-50 flex items-center justify-center">
+                  <tier.icon size={24} style={{ color: tier.color }} />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-end px-1">
+                  <span className="text-[14px] font-bold tracking-tight" style={{ color: tier.color }}>
+                    {tier.name}
+                  </span>
+                  {nextTier && (
+                    <span className="text-[13px] font-bold text-gray-400">
+                      NEXT: {nextTier.min.toLocaleString()}P
+                    </span>
+                  )}
+                </div>
+
+                {/* XP 진행 바 */}
+                <div className="relative w-full">
+                  <div className="w-full h-3.5 bg-gray-200/50 rounded-full overflow-hidden border border-white/40 relative p-[1px]">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 1.5, ease: 'circOut' }}
+                      className="h-full rounded-full relative"
+                      style={{
+                        background: 'linear-gradient(to right, #FFD500, #FFAB00)',
+                        boxShadow: '0 1px 3px rgba(255,171,0,0.3)',
+                      }}
+                    >
+                      <div className="absolute top-0 left-0 w-full h-[35%] bg-white/40 rounded-full" />
+                    </motion.div>
+                  </div>
+                  <div className="mt-2.5 flex justify-between items-center px-1">
+                    <span className="text-[13px] font-black text-gray-500 tracking-tighter">
+                      {progress}%
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-400 tracking-tight">
+                      {currentScore.toLocaleString()} <span className="text-gray-600">/</span>{' '}
+                      {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-[32px] font-bold text-emerald-600 mb-4">{winRate}%</div>
-          <div className="flex justify-between text-[16px] font-black mb-3 px-1">
-            <span className="text-emerald-600">{wins}승</span>
-            {draws > 0 && <span className="text-[#8E8E93]">{draws}무</span>}
-            <span className="text-[#FF3B30]">{losses}패</span>
-          </div>
-          {/* 막대 그래프 — 승률 계산은 무승부 제외 유지 */}
-          <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${totalForRate > 0 ? (wins / totalForRate) * 100 : 0}%` }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-              className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full"
-            />
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${totalForRate > 0 ? (losses / totalForRate) * 100 : 0}%` }}
-              transition={{ duration: 1, delay: 0.1, ease: 'easeOut' }}
-              className="absolute right-0 top-0 h-full bg-[#FF3B30] rounded-r-full"
-            />
-          </div>
-          {/* ✅ 총 참여 횟수 (무승부 포함) + 안내 문구 */}
-          <div className="mt-4 text-center space-y-1">
-            <p className="text-[16px] text-gray-400 font-bold">총 {totalGames}회 논쟁 참여</p>
+
+          {/* 2. 승률 스코어보드 카드 */}
+          <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80">
+
+            {/* 요약 */}
+            <div className="flex justify-between items-center mb-8">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+                  <span className="text-[13px] font-bold text-gray-400 uppercase tracking-widest">전적</span>
+                </div>
+                <div className="flex items-baseline leading-none">
+                  <span className="text-[32px] font-black text-gray-900 tracking-tighter">
+                    {winRate.toFixed(1)}
+                  </span>
+                  <span className="text-[20px] font-bold text-blue-500 ml-1">%</span>
+                </div>
+              </div>
+
+              <div className="bg-gray-50/80 px-4 py-2.5 rounded-2xl border border-gray-100/50 text-right">
+                <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</p>
+                <p className="text-[22px] font-black text-gray-900 leading-none">{totalGames}</p>
+              </div>
+            </div>
+
+            {/* 승/무/패 그리드 */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: '승리', value: wins, textColor: 'text-blue-600', bg: 'bg-blue-50/40', border: 'border-blue-100/50' },
+                { label: '무승부', value: draws, textColor: 'text-gray-500', bg: 'bg-gray-50/60', border: 'border-gray-200/50' },
+                { label: '패배', value: losses, textColor: 'text-red-600', bg: 'bg-red-50/40', border: 'border-red-100/50' },
+              ].map((item, i) => (
+                <div key={i} className={`${item.bg} ${item.border} rounded-[24px] py-4 flex flex-col items-center border shadow-[0_4px_12px_rgba(0,0,0,0.01)]`}>
+                  <span className={`text-[24px] font-black ${item.textColor} tracking-tight leading-none`}>
+                    {item.value}
+                  </span>
+                  <span className="text-[10px] font-bold text-gray-400 mt-2">
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
             {draws > 0 && (
-              <p className="text-[11px] text-[#8E8E93] font-medium">
+              <p className="text-[11px] text-gray-400 text-center mt-4">
                 승률은 무승부를 제외하고 계산됩니다
               </p>
             )}
           </div>
-        </div>
-
-        {/* 티어 진행도 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[16px] font-bold text-gray-500 uppercase">티어 진행도</span>
-            <span className="text-[16px] font-black" style={{ color: tier.color }}>{tier.name}</span>
-          </div>
-          {(() => {
-            const nextTier = TIER_LIST[TIER_LIST.indexOf(tier) + 1] || null;
-            const progress = nextTier
-              ? Math.round(((player.total_score - tier.min) / (nextTier.min - tier.min)) * 100)
-              : 100;
-            return (
-              <>
-                <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-3">
-                  <motion.div
-                    initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full rounded-full" style={{ backgroundColor: tier.color }}
-                  />
-                </div>
-                <p className="text-[16px] text-gray-400 font-bold text-right">
-                  {nextTier ? `${(nextTier.min - player.total_score).toLocaleString()}점 더 모으면 ${nextTier.name}` : '최고 등급 달성!'}
-                </p>
-              </>
-            );
-          })()}
         </div>
 
         {/* 논쟁 리스트 */}
@@ -775,7 +851,7 @@ export default function RankingPage() {
         )}
       </div>
 
-      {/* ─── 등급 시스템 바텀시트 ─────────────────────────────── */}
+      {/* 등급 시스템 바텀시트 */}
       <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="88vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
         <div className="px-5 overflow-y-auto flex-1 overscroll-contain pb-12">
           <div className="flex items-center justify-between mb-10">
@@ -821,6 +897,7 @@ export default function RankingPage() {
         </div>
       </BottomSheet>
 
+<<<<<<< HEAD
       {/* ─── 논쟁 랭킹 점수 산정 기준 바텀시트 ──────────────────── */}
       <BottomSheet isOpen={isHallInfoOpen} onClose={() => setIsHallInfoOpen(false)} maxHeight="80vh" bgColor={isDark ? '#0f1419' : '#F2F2F7'} zIndex={100}>
         <div className="px-6 overflow-y-auto flex-1 pb-16">
