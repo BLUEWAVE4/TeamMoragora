@@ -1,5 +1,5 @@
 // Solo 모드: AI 반대 주장 생성 서비스
-// GPT-4o만 사용 (비용 효율 + 품질 균형)
+// GPT-4o-mini 사용 (비용 절감)
 
 import { openai } from '../../config/ai.js';
 import { buildCounterArgumentPrompt } from './prompts.js';
@@ -10,9 +10,9 @@ export async function generateCounterArgument({ topic, category, sideA_argument 
   const prompt = buildCounterArgumentPrompt({ topic, category, sideA_argument });
 
   const parsed = await callAI(
-    'GPT-4o (Solo)',
+    'GPT-4o-mini (Solo)',
     () => openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDebate, getArguments, submitArgument } from '../../services/api'
+import { getDebate, getArguments, submitArgument, generateSoloArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { CircleCheck, CircleDot, Circle } from 'lucide-react'
 import MoragoraModal from '../../components/common/MoragoraModal'
@@ -324,6 +324,22 @@ export default function ArgumentPage() {
       await submitArgument(debateId, { content, side: mySide, round })
       if (round === 1) setR1Content('')
       else setR2Content('')
+
+      // 연습 모드: A측 제출 후 AI(소크라테스)가 B측 자동 생성 → 판결
+      if (debate?.mode === 'solo') {
+        showModal('소크라테스가 반박을 준비하고 있습니다...', 'AI가 상대 주장을 작성 중입니다. 잠시만 기다려주세요.', 'info')
+        try {
+          await generateSoloArgument(debateId)
+          closeModal()
+          navigate(`/debate/${debateId}/judging`)
+          return
+        } catch (soloErr) {
+          closeModal()
+          showModal('AI 주장 생성에 실패했습니다', '다시 시도해주세요.', 'error')
+          return
+        }
+      }
+
       await fetchData()
       const updatedArgs = await getArguments(debateId)
       if (updatedArgs.length >= 4) navigate(`/debate/${debateId}/judging`)

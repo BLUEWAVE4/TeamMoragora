@@ -92,15 +92,14 @@ function ModeSelector({ onStart }) {
 
   const handleGameStart = () => {
 
-    // if (selectedMode.key === "random") {
-    //   setShowRandomModal(true);
-    //   return;
-    // } else if (selectedMode.key === "practice") {
-    //   setShowPracticeModal(true);
-    //   return;
-    // }
+    if (selectedMode.key === "random") {
+      setShowRandomModal(true);
+      return;
+    }
 
-    onStart(selectedMode.key);
+    // practice → solo로 매핑
+    const modeKey = selectedMode.key === "practice" ? "solo" : selectedMode.key;
+    onStart(modeKey);
   };
 
   return (
