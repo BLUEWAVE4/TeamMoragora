@@ -18,6 +18,7 @@ import NicknamePage from './pages/auth/NicknamePage';
 import JudgingPage from './pages/debate/JudgingPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import DebateLobbyPage from './pages/debate/DebateLobbyPage';
 
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/debate/lobby/:inviteCode" element={<DebateLobbyPage />} />
         
         {/* 🔥 테스트를 위해 상세 페이지를 Public으로 이동함 */}
         <Route path="/debate/:debateId" element={<DebateDetailPage />} />
@@ -53,6 +55,7 @@ export default function App() {
           <Route path="/debate/:debateId/judging" element={<JudgingPage />} />
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/debate/lobby" element={<DebateLobbyPage />} />
         </Route>
       </Route>
     </Routes>
