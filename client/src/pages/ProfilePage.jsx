@@ -614,7 +614,32 @@ const [showInfo, setShowInfo] = useState(false);
           </div>
         </div>
 
-{/*========================================================================================================================================================================== */}
+{/* ─── 프로필 완성 배너 ─────────────────────────────────── */}
+{profileData && (!profileData.gender || !profileData.age) && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="rounded-2xl p-4 mb-4 border bg-gradient-to-r from-[#FFF8E1] to-[#FFF3CD] border-[#D4AF37]/20"
+  >
+    <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#D4AF37]/10">
+        <Edit3 size={20} className="text-[#D4AF37]" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] font-bold text-[#1B2A4A]">프로필을 완성해주세요</p>
+        <p className="text-[11px] mt-0.5 text-[#1B2A4A]/40">
+          {!profileData.gender && !profileData.age ? '성별과 나이를' : !profileData.gender ? '성별을' : '나이를'} 설정하면 더 나은 경험을 제공합니다
+        </p>
+      </div>
+      <button
+        onClick={() => setShowProfileSetup(true)}
+        className="shrink-0 ml-3 px-3 py-1.5 rounded-lg text-[12px] font-bold bg-[#1B2A4A] text-[#D4AF37] active:scale-95 transition-all"
+      >
+        설정하기
+      </button>
+    </div>
+  </motion.div>
+)}
 
 {(() => {
   return (
