@@ -25,9 +25,9 @@ function ModeSelector({ onStart }) {
       img: "/fight2.webp"
     },
     {
-      key: "random",
-      label: "랜덤 매칭",
-      desc: "랜덤으로 상대가 매칭되어 예상치 못한 논쟁이 펼쳐집니다.",
+      key: "chat",
+      label: "실시간 논쟁",
+      desc: "기다림 없는 실시간 채팅 형식으로 상대와 뜨겁게 설전합니다.",
       img: "/random2.webp"
     }
   ];
