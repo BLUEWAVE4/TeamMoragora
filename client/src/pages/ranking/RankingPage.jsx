@@ -507,7 +507,7 @@ export default function RankingPage() {
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-[14px] font-black text-[#D4AF37]">👑 #1</span>
                             <img
-                              src={getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
+                              src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
                               className="w-7 h-7 rounded-full border-2 border-[#D4AF37]/40"
                               alt=""
                             />
@@ -554,7 +554,7 @@ export default function RankingPage() {
                             <div className="flex items-center gap-2">
                               <span className={`text-[12px] font-black ${rank <= 3 ? 'text-[#D4AF37]' : 'text-gray-400'}`}>#{rank}</span>
                               <img
-                                src={getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
+                                src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
                                 className="w-6 h-6 rounded-full"
                                 alt=""
                               />
