@@ -60,6 +60,13 @@ export function buildAvatarUrl(userId, gender, options = {}) {
   const isMale = gender === 'male';
   const params = new URLSearchParams({ seed: userId });
 
+  // 성별 기본값: 남성은 남성 헤어, 여성은 여성 헤어
+  if (!options.top) {
+    const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
+    const hash = userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    params.set('top', styles[hash % styles.length]);
+  }
+
   if (options.top) params.set('top', options.top);
   if (options.noHair) params.set('topProbability', '0');
   if (options.skinColor) params.set('skinColor', options.skinColor);
