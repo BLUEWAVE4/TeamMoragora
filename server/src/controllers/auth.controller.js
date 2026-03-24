@@ -4,7 +4,7 @@ export async function getProfile(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('*')
+      .select('id, nickname, avatar_url, gender, age, tier, total_score, wins, losses, draws')
       .eq('id', req.user.id)
       .single();
 

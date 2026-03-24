@@ -6,7 +6,7 @@ import { env } from '../config/env.js';
 // cron 시크릿 검증 미들웨어
 function verifyCronSecret(req, res, next) {
   const cronSecret = env.CRON_SECRET;
-  if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();

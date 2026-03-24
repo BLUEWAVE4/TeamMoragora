@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
 // ===== 페이지네이션 헬퍼 (Supabase max_rows 1000 제한 우회) =====
+const ALLOWED_FILTER_METHODS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'is'];
+
 async function fetchAll(table, select, filters = []) {
   let all = [];
   let offset = 0;
@@ -9,7 +11,8 @@ async function fetchAll(table, select, filters = []) {
     let q = supabaseAdmin.from(table).select(select);
     filters.forEach(f => {
       if (f.method === 'not') q = q.not(f.col, f.op, f.val);
-      else q = q[f.method](f.col, f.val);
+      else if (ALLOWED_FILTER_METHODS.includes(f.method)) q = q[f.method](f.col, f.val);
+      else throw new Error(`허용되지 않은 필터 메서드: ${f.method}`);
     });
     const { data } = await q.range(offset, offset + batch - 1);
     if (!data || data.length === 0) break;
@@ -179,13 +182,10 @@ export async function getDailyTrends(req, res, next) {
       days.push(d.toISOString().split('T')[0]);
     }
 
-    const verdictCounts = [];
-    const dauCounts = [];
-
-    for (const day of days) {
+    // 14일 DAU + 판결 수 병렬
+    const dauResults = await Promise.all(days.map(async (day) => {
       const start = `${day}T00:00:00+09:00`;
       const end = `${day}T23:59:59+09:00`;
-
       const [{ count: vCount }, pvData] = await Promise.all([
         supabaseAdmin.from('verdicts').select('*', { count: 'exact', head: true }).gte('created_at', start).lte('created_at', end),
         fetchAll('page_views', 'user_id', [
@@ -194,34 +194,38 @@ export async function getDailyTrends(req, res, next) {
           { method: 'not', col: 'user_id', op: 'is', val: null },
         ]),
       ]);
+      return { date: day, verdicts: vCount || 0, dau: new Set(pvData.map(p => p.user_id)).size };
+    }));
 
-      verdictCounts.push({ date: day, count: vCount || 0 });
-      dauCounts.push({ date: day, count: new Set(pvData.map(p => p.user_id)).size });
-    }
+    const verdictCounts = dauResults.map(r => ({ date: r.date, count: r.verdicts }));
+    const dauCounts = dauResults.map(r => ({ date: r.date, count: r.dau }));
 
-    // MAU 달력: 이번 달 일별 고유 사용자 수 (DAU와 동일한 KST 쿼리 방식)
+    // MAU 달력 병렬
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-    const monthSessions = new Set();
-    const mauCalendar = [];
+    const mauResults = await Promise.all(
+      Array.from({ length: daysInMonth }, (_, i) => i + 1).map(async (d) => {
+        const dayStr = `${monthStr}-${String(d).padStart(2, '0')}`;
+        const start = `${dayStr}T00:00:00+09:00`;
+        const end = `${dayStr}T23:59:59+09:00`;
+        const pvDay = await fetchAll('page_views', 'user_id', [
+          { method: 'gte', col: 'created_at', val: start },
+          { method: 'lte', col: 'created_at', val: end },
+          { method: 'not', col: 'user_id', op: 'is', val: null },
+        ]);
+        return { day: d, users: new Set(pvDay.map(p => p.user_id).filter(Boolean)) };
+      })
+    );
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dayStr = `${monthStr}-${String(d).padStart(2, '0')}`;
-      const start = `${dayStr}T00:00:00+09:00`;
-      const end = `${dayStr}T23:59:59+09:00`;
-      const pvDay = await fetchAll('page_views', 'user_id', [
-        { method: 'gte', col: 'created_at', val: start },
-        { method: 'lte', col: 'created_at', val: end },
-        { method: 'not', col: 'user_id', op: 'is', val: null },
-      ]);
-      const sessions = new Set(pvDay.map(p => p.user_id).filter(Boolean));
-      sessions.forEach(s => monthSessions.add(s));
-      mauCalendar.push({ day: d, count: sessions.size });
-    }
+    const monthSessions = new Set();
+    const mauCalendar = mauResults.map(r => {
+      r.users.forEach(s => monthSessions.add(s));
+      return { day: r.day, count: r.users.size };
+    });
 
     res.json({
       verdictTrends: verdictCounts,

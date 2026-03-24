@@ -17,7 +17,7 @@ export async function requestJudgment(req, res, next) {
     if (!debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
 
     if (debate.status !== 'arguing') {
-      throw new ValidationError(`현재 상태(${debate.status})에서는 판결을 요청할 수 없습니다.`);
+      throw new ValidationError('현재 상태에서는 판결을 요청할 수 없습니다.');
     }
 
     // 중복 판결 방지

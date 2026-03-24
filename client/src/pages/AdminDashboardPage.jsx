@@ -69,12 +69,16 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [s, a, t, an] = await Promise.all([
-        getAdminStats(), getAdminAI(), getAdminTrends(), getAdminAnalytics()
+      // 핵심 지표만 먼저 로드 (빠른 첫 화면)
+      const s = await getAdminStats();
+      setStats(s);
+      setLoading(false);
+      // 나머지 탭 데이터는 백그라운드에서 병렬 로드
+      const [a, t, an] = await Promise.all([
+        getAdminAI(), getAdminTrends(), getAdminAnalytics()
       ]);
-      setStats(s); setAiStats(a); setTrends(t); setAnalytics(an);
-    } catch (err) { console.error('대시보드 로딩 실패:', err); }
-    setLoading(false);
+      setAiStats(a); setTrends(t); setAnalytics(an);
+    } catch (err) { console.error('대시보드 로딩 실패:', err); setLoading(false); }
   };
 
   if (loading) return (

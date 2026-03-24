@@ -94,22 +94,16 @@ export async function deleteComment(req, res, next) {
   try {
     const { commentId } = req.params;
 
-    // 본인 댓글인지 확인
-    const { data: comment } = await supabaseAdmin
-      .from('comments')
-      .select('user_id')
-      .eq('id', commentId)
-      .single();
-
-    if (!comment) return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
-    if (comment.user_id !== req.user.id) return res.status(403).json({ error: '본인 댓글만 삭제할 수 있습니다.' });
-
-    const { error } = await supabaseAdmin
+    // 원자적 소유권 확인 + 삭제
+    const { data, error } = await supabaseAdmin
       .from('comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .eq('user_id', req.user.id)
+      .select();
 
     if (error) throw error;
+    if (!data || data.length === 0) return res.status(403).json({ error: '본인 댓글만 삭제할 수 있습니다.' });
     res.json({ success: true });
   } catch (err) {
     next(err);

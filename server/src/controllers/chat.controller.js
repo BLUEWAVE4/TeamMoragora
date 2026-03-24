@@ -155,7 +155,7 @@ export async function startChat(req, res, next) {
 
     // 상태 검증 (both_joined 또는 arguing에서 chatting으로 전환)
     if (debate.status !== 'both_joined' && debate.status !== 'arguing') {
-      throw new ConflictError(`현재 상태(${debate.status})에서는 채팅을 시작할 수 없습니다.`);
+      throw new ConflictError('현재 상태에서는 채팅을 시작할 수 없습니다.');
     }
 
     // 원자적 상태 전환
