@@ -254,7 +254,7 @@ const handleSubmit = async () => {
                 nextStep={mode === 'chat' ? handleSubmit : nextStep}
                 // nextStep={nextStep} 
                 prevStep={prevStep}
-                isLastStep={mode === 'chat' || currentStep === 3}
+                // isLastStep={currentStep === totalSteps}
               />
             )}
 

@@ -101,8 +101,8 @@ const [participants, setParticipants] = useState({ A: null, B: null });
       try {
         const data = await getDebate(debateId);
         setDebate(data);
-        // 채팅 중이면 자동 게임 시작 (새로고침 대응)
-        if (data.status === 'chatting' && data.chat_deadline) {
+        // 채팅 중이면 자동 게임 시작 (새로고침/재입장 대응)
+        if (data.status === 'chatting') {
           setGameStarted(true);
           if (data.creator_id === user.id) setMySide('A');
           else if (data.opponent_id === user.id) setMySide('B');
@@ -224,15 +224,8 @@ const selectSide = useCallback((side) => {
 
 const handleStart = async () => {
   if (!isCreator || !bothReady) return;
-
-  const DURATION_MS = 3 * 60 * 1000;
-  const chat_deadline = new Date(Date.now() + DURATION_MS).toISOString();
-
-  // 서버에 시작 알림 (DB 업데이트 + 브로드캐스트)
-  socket.emit('start-game', { debateId, chat_deadline });
-
-  setGameStarted(true);
-  setDebate(prev => ({ ...prev, chat_deadline }));
+  // 서버가 시간 계산 + DB 저장 + 브로드캐스트
+  socket.emit('start-game', { debateId });
 };
 
 const isCreator = debate ? debate.creator_id === user?.id : false;

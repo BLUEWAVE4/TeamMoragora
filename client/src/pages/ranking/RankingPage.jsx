@@ -631,17 +631,17 @@ export default function RankingPage() {
                     <div className="flex items-center gap-3.5 text-gray-400">
                       {/* 좋아요 */}
                       <div className="flex items-center gap-1">
-                        <svg fill="none" stroke={isDark ? '#8b8b8b' : '#FF2D55'} strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                        <svg fill="none" stroke="#8E8E93" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-50">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                         </svg>
-                        <span className={`text-[11px] font-bold ${isDark ? 'text-[#b0aaa0]' : 'text-[#1C1C1E]/60'}`}>{v._likes || 0}</span>
+                        <span className={`text-[10px] font-medium ${isDark ? 'text-[#b0aaa0]' : 'text-[#AEAEB2]'}`}>{v._likes || 0}</span>
                       </div>
                       {/* 댓글 */}
                       <div className="flex items-center gap-1">
-                        <svg fill="none" stroke={isDark ? '#8b8b8b' : '#007AFF'} strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                        <svg fill="none" stroke="#8E8E93" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-50">
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                         </svg>
-                        <span className={`text-[11px] font-bold ${isDark ? 'text-[#b0aaa0]' : 'text-[#1C1C1E]/60'}`}>{v._comments || 0}</span>
+                        <span className={`text-[10px] font-medium ${isDark ? 'text-[#b0aaa0]' : 'text-[#AEAEB2]'}`}>{v._comments || 0}</span>
                       </div>
                       {/* 조회수 */}
                       <div className="flex items-center gap-1">
@@ -946,13 +946,13 @@ export default function RankingPage() {
             </div>
           </div>
 
-          <div className="bg-[#FFF9E5] rounded-2xl p-4 mb-6 border border-[#D4AF37]/20">
-            <p className="text-[12px] text-[#1B2A4A]/70 leading-relaxed">
+          <div className={`rounded-2xl p-4 mb-6 border ${isDark ? 'bg-[#D4AF37]/10 border-[#D4AF37]/20' : 'bg-[#FFF9E5] border-[#D4AF37]/20'}`}>
+            <p className={`text-[12px] leading-relaxed ${isDark ? 'text-[#D4AF37]/80' : 'text-[#1B2A4A]/70'}`}>
               💡 <strong>팁:</strong> 논리적으로 탄탄한 주장을 작성하면 AI 점수가 올라가고, 다른 시민들의 관심을 받으면 참여 점수가 올라갑니다.
             </p>
           </div>
 
-          <button onClick={() => setIsHallInfoOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-2xl text-[18px] active:scale-95 transition-all shadow-lg">확인</button>
+          <button onClick={() => setIsHallInfoOpen(false)} className={`w-full py-5 font-black rounded-2xl text-[18px] active:scale-95 transition-all shadow-lg ${isDark ? 'bg-gray-700 text-gray-100' : 'bg-black text-white'}`}>확인</button>
         </div>
       </BottomSheet>
 
