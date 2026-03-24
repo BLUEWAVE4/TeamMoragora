@@ -51,6 +51,9 @@ export default function ChatRoom() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [gameStarted, setGameStarted] = useState(false);
+const [participants, setParticipants] = useState({ A: null, B: null });
+
   // ── 논쟁 데이터 ──
   const [debate, setDebate] = useState(null);
   const [mySide, setMySide] = useState(null); // 'A' | 'B'
@@ -88,7 +91,7 @@ export default function ChatRoom() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // ── 타이머 ──
-  const timeLeft = useCountdown(debate?.chat_deadline || debate?.vote_deadline);
+  const timeLeft = useCountdown(gameStarted ? (debate?.chat_deadline || debate?.vote_deadline) : null);
 
   // ===== 논쟁 데이터 로드 =====
   useEffect(() => {
@@ -98,8 +101,8 @@ export default function ChatRoom() {
         const data = await getDebate(debateId);
         setDebate(data);
         // 내 사이드 결정
-        const side = data.creator_id === user.id ? 'A' : 'B';
-        setMySide(side);
+        // const side = data.creator_id === user.id ? 'A' : 'B';
+        // setMySide(side);
 
         // 내 닉네임 + 아바타
         const { data: profile } = await supabase
@@ -123,10 +126,10 @@ export default function ChatRoom() {
     if (!debateId) return;
     const fetchMessages = async () => {
       const { data } = await supabase
-        .from('chat_messages')
-        .select('*, profiles(nickname, avatar_url, gender)')
-        .eq('debate_id', debateId)
-        .order('created_at', { ascending: true });
+  .from('chat_messages')
+  .select('*')
+  .eq('debate_id', debateId)
+  .order('created_at', { ascending: true });
       if (data) {
         setMessages(data);
         // 내 메시지 수 카운팅
@@ -145,24 +148,18 @@ export default function ChatRoom() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `debate_id=eq.${debateId}` },
-        async (payload) => {
-          const msg = payload.new;
-          // 프로필 정보 보완
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('nickname, avatar_url, gender')
-            .eq('id', msg.user_id)
-            .single();
-          const enriched = { ...msg, profiles: profile };
-          setMessages(prev => [...prev, enriched]);
-
-          if (msg.user_id !== user?.id) {
-            // 새 메시지 버튼
-            if (!isNearBottom.current) setShowNewMsgBtn(true);
-          } else {
-            setMsgCount(prev => prev + 1);
-          }
-        }
+        (payload) => {
+  const msg = payload.new;
+  setMessages(prev => {
+    if (prev.some(m => m.id === msg.id)) return prev;
+    return [...prev, msg];
+  });
+  if (msg.user_id === user?.id) {
+    setMsgCount(prev => prev + 1);
+  } else {
+    if (!isNearBottom.current) setShowNewMsgBtn(true);
+  }
+}
       )
       .subscribe();
 
@@ -171,27 +168,95 @@ export default function ChatRoom() {
 
   // ===== Presence (타이핑 인디케이터) =====
   useEffect(() => {
-    if (!debateId || !user) return;
-    const channel = supabase.channel(`presence:${debateId}`, {
-      config: { presence: { key: user.id } }
+  if (!debateId || !user || !myNickname) return;
+
+  const channel = supabase.channel(`chatroom:${debateId}`, {
+    config: { presence: { key: user.id } }
+  });
+
+  const syncSlots = () => {
+    const state = channel.presenceState();
+    const newSlots = { A: null, B: null };
+    Object.values(state).forEach((entries) => {
+      const p = entries[0];
+      if (p?.side === 'A') newSlots.A = p;
+      if (p?.side === 'B') newSlots.B = p;
+    });
+    setParticipants(newSlots);
+  };
+
+  channel
+    .on('presence', { event: 'sync' }, syncSlots)
+    .on('presence', { event: 'join' }, syncSlots)
+    .on('presence', { event: 'leave' }, syncSlots)
+    .on('presence', { event: 'sync' }, () => {
+      // 타이핑 인디케이터도 같이 처리
+      const state = channel.presenceState();
+      const others = Object.keys(state).filter(k => k !== user.id);
+      const isTyping = others.some(k => state[k]?.[0]?.typing === true);
+      setOpponentTyping(isTyping);
+    })
+    .on('broadcast', { event: 'game_start' }, ({ payload }) => {
+      setGameStarted(true);
+      // debate의 chat_deadline을 payload로 받아서 업데이트
+      if (payload?.chat_deadline) {
+        setDebate(prev => ({ ...prev, chat_deadline: payload.chat_deadline }));
+      }
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({
+          userId: user.id,
+          nickname: myNickname,
+          side: mySide,   // 처음엔 null, 선택 후 업데이트
+          typing: false,
+        });
+      }
     });
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        const others = Object.keys(state).filter(k => k !== user.id);
-        const isTyping = others.some(k => state[k]?.[0]?.typing === true);
-        setOpponentTyping(isTyping);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ typing: false });
-        }
-      });
+  presenceChannelRef.current = channel;
+  return () => { supabase.removeChannel(channel); };
+}, [debateId, user, myNickname]);
 
-    presenceChannelRef.current = channel;
-    return () => { supabase.removeChannel(channel); };
-  }, [debateId, user]);
+const selectSide = useCallback(async (side) => {
+  if (!presenceChannelRef.current || gameStarted) return;
+  if (side === 'A' && participants.A && participants.A.userId !== user.id) return;
+  if (side === 'B' && participants.B && participants.B.userId !== user.id) return;
+
+  const newSide = mySide === side ? null : side;
+  setMySide(newSide);
+
+  await presenceChannelRef.current.track({
+    userId: user.id,
+    nickname: myNickname,
+    side: newSide,
+    typing: false,
+  });
+}, [mySide, participants, user, myNickname, gameStarted]);
+
+const handleStart = async () => {
+  if (!isCreator || !bothReady) return;
+
+  // 테스트용: 3분 타이머
+  const TEST_DURATION_MS = 3 * 60 * 1000;
+  const chat_deadline = new Date(Date.now() + TEST_DURATION_MS).toISOString();
+
+  // DB 업데이트 (선택사항 — 없어도 broadcast로 동작)
+  await supabase.from('debates').update({ chat_deadline }).eq('id', debateId);
+
+  await presenceChannelRef.current?.send({
+    type: 'broadcast',
+    event: 'game_start',
+    payload: { chat_deadline },
+  });
+
+  // 생성자 본인도 시작
+  setGameStarted(true);
+  setDebate(prev => ({ ...prev, chat_deadline }));
+};
+
+const isCreator = debate ? debate.creator_id === user?.id : false;
+const bothReady = !!participants.A && !!participants.B;
 
   // ===== 타이머 0 → 종료 처리 =====
   useEffect(() => {
@@ -262,12 +327,15 @@ export default function ChatRoom() {
     presenceChannelRef.current?.track({ typing: false });
 
     try {
-      const { error } = await supabase.from('chat_messages').insert({
+      const { data, error } = await supabase.from('chat_messages').insert({
         debate_id: debateId,
         user_id: user.id,
         side: mySide,
         content: trimmed,
+        nickname: myNickname,
       });
+      console.log('data:', data);
+      console.log('error 전체:', JSON.stringify(error));
 
       if (error) {
         // 비속어 등 서버 에러
@@ -279,6 +347,7 @@ export default function ChatRoom() {
         setText(trimmed); // 복원
       }
     } catch (e) {
+      console.error('전송 에러:', e);
       setMsgError('전송에 실패했습니다.');
       setText(trimmed);
     } finally {
@@ -309,7 +378,7 @@ export default function ChatRoom() {
     </div>
   );
 
-  const isInputDisabled = chatEnded || timeLeft === 0 || !mySide;
+  const isInputDisabled = !gameStarted || chatEnded || timeLeft === 0 || !mySide;
   const isWarningTime = timeLeft != null && timeLeft > 0 && timeLeft <= 60;
   const remainingMsgs = MAX_MSGS - msgCount;
 
@@ -318,6 +387,72 @@ export default function ChatRoom() {
       className="flex min-h-screen flex-col bg-[#0f1829]"
       style={{ paddingBottom: keyboardHeight }}
     >
+      {/* ━━━━━ 게임 시작 전 대기 오버레이 ━━━━━ */}
+{!gameStarted && (
+  <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 px-6"
+    style={{ backgroundColor: 'rgba(15,24,41,0.97)' }}>
+
+    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">실시간 논쟁 대기실</p>
+    <h2 className="text-white text-[17px] font-black text-center leading-snug">
+      {debate?.topic || ''}
+    </h2>
+
+    {/* 사이드 선택 */}
+    <div className="w-full flex flex-col gap-3">
+      {/* PRO 버튼 */}
+      <button
+        onClick={() => selectSide('A')}
+        disabled={!!participants.A && participants.A.userId !== user?.id}
+        className={`w-full py-4 rounded-2xl font-bold text-[14px] transition-all border-2
+          ${mySide === 'A'
+            ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
+            : participants.A && participants.A.userId !== user?.id
+              ? 'bg-white/3 border-emerald-900/30 text-white/20 cursor-not-allowed'
+              : 'bg-[#0d2419]/80 border-emerald-900/40 text-emerald-400'
+          }`}
+      >
+        PRO · 찬성 {participants.A ? `(${participants.A.userId === user?.id ? '나' : participants.A.nickname})` : '(비어있음)'}
+      </button>
+
+      {/* CON 버튼 */}
+      <button
+        onClick={() => selectSide('B')}
+        disabled={!!participants.B && participants.B.userId !== user?.id}
+        className={`w-full py-4 rounded-2xl font-bold text-[14px] transition-all border-2
+          ${mySide === 'B'
+            ? 'bg-red-500/20 border-red-400/60 text-red-300'
+            : participants.B && participants.B.userId !== user?.id
+              ? 'bg-white/3 border-red-900/30 text-white/20 cursor-not-allowed'
+              : 'bg-[#1a0808]/80 border-red-900/40 text-red-400'
+          }`}
+      >
+        CON · 반대 {participants.B ? `(${participants.B.userId === user?.id ? '나' : participants.B.nickname})` : '(비어있음)'}
+      </button>
+    </div>
+
+    {/* 상태 + 시작 버튼 */}
+    {isCreator ? (
+      <button
+        onClick={handleStart}
+        disabled={!bothReady || !mySide}
+        className={`w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-wider transition-all
+          ${bothReady && mySide
+            ? 'bg-[#D4AF37] text-[#0a0f1a] shadow-[0_0_30px_rgba(212,175,55,0.3)]'
+            : 'bg-white/5 text-white/20 cursor-not-allowed'
+          }`}
+      >
+        {!mySide ? '입장을 먼저 선택하세요' : !bothReady ? '상대방을 기다리는 중...' : '⚔ 논쟁 시작'}
+      </button>
+    ) : (
+      <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center gap-3">
+        <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+        <span className="text-white/30 text-[13px] font-bold">
+          {!mySide ? '입장을 먼저 선택하세요' : bothReady ? '방장이 시작을 누를 때까지 대기 중' : '상대방을 기다리는 중...'}
+        </span>
+      </div>
+    )}
+  </div>
+)}
       {/* ━━━━━ 헤더 ━━━━━ */}
       <div className="shrink-0 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-10 pb-3 border-b border-white/5">
         {/* 주제 */}
@@ -385,8 +520,8 @@ export default function ChatRoom() {
           {messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
             const isA = msg.side === 'A';
-            const nickname = msg.profiles?.nickname || '익명';
-            const avatar = msg.profiles?.avatar_url || getAvatarUrl(msg.user_id, msg.profiles?.gender) || DEFAULT_AVATAR_ICON;
+            const nickname = msg.nickname || '익명';
+            const avatar = getAvatarUrl(msg.user_id) || DEFAULT_AVATAR_ICON;
 
             return (
               <motion.div

@@ -51,7 +51,7 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 app.use('/og', ogRoutes);
-app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/notifications', notificationRoutes);
