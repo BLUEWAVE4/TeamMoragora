@@ -422,7 +422,7 @@ export async function getVerdictFeed(req, res, next) {
     const fetchLimit = search ? 200 : to + 50;
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, vote_duration, created_at, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .range(0, fetchLimit);
 
@@ -444,8 +444,27 @@ export async function getVerdictFeed(req, res, next) {
     const data = filtered.slice(from, to + 1);
     const count = filtered.length;
 
+    // 댓글수 + 좋아요수 일괄 조회
+    const debateIds = data.map(v => v.debate_id).filter(Boolean);
+    let commentMap = {}, likeMap = {};
+    if (debateIds.length > 0) {
+      const [{ data: comments }, { data: likes }] = await Promise.all([
+        supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
+        supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+      ]);
+      (comments || []).forEach(c => { commentMap[c.debate_id] = (commentMap[c.debate_id] || 0) + 1; });
+      (likes || []).forEach(l => { likeMap[l.debate_id] = (likeMap[l.debate_id] || 0) + 1; });
+    }
+
+    const enriched = data.map(v => ({
+      ...v,
+      comments_count: commentMap[v.debate_id] || 0,
+      likes_count: likeMap[v.debate_id] || 0,
+      views_count: v.debate?.view_count || 0,
+    }));
+
     res.json({
-      data,
+      data: enriched,
       page,
       limit,
       total: count,

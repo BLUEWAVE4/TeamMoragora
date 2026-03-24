@@ -110,17 +110,7 @@ export default function HomePage() {
       if (isInitial) setLoading(true);
       const apiCategory = categoryToApi[cat] || null;
       const res = await getVerdictFeed(1, 5, apiCategory, query || undefined);
-      const rawFeeds = res?.data ?? [];
-      const [feedsWithCount, durationMap] = await Promise.all([
-        fetchCounts(rawFeeds),
-        enrichVoteDuration(rawFeeds),
-      ]);
-      // duration 데이터 병합
-      const merged = feedsWithCount.map((f, i) => ({
-        ...f,
-        debate: { ...f.debate, ...durationMap[i]?.debate },
-      }));
-      setFeeds(merged);
+      setFeeds(res?.data ?? []);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -140,16 +130,7 @@ export default function HomePage() {
       const nextPage = pageRef.current + 1;
       const apiCategory = categoryToApi[filter] || null;
       const res = await getVerdictFeed(nextPage, 5, apiCategory, searchQuery || undefined);
-      const rawFeeds = res?.data ?? [];
-      const [feedsWithCount, durationMap] = await Promise.all([
-        fetchCounts(rawFeeds),
-        enrichVoteDuration(rawFeeds),
-      ]);
-      const merged = feedsWithCount.map((f, i) => ({
-        ...f,
-        debate: { ...f.debate, ...durationMap[i]?.debate },
-      }));
-      setFeeds(prev => [...prev, ...merged]);
+      setFeeds(prev => [...prev, ...(res?.data ?? [])]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
@@ -225,11 +206,28 @@ export default function HomePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-        <span className="text-[13px] font-sans font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+    <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
+      {/* 오늘의 논쟁 스켈레톤 */}
+      <div className="mx-5 h-[200px] rounded-2xl bg-gray-200 animate-pulse" />
+      {/* 카테고리 스켈레톤 */}
+      <div className="flex gap-2 mx-5 mt-6 mb-4">
+        {[1,2,3,4,5].map(i => <div key={i} className="h-8 w-14 rounded-full bg-gray-200 animate-pulse" />)}
       </div>
+      {/* 카드 스켈레톤 */}
+      {[1,2,3].map(i => (
+        <div key={i} className="mx-5 mb-3 rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-4 w-24 rounded bg-gray-200 animate-pulse" />
+          </div>
+          <div className="h-5 w-3/4 rounded bg-gray-200 animate-pulse mb-2" />
+          <div className="h-4 w-1/2 rounded bg-gray-100 animate-pulse mb-3" />
+          <div className="flex gap-4">
+            <div className="h-8 flex-1 rounded-lg bg-gray-100 animate-pulse" />
+            <div className="h-8 flex-1 rounded-lg bg-gray-100 animate-pulse" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 
