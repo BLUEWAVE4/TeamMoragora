@@ -9,7 +9,6 @@ import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
 import { useTheme } from '../../store/ThemeContext';
 
-// created_at + vote_duration(일) → 카운트다운 훅
 function useVoteCountdown(createdAt, voteDuration) {
   const [timeLeft, setTimeLeft] = useState(null);
   useEffect(() => {
@@ -42,7 +41,6 @@ export default function DebateCard({ feed, formatTime }) {
   const isVotingStatus = debateStatus === 'voting';
   const isCompleted = debateStatus === 'completed';
 
-  // 카운트다운
   const voteDuration = debateData?.vote_duration ?? null;
   const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration);
   const hasTimer = !!voteDuration;
@@ -80,7 +78,6 @@ export default function DebateCard({ feed, formatTime }) {
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  // 좋아요 및 댓글 상태
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
@@ -97,7 +94,6 @@ export default function DebateCard({ feed, formatTime }) {
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const commentInputRef = useRef(null);
 
-  // ✅ 조회수 state — page_views 테이블에서 직접 fetch
   const [viewCount, setViewCount] = useState(0);
 
   useEffect(() => {
@@ -115,7 +111,6 @@ export default function DebateCard({ feed, formatTime }) {
     fetchViewCount();
   }, [feed?.debate_id, debateData?.id]);
 
-  // 현재 유저 아바타 URL (profiles 테이블)
   const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
   useEffect(() => {
     if (!user) return;
@@ -286,15 +281,11 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (e) { showModal('댓글 작성에 실패했습니다', '잠시 후 다시 시도해주세요.'); } finally { setIsSendingComment(false); }
   };
 
-  // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
   const handleDetailClick = async () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
-
-    // 같은 세션에서 이미 조회한 경우 중복 insert 방지
     const viewKey = `viewed_${debateId}`;
     const alreadyViewed = sessionStorage.getItem(viewKey);
-
     if (!alreadyViewed) {
       sessionStorage.setItem(viewKey, 'true');
       setViewCount(prev => prev + 1);
@@ -309,7 +300,6 @@ export default function DebateCard({ feed, formatTime }) {
         sessionStorage.removeItem(viewKey);
       }
     }
-
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }
     });
@@ -325,11 +315,13 @@ export default function DebateCard({ feed, formatTime }) {
     if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`;
     return `${d.getMonth() + 1}.${d.getDate()}`;
   };
-return (
+
+  return (
     <>
-      <div className="w-full font-sans pb-5 mb-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-        {/* 1. 프로필 헤더 (닉네임 아래 카테고리 배치) */}
-        <div className="px-4 pt-4 pb-2 flex items-start gap-3">
+      <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
+
+        {/* 프로필 헤더 */}
+        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
             <img
               src={debateData?.creator?.avatar_url || getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
@@ -337,135 +329,166 @@ return (
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[13px] font-bold text-[#1B2A4A] truncate">{creatorNickname}</span>
-              {(() => {
-                const tier = debateData?.creator?.tier || '시민';
-                const tierColor = isDark
-                  ? { '시민': '#6b6b6b', '배심원': '#4da6ff80', '변호사': '#c084fc80', '판사': '#f59e0b80', '대법관': '#f8717180' }
-                  : { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
-                const tierBg = isDark
-                  ? { '시민': '#2a2a2a', '배심원': '#1a2a40', '변호사': '#2a1a35', '판사': '#2a2210', '대법관': '#2a1515' }
-                  : { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
-                return (
-                  <span
-                    className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0"
-                    style={{ color: tierColor[tier] || '#8E8E93', backgroundColor: tierBg[tier] || '#F5F5F7' }}
-                  >{tier}</span>
-                );
-              })()}
-            </div>
-            
-            {/* 카테고리 뱃지를 닉네임 밑으로 이동 */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
-              {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
-              {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-            </div>
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <span className="text-[13px] font-bold text-[#1B2A4A] truncate">{creatorNickname}</span>
+            {(() => {
+              const tier = debateData?.creator?.tier || '시민';
+              const tierColor = isDark
+                ? { '시민': '#6b6b6b', '배심원': '#4da6ff80', '변호사': '#c084fc80', '판사': '#f59e0b80', '대법관': '#f8717180' }
+                : { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
+              const tierBg = isDark
+                ? { '시민': '#2a2a2a', '배심원': '#1a2a40', '변호사': '#2a1a35', '판사': '#2a2210', '대법관': '#2a1515' }
+                : { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
+              return (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0"
+                  style={{ color: tierColor[tier] || '#8E8E93', backgroundColor: tierBg[tier] || '#F5F5F7' }}
+                >{tier}</span>
+              );
+            })()}
           </div>
-          <button onClick={handleDetailClick} className="w-9 h-9 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-500 transition-all flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+          <button onClick={handleDetailClick} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
           </button>
         </div>
 
-        {/* 2. 주제 (제목만 남김) */}
+        <div className="mx-4 border-b border-[#1B2A4A]/5" />
+
+        {/* 주제 */}
         <div className="px-4 pt-3 pb-1">
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 3. 투표 섹션 */}
-        <div className="px-4 pb-2 pt-4">
-          {hasTimer && (
-            <div className="mb-3">
-              <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
-                {!timerExpired && (
-                  <div
-                    className="h-full rounded-full transition-all duration-1000 ease-linear"
-                    style={{
-                      width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
-                      backgroundColor: barColor,
-                    }}
-                  />
-                )}
-              </div>
-            </div>
+        {/* 카테고리 + 목적 + 기준 + 실시간 뱃지 */}
+        <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
+          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
+          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
+          {debateData?.mode === 'chat' && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 text-[10px] font-bold">
+              ⚡ 실시간
+            </span>
           )}
+        </div>
 
+        {/* 투표 진행 바 */}
+        {hasTimer && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-bold text-[#1B2A4A]/30 uppercase tracking-wider">
+                {timerExpired ? '투표 마감' : '투표 진행 중'}
+              </span>
+            </div>
+            <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
+              {timerExpired ? (
+                <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
+              ) : (
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                    backgroundColor: barColor,
+                    boxShadow: `0 0 4px ${barColor}50`,
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 투표 섹션 */}
+        <div className="px-4 pb-4 pt-1">
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
-              <p className="text-[10px] text-center text-[#1B2A4A]/25 font-bold mb-1">논쟁 당사자는 투표할 수 없습니다</p>
+              <p className="text-[10px] text-center text-[#1B2A4A]/25 font-bold">논쟁 당사자는 투표할 수 없습니다</p>
             )}
-            
+            {/* A측 */}
             <button
               onClick={() => handleVote('A')}
               disabled={isVoting || !canVote || isParticipant}
-              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all border
+              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
                 ${myVote === 'A' ? 'border-emerald-400/60 bg-emerald-50/50' : 'border-[#1B2A4A]/10'}
-                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'}`}
+                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
-                <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
+                  }`}>{isCompleted || timerExpired ? '마감' : 'A측'}</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
+                </div>
                 {(myVote || isCompleted || isParticipant) && (
-                  <span className="text-[13px] font-bold text-[#1B2A4A]/80">{agreePercent}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/80">{agreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.agree}표</span>
+                  </div>
                 )}
               </div>
             </button>
 
+            {/* B측 */}
             <button
               onClick={() => handleVote('B')}
               disabled={isVoting || !canVote || isParticipant}
-              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all border
+              className={`relative h-11 w-full rounded-lg overflow-hidden transition-all active:scale-[0.98] border
                 ${myVote === 'B' ? 'border-red-400/60 bg-red-50/50' : 'border-[#1B2A4A]/10'}
-                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'}`}
+                ${(!canVote || isParticipant) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {(myVote || isCompleted || isParticipant) && totalVotes > 0 && (
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
-                <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
+                    myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
+                  }`}>{isCompleted || timerExpired ? '마감' : 'B측'}</span>
+                  <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
+                </div>
                 {(myVote || isCompleted || isParticipant) && (
-                  <span className="text-[13px] font-bold text-[#1B2A4A]/80">{disagreePercent}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-[#1B2A4A]/80">{disagreePercent}%</span>
+                    <span className="text-[9px] text-[#1B2A4A]/45">{voteCounts.disagree}표</span>
+                  </div>
                 )}
               </div>
             </button>
           </div>
         </div>
 
-        {/* 4. 하단 액션 바 */}
-        <div className="px-4 py-3 flex justify-between items-center border-t border-gray-50 mt-2">
+        {/* 하단 액션 바 */}
+        <div className="px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-5">
-            <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : '#1B2A4A'} strokeWidth="2.2" height="20" viewBox="0 0 24 24" width="20" opacity={liked ? 1 : 0.7}>
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-              <span className={`text-[13px] font-bold ${liked ? 'text-[#E63946]' : 'text-[#1B2A4A]/60'}`}>{likeCount}</span>
-            </button>
-
-            <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2.2" height="20" viewBox="0 0 24 24" width="20" opacity="0.7">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-              </svg>
-              <span className="text-[13px] font-bold text-[#1B2A4A]/60">{localCommentCount}</span>
-            </button>
-
-            <div className="flex items-center gap-1.5">
-              <svg fill="none" stroke="#1B2A4A" strokeWidth="2.2" height="20" viewBox="0 0 24 24" width="20" opacity="0.6">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-              <span className="text-[13px] font-bold text-[#1B2A4A]/50">{viewCount}</span>
-            </div>
+            {(() => {
+              const iconStroke = isDark ? '#a0a0a0' : '#1B2A4A';
+              return (<>
+                <button onClick={handleLike} disabled={isLiking} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                  <svg fill={liked ? '#E63946' : 'none'} stroke={liked ? '#E63946' : iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity={liked ? 1 : 0.7}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/60">{likeCount}</span>
+                </button>
+                <button onClick={() => setIsCommentOpen(true)} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                  <svg fill="none" stroke={iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.7"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/60">{localCommentCount}</span>
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <svg fill="none" stroke={iconStroke} strokeWidth="2" height="18" viewBox="0 0 24 24" width="18" opacity="0.6">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span className="text-[12px] font-bold text-[#1B2A4A]/50">{viewCount}</span>
+                </div>
+              </>);
+            })()}
           </div>
-          <span className="text-[10px] text-[#1B2A4A]/40 font-bold uppercase">
-            {formatTime ? formatTime(feed.created_at) : ''}
-          </span>
+          <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
         </div>
       </div>
 
-      {/* 5. 바텀시트 및 모달 로직 */}
+      {/* 시민 의견 바텀시트 */}
       <AnimatePresence>
         {isCommentOpen && (
           <>
@@ -474,68 +497,103 @@ return (
               <motion.div
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl pointer-events-auto"
+                className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto"
               >
-                <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-gray-100">
-                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
+                <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-[#D4AF37]/10">
+                  <div className="w-10 h-1 bg-[#1B2A4A]/10 rounded-full mx-auto mb-3" />
                   <div className="flex items-center justify-between">
                     <h3 className="text-[14px] font-bold text-[#1B2A4A]">시민 의견 <span className="text-[11px] text-[#1B2A4A]/40 ml-1">{localCommentCount}개</span></h3>
-                    <button onClick={() => setIsCommentOpen(false)} className="text-blue-500 text-[13px] font-bold">완료</button>
+                    <button onClick={() => setIsCommentOpen(false)} className="text-[#1B2A4A]/30 text-[12px] font-bold">닫기</button>
                   </div>
                 </div>
-
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
                   {comments.length === 0 ? (
-                    <div className="text-center py-16">
-                      <p className="text-[13px] text-gray-400">아직 의견이 없습니다</p>
+                    <div className="text-center py-8">
+                      <p className="text-[13px] text-[#1B2A4A]/30">아직 의견이 없습니다</p>
+                      <p className="text-[11px] text-[#1B2A4A]/20 mt-1">이 판결에 대한 의견을 남겨보세요</p>
                     </div>
                   ) : (
-                    comments.map((c) => (
-                      <div key={c.id} className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
-                          <img src={c.profiles?.avatar_url || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[12px] font-bold text-gray-900">{c.profiles?.nickname || '익명'}</span>
-                            <span className="text-[10px] text-gray-400">{formatCommentTime(c.created_at)}</span>
+                    comments.map((c) => {
+                      const nickname = c.profiles?.nickname || '익명';
+                      const isMine = user?.id === c.user_id;
+                      return (
+                        <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                            <img
+                              src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                          <p className="text-[13px] text-gray-700 mt-0.5 leading-normal">{c.content}</p>
-                          {user?.id === c.user_id && (
-                            <button
-                              onClick={async () => {
-                                const { error } = await supabase.from('comments').delete().eq('id', c.id);
-                                if (!error) {
-                                  setComments(prev => prev.filter(x => x.id !== c.id));
-                                  setLocalCommentCount(prev => prev - 1);
-                                }
-                              }}
-                              className="text-[11px] text-red-400 font-bold mt-2"
-                            >
-                              삭제
-                            </button>
-                          )}
+                          <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
+                            <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
+                              <span className="text-[12px] font-bold text-[#1B2A4A]">{nickname}</span>
+                              {c.user_id === sideUsers.A && (
+                                <span className="text-[9px] text-white bg-emerald-500 px-1.5 py-0.5 rounded-full font-bold">A측</span>
+                              )}
+                              {c.user_id === sideUsers.B && (
+                                <span className="text-[9px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold">B측</span>
+                              )}
+                              <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
+                            </div>
+                            <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+                              <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
+                                <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
+                              </div>
+                              {isMine && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase.from('comments').delete().eq('id', c.id);
+                                      if (!error) {
+                                        setComments(prev => prev.filter(x => x.id !== c.id));
+                                        setLocalCommentCount(prev => prev - 1);
+                                      }
+                                    } catch {}
+                                  }}
+                                  className="text-[9px] text-[#1B2A4A]/15 active:text-red-400 transition-colors shrink-0 pb-0.5"
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
-
-                <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-3 bg-white" style={{ paddingBottom: `max(16px, env(safe-area-inset-bottom))` }}>
+                <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
+                  {user && (
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
+                      <img
+                        src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                   <input
                     ref={commentInputRef}
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }}
-                    placeholder="의견을 남겨보세요..."
-                    className="flex-1 h-10 bg-gray-100 rounded-full px-4 text-[13px] focus:outline-none"
+                    placeholder={user ? "의견을 입력하세요..." : "로그인 후 의견을 남길 수 있어요"}
+                    disabled={!user}
+                    maxLength={500}
+                    className="flex-1 h-9 bg-[#1B2A4A]/5 rounded-full px-4 text-[12px] text-[#1B2A4A] placeholder:text-[#1B2A4A]/25 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
                   />
                   <button
                     onClick={handleSendComment}
-                    disabled={!commentText.trim() || isSendingComment}
-                    className={`text-[14px] font-bold ${commentText.trim() ? 'text-blue-500' : 'text-blue-200'}`}
+                    disabled={!commentText.trim() || isSendingComment || !user}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                      commentText.trim() ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37]/20 text-[#D4AF37]/40'
+                    }`}
                   >
-                    게시
+                    {isSendingComment
+                      ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <span className="text-[14px] font-bold">↑</span>
+                    }
                   </button>
                 </div>
               </motion.div>
@@ -543,9 +601,14 @@ return (
           </>
         )}
       </AnimatePresence>
-
       <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
-      <MoragoraModal isOpen={modalState.isOpen} onClose={closeModal} title={modalState.title} description={modalState.description} type="error" />
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type="error"
+      />
     </>
   );
 }
