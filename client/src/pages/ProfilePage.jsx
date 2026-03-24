@@ -317,7 +317,11 @@ const [showInfo, setShowInfo] = useState(false);
       if (!user) return;
       try {
         setLoading(true);
-        const pRes = await api.get('/auth/me');
+        // 프로필 + 논쟁 목록 병렬 조회
+        const [pRes, { data: debates, error }] = await Promise.all([
+          api.get('/auth/me'),
+          supabase.from('debates').select(`*, verdicts (*)`).or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`).order('created_at', { ascending: false }),
+        ]);
         const profile = pRes.data || pRes;
         setProfileData(profile);
         setNewNickname(profile.nickname || '');
@@ -327,11 +331,6 @@ const [showInfo, setShowInfo] = useState(false);
           setSetupAge(profile.age ? String(profile.age) : '');
           setShowProfileSetup(true);
         }
-        const { data: debates, error } = await supabase
-          .from('debates')
-          .select(`*, verdicts (*)`)
-          .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
-          .order('created_at', { ascending: false });
         if (error) throw error;
         setMyJudgments(debates || []);
       } catch (error) {

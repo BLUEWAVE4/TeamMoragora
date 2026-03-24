@@ -45,7 +45,7 @@ app.use('/api', globalLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/debates', debateRoutes);
 app.use('/api/arguments', argumentRoutes);
-app.use('/api/judgments', aiLimiter, judgmentRoutes);
+app.use('/api/judgments', judgmentRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);
