@@ -77,13 +77,35 @@ io.on('connection', (socket) => {
     socket.to(debateId).emit('opponent-typing', typing);
   });
 
-  // ===== 게임 시작 =====
-  socket.on('start-game', async ({ debateId, chat_deadline }) => {
-    io.to(debateId).emit('game-start', { chat_deadline });
-    // DB 업데이트 (비동기)
+  // ===== 게임 시작 (서버가 시간 관리) =====
+  socket.on('start-game', async ({ debateId }) => {
+    const CHAT_DURATION_MS = 3 * 60 * 1000; // 3분
+    const now = new Date();
+    const chat_deadline = new Date(now.getTime() + CHAT_DURATION_MS).toISOString();
+    const chat_started_at = now.toISOString();
+
+    // 양쪽에 서버 기준 deadline 전달
+    io.to(debateId).emit('game-start', { chat_deadline, chat_started_at });
+
+    // DB 저장
     import('./src/config/supabase.js').then(({ supabaseAdmin }) => {
-      supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at: new Date().toISOString(), status: 'chatting' }).eq('id', debateId);
+      supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
     }).catch(() => {});
+
+    // 서버 타이머: 시간 만료 시 자동 판결 트리거
+    setTimeout(async () => {
+      try {
+        const { supabaseAdmin } = await import('./src/config/supabase.js');
+        const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
+        if (debate?.status === 'chatting') {
+          await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId).eq('status', 'chatting');
+          io.to(debateId).emit('chat-ended', { debateId });
+          const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
+          triggerJudgment(debateId).catch(err => console.error('[Timer] 판결 실패:', err.message));
+          console.log(`[Timer] ${debateId} 채팅 종료 → 판결 트리거`);
+        }
+      } catch (err) { console.error('[Timer] 에러:', err.message); }
+    }, CHAT_DURATION_MS);
   });
 
   // ===== 실시간 메시지: 즉시 브로드캐스트 → DB 비동기 저장 =====

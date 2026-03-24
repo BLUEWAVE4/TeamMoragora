@@ -239,30 +239,26 @@ export default function Header() {
       <header className={`bg-white/80 border-b border-gray-100 sticky top-0 z-[100] h-14 flex items-center backdrop-blur-md transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
           {isSearchOpen ? (
-            <form onSubmit={(e) => { e.preventDefault(); setSearchParams(searchQuery ? { q: searchQuery } : {}); setIsSearchOpen(false); }} className="flex-1 flex items-center gap-3">
-              <div className="flex-1 flex items-center bg-gray-100/80 rounded-xl px-3 py-1.5">
-                <SearchIcon className="text-gray-400 mr-2" />
-                <input autoFocus type="text" placeholder={config.placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-sm text-[#2D3350]" />
-              </div>
-              <button type="button" onClick={() => setIsSearchOpen(false)} className="text-[13px] font-bold text-[#1B2A4A]/50">취소</button>
+            <form onSubmit={(e) => { e.preventDefault(); setSearchParams(searchQuery ? { q: searchQuery } : {}); setIsSearchOpen(false); }} className="flex-1 flex items-center bg-gray-100/80 rounded-xl px-3 py-1.5 mr-2">
+              <SearchIcon className="text-gray-400 mr-2 shrink-0" />
+              <input autoFocus type="text" placeholder={config.placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-sm text-[#2D3350] min-w-0" />
+              <button type="button" onClick={() => setIsSearchOpen(false)} className="text-[11px] font-bold text-[#1B2A4A]/40 shrink-0 ml-2">취소</button>
             </form>
           ) : (
-            <>
-              <Link to="/" className="flex items-center no-underline active:scale-95 transition-transform">
-                <ScalesLogo /><span className="text-lg font-black text-[#2D3350]">모라고라<span className="text-[#FFBD43]">.</span></span>
-              </Link>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setIsSearchOpen(true)} className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full"><SearchIcon /></button>
-                <button onClick={() => user ? setShowNotif(!showNotif) : navigate('/login')} className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full relative">
-                  <BellIcon active={unreadCount > 0} />
-                  {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
-                </button>
-                <button onClick={toggleTheme} className="w-9 h-9 flex items-center justify-center rounded-full">
-                  {isDark ? <Sun size={20} strokeWidth={2} className="text-[#D4AF37]" /> : <Moon size={20} strokeWidth={2} className="text-[#2D3350]/50" />}
-                </button>
-              </div>
-            </>
+            <Link to="/" className="flex items-center no-underline active:scale-95 transition-transform">
+              <ScalesLogo /><span className="text-lg font-black text-[#2D3350]">모라고라<span className="text-[#FFBD43]">.</span></span>
+            </Link>
           )}
+          <div className="flex items-center gap-1 shrink-0">
+            {!isSearchOpen && <button onClick={() => setIsSearchOpen(true)} className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full"><SearchIcon /></button>}
+            <button onClick={() => user ? setShowNotif(!showNotif) : navigate('/login')} className="w-9 h-9 flex items-center justify-center text-[#2D3350]/50 rounded-full relative">
+              <BellIcon active={unreadCount > 0} />
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+            </button>
+            <button onClick={toggleTheme} className="w-9 h-9 flex items-center justify-center rounded-full">
+              {isDark ? <Sun size={20} strokeWidth={2} className="text-[#D4AF37]" /> : <Moon size={20} strokeWidth={2} className="text-[#2D3350]/50" />}
+            </button>
+          </div>
         </div>
       </header>
 

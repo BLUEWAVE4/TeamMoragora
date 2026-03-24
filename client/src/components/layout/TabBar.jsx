@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Swords } from 'lucide-react';
 import { useAuth } from "../../store/AuthContext";
 import { useTheme } from "../../store/ThemeContext";
 import { getMyActiveDebates, deleteDebate } from "../../services/api";
@@ -16,10 +16,7 @@ const HomeIcon = ({ active }) => (
 );
 
 const LiveIcon = ({ active }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.8" : "2"} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-200">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    {active && <circle cx="12" cy="11" r="2" fill="currentColor" stroke="none"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>}
-  </svg>
+  <Swords size={24} strokeWidth={active ? 2.8 : 2} className="transition-all duration-200" />
 );
 
 const PlusIcon = ({ active, pulse, isDark }) => {
