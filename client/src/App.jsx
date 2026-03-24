@@ -20,6 +20,8 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ChatRoom from './pages/debate/ChatRoom';
 import DebateLobbyPage from './pages/debate/DebateLobbyPage';
+import ChatLobby from './pages/debate/ChatLobby';
+import ChatLobbyList from './pages/debate/ChatLobbyList';
 
 export default function App() {
   const location = useLocation();
@@ -48,6 +50,10 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/auth/nickname" element={<NicknamePage />} />
           <Route path="/debate/create" element={<DebateCreatePage />} />
+
+          <Route path="/debate/:debateId/lobby" element={<ChatLobby />} />
+          <Route path="/debate/chat/list" element={<ChatLobbyList />} />  {/* 테스트용 목록 */}
+          
           <Route path="/debate/chat/room" element={<ChatRoom />} />          {/* ← 추가: 실시간 논쟁 진입 */}
           <Route path="/debate/:debateId/chat" element={<ChatRoom />} />     {/* ← 추가: debateId 있는 채팅방 */}
           <Route path="/debate/:debateId/argument" element={<ArgumentPage />} />

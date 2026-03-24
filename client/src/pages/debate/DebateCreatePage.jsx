@@ -200,8 +200,8 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
       if (mode === 'chat') {
         const inviteCode = result?.invite_code || result?.inviteCode;
         setGameStarted(true);
+        // navigate(`/debate/${result.id}/lobby`);
         navigate(`/debate/${result.id}/chat`);
-        // navigate(`/debate/${result.id}/chat`);
         return;
       }
 
