@@ -140,7 +140,7 @@ export async function getVerdict(req, res, next) {
   try {
     const { data: verdict, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side, status, vote_deadline)')
+      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side, status, vote_deadline, mode)')
       .eq('debate_id', req.params.debateId)
       .maybeSingle();
 
@@ -165,7 +165,7 @@ export async function getVerdict(req, res, next) {
       A: r1A?.content || null,
       B: r1B?.content || null,
       nicknameA: r1A?.user?.nickname || null,
-      nicknameB: r1B?.user?.nickname || null,
+      nicknameB: verdict.debate?.mode === 'solo' ? '소크라테스' : (r1B?.user?.nickname || null),
       userIdA: r1A?.user_id || null,
       userIdB: r1B?.user_id || null,
       // 2라운드 반박
