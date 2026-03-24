@@ -100,8 +100,23 @@ export default function DebateCreatePage() {
     localStorage.removeItem(DRAFT_KEY);
   };
 
+  // const handleModeStart = (selectedMode) => {
+  //   setMode(selectedMode);
+  //   setGameStarted(true);
+  // };
+
   const handleModeStart = (selectedMode) => {
+    // if (selectedMode === "chat") {
+    //   navigate('/debate/chat/room');  // 바로 ChatRoom으로 이동
+    //   return;
+    // }
     setMode(selectedMode);
+    if (selectedMode === 'chat') {
+      // 🚀 실시간 논쟁 루트: '대기실' 컴포넌트로 바로 이동
+      // (아직 방을 안 만들었으니 inviteCode가 없는 상태로 이동)
+      navigate('/debate/lobby'); 
+      return;
+    }
     setGameStarted(true);
   };
 
@@ -179,8 +194,11 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
       localStorage.removeItem(DRAFT_KEY);
 
       if (mode === 'solo') {
-        // 연습 모드: 초대 스킵 → 바로 주장 작성
         navigate(`/debate/${result.id}/argument`);
+        return;
+      }
+      if (mode === 'chat') {
+        navigate(`/debate/${result.id}/chat`);
         return;
       }
 
@@ -202,7 +220,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
 
         {!gameStarted && <ModeSelector onStart={handleModeStart} />}
 
-        {gameStarted && (mode === "battle" || mode === "solo") && (
+        {gameStarted && (mode === "battle" || mode === "solo" || mode === "chat") && (
           <>
             <StepWizard currentStep={step} total={3} />
 

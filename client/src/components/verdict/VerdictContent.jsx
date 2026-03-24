@@ -701,10 +701,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     <span
                       className="text-[9px] font-bold"
                       style={{
-                        color: j.winner_side === 'A' ? '#059669' : j.winner_side === 'B' ? '#E63946' : '#D4AF37',
+                        color: !isBattle ? '#D4AF37' : j.winner_side === 'A' ? '#059669' : j.winner_side === 'B' ? '#E63946' : '#D4AF37',
                       }}
                     >
-                      {j.winner_side === 'draw' ? '무승부' : j.winner_side === 'A' ? 'A측' : 'B측'}
+                      {!isBattle ? '처리완료' : j.winner_side === 'draw' ? '무승부' : j.winner_side === 'A' ? 'A측' : 'B측'}
                     </span>
                   </div>
                 </button>

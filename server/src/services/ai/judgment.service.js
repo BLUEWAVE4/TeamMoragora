@@ -28,7 +28,10 @@ export function validateAndCorrectVerdict(raw) {
   }
 
   if (!['A', 'B', 'draw'].includes(raw.winner_side)) {
-    throw new Error(`잘못된 winner_side: ${raw.winner_side}`);
+    // AI가 닉네임 등 잘못된 값 반환 시 점수 기반 보정
+    const sa = Number(raw.score_a) || 0;
+    const sb = Number(raw.score_b) || 0;
+    raw.winner_side = sa > sb ? 'A' : sb > sa ? 'B' : 'draw';
   }
 
   const correctDetail = (detail) => {
