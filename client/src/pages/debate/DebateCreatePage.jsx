@@ -169,17 +169,19 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      const data = {
-        topic,
-        pro_side: proSide,
-        con_side: conSide,
-        category: category || "기타",
-        purpose,
-        lens,
-        time: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),      
-        vote_duration: mode === 'chat' ? 10 : (time ? parseInt(time) : 0), 
+const handleSubmit = async () => {
+  try {
+    const data = {
+      topic,
+      pro_side: proSide,
+      con_side: conSide,
+      category: category || "기타",
+      purpose,
+      lens,
+      // ✅ 여기서 mode가 'chat'일 때 서버가 'duo'로 오해하지 않도록 명확히 전달
+      mode: mode === 'chat' ? 'chat' : mode, 
+      time: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),      
+      vote_duration: mode === 'chat' ? 10 : (time ? parseInt(time) : 0), 
         mode,
         deadline: time
           ? (() => {
@@ -191,6 +193,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
       };
 
       const result = await createDebate(data);
+      console.log("생성 후 서버 응답 데이터:", result);
       localStorage.removeItem(DRAFT_KEY);
 
       if (mode === 'solo') {
@@ -198,17 +201,17 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
         return;
       }
       if (mode === 'chat') {
-        const inviteCode = result?.invite_code || result?.inviteCode;
-        setGameStarted(true);
-        // navigate(`/debate/${result.id}/lobby`);
-        navigate(`/debate/${result.id}/chat`);
-        return;
-      }
-
-      const inviteCode = result?.invite_code;
+      navigate(`/debate/${result.id}/chat`, { replace: true });
+      return; 
+    }
+      const inviteCode = result?.invite_code || result?.inviteCode;
+    if (inviteCode) {
       sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(result));
       navigate(`/invite/${inviteCode}`);
-
+    } else {
+      // 초대 코드가 없는 예외 상황 대비
+      navigate(`/debate/${result.id}/argument`);
+    }
     } catch (err) {
       console.error(err);
       showModal('논쟁 생성에 실패했습니다', '잠시 후 다시 시도해주세요.', 'error');

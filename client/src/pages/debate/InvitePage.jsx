@@ -15,8 +15,13 @@ const labelMap = {
 }
 const toKor = (v) => labelMap[v] || v
 
-const getDebateRoute = (debateId, status) => {
-  // 1. 실시간 채팅 모드 우선 처리
+const getDebateRoute = (debate) => {
+  if (!debate) return '/';
+
+  // 객체에서 필요한 정보(id, mode, status)를 꺼냅니다.
+  const { id: debateId, mode, status } = debate;
+
+  // 1️⃣ 실시간 논쟁 모드인 경우
   if (mode === 'chat') {
     return `/debate/${debateId}/chat`;
   }
@@ -153,14 +158,14 @@ export default function InvitePage() {
       return
     }
     // 이미 자동 참여 완료된 경우 바로 이동
-    if (debate?.opponent_id === user.id) {
-      navigate(getDebateRoute(debate.id, debate.status))
-      return
-    }
+if (debate?.opponent_id === user.id) {
+  navigate(getDebateRoute(debate))
+  return
+}
     try {
       const response = await joinByInvite(inviteCode)
       const targetId = response.id || response._id
-      if (targetId) navigate(getDebateRoute(targetId, response.status))
+      if (response) navigate(getDebateRoute(response))
     } catch (err) {
       const msg = err?.response?.data?.error || err.message || ''
       const status = err?.response?.status || err?.status
