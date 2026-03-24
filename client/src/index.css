@@ -37,6 +37,44 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   transition: background-color 0.3s, color 0.3s;
+  /* 노치/다이나믹 아일랜드 대응 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ===== 최소 너비 방어 (갤럭시 폴드 접힌 상태 280px) ===== */
+.app-container {
+  min-width: 280px;
+}
+
+/* ===== 가로 모드 안내 ===== */
+@media (orientation: landscape) and (max-height: 500px) {
+  body::after {
+    content: '세로 모드로 회전해주세요';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #1B2A4A;
+    color: #D4AF37;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+  }
+}
+
+/* ===== 텍스트 오버플로우 방어 ===== */
+.app-container * {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ===== 키보드 대응 — 입력 시 화면 확대 방지 (iOS) ===== */
+input, textarea, select {
+  font-size: 16px !important; /* iOS 16px 미만일 때 자동 확대 방지 */
 }
 
 /* ===== 다크모드 CSS 변수 오버라이드 ===== */
