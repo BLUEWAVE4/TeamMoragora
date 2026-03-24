@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
+import { socket } from '../../services/socket';
 import { getDebate } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -100,9 +101,12 @@ const [participants, setParticipants] = useState({ A: null, B: null });
       try {
         const data = await getDebate(debateId);
         setDebate(data);
-        // 내 사이드 결정
-        // const side = data.creator_id === user.id ? 'A' : 'B';
-        // setMySide(side);
+        // 채팅 중이면 자동 게임 시작 (새로고침 대응)
+        if (data.status === 'chatting' && data.chat_deadline) {
+          setGameStarted(true);
+          if (data.creator_id === user.id) setMySide('A');
+          else if (data.opponent_id === user.id) setMySide('B');
+        }
 
         // 내 닉네임 + 아바타
         const { data: profile } = await supabase
@@ -140,117 +144,93 @@ const [participants, setParticipants] = useState({ A: null, B: null });
     fetchMessages();
   }, [debateId, user]);
 
-  // ===== Realtime 메시지 구독 =====
+  // ===== Socket.io 메시지 구독 =====
   useEffect(() => {
     if (!debateId) return;
-    const channel = supabase
-      .channel(`chat:${debateId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `debate_id=eq.${debateId}` },
-        (payload) => {
-  const msg = payload.new;
-  setMessages(prev => {
-    if (prev.some(m => m.id === msg.id)) return prev;
-    return [...prev, msg];
-  });
-  if (msg.user_id === user?.id) {
-    setMsgCount(prev => prev + 1);
-  } else {
-    if (!isNearBottom.current) setShowNewMsgBtn(true);
-  }
-}
-      )
-      .subscribe();
+    socket.connect();
+    socket.emit('join-room', debateId);
 
-    return () => { supabase.removeChannel(channel); };
+    const handleNewMessage = (msg) => {
+      setMessages(prev => {
+        // 낙관적 메시지(temp-)가 있으면 교체, 없으면 추가
+        if (msg.user_id === user?.id) {
+          const tempIdx = prev.findIndex(m => m.id?.startsWith('temp-') && m.user_id === msg.user_id && m.content === msg.content);
+          if (tempIdx >= 0) {
+            const updated = [...prev];
+            updated[tempIdx] = msg;
+            return updated;
+          }
+        }
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      // 상대 메시지 → 타이핑 인디케이터 해제 + 새 메시지 알림
+      if (msg.user_id !== user?.id) {
+        setOpponentTyping(false);
+        if (!isNearBottom.current) setShowNewMsgBtn(true);
+      }
+    };
+
+    socket.on('new-message', handleNewMessage);
+
+    return () => {
+      socket.off('new-message', handleNewMessage);
+      socket.emit('leave-room', debateId);
+    };
   }, [debateId, user]);
 
-  // ===== Presence (타이핑 인디케이터) =====
+  // ===== Socket.io Presence (타이핑/참여자/게임시작) =====
   useEffect(() => {
-  if (!debateId || !user || !myNickname) return;
+    if (!debateId || !user || !myNickname) return;
 
-  const channel = supabase.channel(`chatroom:${debateId}`, {
-    config: { presence: { key: user.id } }
-  });
+    // 참여자 입장 알림
+    socket.emit('join-presence', { debateId, userId: user.id, nickname: myNickname, side: mySide });
 
-  const syncSlots = () => {
-    const state = channel.presenceState();
-    const newSlots = { A: null, B: null };
-    Object.values(state).forEach((entries) => {
-      const p = entries[0];
-      if (p?.side === 'A') newSlots.A = p;
-      if (p?.side === 'B') newSlots.B = p;
-    });
-    setParticipants(newSlots);
-  };
+    // 참여자 동기화
+    socket.on('presence-sync', (slots) => setParticipants(slots));
 
-  channel
-    .on('presence', { event: 'sync' }, syncSlots)
-    .on('presence', { event: 'join' }, syncSlots)
-    .on('presence', { event: 'leave' }, syncSlots)
-    .on('presence', { event: 'sync' }, () => {
-      // 타이핑 인디케이터도 같이 처리
-      const state = channel.presenceState();
-      const others = Object.keys(state).filter(k => k !== user.id);
-      const isTyping = others.some(k => state[k]?.[0]?.typing === true);
+    // 타이핑 인디케이터
+    socket.on('opponent-typing', (isTyping) => {
       setOpponentTyping(isTyping);
-    })
-    .on('broadcast', { event: 'game_start' }, ({ payload }) => {
-      setGameStarted(true);
-      // debate의 chat_deadline을 payload로 받아서 업데이트
-      if (payload?.chat_deadline) {
-        setDebate(prev => ({ ...prev, chat_deadline: payload.chat_deadline }));
-      }
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({
-          userId: user.id,
-          nickname: myNickname,
-          side: mySide,   // 처음엔 null, 선택 후 업데이트
-          typing: false,
-        });
+      if (isTyping) {
+        clearTimeout(window._typingTimeout);
+        window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000);
       }
     });
 
-  presenceChannelRef.current = channel;
-  return () => { supabase.removeChannel(channel); };
-}, [debateId, user, myNickname]);
+    // 게임 시작
+    socket.on('game-start', ({ chat_deadline }) => {
+      setGameStarted(true);
+      if (chat_deadline) setDebate(prev => ({ ...prev, chat_deadline }));
+    });
 
-const selectSide = useCallback(async (side) => {
-  if (!presenceChannelRef.current || gameStarted) return;
+    return () => {
+      socket.emit('leave-presence', { debateId, userId: user.id });
+      socket.off('presence-sync');
+      socket.off('opponent-typing');
+      socket.off('game-start');
+    };
+  }, [debateId, user, myNickname, mySide]);
+
+const selectSide = useCallback((side) => {
+  if (gameStarted) return;
   if (side === 'A' && participants.A && participants.A.userId !== user.id) return;
   if (side === 'B' && participants.B && participants.B.userId !== user.id) return;
 
   const newSide = mySide === side ? null : side;
   setMySide(newSide);
-
-  await presenceChannelRef.current.track({
-    userId: user.id,
-    nickname: myNickname,
-    side: newSide,
-    typing: false,
-  });
-}, [mySide, participants, user, myNickname, gameStarted]);
+  socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, side: newSide });
+}, [mySide, participants, user, myNickname, gameStarted, debateId]);
 
 const handleStart = async () => {
   if (!isCreator || !bothReady) return;
 
-  // 테스트용: 3분 타이머
-  const TEST_DURATION_MS = 3 * 60 * 1000;
-  const chat_deadline = new Date(Date.now() + TEST_DURATION_MS).toISOString();
+  const DURATION_MS = 3 * 60 * 1000;
+  const chat_deadline = new Date(Date.now() + DURATION_MS).toISOString();
 
-  // DB 업데이트 (선택사항 — 없어도 broadcast로 동작)
-  await supabase.from('debates').update({ chat_deadline }).eq('id', debateId);
+  // 서버에 시작 알림 (DB 업데이트 + 브로드캐스트)
+  socket.emit('start-game', { debateId, chat_deadline });
 
-  await presenceChannelRef.current?.send({
-    type: 'broadcast',
-    event: 'game_start',
-    payload: { chat_deadline },
-  });
-
-  // 생성자 본인도 시작
   setGameStarted(true);
   setDebate(prev => ({ ...prev, chat_deadline }));
 };
@@ -301,14 +281,12 @@ const bothReady = !!participants.A && !!participants.B;
     setText(e.target.value);
     setMsgError('');
 
-    // 타이핑 상태 broadcast
-    if (presenceChannelRef.current) {
-      presenceChannelRef.current.track({ typing: true });
-      clearTimeout(typingTimeout.current);
-      typingTimeout.current = setTimeout(() => {
-        presenceChannelRef.current?.track({ typing: false });
-      }, 1500);
-    }
+    // 타이핑 상태 broadcast (Socket.io)
+    socket.emit('typing', { debateId, userId: user.id, typing: true });
+    clearTimeout(typingTimeout.current);
+    typingTimeout.current = setTimeout(() => {
+      socket.emit('typing', { debateId, userId: user.id, typing: false });
+    }, 1500);
   }, []);
 
   // ===== 메시지 전송 =====
@@ -324,37 +302,33 @@ const bothReady = !!participants.A && !!participants.B;
     setSending(true);
     setCooldown(true);
     setText('');
-    presenceChannelRef.current?.track({ typing: false });
+    socket.emit('typing', { debateId, userId: user.id, typing: false });
 
-    try {
-      const { data, error } = await supabase.from('chat_messages').insert({
-        debate_id: debateId,
-        user_id: user.id,
-        side: mySide,
-        content: trimmed,
-        nickname: myNickname,
-      });
-      console.log('data:', data);
-      console.log('error 전체:', JSON.stringify(error));
+    // 낙관적 업데이트: 로컬에 즉시 표시
+    const optimisticMsg = {
+      id: `temp-${Date.now()}`,
+      debate_id: debateId,
+      user_id: user.id,
+      nickname: myNickname,
+      content: trimmed,
+      side: mySide,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setMsgCount(prev => prev + 1);
 
-      if (error) {
-        // 비속어 등 서버 에러
-        if (error.message?.includes('inappropriate') || error.code === '23514') {
-          setMsgError('부적절한 표현이 감지되었습니다.');
-        } else {
-          setMsgError('전송에 실패했습니다. 다시 시도해주세요.');
-        }
-        setText(trimmed); // 복원
-      }
-    } catch (e) {
-      console.error('전송 에러:', e);
-      setMsgError('전송에 실패했습니다.');
-      setText(trimmed);
-    } finally {
-      setSending(false);
-      setTimeout(() => setCooldown(false), COOLDOWN_MS);
-    }
-  }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user]);
+    // Socket.io로 전송 (HTTP 대신)
+    socket.emit('send-message', {
+      debateId,
+      userId: user.id,
+      nickname: myNickname,
+      content: trimmed,
+      side: mySide,
+    });
+
+    setSending(false);
+    setTimeout(() => setCooldown(false), COOLDOWN_MS);
+  }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
