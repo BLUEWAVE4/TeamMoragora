@@ -550,138 +550,143 @@ export default function RankingPage() {
               </div>
             </div>
 
-            {/* ===== 논쟁 랭킹 탭 ===== */}
-            {activeTab === 'debate' && (
-              <div>
-                {hallLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : hallData.length === 0 ? (
-                  <div className="text-center py-16">
-                    <p className="text-[15px] font-bold text-[#1B2A4A]/30">아직 등록된 논쟁이 없습니다</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* === 1위 하이라이트 카드 === */}
-                    {hallData[0] && (() => {
-                      const v = hallData[0];
-                      const d = v.debate || {};
-                      const creator = d.creator || {};
-                      const cat = categoryMap[d.category] || d.category || '';
-                      const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
-                      const winColor = v.winner_side === 'A' ? '#059669' : v.winner_side === 'B' ? '#E63946' : '#D4AF37';
-                      return (
-                        <motion.div
-                          key={v.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          onClick={() => window.location.href = `/moragora/${d.id}`}
-                          className="relative bg-gradient-to-br from-[#1B2A4A] to-[#2D4470] rounded-2xl p-5 shadow-lg cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/10 rounded-full -translate-y-8 translate-x-8" />
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-[14px] font-black text-[#D4AF37]">👑 #1</span>
-                            <img
-                              src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
-                              className="w-7 h-7 rounded-full border-2 border-[#D4AF37]/40"
-                              alt=""
-                            />
-                            <span className="text-[14px] font-bold text-white">{creator.nickname || '익명'}</span>
-                            {creator.tier && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#D4AF37]/20 text-[#D4AF37]">
-                                {creator.tier}
-                              </span>
-                            )}
-                            <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${winColor}25`, color: winColor }}>
-                              {winLabel}
-                            </span>
-                          </div>
-                          <p className="text-[16px] font-bold text-white mb-3 leading-snug">{d.topic}</p>
-                          <div className="flex items-center gap-3 text-[11px] text-white/50">
-                            {cat && <span className="bg-white/10 px-2 py-0.5 rounded font-semibold">{cat}</span>}
-                            <span>♥ {v._likes || 0}</span>
-                            <span>💬 {v._comments || 0}</span>
-                            <span>👁 {v._views || 0}</span>
-                            <span className="ml-auto font-bold text-[#D4AF37]">AI {v._aiScore || ((v.ai_score_a || 0) + (v.ai_score_b || 0))}</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })()}
+                  
+           {/* ===== 논쟁 랭킹 탭 (Clean Mono AI & Views Fixed) ===== */}
+{activeTab === 'debate' && (
+  <div className="px-4 pb-24 min-h-screen font-[-apple-system,sans-serif] tracking-tight antialiased">
+    {hallLoading ? (
+      <div className="flex justify-center items-center h-64">
+        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#007AFF] rounded-full animate-spin" />
+      </div>
+    ) : (
+      <div className="max-w-[440px] mx-auto pt-6 flex flex-col gap-3">
+        {hallData.slice(0, hallVisible).map((v, idx) => {
+          const d = v.debate || {};
+          const creator = d.creator || {};
+          const rank = idx + 1;
+          
+          // 티어 색상 (배지에만 사용)
+          const getTierColor = (tierName) => {
+            switch(tierName) {
+              case '변호사': return '#A855F7';
+              case '검사': return '#EF4444';
+              case '판사': return '#D4AF37';
+              case '배심원': return '#3B82F6';
+              default: return '#8E8E93';
+            }
+          };
+          const tierColor = getTierColor(creator.tier);
 
-                    {/* === 2위~ 카드 === */}
-                    {hallData.slice(1, hallVisible).map((v, idx) => {
-                      const d = v.debate || {};
-                      const creator = d.creator || {};
-                      const cat = categoryMap[d.category] || d.category || '';
-                      const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
-                      const winColor = v.winner_side === 'A' ? '#059669' : v.winner_side === 'B' ? '#E63946' : '#D4AF37';
-                      const rank = idx + 2;
-                      return (
-                        <motion.div
-                          key={v.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.03 }}
-                          onClick={() => window.location.href = `/moragora/${d.id}`}
-                          className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.98] transition-all"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[12px] font-black ${rank <= 3 ? 'text-[#D4AF37]' : 'text-gray-400'}`}>#{rank}</span>
-                              <img
-                                src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON}
-                                className="w-6 h-6 rounded-full"
-                                alt=""
-                              />
-                              <span className="text-[13px] font-bold text-[#1B2A4A]">{creator.nickname || '익명'}</span>
-                              {creator.tier && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: findTierByScore(0).bg, color: findTierByScore(0).color }}>
-                                  {creator.tier}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${winColor}15`, color: winColor }}>
-                              {winLabel}
-                            </span>
-                          </div>
-                          <p className="text-[14px] font-bold text-[#1B2A4A] mb-2 leading-snug">{d.topic}</p>
-                          <div className="flex items-center gap-2 text-[11px] text-[#1B2A4A]/40">
-                            {cat && <span className="bg-gray-50 px-2 py-0.5 rounded font-semibold">{cat}</span>}
-                            <span>♥ {v._likes || 0}</span>
-                            <span>💬 {v._comments || 0}</span>
-                            <span>👁 {v._views || 0}</span>
-                            <span className="ml-auto font-bold text-[#D4AF37]">AI {v._aiScore || ((v.ai_score_a || 0) + (v.ai_score_b || 0))}</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
+          const winLabel = v.winner_side === 'A' ? 'A측 승리' : v.winner_side === 'B' ? 'B측 승리' : '무승부';
+          const winColor = v.winner_side === 'A' ? '#34C759' : v.winner_side === 'B' ? '#FF3B30' : '#8E8E93';
 
-                    {/* === 더 보기 (5개씩 lazy load) === */}
-                    {hallVisible < hallData.length && (
-                      <div className="flex justify-center py-4">
-                        {hallLoadingMore ? (
-                          <div className="w-7 h-7 border-3 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setHallLoadingMore(true);
-                              setTimeout(() => {
-                                setHallVisible(prev => prev + 5);
-                                setHallLoadingMore(false);
-                              }, 500);
-                            }}
-                            className="px-6 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] font-bold text-[#1B2A4A]/50 active:scale-95 transition-all"
-                          >
-                            더 보기 ({Math.min(5, hallData.length - hallVisible)}개)
-                          </button>
-                        )}
+          return (
+            <motion.div
+              key={v.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => window.location.href = `/moragora/${d.id}`}
+              className={`relative rounded-[24px] p-4 border-[1.5px] bg-white transition-all active:scale-[0.98] cursor-pointer 
+                ${rank === 1 ? "border-[#FFD60A] shadow-[0_8px_20px_rgba(255,214,10,0.12)]" : "border-white shadow-[0_2px_8px_rgba(0,0,0,0.02)]"}`}
+            >
+              <div className="flex gap-3.5">
+                {/* [좌측] 순위 배지 */}
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[16px] font-[1000] italic shadow-inner
+                    ${rank === 1 ? "bg-[#FFD60A] text-[#8A6600]" : rank === 2 ? "bg-[#D1D1D6] text-white" : rank === 3 ? "bg-[#C1A47E] text-white" : "bg-[#F2F2F7] text-[#AEAEB2]"}`}>
+                    {rank}
+                  </div>
+                </div>
+
+                {/* [우측] 콘텐츠 */}
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img 
+                        src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON} 
+                        className="w-5 h-5 rounded-full object-cover border border-gray-100" 
+                        alt="" 
+                      />
+                      <span className="text-[14px] font-[600] text-[#1C1C1E] truncate max-w-[100px] leading-none">
+                        {creator.nickname || '익명'}
+                      </span>
+                      {creator.tier && (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-[4px] text-white uppercase tracking-tighter scale-95"
+                              style={{ backgroundColor: tierColor }}>
+                          {creator.tier}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F2F2F7]" style={{ color: winColor }}>
+                      {winLabel}
+                    </span>
+                  </div>
+
+                  <h3 className="text-[13px] text-[#4e4e4e] leading-snug line-clamp-1 mt-3 mb-3.5 tracking-tight">
+                    {d.topic}
+                  </h3>
+
+                  {/* 하단: 통계(조회수 복구) & AI 점수(단색화) */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#F2F2F7]">
+                    <div className="flex items-center gap-3.5 text-gray-400">
+                      {/* 좋아요 */}
+                      <div className="flex items-center gap-1">
+                        <svg fill="none" stroke="#FF2D55" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        <span className="text-[11px] font-bold text-[#1C1C1E]/60">{v._likes || 0}</span>
                       </div>
-                    )}
+                      {/* 댓글 */}
+                      <div className="flex items-center gap-1">
+                        <svg fill="none" stroke="#007AFF" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                        </svg>
+                        <span className="text-[11px] font-bold text-[#1C1C1E]/60">{v._comments || 0}</span>
+                      </div>
+                      {/* [복구] 조회수 */}
+                      <div className="flex items-center gap-1">
+                        <svg fill="none" stroke="#8E8E93" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-50">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span className="text-[10px] font-medium text-[#AEAEB2]">{v._views || 0}</span>
+                      </div>
+                    </div>
+                    
+                    {/* [단색화] AI Score (깔끔한 그레이 & 블루 포인트) */}
+                    <div className="flex items-center gap-1.5 bg-[#F2F2F7] px-2.5 py-1 rounded-[10px] border border-gray-100/50">
+                      <span className="text-[10px] font-black text-[#8E8E93] tracking-tighter uppercase leading-none">AI점수</span>
+                      <span className="text-[12px] font-[600] text-[#007AFF] leading-none">
+                        {v._aiScore || ((v.ai_score_a || 0) + (v.ai_score_b || 0))}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            )}
+            </motion.div>
+          );
+        })}
+
+        {/* 더 보기 버튼 */}
+        {hallVisible < hallData.length && (
+          <div className="flex justify-center py-4">
+            <button
+              onClick={() => {
+                setHallLoadingMore(true);
+                setTimeout(() => {
+                  setHallVisible(prev => prev + 5);
+                  setHallLoadingMore(false);
+                }, 400);
+              }}
+              className="w-full py-4 bg-white/80 backdrop-blur-md border border-white rounded-[22px] text-[15px] font-[1000] text-[#007AFF] shadow-sm active:scale-[0.98] transition-all"
+            >
+              {hallLoadingMore ? "불러오는 중..." : `기록 더 보기 (${Math.min(5, hallData.length - hallVisible)}개)`}
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
 
             {/* ===== 유저 랭킹 탭 ===== */}
             {activeTab === 'user' && <>

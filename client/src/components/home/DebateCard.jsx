@@ -9,7 +9,6 @@ import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
 import { useTheme } from '../../store/ThemeContext';
 
-// created_at + vote_duration(일) → 카운트다운 훅
 function useVoteCountdown(createdAt, voteDuration) {
   const [timeLeft, setTimeLeft] = useState(null);
   useEffect(() => {
@@ -42,7 +41,6 @@ export default function DebateCard({ feed, formatTime }) {
   const isVotingStatus = debateStatus === 'voting';
   const isCompleted = debateStatus === 'completed';
 
-  // 카운트다운
   const voteDuration = debateData?.vote_duration ?? null;
   const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration);
   const hasTimer = !!voteDuration;
@@ -80,7 +78,6 @@ export default function DebateCard({ feed, formatTime }) {
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  // 좋아요 및 댓글 상태
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
@@ -97,7 +94,6 @@ export default function DebateCard({ feed, formatTime }) {
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const commentInputRef = useRef(null);
 
-  // ✅ 조회수 state — page_views 테이블에서 직접 fetch
   const [viewCount, setViewCount] = useState(0);
 
   useEffect(() => {
@@ -115,7 +111,6 @@ export default function DebateCard({ feed, formatTime }) {
     fetchViewCount();
   }, [feed?.debate_id, debateData?.id]);
 
-  // 현재 유저 아바타 URL (profiles 테이블)
   const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
   useEffect(() => {
     if (!user) return;
@@ -286,15 +281,11 @@ export default function DebateCard({ feed, formatTime }) {
     } catch (e) { showModal('댓글 작성에 실패했습니다', '잠시 후 다시 시도해주세요.'); } finally { setIsSendingComment(false); }
   };
 
-  // ✅ 상세보기 클릭 시 조회수 +1 (중복 방지)
   const handleDetailClick = async () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
-
-    // 같은 세션에서 이미 조회한 경우 중복 insert 방지
     const viewKey = `viewed_${debateId}`;
     const alreadyViewed = sessionStorage.getItem(viewKey);
-
     if (!alreadyViewed) {
       sessionStorage.setItem(viewKey, 'true');
       setViewCount(prev => prev + 1);
@@ -309,7 +300,6 @@ export default function DebateCard({ feed, formatTime }) {
         sessionStorage.removeItem(viewKey);
       }
     }
-
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }
     });
@@ -369,17 +359,19 @@ export default function DebateCard({ feed, formatTime }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 카테고리 + 목적 + 기준 뱃지 + 타이머 뱃지 */}
+        {/* 카테고리 + 목적 + 기준 + 실시간 뱃지 */}
         <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-          
+          {debateData?.mode === 'chat' && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 text-[10px] font-bold">
+              ⚡ 실시간
+            </span>
+          )}
         </div>
 
-        
-
- {/* 투표 진행 바 (vote_duration 있을 때만) */}
+        {/* 투표 진행 바 */}
         {hasTimer && (
           <div className="px-4 pb-2">
             <div className="flex items-center justify-between mb-1">
@@ -387,10 +379,6 @@ export default function DebateCard({ feed, formatTime }) {
                 {timerExpired ? '투표 마감' : '투표 진행 중'}
               </span>
             </div>
-
-
-
-
             <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
               {timerExpired ? (
                 <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
@@ -407,11 +395,6 @@ export default function DebateCard({ feed, formatTime }) {
             </div>
           </div>
         )}
-
-        
-
-
-
 
         {/* 투표 섹션 */}
         <div className="px-4 pb-4 pt-1">
@@ -480,7 +463,6 @@ export default function DebateCard({ feed, formatTime }) {
         {/* 하단 액션 바 */}
         <div className="px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-5">
-            {/* 좋아요 */}
             {(() => {
               const iconStroke = isDark ? '#a0a0a0' : '#1B2A4A';
               return (<>
@@ -517,7 +499,6 @@ export default function DebateCard({ feed, formatTime }) {
                 transition={{ type: 'spring', damping: 28, stiffness: 220 }}
                 className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto"
               >
-                {/* 핸들 + 헤더 */}
                 <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-[#D4AF37]/10">
                   <div className="w-10 h-1 bg-[#1B2A4A]/10 rounded-full mx-auto mb-3" />
                   <div className="flex items-center justify-between">
@@ -525,8 +506,6 @@ export default function DebateCard({ feed, formatTime }) {
                     <button onClick={() => setIsCommentOpen(false)} className="text-[#1B2A4A]/30 text-[12px] font-bold">닫기</button>
                   </div>
                 </div>
-
-                {/* 의견 목록 */}
                 <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
                   {comments.length === 0 ? (
                     <div className="text-center py-8">
@@ -584,8 +563,6 @@ export default function DebateCard({ feed, formatTime }) {
                     })
                   )}
                 </div>
-
-                {/* 입력창 */}
                 <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                   {user && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">

@@ -8,7 +8,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor: attach Supabase JWT
 api.interceptors.request.use(async (config) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.access_token) {
@@ -17,7 +16,6 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Response interceptor: normalize errors
 api.interceptors.response.use(
   (res) => res.data,
   (err) => {
@@ -36,17 +34,22 @@ export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { pa
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
 export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
 
-
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
+
 // ===== AI =====
-export const generateDebateSides = (data) =>
-  api.post('/ai/generate-sides', data);
+export const generateDebateSides = (data) => api.post('/ai/generate-sides', data);
 
 // ===== 주장 (Arguments) =====
 export const submitArgument = (debateId, data) => api.post(`/arguments/${debateId}`, data);
 export const getArguments = (debateId) => api.get(`/arguments/${debateId}`);
 export const generateSoloArgument = (debateId) => api.post(`/arguments/${debateId}/solo`);
+
+// ===== 채팅 (Chat) =====
+export const getChatMessages = (debateId) => api.get(`/chat/${debateId}/messages`);
+export const sendChatMessage = (debateId, content) => api.post(`/chat/${debateId}/messages`, { content });
+export const startChat = (debateId) => api.post(`/chat/${debateId}/start`);
+export const endChat = (debateId) => api.post(`/chat/${debateId}/end`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
@@ -59,7 +62,6 @@ export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`,
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
 export const getMyVote = (debateId) => api.get(`/votes/${debateId}/my`);
 export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`);
-
 
 // ===== 댓글 (Comments) =====
 export const getComments = (debateId) => api.get(`/comments/${debateId}`);
@@ -80,8 +82,6 @@ export const getNotifications = () => api.get('/notifications');
 export const getUnreadCount = () => api.get('/notifications/unread-count');
 export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
 export const markAllNotificationsRead = () => api.patch('/notifications/read-all');
-
-// == 03/19 오후 5시에 추가함(알림 삭제 / 전체 삭제 기능)
 export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
 export const deleteAllNotifications = () => api.delete('/notifications');
 
