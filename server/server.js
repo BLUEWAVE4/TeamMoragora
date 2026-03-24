@@ -43,16 +43,23 @@ io.on('connection', (socket) => {
   // ===== Presence: 참여자 입장 =====
   socket.on('join-presence', ({ debateId, userId, nickname, side }) => {
     if (!roomParticipants[debateId]) roomParticipants[debateId] = {};
-    roomParticipants[debateId][userId] = { userId, nickname, side, socketId: socket.id };
+    // 기존 참여자면 socketId만 갱신 (ready, side 유지)
+    if (roomParticipants[debateId][userId]) {
+      roomParticipants[debateId][userId].socketId = socket.id;
+      roomParticipants[debateId][userId].nickname = nickname;
+    } else {
+      roomParticipants[debateId][userId] = { userId, nickname, side: side || null, ready: false, socketId: socket.id };
+    }
     const slots = buildSlots(debateId);
     io.to(debateId).emit('presence-sync', slots);
   });
 
   // ===== Presence: 사이드 선택 =====
-  socket.on('select-side', ({ debateId, userId, nickname, side }) => {
+  socket.on('select-side', ({ debateId, userId, nickname, side, ready }) => {
     if (roomParticipants[debateId]?.[userId]) {
       roomParticipants[debateId][userId].side = side;
       roomParticipants[debateId][userId].nickname = nickname;
+      roomParticipants[debateId][userId].ready = ready || false;
     }
     io.to(debateId).emit('presence-sync', buildSlots(debateId));
   });
@@ -112,11 +119,11 @@ io.on('connection', (socket) => {
 });
 
 function buildSlots(debateId) {
-  const slots = { A: null, B: null };
+  const slots = { A: [], B: [] };
   if (!roomParticipants[debateId]) return slots;
   Object.values(roomParticipants[debateId]).forEach(p => {
-    if (p.side === 'A') slots.A = p;
-    if (p.side === 'B') slots.B = p;
+    if (p.side === 'A') slots.A.push(p);
+    if (p.side === 'B') slots.B.push(p);
   });
   return slots;
 }
