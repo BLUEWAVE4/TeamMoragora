@@ -114,7 +114,7 @@ export default function DebateCreatePage() {
     if (selectedMode === 'chat') {
       // 🚀 실시간 논쟁 루트: '대기실' 컴포넌트로 바로 이동
       // (아직 방을 안 만들었으니 inviteCode가 없는 상태로 이동)
-      navigate('/debate/lobby'); 
+      setGameStarted(true);; 
       return;
     }
     setGameStarted(true);
@@ -175,11 +175,11 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
         topic,
         pro_side: proSide,
         con_side: conSide,
-        category,
+        category: category || "기타",
         purpose,
         lens,
-        time: time ? parseInt(time) : null,          
-        vote_duration: time ? parseInt(time) : null, 
+        time: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),      
+        vote_duration: mode === 'chat' ? 10 : (time ? parseInt(time) : 0), 
         mode,
         deadline: time
           ? (() => {
@@ -198,7 +198,10 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
         return;
       }
       if (mode === 'chat') {
+        const inviteCode = result?.invite_code || result?.inviteCode;
+        setGameStarted(true);
         navigate(`/debate/${result.id}/chat`);
+        // navigate(`/debate/${result.id}/chat`);
         return;
       }
 
@@ -245,8 +248,10 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
                 // AI 추천값 전달
                 aiSuggestedPurpose={aiResults[topic]?.aiPurpose || null}
                 aiSuggestedLens={aiResults[topic]?.aiLens || null}
-                nextStep={nextStep}
+                nextStep={mode === 'chat' ? handleSubmit : nextStep}
+                // nextStep={nextStep} 
                 prevStep={prevStep}
+                isLastStep={mode === 'chat'}
               />
             )}
 
