@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -23,6 +25,18 @@ import adminRoutes from './src/routes/admin.routes.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
+const httpServer = createServer(app);
+
+// ===== Socket.io =====
+const corsOrigins = [env.CLIENT_URL, 'http://localhost:5173'].filter(Boolean);
+export const io = new Server(httpServer, {
+  cors: { origin: corsOrigins, credentials: true },
+});
+
+io.on('connection', (socket) => {
+  socket.on('join-room', (debateId) => socket.join(debateId));
+  socket.on('leave-room', (debateId) => socket.leave(debateId));
+});
 
 // ===== 보안 미들웨어 =====
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -66,6 +80,6 @@ app.get('/api/health', (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
+httpServer.listen(env.PORT, () => {
   console.log(`Server running on http://localhost:${env.PORT}`);
 });

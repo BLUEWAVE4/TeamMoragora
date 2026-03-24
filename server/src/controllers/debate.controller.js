@@ -19,7 +19,7 @@ export async function createDebate(req, res, next) {
     }
 
     const inviteCode = nanoid(8);
-    const debateMode = ['duo', 'solo'].includes(mode) ? mode : 'duo';
+    const debateMode = ['duo', 'solo', 'chat'].includes(mode) ? mode : 'duo';
 
     const { data, error } = await supabaseAdmin
       .from('debates')

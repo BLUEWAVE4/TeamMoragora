@@ -103,6 +103,12 @@ export async function sendMessage(req, res, next) {
 
     if (insertErr) throw insertErr;
 
+    // Socket.io 브로드캐스트
+    try {
+      const { io } = await import('../../server.js');
+      io.to(debateId).emit('new-message', saved);
+    } catch { /* socket 없으면 무시 */ }
+
     res.status(201).json(saved);
   } catch (err) {
     next(err);

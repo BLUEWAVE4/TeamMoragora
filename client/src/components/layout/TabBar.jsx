@@ -488,8 +488,12 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
                               initial={{ opacity: 0, x: -5 }}
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: -5 }}
+                              className="flex items-center gap-1"
                             >
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
+                              <span className="text-[10px] font-bold text-[#D4AF37]">
+                                {debate.mode === 'chat' ? '실시간' : debate.mode === 'solo' ? '연습' : '1:1'}
+                              </span>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round">
                                 <polyline points="9 6 15 12 9 18"/>
                               </svg>
                             </motion.div>
