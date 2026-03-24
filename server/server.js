@@ -35,6 +35,7 @@ export const io = new Server(httpServer, {
 
 // 방별 참여자 상태 관리
 const roomParticipants = {};
+const timeVotes = {};
 
 io.on('connection', (socket) => {
   socket.on('join-room', (debateId) => socket.join(debateId));
@@ -126,6 +127,46 @@ io.on('connection', (socket) => {
     }).catch(() => {});
   });
 
+socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) => {
+  const slots = buildSlots(debateId);
+  const total = [...slots.A, ...slots.B].length;
+  timeVotes[debateId] = { type, votes: { [userId]: true }, requiredCount: total, currentDeadline };
+  io.to(debateId).emit('time-change-request', { type, requesterId: userId, votes: { [userId]: true }, requiredCount: total });
+});
+
+socket.on('vote-time-change', ({ debateId, userId, agree }) => {
+  const vote = timeVotes[debateId];
+  if (!vote) return;
+  if (agree) {
+    vote.votes[userId] = true;
+  } else {
+    delete timeVotes[debateId];
+    io.to(debateId).emit('time-change-cancelled', { reason: '참여자가 거부했습니다.' });
+    return;
+  }
+  io.to(debateId).emit('time-change-request', { type: vote.type, votes: vote.votes, requiredCount: vote.requiredCount });
+  if (Object.keys(vote.votes).length >= vote.requiredCount) {
+  const voteType = vote.type;
+  delete timeVotes[debateId];
+
+  // 서버에서 deadline 계산
+  import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+    let newDeadline;
+    if (voteType === 'skip') {
+      newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
+    } else {
+      // DB 대신 현재 서버 시각 기준으로 참여자들의 남은 시간을 알 수 없으므로
+      // 클라이언트가 현재 deadline을 payload로 보내게 변경
+      const currentDeadline = timeVotes[debateId]?.currentDeadline;
+      const base = currentDeadline ? new Date(currentDeadline).getTime() : Date.now();
+      newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
+    }
+    await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+    // deadline 포함해서 broadcast
+    io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
+  }).catch(console.error);
+}
+});
   // ===== 소켓 끊김 시 참여자 제거 =====
   socket.on('disconnect', () => {
     for (const debateId of Object.keys(roomParticipants)) {
@@ -161,6 +202,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 app.use(express.json({ limit: '1mb' }));
+
 
 // ===== Rate Limiting (필요 시 활성화) =====
 // const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' } });
