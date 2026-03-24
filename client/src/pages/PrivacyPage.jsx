@@ -19,7 +19,7 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 pb-24 text-sm text-gray-700 leading-relaxed">
       <h1 className="text-xl font-black text-[#2D3350] mb-6">개인정보처리방침</h1>
-      <p className="text-xs text-gray-400 mb-6">시행일: 2026년 3월 11일</p>
+      <p className="text-xs text-gray-400 mb-6">시행일: 2026년 3월 24일 (개정)</p>
 
       <section className="mb-6">
         <h2 className="font-bold text-[#2D3350] mb-2">1. 수집하는 개인정보 항목</h2>
@@ -27,7 +27,9 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>소셜 로그인 시</strong>: 이메일, 닉네임, 프로필 이미지 (소셜 로그인 제공자로부터 수신)</li>
           <li><strong>서비스 이용 시 자동 수집</strong>: 접속 페이지, 접속 시간, 브라우저 정보, 세션 식별자 (익명)</li>
-          <li><strong>논쟁 참여 시</strong>: 사용자가 입력한 논쟁 주제 및 주장 내용</li>
+          <li><strong>논쟁 참여 시</strong>: 사용자가 입력한 논쟁 주제, 주장 내용, 실시간 채팅 메시지</li>
+          <li><strong>서비스 이용 활동</strong>: 투표, 댓글, 좋아요, 판결 만족도 평가 (별점)</li>
+          <li><strong>콘텐츠 필터링 로그</strong>: 부적절 표현 감지 시 차단 사유 및 원문 (서비스 안전 목적)</li>
         </ul>
       </section>
 
@@ -35,8 +37,9 @@ export default function PrivacyPage() {
         <h2 className="font-bold text-[#2D3350] mb-2">2. 개인정보의 수집 및 이용 목적</h2>
         <ul className="list-disc pl-5 space-y-1">
           <li>서비스 제공 및 운영 (논쟁 판결, 랭킹, 투표 기능)</li>
-          <li>서비스 품질 개선을 위한 통계 분석 (익명화된 접속 데이터)</li>
-          <li>부정 이용 방지 및 서비스 안정성 확보</li>
+          <li>서비스 품질 개선을 위한 통계 분석 (페이지뷰, 이벤트, 사용자 행동 데이터)</li>
+          <li>부정 이용 방지 및 콘텐츠 안전성 확보 (비속어/유해 콘텐츠 필터링)</li>
+          <li>AI 판결 품질 평가 및 개선 (판결 만족도 수집)</li>
           <li>사용자 문의 대응 및 공지사항 전달</li>
         </ul>
       </section>
@@ -47,6 +50,8 @@ export default function PrivacyPage() {
           <li><strong>회원 정보</strong>: 회원 탈퇴 시 즉시 파기</li>
           <li><strong>접속 로그</strong>: 수집일로부터 1년 후 자동 파기</li>
           <li><strong>논쟁 콘텐츠</strong>: 서비스 운영 기간 동안 보유 (공개 피드에 게시된 경우)</li>
+          <li><strong>콘텐츠 필터 로그</strong>: 수집일로부터 6개월 후 자동 파기</li>
+          <li><strong>판결 만족도 평가</strong>: 서비스 운영 기간 동안 보유</li>
         </ul>
       </section>
 
@@ -56,7 +61,7 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>사용자가 사전에 동의한 경우</li>
           <li>법령에 의한 요청이 있는 경우</li>
-          <li>AI 판결 처리를 위해 논쟁 내용을 AI 서비스(OpenAI, Google, Anthropic)에 전송 (개인 식별 정보 제외)</li>
+          <li>AI 판결 처리를 위해 논쟁 내용(주장, 반박, 채팅 로그)을 AI 서비스(OpenAI, Google, Anthropic, xAI)에 전송 (개인 식별 정보 제외, 닉네임만 포함)</li>
         </ul>
       </section>
 
@@ -87,7 +92,7 @@ export default function PrivacyPage() {
 
       <section>
         <h2 className="font-bold text-[#2D3350] mb-2">8. 방침 변경</h2>
-        <p>본 방침은 2026년 3월 11일부터 시행됩니다. 변경 시 서비스 내 공지를 통해 안내합니다.</p>
+        <p>본 방침은 2026년 3월 24일부터 시행됩니다. 변경 시 서비스 내 공지를 통해 안내합니다.</p>
       </section>
 
       {/* 플로팅 뒤로가기 */}

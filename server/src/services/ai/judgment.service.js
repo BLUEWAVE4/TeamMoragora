@@ -102,6 +102,7 @@ async function saveJudgmentImmediately(verdictId, judgment) {
     await supabaseAdmin.from('ai_judgments').insert({
       verdict_id: verdictId,
       ai_model: judgment.ai_model,
+      status: 'success',
       winner_side: judgment.winner_side,
       verdict_text: judgment.verdict_text,
       verdict_sections: judgment.verdict_sections || [],
@@ -138,9 +139,26 @@ export async function runParallelJudgment(debateContext, verdictId) {
         judgments.push(validated);
         return { status: 'ok', model: MODELS[i] };
       })
-      .catch((err) => {
+      .catch(async (err) => {
         console.warn(`[AI] ${MODELS[i]} 판결 실패:`, err.message);
         failedModels.push(MODELS[i]);
+        // 실패 기록 저장
+        if (verdictId) {
+          const modelMap = { 'GPT-4o': 'gpt-4o', 'Gemini': 'gemini-2.5-flash', 'Claude': 'claude-sonnet' };
+          try {
+            await supabaseAdmin.from('ai_judgments').insert({
+              verdict_id: verdictId,
+              ai_model: modelMap[MODELS[i]] || MODELS[i],
+              status: 'failed',
+              winner_side: 'draw',
+              verdict_text: `판결 실패: ${err.message}`,
+              score_a: 0, score_b: 0,
+              score_detail_a: { logic: 0, evidence: 0, persuasion: 0, consistency: 0, expression: 0 },
+              score_detail_b: { logic: 0, evidence: 0, persuasion: 0, consistency: 0, expression: 0 },
+              confidence: 0,
+            });
+          } catch { /* ignore */ }
+        }
         return { status: 'fail', model: MODELS[i] };
       })
   );

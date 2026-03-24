@@ -4,29 +4,33 @@ import { useNavigate } from 'react-router-dom';
 import { getAdminStats, getAdminAI, getAdminTrends, getAdminAnalytics } from '../services/api';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
-import { ArrowLeft, Users, Gavel, MessageSquare, ThumbsUp, Shield, Star, TrendingUp, Eye, Zap } from 'lucide-react';
+import { ArrowLeft, Users, Gavel, MessageSquare, ThumbsUp, Shield, Star, TrendingUp, Eye, Zap, X, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-const TABS = ['핵심 지표', 'AI 성능', '일간 추이', '방문자 분석'];
+const TABS = ['핵심 지표', 'AI 성능', '일/월간 추이', '방문자 분석'];
 
-function StatCard({ icon: Icon, label, value, sub, color = '#6366f1' }) {
+function StatCard({ icon: Icon, label, value, sub, color = '#6366f1', onClick }) {
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.98] transition-all" onClick={onClick}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[12px] font-bold text-gray-400">{label}</span>
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
           <Icon size={16} style={{ color }} />
         </div>
       </div>
-      <p className="text-[28px] font-black text-[#1B2A4A] leading-none">{value}</p>
+      <div className="flex items-end justify-between">
+        <p className="text-[28px] font-black text-[#1B2A4A] leading-none">{value}</p>
+        {onClick && <ChevronRight size={14} className="text-gray-300 mb-1" />}
+      </div>
       {sub && <p className="text-[11px] text-gray-400 mt-1">{sub}</p>}
     </div>
   );
 }
 
 function AICard({ model, data }) {
-  const colors = { 'gpt-4o': '#4285F4', 'gemini-2.5-flash': '#10A37F', 'claude-sonnet': '#D97706' };
+  const colors = { 'gpt-4o': '#1B2A4A', 'gemini-2.5-flash': '#4285F4', 'claude-sonnet': '#D97706' };
   const names = { 'gpt-4o': 'Judge G (GPT)', 'gemini-2.5-flash': 'Judge M (Gemini)', 'claude-sonnet': 'Judge C (Claude)' };
   const color = colors[model] || '#6366f1';
   const t = data.wins.A + data.wins.B + (data.wins.draw || 0);
@@ -55,6 +59,7 @@ export default function AdminDashboardPage() {
   const [trends, setTrends] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [detail, setDetail] = useState(null); // { title, content }
 
   useEffect(() => {
     if (!isAdmin) { navigate('/'); return; }
@@ -67,7 +72,7 @@ export default function AdminDashboardPage() {
       const [s, a, t, an] = await Promise.all([
         getAdminStats(), getAdminAI(), getAdminTrends(), getAdminAnalytics()
       ]);
-      setStats(s.data); setAiStats(a.data); setTrends(t.data); setAnalytics(an.data);
+      setStats(s); setAiStats(a); setTrends(t); setAnalytics(an);
     } catch (err) { console.error('대시보드 로딩 실패:', err); }
     setLoading(false);
   };
@@ -105,14 +110,77 @@ export default function AdminDashboardPage() {
         {tab === 0 && stats && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <StatCard icon={Users} label="DAU (일간 활성)" value={stats.dau} sub={`총 ${stats.totalUsers}명 가입`} />
-              <StatCard icon={Gavel} label="총 판결 수" value={stats.totalVerdicts} color="#10b981" />
-              <StatCard icon={MessageSquare} label="총 논쟁 수" value={stats.totalDebates} color="#f59e0b" />
+              <StatCard icon={Users} label="DAU (일간 활성)" value={stats.dau} sub={`총 ${stats.totalUsers}명 가입`}
+                onClick={() => setDetail({ title: '유저 현황', content: (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-[13px]"><span className="text-gray-500">총 가입자</span><span className="font-bold">{stats.totalUsers}명</span></div>
+                    <div className="flex justify-between text-[13px]"><span className="text-gray-500">오늘 활성(DAU)</span><span className="font-bold">{stats.dau}명</span></div>
+                    <p className="text-[11px] font-bold text-gray-400 mt-3 mb-1">등급 분포</p>
+                    {stats.tierDist && Object.entries(stats.tierDist).map(([tier, cnt]) => (
+                      <div key={tier} className="flex justify-between text-[12px]"><span>{tier}</span><span className="font-bold">{cnt}명</span></div>
+                    ))}
+                  </div>
+                )})} />
+              <StatCard icon={Gavel} label="총 판결 수" value={stats.totalVerdicts} color="#10b981"
+                onClick={() => setDetail({ title: '논쟁 상세', content: (
+                  <div className="space-y-3">
+                    <p className="text-[11px] font-bold text-gray-400 mb-1">모드별 분포</p>
+                    {stats.debateByMode && Object.entries(stats.debateByMode).map(([mode, cnt]) => (
+                      <div key={mode} className="flex justify-between text-[12px]"><span>{mode === 'duo' ? '1:1 대결' : mode === 'solo' ? '연습 모드' : mode === 'daily' ? '오늘의 논쟁' : '실시간 채팅'}</span><span className="font-bold">{cnt}건</span></div>
+                    ))}
+                    <p className="text-[11px] font-bold text-gray-400 mt-3 mb-1">상태별 분포</p>
+                    {stats.debateByStatus && Object.entries(stats.debateByStatus).map(([status, cnt]) => (
+                      <div key={status} className="flex justify-between text-[12px]"><span>{status}</span><span className="font-bold">{cnt}건</span></div>
+                    ))}
+                  </div>
+                )})} />
+              <StatCard icon={MessageSquare} label="총 논쟁 수" value={stats.totalDebates} color="#f59e0b"
+                onClick={() => setDetail({ title: '논쟁 모드별 현황', content: (
+                  <div className="space-y-2">
+                    {stats.debateByMode && Object.entries(stats.debateByMode).map(([mode, cnt]) => (
+                      <div key={mode} className="flex justify-between text-[12px]">
+                        <span>{mode === 'duo' ? '1:1 대결' : mode === 'solo' ? '연습 모드' : mode === 'daily' ? '오늘의 논쟁' : '실시간 채팅'}</span>
+                        <span className="font-bold">{cnt}건 ({stats.totalDebates > 0 ? Math.round(cnt / stats.totalDebates * 100) : 0}%)</span>
+                      </div>
+                    ))}
+                  </div>
+                )})} />
               <StatCard icon={ThumbsUp} label="총 투표 수" value={stats.totalVotes} color="#3b82f6" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <StatCard icon={Shield} label="필터 차단" value={`${stats.filterBlocked}건`} color="#ef4444" sub="콘텐츠 필터" />
-              <StatCard icon={Star} label="판결 만족도" value={stats.avgRating || '-'} color="#d4af37" sub={`${stats.ratingCount}건 평가`} />
+              <StatCard icon={Shield} label="필터 차단" value={`${stats.filterBlocked}건`} color="#ef4444" sub="콘텐츠 필터"
+                onClick={() => setDetail({ title: '콘텐츠 필터 상세', content: (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-[13px]"><span className="text-gray-500">총 차단 건수</span><span className="font-bold text-red-500">{stats.filterBlocked}건</span></div>
+                    <p className="text-[11px] font-bold text-gray-400 mt-2 mb-1">단계별 차단 현황</p>
+                    {stats.filterByStage && Object.keys(stats.filterByStage).length > 0
+                      ? Object.entries(stats.filterByStage).map(([stage, cnt]) => (
+                        <div key={stage} className="flex justify-between text-[12px] bg-red-50 rounded-lg px-3 py-2">
+                          <span className="text-red-600">{stage} {stage === '1단계' ? '(비속어 사전)' : stage === '2단계' ? '(AI 유해성)' : '(주제 관련성)'}</span>
+                          <span className="font-bold text-red-600">{cnt}건</span>
+                        </div>
+                      ))
+                      : <p className="text-[12px] text-gray-400">차단 기록이 없습니다</p>
+                    }
+                  </div>
+                )})} />
+              <StatCard icon={Star} label="판결 만족도" value={stats.avgRating || '-'} color="#d4af37" sub={`${stats.ratingCount}건 평가`}
+                onClick={() => setDetail({ title: '판결 만족도 상세', content: (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-[13px]"><span className="text-gray-500">평균 점수</span><span className="font-bold text-[#d4af37]">{stats.avgRating || '-'} / 5.0</span></div>
+                    <div className="flex justify-between text-[13px]"><span className="text-gray-500">총 평가 수</span><span className="font-bold">{stats.ratingCount}건</span></div>
+                    <p className="text-[11px] font-bold text-gray-400 mt-2 mb-1">별점 분포</p>
+                    {stats.ratingDist && Object.entries(stats.ratingDist).reverse().map(([score, cnt]) => (
+                      cnt > 0 && <div key={score} className="flex items-center gap-2 text-[12px]">
+                        <span className="w-8 text-right font-bold">{score}점</span>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#d4af37] rounded-full" style={{ width: `${stats.ratingCount > 0 ? cnt / stats.ratingCount * 100 : 0}%` }} />
+                        </div>
+                        <span className="w-6 text-gray-400">{cnt}</span>
+                      </div>
+                    ))}
+                  </div>
+                )})} />
               <StatCard icon={Eye} label="오늘 페이지뷰" value={stats.todayPageViews} color="#8b5cf6" />
               <StatCard icon={MessageSquare} label="시민 의견" value={stats.totalComments} color="#06b6d4" sub="총 댓글" />
             </div>
@@ -126,7 +194,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* 탭 2: 일간 추이 */}
+        {/* 탭 2: 일/월간 추이 */}
         {tab === 2 && trends && (
           <div className="space-y-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
@@ -142,6 +210,37 @@ export default function AdminDashboardPage() {
                 labels: trends.dauTrends?.map(d => d.date.slice(5)),
                 datasets: [{ data: trends.dauTrends?.map(d => d.count), backgroundColor: '#3b82f6', borderRadius: 4 }]
               }} options={{ plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }} height={150} />
+            </div>
+
+            {/* MAU 달력 */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[12px] font-bold text-gray-400">MAU 달력 ({trends.mauMonth})</p>
+                <span className="text-[14px] font-black text-[#6366f1]">{trends.mauTotal}명</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {['일','월','화','수','목','금','토'].map(d => (
+                  <div key={d} className="text-[10px] font-bold text-gray-300 py-1">{d}</div>
+                ))}
+                {Array.from({ length: trends.mauFirstDayOfWeek || 0 }).map((_, i) => (
+                  <div key={`empty-${i}`} />
+                ))}
+                {trends.mauCalendar?.map(d => {
+                  const today = new Date().getDate();
+                  const isToday = d.day === today;
+                  const intensity = d.count === 0 ? 'bg-gray-50 text-gray-300'
+                    : d.count < 5 ? 'bg-blue-50 text-blue-500'
+                    : d.count < 20 ? 'bg-blue-100 text-blue-600'
+                    : d.count < 50 ? 'bg-blue-200 text-blue-700'
+                    : 'bg-blue-400 text-white';
+                  return (
+                    <div key={d.day} className={`rounded-lg py-1.5 text-[11px] font-bold ${intensity} ${isToday ? 'ring-2 ring-[#6366f1]' : ''}`}>
+                      <div className="text-[10px] opacity-60">{d.day}</div>
+                      <div>{d.count}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -170,7 +269,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-2">
                 {analytics.eventDist?.map((e, i) => (
                   <div key={i} className="flex items-center justify-between text-[12px]">
-                    <span className="text-[#1B2A4A] font-medium">{e.name}</span>
+                    <span className="text-[#1B2A4A] font-medium">{e.name} <span className="text-gray-400">{{ verdict_view: '(판결 열람)', debate_create: '(논쟁 생성)', vote_cast: '(투표)', comment_create: '(댓글 작성)', share: '(공유)' }[e.name] || ''}</span></span>
                     <span className="text-gray-400">{e.count}건 ({e.ratio}%)</span>
                   </div>
                 ))}
@@ -179,6 +278,34 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* 상세 모달 */}
+      <AnimatePresence>
+        {detail && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-[500] flex items-end justify-center"
+            onClick={() => setDetail(null)}
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="w-full max-w-md bg-white rounded-t-2xl shadow-2xl max-h-[70vh] flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+                <h3 className="text-[16px] font-black text-[#1B2A4A]">{detail.title}</h3>
+                <button onClick={() => setDetail(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                  <X size={16} className="text-gray-400" />
+                </button>
+              </div>
+              <div className="px-5 py-4 overflow-y-auto flex-1">
+                {detail.content}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

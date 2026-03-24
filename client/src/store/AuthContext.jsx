@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,18 +9,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // role 조회
-  const fetchRole = async (userId) => {
-    if (!userId) { setIsAdmin(false); return; }
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    setIsAdmin(data?.role === 'admin');
+  // role 조회 (서버 API 경유 — RLS 우회)
+  const fetchRole = async () => {
+    try {
+      const data = await api.get('/profiles/me/role');
+      setIsAdmin(data?.role === 'admin');
+    } catch (err) {
+      console.error('[AuthContext] role 조회 실패:', err?.response?.status, err?.message);
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id);
+      if (session?.user) fetchRole();
       setLoading(false);
     });
 
@@ -27,7 +32,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) fetchRole(session.user.id);
+        if (session?.user) fetchRole();
         else setIsAdmin(false);
 
         // OAuth 로그인 완료 후 저장된 리다이렉트 경로로 이동
