@@ -24,7 +24,7 @@ export default function CategoryFilter({ filter, setFilter, sortBy, setSortBy })
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`px-3 py-1 rounded-full text-[12px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-4 py-2 rounded-full text-[14px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${
                 filter === cat
                   ? 'bg-[#1B2A4A] text-[#D4AF37]'
                   : 'text-[#1B2A4A]/30 active:text-[#1B2A4A]/50'
@@ -43,7 +43,7 @@ export default function CategoryFilter({ filter, setFilter, sortBy, setSortBy })
       <div className="relative flex-shrink-0">
         <button
           onClick={() => setShowSort(!showSort)}
-          className="text-[12px] font-bold text-[#1B2A4A]/60 whitespace-nowrap px-1"
+          className="text-[14px] font-bold text-[#1B2A4A]/60 whitespace-nowrap px-2"
         >
           {sortBy} ▾
         </button>
@@ -55,7 +55,7 @@ export default function CategoryFilter({ filter, setFilter, sortBy, setSortBy })
                 <button
                   key={opt}
                   onClick={() => { setSortBy(opt); setShowSort(false); }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-[14px] font-bold transition-all ${
                     sortBy === opt ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 active:text-[#1B2A4A]/60'
                   }`}
                 >
