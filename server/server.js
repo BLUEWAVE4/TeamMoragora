@@ -33,10 +33,93 @@ export const io = new Server(httpServer, {
   cors: { origin: corsOrigins, credentials: true },
 });
 
+// 방별 참여자 상태 관리
+const roomParticipants = {};
+
 io.on('connection', (socket) => {
   socket.on('join-room', (debateId) => socket.join(debateId));
   socket.on('leave-room', (debateId) => socket.leave(debateId));
+
+  // ===== Presence: 참여자 입장 =====
+  socket.on('join-presence', ({ debateId, userId, nickname, side }) => {
+    if (!roomParticipants[debateId]) roomParticipants[debateId] = {};
+    roomParticipants[debateId][userId] = { userId, nickname, side, socketId: socket.id };
+    const slots = buildSlots(debateId);
+    io.to(debateId).emit('presence-sync', slots);
+  });
+
+  // ===== Presence: 사이드 선택 =====
+  socket.on('select-side', ({ debateId, userId, nickname, side }) => {
+    if (roomParticipants[debateId]?.[userId]) {
+      roomParticipants[debateId][userId].side = side;
+      roomParticipants[debateId][userId].nickname = nickname;
+    }
+    io.to(debateId).emit('presence-sync', buildSlots(debateId));
+  });
+
+  // ===== Presence: 퇴장 =====
+  socket.on('leave-presence', ({ debateId, userId }) => {
+    if (roomParticipants[debateId]) {
+      delete roomParticipants[debateId][userId];
+      io.to(debateId).emit('presence-sync', buildSlots(debateId));
+    }
+  });
+
+  // ===== 타이핑 인디케이터 =====
+  socket.on('typing', ({ debateId, userId, typing }) => {
+    socket.to(debateId).emit('opponent-typing', typing);
+  });
+
+  // ===== 게임 시작 =====
+  socket.on('start-game', async ({ debateId, chat_deadline }) => {
+    io.to(debateId).emit('game-start', { chat_deadline });
+    // DB 업데이트 (비동기)
+    import('./src/config/supabase.js').then(({ supabaseAdmin }) => {
+      supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at: new Date().toISOString(), status: 'chatting' }).eq('id', debateId);
+    }).catch(() => {});
+  });
+
+  // ===== 실시간 메시지: 즉시 브로드캐스트 → DB 비동기 저장 =====
+  socket.on('send-message', async (payload) => {
+    const { debateId, userId, nickname, content, side } = payload;
+    if (!debateId || !userId || !content?.trim() || !side) return;
+
+    const msgId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const msg = { id: msgId, debate_id: debateId, user_id: userId, nickname, content: content.trim(), side, created_at: now };
+
+    io.to(debateId).emit('new-message', msg);
+
+    import('./src/config/supabase.js').then(({ supabaseAdmin }) => {
+      supabaseAdmin.from('chat_messages').insert(msg).then(({ error }) => {
+        if (error) console.error('[Socket] DB 저장 실패:', error.message);
+      });
+    }).catch(() => {});
+  });
+
+  // ===== 소켓 끊김 시 참여자 제거 =====
+  socket.on('disconnect', () => {
+    for (const debateId of Object.keys(roomParticipants)) {
+      for (const [userId, p] of Object.entries(roomParticipants[debateId])) {
+        if (p.socketId === socket.id) {
+          delete roomParticipants[debateId][userId];
+          io.to(debateId).emit('presence-sync', buildSlots(debateId));
+          break;
+        }
+      }
+    }
+  });
 });
+
+function buildSlots(debateId) {
+  const slots = { A: null, B: null };
+  if (!roomParticipants[debateId]) return slots;
+  Object.values(roomParticipants[debateId]).forEach(p => {
+    if (p.side === 'A') slots.A = p;
+    if (p.side === 'B') slots.B = p;
+  });
+  return slots;
+}
 
 // ===== 보안 미들웨어 =====
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

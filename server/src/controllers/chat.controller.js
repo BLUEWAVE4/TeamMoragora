@@ -29,16 +29,27 @@ export async function sendMessage(req, res, next) {
 
     if (debateErr || !debate) throw new NotFoundError('논쟁을 찾을 수 없습니다.');
 
-    // 상태 검증
-    if (debate.status !== 'chatting') {
+    // 상태 검증 (chat 모드: waiting/chatting 허용, 첫 메시지 시 자동 chatting 전환)
+    const allowedStatuses = ['chatting', 'waiting', 'both_joined', 'arguing'];
+    if (!allowedStatuses.includes(debate.status)) {
       throw new ConflictError('채팅 중인 논쟁이 아닙니다.');
     }
+    if (debate.status !== 'chatting') {
+      await supabaseAdmin.from('debates').update({
+        status: 'chatting',
+        chat_started_at: new Date().toISOString(),
+      }).eq('id', debateId);
+    }
 
-    // 참여자 확인 + side 결정
+    // 참여자 확인 + side 결정 (chat 모드: opponent 미등록 시 자동 등록)
     let side;
     if (userId === debate.creator_id) {
       side = 'A';
     } else if (userId === debate.opponent_id) {
+      side = 'B';
+    } else if (debate.mode === 'chat' && !debate.opponent_id) {
+      // chat 모드에서 opponent 미등록 → 자동 B측 등록
+      await supabaseAdmin.from('debates').update({ opponent_id: userId }).eq('id', debateId);
       side = 'B';
     } else {
       throw new ForbiddenError('이 논쟁의 참여자만 채팅할 수 있습니다.');
