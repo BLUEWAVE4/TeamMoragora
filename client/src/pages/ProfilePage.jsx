@@ -402,6 +402,24 @@ const [showInfo, setShowInfo] = useState(false);
     }
   };
 
+  // ─── 회원탈퇴 ───
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawConfirm, setWithdrawConfirm] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
+
+  const handleWithdraw = async () => {
+    if (withdrawConfirm !== '탈퇴합니다') return;
+    setWithdrawing(true);
+    try {
+      await api.delete('/profiles/me');
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (err) {
+      alert('회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setWithdrawing(false);
+    }
+  };
+
   const resetAvatarOptions = () => setAvatarOptions({
     top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '',
     accessories: '', accessoriesColor: '', eyes: '', eyebrows: '', mouth: '',
@@ -554,9 +572,6 @@ const [showInfo, setShowInfo] = useState(false);
           <div className="space-y-3">
             <div className="flex justify-between items-end px-1">
               <span className="text-[14px] font-heavy tracking-tight" style={{ color: tier.color }}>{tier.name}</span>
-              {nextTier && (
-                <span className="text-[13px] font-bold text-gray-500">NEXT: {nextTier.min.toLocaleString()}P</span>
-              )}
             </div>
 
             <div className="relative w-full">
@@ -668,9 +683,6 @@ const [showInfo, setShowInfo] = useState(false);
               <History size={20} className="text-[#8E8E93]" />
               <h3 className="text-[16px] font-bold text-[#8E8E93] uppercase tracking-wider">최근 논쟁 기록</h3>
             </div>
-            <button onClick={() => setIsListEditing(!isListEditing)} className="text-[14px] font-bold text-[#007AFF] active:opacity-30 transition-opacity">
-              {isListEditing ? '완료' : '편집'}
-            </button>
           </div>
 
           {loading ? (
@@ -750,6 +762,12 @@ const [showInfo, setShowInfo] = useState(false);
                 className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
                 로그아웃
               </motion.button>
+              {isEditing && (
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowWithdrawModal(true)}
+                  className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-gray-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+                  회원탈퇴
+                </motion.button>
+              )}
             </>
           )}
         </div>
@@ -1088,6 +1106,69 @@ const [showInfo, setShowInfo] = useState(false);
       )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+
+      {/* ─── 회원탈퇴 모달 ──────────────────────────────────── */}
+      <AnimatePresence>
+        {showWithdrawModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-[500] flex items-center justify-center px-6"
+            onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-[360px] overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-6 py-5 text-center">
+                <Scale size={32} className="text-[#D4AF37] mx-auto mb-2" />
+                <h3 className="text-[18px] font-black text-white">회원탈퇴</h3>
+                <p className="text-[12px] text-white/60 mt-1">이 작업은 되돌릴 수 없습니다</p>
+              </div>
+              <div className="px-6 py-5">
+                <p className="text-[13px] font-bold text-[#1B2A4A] mb-3">삭제되는 자산</p>
+                <div className="space-y-2 mb-4">
+                  {[
+                    `논쟁 기록 전체 (${profileData?.wins + profileData?.losses + profileData?.draws || 0}건)`,
+                    `포인트 ${profileData?.total_score?.toLocaleString() || 0}점 및 ${profileData?.tier || '시민'} 등급`,
+                    '논리 분석 프로필 데이터',
+                    '댓글, 좋아요, 투표 내역',
+                    '알림 및 활동 로그',
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-center gap-2.5 bg-red-50 rounded-lg px-3 py-2">
+                      <span className="text-[12px] text-red-600 font-medium">• {text}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-400 mb-3">확인을 위해 <strong className="text-red-500">"탈퇴합니다"</strong>를 입력해주세요</p>
+                <input
+                  value={withdrawConfirm}
+                  onChange={e => setWithdrawConfirm(e.target.value)}
+                  placeholder="탈퇴합니다"
+                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-300 mb-4"
+                />
+                <button
+                  onClick={handleWithdraw}
+                  disabled={withdrawConfirm !== '탈퇴합니다' || withdrawing}
+                  className={`w-full py-3 rounded-xl text-[14px] font-bold transition-all ${
+                    withdrawConfirm === '탈퇴합니다' && !withdrawing
+                      ? 'bg-red-500 text-white active:scale-95'
+                      : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  {withdrawing ? '처리 중...' : '회원탈퇴'}
+                </button>
+                <button
+                  onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
+                  className="w-full mt-2 py-2 text-[12px] text-gray-400 font-bold"
+                >
+                  취소
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

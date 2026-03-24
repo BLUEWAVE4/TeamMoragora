@@ -74,7 +74,7 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 1440)}일 전`;
 }
 
-function NotifCard({ n, onDelete, onClick }) {
+function NotifCard({ n, onDelete, onClick, isDark }) {
   const x = useMotionValue(0);
   const SNAP = -72;
 
@@ -110,21 +110,23 @@ function NotifCard({ n, onDelete, onClick }) {
         onDragEnd={handleDragEnd}
         onClick={() => x.get() < -8 ? x.set(0) : onClick(n)}
         className={`relative flex items-start gap-3.5 px-4 py-3.5 cursor-pointer select-none transition-colors ${
-          n.is_read ? 'bg-white/40' : 'bg-white'
+          n.is_read
+            ? (isDark ? 'bg-white/5' : 'bg-white/40')
+            : (isDark ? 'bg-[#16213e]' : 'bg-white')
         }`}
       >
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${config.bg} ${n.is_read ? 'opacity-50' : config.color}`}>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isDark ? 'bg-white/10' : config.bg} ${n.is_read ? 'opacity-50' : config.color}`}>
           <IconComponent active={!n.is_read} />
         </div>
 
         <div className="flex-1 min-w-0 pt-0.5">
-          <p className={`text-[13.5px] leading-snug font-semibold ${n.is_read ? 'text-[#8E8E93]' : 'text-[#1C1C1E]'}`}>
+          <p className={`text-[13.5px] leading-snug font-semibold ${n.is_read ? (isDark ? 'text-gray-500' : 'text-[#8E8E93]') : (isDark ? 'text-gray-100' : 'text-[#1C1C1E]')}`}>
             {n.title}
           </p>
-          <p className={`text-[12px] mt-0.5 truncate ${n.is_read ? 'text-[#AEAEB2]' : 'text-[#6D6D72]'}`}>
+          <p className={`text-[12px] mt-0.5 truncate ${n.is_read ? (isDark ? 'text-gray-600' : 'text-[#AEAEB2]') : (isDark ? 'text-gray-400' : 'text-[#6D6D72]')}`}>
             {n.message}
           </p>
-          <p className="text-[11px] mt-1 text-[#8E8E93]">{timeAgo(n.created_at)}</p>
+          <p className={`text-[11px] mt-1 ${isDark ? 'text-gray-500' : 'text-[#8E8E93]'}`}>{timeAgo(n.created_at)}</p>
         </div>
         {!n.is_read && <div className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shrink-0 mt-1.5" />}
       </motion.div>
@@ -256,7 +258,7 @@ export default function Header() {
                   {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
                 </button>
                 <button onClick={toggleTheme} className="w-9 h-9 flex items-center justify-center rounded-full">
-                  {isDark ? <Sun size={18} className="text-[#D4AF37]" /> : <Moon size={18} className="text-[#2D3350]/50" />}
+                  {isDark ? <Sun size={20} strokeWidth={2} className="text-[#D4AF37]" /> : <Moon size={20} strokeWidth={2} className="text-[#2D3350]/50" />}
                 </button>
               </div>
             </>
@@ -277,37 +279,37 @@ export default function Header() {
               initial={{ y: "-100%" }} animate={{ y: 0 }} exit={{ y: "-100%" }}
               transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.8 }}
               className="fixed top-0 left-0 right-0 z-[201] w-full max-w-md mx-auto flex flex-col"
-              style={{ background: 'rgba(242,242,247,0.98)', backdropFilter: 'blur(30px)', borderBottomLeftRadius: '28px', borderBottomRightRadius: '28px', boxShadow: '0 10px 40px rgba(0,0,0,0.15)', maxHeight: '90vh' }}
+              style={{ background: isDark ? 'rgba(26,26,46,0.98)' : 'rgba(242,242,247,0.98)', backdropFilter: 'blur(30px)', borderBottomLeftRadius: '28px', borderBottomRightRadius: '28px', boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.4)' : '0 10px 40px rgba(0,0,0,0.15)', maxHeight: '90vh' }}
             >
               <div className="pt-8 px-6 pb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <h2 className="text-[22px] font-bold text-[#1C1C1E]">알림</h2>
+                  <h2 className={`text-[22px] font-bold ${isDark ? 'text-gray-100' : 'text-[#1C1C1E]'}`}>알림</h2>
                   {unreadCount > 0 && <span className="bg-[#FF3B30] text-white text-[11px] font-black px-2 py-0.5 rounded-full">{unreadCount}</span>}
                 </div>
                 {notifications.length > 0 && (
                   <div className="flex items-center gap-3">
-                    <button onClick={handleReadAll} className="text-[14px] font-semibold text-[#007AFF]">모두 읽음</button>
+                    <button onClick={handleReadAll} className={`text-[14px] font-semibold ${isDark ? 'text-[#64D2FF]' : 'text-[#007AFF]'}`}>모두 읽음</button>
                     <button onClick={handleDeleteAll} className="text-[14px] font-semibold text-[#FF3B30]">전체 삭제</button>
                   </div>
                 )}
               </div>
-              <div className="mx-6 h-[0.5px] bg-black/5" />
+              <div className={`mx-6 h-[0.5px] ${isDark ? 'bg-white/10' : 'bg-black/5'}`} />
               <div className="overflow-y-auto px-4 pt-4 pb-4" style={{ flex: 1 }}>
                 {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 opacity-30">
-                    <BellIcon active={false} /><p className="text-[16px] font-bold mt-2">알림이 비어있습니다</p>
+                  <div className={`flex flex-col items-center justify-center py-20 ${isDark ? 'opacity-40' : 'opacity-30'}`}>
+                    <BellIcon active={false} /><p className={`text-[16px] font-bold mt-2 ${isDark ? 'text-gray-400' : ''}`}>알림이 비어있습니다</p>
                   </div>
                 ) : (
                   <AnimatePresence initial={false}>
                     {notifications.map((n) => (
                       <motion.div key={n.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 100 }}>
-                        <NotifCard n={n} onDelete={handleDeleteOne} onClick={handleNotifClick} />
+                        <NotifCard n={n} onDelete={handleDeleteOne} onClick={handleNotifClick} isDark={isDark} />
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 )}
               </div>
-              <div className="w-full flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing"><div className="w-10 h-1.5 rounded-full bg-gray-300/80" /></div>
+              <div className="w-full flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing"><div className={`w-10 h-1.5 rounded-full ${isDark ? 'bg-white/20' : 'bg-gray-300/80'}`} /></div>
             </motion.div>
           </>
         )}

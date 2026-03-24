@@ -421,14 +421,6 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
             {/* 헤더 */}
             <div className="px-5 pt-2 pb-3 flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
-              {activeDebates.length > 0 && (
-                <button
-                  onClick={() => { setIsEditing(!isEditing); setDeleting(null); }}
-                  className="text-[13px] font-bold text-[#007AFF] active:opacity-30 transition-opacity"
-                >
-                  {isEditing ? '완료' : '편집'}
-                </button>
-              )}
             </div>
 
             {/* 진행중 논쟁 목록 */}
