@@ -18,6 +18,21 @@ export async function requireAuth(req, res, next) {
   next();
 }
 
+// 어드민 전용 — requireAuth 이후 사용
+export async function requireAdmin(req, res, next) {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', req.user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+  }
+  req.isAdmin = true;
+  next();
+}
+
 // 인증 선택적 — 토큰 있으면 user 부착, 없어도 통과
 export async function optionalAuth(req, _res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');

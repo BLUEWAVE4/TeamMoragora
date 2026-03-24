@@ -17,6 +17,7 @@ import commentRoutes from './src/routes/comment.routes.js';
 import cronRoutes from './src/routes/cron.routes.js';
 import notificationRoutes from './src/routes/notification.routes.js';
 import chatRoutes from './src/routes/chat.routes.js';
+import adminRoutes from './src/routes/admin.routes.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

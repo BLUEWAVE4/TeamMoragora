@@ -286,7 +286,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
 
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
-    { to: '/chat/lobby', icon: (active) => <LiveIcon active={active} /> },
+    { to: '/debate/lobby', icon: (active) => <LiveIcon active={active} /> },
     { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} isDark={isDark} /> },
     { to: '/moragora', icon: (active) => <HallIcon active={active} /> },
     { to: '/profile', icon: (active) => <UserIcon active={active} /> }

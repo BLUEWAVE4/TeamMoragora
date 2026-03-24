@@ -20,6 +20,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ChatRoom from './pages/debate/ChatRoom';
 import DebateLobbyPage from './pages/debate/DebateLobbyPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 export default function App() {
   const location = useLocation();
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/debate/lobby" element={<DebateLobbyPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
         </Route>
       </Route>
     </Routes>

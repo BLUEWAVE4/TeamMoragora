@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../store/AuthContext';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
 import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
-  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X
+  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X, Shield
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
@@ -267,7 +267,8 @@ function VerdictModal({ verdict, onClose }) {
 
 // ─── ProfilePage ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [profileData, setProfileData] = useState(null);
@@ -674,6 +675,18 @@ const [showInfo, setShowInfo] = useState(false);
             </div>
             <ChevronRight size={20} className="text-[#C7C7CC]" />
           </motion.button>
+          {isAdmin && (
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => navigate('/admin')}
+              className="w-full bg-gradient-to-r from-[#1B2A4A] to-[#2D4470] rounded-2xl p-5 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Shield size={22} className="text-[#D4AF37]" />
+                </div>
+                <span className="text-[17px] font-bold text-white">운영 대시보드</span>
+              </div>
+              <ChevronRight size={20} className="text-white/40" />
+            </motion.button>
+          )}
         </div>
 
         {/* Debate History */}

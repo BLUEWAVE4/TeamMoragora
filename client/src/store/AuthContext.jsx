@@ -6,11 +6,20 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // role 조회
+  const fetchRole = async (userId) => {
+    if (!userId) { setIsAdmin(false); return; }
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    setIsAdmin(data?.role === 'admin');
+  };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) fetchRole(session.user.id);
       setLoading(false);
     });
 
@@ -18,6 +27,8 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) fetchRole(session.user.id);
+        else setIsAdmin(false);
 
         // OAuth 로그인 완료 후 저장된 리다이렉트 경로로 이동
         if (event === 'SIGNED_IN' && session?.user) {
@@ -64,7 +75,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithKakao, signInWithGoogle, signOut, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signInWithKakao, signInWithGoogle, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -85,4 +85,10 @@ export const markAllNotificationsRead = () => api.patch('/notifications/read-all
 export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
 export const deleteAllNotifications = () => api.delete('/notifications');
 
+// 어드민 대시보드
+export const getAdminStats = () => api.get('/admin/stats');
+export const getAdminAI = () => api.get('/admin/ai');
+export const getAdminTrends = () => api.get('/admin/trends');
+export const getAdminAnalytics = () => api.get('/admin/analytics');
+
 export default api;
