@@ -543,12 +543,12 @@ if (days > 0) {
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (
               <h2 className="text-white/80 text-lg font-sans font-bold tracking-tight">
-                세 현자가 아고라에 모였습니다.
+                모라고라에서 판결이 진행중입니다.
               </h2>
             )}
             {isAllDone && (
               <h2 className="text-white text-2xl font-sans font-black tracking-tight">
-                현자들이 석판을 내려놓았습니다!
+                판결이 완료되었습니다!
               </h2>
             )}
             <p className="text-[13px] text-white/60 font-sans font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
