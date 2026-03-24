@@ -110,9 +110,17 @@ export default function HomePage() {
       if (isInitial) setLoading(true);
       const apiCategory = categoryToApi[cat] || null;
       const res = await getVerdictFeed(1, 5, apiCategory, query || undefined);
-      const feedsWithCount = await fetchCounts(res?.data ?? []);
-      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
-      setFeeds(feedsWithDuration);
+      const rawFeeds = res?.data ?? [];
+      const [feedsWithCount, durationMap] = await Promise.all([
+        fetchCounts(rawFeeds),
+        enrichVoteDuration(rawFeeds),
+      ]);
+      // duration 데이터 병합
+      const merged = feedsWithCount.map((f, i) => ({
+        ...f,
+        debate: { ...f.debate, ...durationMap[i]?.debate },
+      }));
+      setFeeds(merged);
       pageRef.current = 1;
       hasNextRef.current = res?.hasNext ?? false;
       setHasNext(res?.hasNext ?? false);
@@ -132,9 +140,16 @@ export default function HomePage() {
       const nextPage = pageRef.current + 1;
       const apiCategory = categoryToApi[filter] || null;
       const res = await getVerdictFeed(nextPage, 5, apiCategory, searchQuery || undefined);
-      const feedsWithCount = await fetchCounts(res?.data ?? []);
-      const feedsWithDuration = await enrichVoteDuration(feedsWithCount);
-      setFeeds(prev => [...prev, ...feedsWithDuration]);
+      const rawFeeds = res?.data ?? [];
+      const [feedsWithCount, durationMap] = await Promise.all([
+        fetchCounts(rawFeeds),
+        enrichVoteDuration(rawFeeds),
+      ]);
+      const merged = feedsWithCount.map((f, i) => ({
+        ...f,
+        debate: { ...f.debate, ...durationMap[i]?.debate },
+      }));
+      setFeeds(prev => [...prev, ...merged]);
       pageRef.current = nextPage;
       hasNextRef.current = res?.hasNext ?? false;
       setPage(nextPage);
