@@ -251,7 +251,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
                 nextStep={mode === 'chat' ? handleSubmit : nextStep}
                 // nextStep={nextStep} 
                 prevStep={prevStep}
-                isLastStep={currentStep === totalSteps}
+                isLastStep={mode === 'chat' || currentStep === 3}
               />
             )}
 
