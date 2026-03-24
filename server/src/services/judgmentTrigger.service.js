@@ -176,6 +176,7 @@ export async function triggerJudgment(debateId) {
       .from('debates')
       .update({ status: 'completed' })
       .eq('id', debateId);
+    await applyResult(debateId, verdictId);
   }
 
   const participants = [debate.creator_id, debate.opponent_id].filter(Boolean);
