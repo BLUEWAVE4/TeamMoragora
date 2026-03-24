@@ -54,16 +54,10 @@ export async function getVoteTally(req, res, next) {
   try {
     const { debateId } = req.params;
 
-    const { data: debate } = await supabaseAdmin
-      .from('debates')
-      .select('status, vote_deadline')
-      .eq('id', debateId)
-      .single();
-
-    const { data, error } = await supabaseAdmin
-      .from('votes')
-      .select('voted_side')
-      .eq('debate_id', debateId);
+    const [{ data: debate }, { data, error }] = await Promise.all([
+      supabaseAdmin.from('debates').select('status, vote_deadline').eq('id', debateId).single(),
+      supabaseAdmin.from('votes').select('voted_side').eq('debate_id', debateId),
+    ]);
 
     if (error) throw error;
 

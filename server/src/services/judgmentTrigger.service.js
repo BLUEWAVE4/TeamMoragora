@@ -29,18 +29,22 @@ async function applyResult(debateId, verdictId) {
     : verdict.winner_side === 'B' ? debate.creator_id : null;
 
   if (verdict.winner_side === 'draw') {
-    // 무승부: 양측 draws +1
-    for (const uid of [debate.creator_id, debate.opponent_id].filter(Boolean)) {
-      const { data: p } = await supabaseAdmin.from('profiles').select('draws').eq('id', uid).single();
-      if (p) await supabaseAdmin.from('profiles').update({ draws: (p.draws || 0) + 1 }).eq('id', uid);
-    }
+    // 무승부: 양측 draws +1 (병렬)
+    const uids = [debate.creator_id, debate.opponent_id].filter(Boolean);
+    const profiles = await Promise.all(uids.map(uid => supabaseAdmin.from('profiles').select('draws').eq('id', uid).single()));
+    await Promise.all(profiles.map(({ data: p }, i) =>
+      p ? supabaseAdmin.from('profiles').update({ draws: (p.draws || 0) + 1 }).eq('id', uids[i]) : null
+    ));
   } else if (winnerId && loserId) {
-    // 승자 wins +1
-    const { data: wp } = await supabaseAdmin.from('profiles').select('wins').eq('id', winnerId).single();
-    if (wp) await supabaseAdmin.from('profiles').update({ wins: (wp.wins || 0) + 1 }).eq('id', winnerId);
-    // 패자 losses +1
-    const { data: lp } = await supabaseAdmin.from('profiles').select('losses').eq('id', loserId).single();
-    if (lp) await supabaseAdmin.from('profiles').update({ losses: (lp.losses || 0) + 1 }).eq('id', loserId);
+    // 승자/패자 병렬 업데이트
+    const [{ data: wp }, { data: lp }] = await Promise.all([
+      supabaseAdmin.from('profiles').select('wins').eq('id', winnerId).single(),
+      supabaseAdmin.from('profiles').select('losses').eq('id', loserId).single(),
+    ]);
+    await Promise.all([
+      wp ? supabaseAdmin.from('profiles').update({ wins: (wp.wins || 0) + 1 }).eq('id', winnerId) : null,
+      lp ? supabaseAdmin.from('profiles').update({ losses: (lp.losses || 0) + 1 }).eq('id', loserId) : null,
+    ]);
   }
 }
 

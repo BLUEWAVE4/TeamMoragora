@@ -72,11 +72,11 @@ export async function getMyActiveDebates(req, res, next) {
     const userId = req.user.id;
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 10));
     const cursor = req.query.cursor; // created_at ISO string
-    const activeStatuses = ['waiting', 'both_joined', 'arguing', 'judging', 'voting'];
+    const activeStatuses = ['waiting', 'both_joined', 'arguing', 'chatting', 'judging', 'voting'];
 
     let query = supabaseAdmin
       .from('debates')
-      .select('id, topic, status, invite_code, creator_id, opponent_id, created_at, vote_deadline, vote_duration')
+      .select('id, topic, status, mode, invite_code, creator_id, opponent_id, created_at, vote_deadline, vote_duration')
       .or(`creator_id.eq.${userId},opponent_id.eq.${userId}`)
       .in('status', activeStatuses)
       .order('created_at', { ascending: false })

@@ -631,24 +631,24 @@ export default function RankingPage() {
                     <div className="flex items-center gap-3.5 text-gray-400">
                       {/* 좋아요 */}
                       <div className="flex items-center gap-1">
-                        <svg fill="none" stroke="#FF2D55" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                        <svg fill="none" stroke={isDark ? '#8b8b8b' : '#FF2D55'} strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                         </svg>
-                        <span className="text-[11px] font-bold text-[#1C1C1E]/60">{v._likes || 0}</span>
+                        <span className={`text-[11px] font-bold ${isDark ? 'text-[#b0aaa0]' : 'text-[#1C1C1E]/60'}`}>{v._likes || 0}</span>
                       </div>
                       {/* 댓글 */}
                       <div className="flex items-center gap-1">
-                        <svg fill="none" stroke="#007AFF" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
+                        <svg fill="none" stroke={isDark ? '#8b8b8b' : '#007AFF'} strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-80">
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                         </svg>
-                        <span className="text-[11px] font-bold text-[#1C1C1E]/60">{v._comments || 0}</span>
+                        <span className={`text-[11px] font-bold ${isDark ? 'text-[#b0aaa0]' : 'text-[#1C1C1E]/60'}`}>{v._comments || 0}</span>
                       </div>
-                      {/* [복구] 조회수 */}
+                      {/* 조회수 */}
                       <div className="flex items-center gap-1">
                         <svg fill="none" stroke="#8E8E93" strokeWidth="2.5" height="12" viewBox="0 0 24 24" width="12" className="opacity-50">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                         </svg>
-                        <span className="text-[10px] font-medium text-[#AEAEB2]">{v._views || 0}</span>
+                        <span className={`text-[10px] font-medium ${isDark ? 'text-[#b0aaa0]' : 'text-[#AEAEB2]'}`}>{v._views || 0}</span>
                       </div>
                     </div>
                     
@@ -666,21 +666,23 @@ export default function RankingPage() {
           );
         })}
 
-        {/* 더 보기 버튼 */}
+        {/* 무한 스크롤 트리거 */}
         {hallVisible < hallData.length && (
-          <div className="flex justify-center py-4">
-            <button
-              onClick={() => {
+          <div ref={el => {
+            if (!el) return;
+            const observer = new IntersectionObserver(([entry]) => {
+              if (entry.isIntersecting && !hallLoadingMore) {
                 setHallLoadingMore(true);
                 setTimeout(() => {
                   setHallVisible(prev => prev + 5);
                   setHallLoadingMore(false);
                 }, 400);
-              }}
-              className="w-full py-4 bg-white/80 backdrop-blur-md border border-white rounded-[22px] text-[15px] font-[1000] text-[#007AFF] shadow-sm active:scale-[0.98] transition-all"
-            >
-              {hallLoadingMore ? "불러오는 중..." : `기록 더 보기 (${Math.min(5, hallData.length - hallVisible)}개)`}
-            </button>
+              }
+            }, { threshold: 0.1 });
+            observer.observe(el);
+            return () => observer.disconnect();
+          }} className="flex justify-center py-6">
+            <div className="w-6 h-6 border-3 border-gray-200 border-t-[#007AFF] rounded-full animate-spin" />
           </div>
         )}
       </div>

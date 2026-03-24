@@ -49,25 +49,18 @@ export async function createComment(req, res, next) {
       return res.status(400).json({ error: '댓글은 500자 이내로 작성해주세요.' });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('comments')
-      .insert({
+    // 댓글 생성 + 논쟁 정보 조회 병렬
+    const [{ data, error }, { data: debate }] = await Promise.all([
+      supabaseAdmin.from('comments').insert({
         debate_id: debateId,
         user_id: req.user.id,
         content: content.trim(),
-      })
-      .select('*, user:profiles!user_id(id, nickname, avatar_url, tier, gender)')
-      .single();
+      }).select('*, user:profiles!user_id(id, nickname, avatar_url, tier, gender)').single(),
+      supabaseAdmin.from('debates').select('topic, creator_id, opponent_id').eq('id', debateId).single(),
+    ]);
 
     if (error) throw error;
     data.is_liked = false;
-
-    // 논쟁 당사자에게 댓글 알림 (본인 제외)
-    const { data: debate } = await supabaseAdmin
-      .from('debates')
-      .select('topic, creator_id, opponent_id')
-      .eq('id', debateId)
-      .single();
     if (debate) {
       const recipients = [debate.creator_id, debate.opponent_id]
         .filter(uid => uid && uid !== req.user.id);

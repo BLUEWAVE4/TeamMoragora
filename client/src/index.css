@@ -186,6 +186,17 @@ input, textarea, select {
 /* 홈 배경 */
 .dark .bg-\[\#F8F9FA\] { background-color: #0f1419; }
 
+/* ===== 논쟁 랭킹 카드 다크모드 ===== */
+.dark .text-\[\#1C1C1E\] { color: #e0ddd5; }
+.dark .text-\[\#4e4e4e\] { color: #b0aaa0; }
+.dark .text-\[\#AEAEB2\] { color: #6a6a6a; }
+.dark .bg-\[\#F2F2F7\] { background-color: #1e2a3a; }
+.dark .border-\[\#F2F2F7\] { border-color: #2a3545; }
+.dark .border-white { border-color: #2a3545; }
+.dark .shadow-\[0_2px_8px_rgba\(0\,0\,0\,0\.02\)\] { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.dark .border-\[\#FFD60A\] { border-color: #FFD60A; }
+.dark .border-gray-100 { border-color: #2a3545; }
+
 /* 테두리 */
 .dark .border-gray-100 { border-color: #2a3545; }
 .dark .border-gray-200 { border-color: #2a3545; }
