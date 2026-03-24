@@ -101,29 +101,36 @@ const STATUS_MAP = {
 };
 
 function getDebateRoute(debate, userId) {
+  if (!debate) return '/';
   const { id, status, creator_id, mode, invite_code } = debate;
 
- // 1. 실시간 채팅 모드라면 상태가 무엇이든 무조건 채팅방으로!
-if (mode === 'chat') {
+  // ✅ 1. 오직 '실시간 채팅' 모드일 때만 바로 채팅방으로!
+  // (서버에서 실시간 모드를 어떤 값으로 주는지 확인 필요, 예: 'chat')
+  if (mode === 'chat') {
     return `/debate/${id}/chat`;
   }
 
- switch (status) {
+  // ✅ 2. 그 외(duo 등) 일반 논쟁 모드 처리
+  switch (status) {
     case 'waiting':
+      // 1:1(duo) 모드 등에서 대기 중일 때는 초대 페이지로 가는게 맞음
       return creator_id === userId
         ? `/invite/${invite_code}`
         : `/debate/${id}`;
+    
     case 'both_joined':
     case 'arguing':
+      // 1:1 논쟁은 여기서 '주장 작성' 페이지로 감
       return `/debate/${id}/argument`;
+      
     case 'judging':
-      return `/debate/${id}/judging`;
     case 'voting':
       return `/debate/${id}/judging`; 
+      
     default:
       return `/debate/${id}`;
   }
-};
+}
 // --- 메인 탭바 컴포넌트 ---
 
 export default function TabBar() {
@@ -270,10 +277,12 @@ export default function TabBar() {
   };
 
   const handleSelectDebate = (debate) => {
+    console.log("클릭한 논쟁 데이터 상세:", debate);
     setShowSheet(false);
     setIsEditing(false);
     setDeleting(null);
     const targetPath = getDebateRoute(debate, user.id);
+    console.log("결정된 이동 경로:", targetPath);
     navigate(targetPath);
   };
 
