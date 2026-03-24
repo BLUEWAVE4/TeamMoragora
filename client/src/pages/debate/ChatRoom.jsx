@@ -67,6 +67,7 @@ export default function ChatRoom() {
   const [msgError, setMsgError] = useState('');
   const [msgCount, setMsgCount] = useState(0);
   const [exhaustedUsers, setExhaustedUsers] = useState({});
+  const [timeChangeRequest, setTimeChangeRequest] = useState(null);
 
   const msgEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -82,20 +83,22 @@ export default function ChatRoom() {
 
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatDeadline, setChatDeadline] = useState(null);
+  const chatDeadlineRef = useRef(null);
+  useEffect(() => { chatDeadlineRef.current = chatDeadline; }, [chatDeadline]);
   const timeLeft = useCountdown(gameStarted ? chatDeadline : null);
   const isWarningTime = timeLeft != null && timeLeft > 0 && timeLeft <= 60;
 
   const isCreator = debate ? debate.creator_id === user?.id : false;
 
   const allReady = useCallback(() => {
-    const aList = Array.isArray(participants.A) ? participants.A : [];
-    const bList = Array.isArray(participants.B) ? participants.B : [];
-    if (aList.length < 1 || bList.length < 1) return false;
-    // 내 ready는 서버 sync 대신 myReady state로 판단
-    return [...aList, ...bList].every(p =>
-      p.userId === user?.id ? myReady : p.ready
-    );
-  }, [participants, myReady, user]);
+  const aList = Array.isArray(participants.A) ? participants.A : [];
+  const bList = Array.isArray(participants.B) ? participants.B : [];
+  if (aList.length < 1 || bList.length < 1) return false;
+  // 내 ready는 서버 sync 대신 myReady state로 판단
+  return [...aList, ...bList].every(p =>
+    p.userId === user?.id ? myReady : p.ready
+  );
+}, [participants, myReady, user]);
 
   // ===== 데이터 로드 =====
   useEffect(() => {
@@ -212,12 +215,61 @@ export default function ChatRoom() {
       if (chat_deadline) setChatDeadline(chat_deadline);
     });
     socket.on('time-update', ({ chat_deadline }) => setChatDeadline(chat_deadline));
+    socket.on('time-change-request', ({ type, votes, requiredCount }) => {
+  setTimeChangeRequest({ type, votes, requiredCount });
+  // 이미 메시지가 있으면 업데이트, 없으면 추가
+  setMessages(prev => {
+    const existingIdx = prev.findIndex(m => m.id === 'sys-time-vote');
+    const voteMsg = {
+      id: 'sys-time-vote',
+      type: 'vote',
+      voteType: type,
+      votes,
+      requiredCount,
+      created_at: new Date().toISOString(),
+    };
+    if (existingIdx >= 0) {
+      const updated = [...prev];
+      updated[existingIdx] = voteMsg;
+      return updated;
+    }
+    return [...prev, voteMsg];
+  });
+});
+
+    socket.on('time-change-approved', ({ type, chat_deadline }) => {
+      setTimeChangeRequest(null);
+      if (chat_deadline) setChatDeadline(chat_deadline);
+      // 시스템 메시지로 알림
+      setMessages(prev => [...prev, {
+        id: `sys-time-${Date.now()}`,
+        type: 'system',
+        content: type === 'skip' ? '⏩ 모든 참여자 동의로 시간이 스킵되었습니다.' : '⏱ 모든 참여자 동의로 5분이 추가되었습니다.',
+        created_at: new Date().toISOString(),
+      }]);
+    });
+
+    socket.on('time-change-cancelled', () => {
+  setTimeChangeRequest(null);
+  setMessages(prev => [
+    ...prev.filter(m => m.id !== 'sys-time-vote'),
+    {
+      id: `sys-cancelled-${Date.now()}`,
+      type: 'system',
+      content: '❌ 시간 변경이 거부되었습니다.',
+      created_at: new Date().toISOString(),
+    }
+  ]);
+});
     return () => {
       socket.emit('leave-presence', { debateId, userId: user.id });
       socket.off('presence-sync');
       socket.off('opponent-typing');
       socket.off('game-start');
       socket.off('time-update');
+      socket.off('time-change-request');
+      socket.off('time-change-approved');
+      socket.off('time-change-cancelled');
     };
   }, [debateId, user, myNickname, mySide]);
 
@@ -273,24 +325,20 @@ export default function ChatRoom() {
     setChatDeadline(chat_deadline);
   };
 
-  // ===== 시간 스킵 =====
-  const handleSkipTime = async () => {
-    if (!isCreator) return;
-    const newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-    await supabase.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
-    socket.emit('time-update', { debateId, chat_deadline: newDeadline });
-    setChatDeadline(newDeadline);
-  };
+const handleSkipTime = () => {
+  if (timeChangeRequest) return;
+  socket.emit('request-time-change', { debateId, userId: user.id, type: 'skip', currentDeadline: chatDeadlineRef.current });
+};
 
-  // ===== 시간 추가 (5분) =====
-  const handleExtendTime = async () => {
-    if (!isCreator) return;
-    const current = chatDeadline ? new Date(chatDeadline).getTime() : Date.now();
-    const newDeadline = new Date(current + EXTEND_MS).toISOString();
-    await supabase.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
-    socket.emit('time-update', { debateId, chat_deadline: newDeadline });
-    setChatDeadline(newDeadline);
-  };
+const handleExtendTime = () => {
+  if (timeChangeRequest) return;
+  socket.emit('request-time-change', { debateId, userId: user.id, type: 'extend', currentDeadline: chatDeadlineRef.current });
+};
+
+const handleVote = (agree) => {
+  socket.emit('vote-time-change', { debateId, userId: user.id, agree });
+  if (!agree) setTimeChangeRequest(null);
+};
 
   // ===== 타이머 종료 =====
   useEffect(() => {
@@ -397,7 +445,7 @@ export default function ChatRoom() {
               {['A', 'B'].map(side => (
                 <div key={side} className="flex flex-col gap-2">
                   <p className={`text-[11px] font-black uppercase tracking-widest text-center ${side === 'A' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {side === 'A' ? 'PRO · A측' : 'CON · B측'}
+                    {side === 'A' ? 'A측' : 'B측'}
                   </p>
                   <p className="text-white/40 text-[10px] text-center leading-snug line-clamp-2">
                     {side === 'A' ? debate?.pro_side : debate?.con_side}
@@ -428,7 +476,7 @@ export default function ChatRoom() {
                               {isMe ? '나' : p.nickname}
                             </span>
                             {p.ready
-                              ? <span className={`text-[9px] font-black shrink-0 ${isA ? 'text-emerald-400' : 'text-red-400'}`}>준비</span>
+                              ? <span className={`text-[9px] font-black shrink-0 ${isA ? 'text-emerald-400' : 'text-red-400'}`}>준비✓</span>
                               : isMe && <span className="text-[9px] text-white/30 shrink-0">대기중</span>
                             }
                           </>
@@ -439,7 +487,7 @@ export default function ChatRoom() {
                             className={`w-full text-center text-[10px] font-bold py-0.5 transition-opacity disabled:opacity-30
                               ${isA ? 'text-emerald-600' : 'text-red-600'}`}
                           >
-                            {isFull ? '가득 참' : '+ 입장 선택'}
+                            {isFull ? '가득 참' : '+ 선택'}
                           </button>
                         )}
                       </div>
@@ -466,7 +514,7 @@ export default function ChatRoom() {
                 className={`w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-wider transition-all active:scale-[0.97] ${
                   allReady() ? 'bg-[#D4AF37] text-[#0a0f1a] shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-white/20 cursor-not-allowed'
                 }`}>
-                {allReady() ? '⚔ 논쟁 시작' : '모든 참여자의 준비를 기다리는 중...'}
+                {allReady() ? '논쟁 시작' : '모든 참여자의 준비를 기다리는 중...'}
               </button>
             ) : (
               <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center gap-3">
@@ -506,18 +554,18 @@ export default function ChatRoom() {
               {formatTime(timeLeft)}
             </span>
             <span className="text-[9px] text-white/30">남은 시간</span>
-            {gameStarted && isCreator && (
-              <div className="flex gap-1 mt-0.5">
-                <button onClick={handleSkipTime}
-                  className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold active:scale-90 transition-all">
-                  스킵
-                </button>
-                <button onClick={handleExtendTime}
-                  className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold active:scale-90 transition-all">
-                  +5분
-                </button>
-              </div>
-            )}
+            {gameStarted && (
+  <div className="flex gap-1 mt-0.5">
+    <button onClick={handleSkipTime} disabled={!!timeChangeRequest}
+      className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold active:scale-90 transition-all disabled:opacity-30">
+      스킵
+    </button>
+    <button onClick={handleExtendTime} disabled={!!timeChangeRequest}
+      className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold active:scale-90 transition-all disabled:opacity-30">
+      +5분
+    </button>
+  </div>
+)}
           </div>
 
           <div className="flex items-center gap-1.5 flex-row-reverse">
@@ -545,12 +593,50 @@ export default function ChatRoom() {
           {messages.map((msg) => {
             // 3. 시스템 메시지 (발언권 소진)
             if (msg.type === 'system') {
-              return (
-                <motion.div key={msg.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center">
-                  <span className="text-[10px] text-amber-400/50 bg-amber-400/10 px-3 py-1 rounded-full">{msg.content}</span>
-                </motion.div>
-              );
-            }
+  return (
+    <motion.div key={msg.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center">
+      <span className="text-[10px] text-amber-400/50 bg-amber-400/10 px-3 py-1 rounded-full">{msg.content}</span>
+    </motion.div>
+  );
+}
+
+if (msg.type === 'vote') {
+  const agreedCount = Object.keys(msg.votes || {}).length;
+  const iVoted = msg.votes?.[user?.id];
+  return (
+    <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+      className="flex justify-center px-2">
+      <div className="w-full max-w-[260px] bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex flex-col items-center gap-2">
+        <span className="text-[11px] text-amber-400 font-black">
+          {msg.voteType === 'skip' ? '⏩ 시간 스킵 요청' : '⏱ +5분 추가 요청'}
+        </span>
+        <span className="text-[10px] text-white/30">
+          {agreedCount}/{msg.requiredCount}명 동의
+        </span>
+        {/* 진행 바 */}
+        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full bg-amber-400 rounded-full transition-all"
+            style={{ width: `${(agreedCount / msg.requiredCount) * 100}%` }} />
+        </div>
+        {!iVoted && (
+          <div className="flex gap-2 mt-1">
+            <button onClick={() => handleVote(true)}
+              className="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-black active:scale-90 transition-all">
+              동의
+            </button>
+            <button onClick={() => handleVote(false)}
+              className="px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-black active:scale-90 transition-all">
+              거부
+            </button>
+          </div>
+        )}
+        {iVoted && (
+          <span className="text-[10px] text-emerald-400/60 font-bold">동의 완료 ✓</span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
             const isMe = msg.user_id === user?.id;
             const isA = msg.side === 'A';
