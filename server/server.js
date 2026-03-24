@@ -36,10 +36,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
-// ===== Rate Limiting =====
-const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' } });
-const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: 'AI 요청 제한에 도달했습니다. 1분 후 다시 시도해주세요.' } });
-app.use('/api', globalLimiter);
+// ===== Rate Limiting (필요 시 활성화) =====
+// const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' } });
+// const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: 'AI 요청 제한에 도달했습니다. 1분 후 다시 시도해주세요.' } });
+// app.use('/api', globalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
