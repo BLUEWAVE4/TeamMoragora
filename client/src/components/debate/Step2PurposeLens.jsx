@@ -8,7 +8,7 @@ export default function Step2PurposeLens({
   aiSuggestedPurpose,
   aiSuggestedLens,
   nextStep, prevStep,
-  isLastStep,
+  isLastStep = false,
 }) {
 
   const [errorPurpose, setErrorPurpose] = useState("");
@@ -54,7 +54,9 @@ export default function Step2PurposeLens({
     if (!purpose) { setErrorPurpose("목적을 선택해주세요."); valid = false; }
     if (!valid) return;
     // 미선택이면 일반으로 설정
-    if (lensMode === 'none') setLens('일반');
+    if (lensMode === 'none') {
+      setLens('일반');
+    }
     nextStep();
   };
 
