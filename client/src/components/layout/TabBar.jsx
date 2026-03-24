@@ -74,6 +74,10 @@ function getTimeRemaining(deadline) {
 }
 
 function getStatusLabel(debate) {
+  // 실시간 채팅 모드인 경우 라벨 변경
+  if (debate.mode === 'chat') {
+    return { label: '실시간 채팅 논쟁 중', color: 'text-red-500 font-black' };
+  }
   if (debate.status === 'voting') {
     // vote_duration(일) + created_at 기반 남은 시간 계산
     const voteDuration = debate.vote_duration ?? 1;
@@ -100,11 +104,17 @@ const STATUS_MAP = {
 };
 
 function getDebateRoute(debate, userId) {
-  const { id, status, creator_id } = debate;
-  switch (status) {
+  const { id, status, creator_id, mode, invite_code } = debate;
+
+ // 1. 실시간 채팅 모드라면 상태가 무엇이든 무조건 채팅방으로!
+if (mode === 'chat') {
+    return `/debate/${id}/chat`;
+  }
+
+ switch (status) {
     case 'waiting':
       return creator_id === userId
-        ? `/invite/${debate.invite_code}`
+        ? `/invite/${invite_code}`
         : `/debate/${id}`;
     case 'both_joined':
     case 'arguing':
@@ -112,12 +122,11 @@ function getDebateRoute(debate, userId) {
     case 'judging':
       return `/debate/${id}/judging`;
     case 'voting':
-      return `/debate/${id}/judging`;
+      return `/debate/${id}/judging`; 
     default:
       return `/debate/${id}`;
   }
-}
-
+};
 // --- 메인 탭바 컴포넌트 ---
 
 export default function TabBar() {
@@ -249,6 +258,7 @@ export default function TabBar() {
       setShowSheet(true);
       markAsSeen();
       fetchActiveDebates(); // 백그라운드 갱신
+      return;
     } else {
       // 캐시 없으면 한 번만 조회
       fetchActiveDebates().then((items) => {
@@ -266,7 +276,8 @@ export default function TabBar() {
     setShowSheet(false);
     setIsEditing(false);
     setDeleting(null);
-    navigate(getDebateRoute(debate, user.id));
+    const targetPath = getDebateRoute(debate, user.id);
+    navigate(targetPath);
   };
 
 const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false);
@@ -286,7 +297,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
 
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
-    { to: '/chat/lobby', icon: (active) => <LiveIcon active={active} /> },
+    { to: '/debate/lobby', icon: (active) => <LiveIcon active={active} /> },
     { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} isDark={isDark} /> },
     { to: '/moragora', icon: (active) => <HallIcon active={active} /> },
     { to: '/profile', icon: (active) => <UserIcon active={active} /> }

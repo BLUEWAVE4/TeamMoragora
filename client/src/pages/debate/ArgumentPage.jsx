@@ -246,6 +246,12 @@ export default function ArgumentPage() {
         getDebate(debateId),
         getArguments(debateId),
       ])
+      
+      if (debateData?.mode === 'chat') {
+        navigate(`/debate/${debateId}/chat`, { replace: true });
+        return; // 아래 setDebate 등을 실행하지 않고 즉시 종료
+      }
+
       setDebate(debateData)
       setArgs(argsData || [])
       if (argsData?.length >= 4 || debateData?.status === 'judging') {

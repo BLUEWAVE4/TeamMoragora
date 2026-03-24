@@ -201,7 +201,6 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
         const inviteCode = result?.invite_code || result?.inviteCode;
         setGameStarted(true);
         navigate(`/debate/${result.id}/chat`);
-        // navigate(`/debate/${result.id}/chat`);
         return;
       }
 
@@ -251,7 +250,7 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
                 nextStep={mode === 'chat' ? handleSubmit : nextStep}
                 // nextStep={nextStep} 
                 prevStep={prevStep}
-                isLastStep={mode === 'chat'}
+                isLastStep={currentStep === totalSteps}
               />
             )}
 

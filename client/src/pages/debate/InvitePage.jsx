@@ -16,6 +16,10 @@ const labelMap = {
 const toKor = (v) => labelMap[v] || v
 
 const getDebateRoute = (debateId, status) => {
+  // 1. 실시간 채팅 모드 우선 처리
+  if (mode === 'chat') {
+    return `/debate/${debateId}/chat`;
+  }
   switch (status) {
     case 'waiting':
     case 'arguing':   return `/debate/${debateId}/argument`
