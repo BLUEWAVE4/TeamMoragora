@@ -541,65 +541,56 @@ export default function DebateCard({ feed, formatTime }) {
                               <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
                             </div>
                             <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
-                              <div className={`px-3 py-2 rounded-2xl max-w-[70%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
+                              <div
+                                className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'} ${isMine ? 'active:bg-[#1B2A4A]/15' : ''} transition-colors`}
+                                onContextMenu={(e) => { if (isMine) { e.preventDefault(); setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: true } : x)); } }}
+                                onTouchStart={isMine ? (() => { c._longPress = setTimeout(() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: true } : x)), 500); }) : undefined}
+                                onTouchEnd={isMine ? (() => clearTimeout(c._longPress)) : undefined}
+                                onTouchMove={isMine ? (() => clearTimeout(c._longPress)) : undefined}
+                              >
                                 <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
                               </div>
-                              <div className="flex items-center gap-0 shrink-0 pb-0.5">
-                                <button
-                                  aria-label="좋아요"
-                                  onClick={async () => {
-                                    if (c._liking) return;
-                                    const liked = c._liked;
-                                    setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: !liked, _likeCount: (x._likeCount || 0) + (liked ? -1 : 1), _liking: true } : x));
-                                    try {
-                                      const { toggleCommentLike } = await import('../../services/api');
-                                      await toggleCommentLike(c.id);
-                                    } catch {
-                                      setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: liked, _likeCount: (x._likeCount || 0) + (liked ? 1 : -1) } : x));
-                                    } finally {
-                                      setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liking: false } : x));
-                                    }
-                                  }}
-                                  className="w-11 h-11 flex items-center justify-center transition-colors"
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill={c._liked ? '#E63946' : 'none'} stroke={c._liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c._liked ? 1 : 0.25}>
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                  </svg>
-                                </button>
-                                {(c._likeCount || 0) > 0 && <span className="text-[9px] text-[#1B2A4A]/30 -ml-2">{c._likeCount}</span>}
-                                {isMine && (
-                                  <button
-                                    aria-label="삭제"
-                                    onClick={() => {
-                                      setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: true } : x));
-                                    }}
-                                    className="w-11 h-11 -ml-3 flex items-center justify-center transition-colors"
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" opacity="0.2">
-                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                    </svg>
-                                  </button>
-                                )}
-                                {c._confirmDelete && (
-                                  <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))}>
-                                    <div className="bg-white rounded-2xl p-5 w-[280px] text-center shadow-xl" onClick={e => e.stopPropagation()}>
-                                      <p className="text-[14px] font-bold text-[#1B2A4A] mb-1">의견 삭제</p>
-                                      <p className="text-[12px] text-[#1B2A4A]/50 mb-4">이 의견을 삭제하시겠습니까?</p>
-                                      <div className="flex gap-2">
-                                        <button onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-[#1B2A4A]/50 bg-gray-100">취소</button>
-                                        <button onClick={async () => {
-                                          try {
-                                            const { deleteComment } = await import('../../services/api');
-                                            await deleteComment(c.id);
-                                            setComments(prev => prev.filter(x => x.id !== c.id));
-                                            setLocalCommentCount(prev => prev - 1);
-                                          } catch {}
-                                        }} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#E63946]">삭제</button>
-                                      </div>
+                              <button
+                                aria-label="좋아요"
+                                onClick={async () => {
+                                  if (c._liking) return;
+                                  const liked = c._liked;
+                                  setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: !liked, _likeCount: (x._likeCount || 0) + (liked ? -1 : 1), _liking: true } : x));
+                                  try {
+                                    const { toggleCommentLike } = await import('../../services/api');
+                                    await toggleCommentLike(c.id);
+                                  } catch {
+                                    setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: liked, _likeCount: (x._likeCount || 0) + (liked ? 1 : -1) } : x));
+                                  } finally {
+                                    setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liking: false } : x));
+                                  }
+                                }}
+                                className="w-11 h-11 flex flex-col items-center justify-center transition-colors shrink-0"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill={c._liked ? '#E63946' : 'none'} stroke={c._liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c._liked ? 1 : 0.25}>
+                                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                {(c._likeCount || 0) > 0 && <span className="text-[9px] text-[#1B2A4A]/30 -mt-0.5">{c._likeCount}</span>}
+                              </button>
+                              {c._confirmDelete && (
+                                <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))}>
+                                  <div className="bg-white rounded-2xl p-5 w-[280px] text-center shadow-xl" onClick={e => e.stopPropagation()}>
+                                    <p className="text-[14px] font-bold text-[#1B2A4A] mb-1">의견 삭제</p>
+                                    <p className="text-[12px] text-[#1B2A4A]/50 mb-4">이 의견을 삭제하시겠습니까?</p>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-[#1B2A4A]/50 bg-gray-100">취소</button>
+                                      <button onClick={async () => {
+                                        try {
+                                          const { deleteComment } = await import('../../services/api');
+                                          await deleteComment(c.id);
+                                          setComments(prev => prev.filter(x => x.id !== c.id));
+                                          setLocalCommentCount(prev => prev - 1);
+                                        } catch {}
+                                      }} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#E63946]">삭제</button>
                                     </div>
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
