@@ -6,7 +6,7 @@ import CategoryFilter from '../../components/home/CategoryFilter';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
-import { useAuth } from "../../store/AuthContext";
+import { useAuth } from '../../store/AuthContext';
 import MoragoraModal from '../../components/common/MoragoraModal';
 
 // ===== 실시간 경과/남은 시간 표시 =====
@@ -32,7 +32,6 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
     );
   }
 
-  // waiting — 대기 경과 시간
   const elapsed = Math.max(0, now - new Date(createdAt).getTime());
   const min = (elapsed / 60000) % 60;
   const sec = (elapsed / 1000) % 60;
@@ -61,40 +60,12 @@ function ParticipantSlot({ name, color, isEmpty }) {
 }
 
 // ===== 카드 =====
-function LobbyDebateCard({ room }) {
-  const navigate = useNavigate();
-  const handleRoomClick = async () => {
-    if (!room?.id) return;
-    try { await incrementDebateView(room.id); } catch (e) {}
-    navigate(`/debate/${room.id}/chat`);
-  };
-  const userTier = room.creator?.tier || '시민';
-  const tierClass = tierColors[userTier] || tierColors['시민'];
-
-  // 방장 및 상대방 닉네임 백업 (토론 시작 후 슬롯 유실 방지)
-  const creatorName = room.creator?.nickname || room.side_a_1 || '방장';
-  const opponentName = room.opponent?.nickname || room.side_b_1 || '상대방';
-
-  // 명단 구성 로직: 시작(chatting) 상태면 최소한 1:1 명단은 유지
-  const sideA_List = [
-    room.side_a_1 || (room.status === 'chatting' ? creatorName : null),
-    room.side_a_2,
-    room.side_a_3
-  ];
-  const sideB_List = [
-    room.side_b_1 || (room.status === 'chatting' ? opponentName : null),
-    room.side_b_2,
-    room.side_b_3
-  ];
-
-  const activeA = sideA_List.filter(Boolean);
-  const activeB = sideB_List.filter(Boolean);
-  const currentTotal = activeA.length + activeB.length;
-
-  // 진행 중 조건: 양측 1명 이상 & chatting 상태
-  const isOngoing = activeA.length >= 1 && activeB.length >= 1 && room.status?.toLowerCase() === 'chatting';
+function LobbyDebateCard({ room, onCardClick }) {
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
-  const currentTotal = [room.creator?.nickname, room.opponent?.nickname].filter(Boolean).length;
+
+  const creatorName = room.creator?.nickname || '방장';
+  const opponentName = room.opponent?.nickname || null;
+  const currentTotal = [creatorName, opponentName].filter(Boolean).length;
 
   const statusConfig = {
     waiting: { bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500', label: '대기 중' },
@@ -104,25 +75,22 @@ function LobbyDebateCard({ room }) {
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
   return (
-    <div onClick={handleRoomClick} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-all mb-3">
-      {/* 상단: 프로필 + 타이머 */}
+    <div onClick={() => onCardClick(room)} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-all mb-3">
       <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
             <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-[#1B2A4A] text-[14px]">{room.creator?.nickname || '익명'}</span>
+            <span className="font-black text-[#1B2A4A] text-[14px]">{creatorName}</span>
             <span className="text-[10px] text-gray-400 font-bold">{room.creator?.tier || '시민'}</span>
           </div>
         </div>
         <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
       </div>
 
-      {/* 주제 */}
       <h3 className="text-[17px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
 
-      {/* 상태 뱃지 */}
       <div className="flex items-center gap-2 mb-4">
         <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${sc.bg} ${sc.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} animate-pulse`} />
@@ -131,16 +99,15 @@ function LobbyDebateCard({ room }) {
         <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
       </div>
 
-      {/* 참여자 */}
       <div className="flex items-center gap-3">
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 border border-emerald-50">
           <div className="text-[9px] font-black text-emerald-700/40 text-center mb-0.5">A측</div>
-          <ParticipantSlot name={room.creator?.nickname} color="emerald" isEmpty={!room.creator?.nickname} />
+          <ParticipantSlot name={creatorName} color="emerald" isEmpty={false} />
         </div>
         <span className="text-[10px] font-black text-gray-200">VS</span>
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 border border-red-50">
           <div className="text-[9px] font-black text-red-600/40 text-center mb-0.5">B측</div>
-          <ParticipantSlot name={room.opponent?.nickname} color="red" isEmpty={!room.opponent?.nickname} />
+          <ParticipantSlot name={opponentName} color="red" isEmpty={!opponentName} />
         </div>
       </div>
     </div>
@@ -158,11 +125,11 @@ export default function DebateLobbyPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const [visibleCount, setVisibleCount] = useState(10);
   const observerRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
 
   const loadData = useCallback(async (silent = false) => {
     try {
@@ -216,19 +183,16 @@ export default function DebateLobbyPage() {
     else if (info.offset.x > 50) setCurrentIndex(prev => (prev - 1 + featuredRooms.length) % featuredRooms.length);
   };
 
-  const lastElementRef = useCallback((node) => {
-    if (loading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) { setVisibleCount((prev) => prev + 5); }
-    });
-    if (node) observerRef.current.observe(node);
-  }, [loading]);
+  const handleCardClick = async (room) => {
+    if (!room?.id) return;
+    if (!user) { setLoginModalOpen(true); return; }
+    try { await incrementDebateView(room.id); } catch (e) {}
+    navigate(`/debate/${room.id}/chat`);
+  };
 
   const filteredRooms = rooms
     .filter(r => (filter === '전체' || r.category === filter) && (!searchQuery || r.topic.toLowerCase().includes(searchQuery)))
     .sort((a, b) => {
-      // chatting 먼저, 그 안에서 최신순
       if (a.status === 'chatting' && b.status !== 'chatting') return -1;
       if (b.status === 'chatting' && a.status !== 'chatting') return 1;
       return new Date(b.created_at) - new Date(a.created_at);
@@ -251,20 +215,18 @@ export default function DebateLobbyPage() {
             <AnimatePresence initial={false} mode="wait">
               <motion.div
                 key={currentIndex}
-                style={{ x: dragX }}
                 initial={{ opacity: 0, x: 80 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -80 }}
                 transition={{ x: { type: "tween", ease: "easeOut", duration: 0.3 }, opacity: { duration: 0.2 } }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0} // ✅ 탄성 제거
-                onDragEnd={onDragEnd}
-                onClickCapture={(e) => { if (Math.abs(e.movementX) > 5) e.stopPropagation(); }}
-                onClick={() => handleCardClick(dailyItems[currentIndex])} // ✅ 클릭 시 이동
-                className="h-full w-full p-8 flex flex-col justify-between cursor-pointer active:cursor-grabbing touch-none"
+                dragElastic={0}
+                onDragEnd={handleDragEnd}
+                onClick={() => handleCardClick(featuredRooms[currentIndex])}
+                className="h-full flex flex-col justify-between cursor-pointer active:cursor-grabbing touch-none"
               >
-                <div onClick={() => navigate(`/debate/${featuredRooms[currentIndex].id}/chat`)}>
+                <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] text-[#D4AF37] font-extrabold tracking-widest">LIVE 토론 중</span>
                     <LiveTimer
@@ -323,7 +285,7 @@ export default function DebateLobbyPage() {
               const isLast = processedRooms.length === index + 1 && filteredRooms.length > visibleCount;
               return (
                 <motion.div key={room.id} ref={isLast ? lastElementRef : null} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <LobbyDebateCard room={room} />
+                  <LobbyDebateCard room={room} onCardClick={handleCardClick} />
                 </motion.div>
               );
             })}
