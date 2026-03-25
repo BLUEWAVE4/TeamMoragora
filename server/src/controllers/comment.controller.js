@@ -14,20 +14,32 @@ export async function getComments(req, res, next) {
 
     if (error) throw error;
 
-    // 로그인 사용자의 좋아요 여부 확인
+    // 좋아요 수 + 로그인 사용자의 좋아요 여부 확인
     const userId = req.user?.id;
-    if (userId && data.length > 0) {
+    if (data.length > 0) {
       const commentIds = data.map(c => c.id);
-      const { data: likes } = await supabaseAdmin
+      const { data: allLikes } = await supabaseAdmin
         .from('comment_likes')
         .select('comment_id')
-        .eq('user_id', userId)
         .in('comment_id', commentIds);
 
-      const likedSet = new Set((likes || []).map(l => l.comment_id));
-      data.forEach(c => { c.is_liked = likedSet.has(c.id); });
-    } else {
-      data.forEach(c => { c.is_liked = false; });
+      const likeCounts = {};
+      (allLikes || []).forEach(l => { likeCounts[l.comment_id] = (likeCounts[l.comment_id] || 0) + 1; });
+
+      let likedSet = new Set();
+      if (userId) {
+        const { data: myLikes } = await supabaseAdmin
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', userId)
+          .in('comment_id', commentIds);
+        likedSet = new Set((myLikes || []).map(l => l.comment_id));
+      }
+
+      data.forEach(c => {
+        c.is_liked = likedSet.has(c.id);
+        c.like_count = likeCounts[c.id] || 0;
+      });
     }
 
     res.json(data);

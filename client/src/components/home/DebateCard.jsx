@@ -176,11 +176,13 @@ export default function DebateCard({ feed, formatTime }) {
     if (!isCommentOpen || !debateId) return;
     const fetchComments = async () => {
       try {
-        const [{ data }, { data: args }] = await Promise.all([
-          supabase.from('comments').select('*, profiles(nickname, gender, avatar_url)').eq('debate_id', debateId).order('created_at', { ascending: true }),
+        const { getComments: fetchComments } = await import('../../services/api');
+        const [data, { data: args }] = await Promise.all([
+          fetchComments(debateId),
           supabase.from('arguments').select('side, user_id').eq('debate_id', debateId),
         ]);
-        setComments(data || []);
+        const mapped = (data || []).map(c => ({ ...c, profiles: c.user, _liked: c.is_liked, _likeCount: c.like_count || 0 }));
+        setComments(mapped);
         setLocalCommentCount(data?.length ?? 0);
         if (args) {
           const a = args.find(x => x.side === 'A');
@@ -539,23 +541,44 @@ export default function DebateCard({ feed, formatTime }) {
                             <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
                               <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
                                 <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
+                                <div className={`flex items-center gap-3 mt-1.5 ${isMine ? 'justify-end' : ''}`}>
+                                  <button
+                                    aria-label="좋아요"
+                                    onClick={async () => {
+                                      try {
+                                        const { toggleCommentLike } = await import('../../services/api');
+                                        await toggleCommentLike(c.id);
+                                        const liked = c._liked;
+                                        setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: !liked, _likeCount: (x._likeCount || 0) + (liked ? -1 : 1) } : x));
+                                      } catch {}
+                                    }}
+                                    className="flex items-center gap-0.5 transition-colors"
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill={c._liked ? '#E63946' : 'none'} stroke={c._liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c._liked ? 1 : 0.3}>
+                                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                    </svg>
+                                    {(c._likeCount || 0) > 0 && <span className="text-[10px] text-[#1B2A4A]/30">{c._likeCount}</span>}
+                                  </button>
+                                  {isMine && (
+                                    <button
+                                      aria-label="삭제"
+                                      onClick={async () => {
+                                        try {
+                                          const { deleteComment } = await import('../../services/api');
+                                          await deleteComment(c.id);
+                                          setComments(prev => prev.filter(x => x.id !== c.id));
+                                          setLocalCommentCount(prev => prev - 1);
+                                        } catch {}
+                                      }}
+                                      className="transition-colors"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" opacity="0.2">
+                                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              {isMine && (
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const { error } = await supabase.from('comments').delete().eq('id', c.id);
-                                      if (!error) {
-                                        setComments(prev => prev.filter(x => x.id !== c.id));
-                                        setLocalCommentCount(prev => prev - 1);
-                                      }
-                                    } catch {}
-                                  }}
-                                  className="text-[9px] text-[#1B2A4A]/15 active:text-red-400 transition-colors shrink-0 pb-0.5"
-                                >
-                                  삭제
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>
