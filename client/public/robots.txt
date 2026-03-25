@@ -1,3 +1,12 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /debate/*/argument
+Disallow: /debate/*/judging
+Disallow: /debate/*/chat
+Disallow: /debate/*/vote
+Disallow: /debate/lobby
+Disallow: /profile
+Disallow: /auth/
+
 Sitemap: https://team-moragora-client.vercel.app/sitemap.xml
