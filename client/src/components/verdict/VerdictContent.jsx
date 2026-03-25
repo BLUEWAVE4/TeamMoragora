@@ -937,15 +937,27 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                           <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-primary/8 rounded-tr-sm' : 'bg-primary/5 rounded-tl-sm'}`}>
                             <p className="text-[12px] text-primary/70 leading-[1.6] break-words text-left">{c.content}</p>
                           </div>
-                          <div className="flex flex-col items-center gap-0.5 shrink-0 pb-0.5">
+                          <div className="flex items-center gap-0 shrink-0 pb-0.5">
                             <button
+                              aria-label="좋아요"
                               onClick={() => handleToggleLike(c.id)}
-                              className={`text-[10px] transition-colors ${c.is_liked ? 'text-red-500' : 'text-primary/20 hover:text-primary/40'}`}
+                              className="w-11 h-11 flex items-center justify-center transition-colors"
                             >
-                              {c.is_liked ? '♥' : '♡'}{c.likes_count > 0 && ` ${c.likes_count}`}
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c.is_liked ? 1 : 0.25}>
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                              </svg>
                             </button>
+                            {c.likes_count > 0 && <span className="text-[9px] text-[#1B2A4A]/30 -ml-2">{c.likes_count}</span>}
                             {isMine && (
-                              <button onClick={() => handleDeleteComment(c.id)} className="text-[9px] text-primary/15 hover:text-red-400 transition-colors">삭제</button>
+                              <button
+                                aria-label="삭제"
+                                onClick={() => handleDeleteComment(c.id)}
+                                className="w-11 h-11 -ml-3 flex items-center justify-center transition-colors"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" strokeWidth="2" opacity="0.2">
+                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                              </button>
                             )}
                           </div>
                         </div>
