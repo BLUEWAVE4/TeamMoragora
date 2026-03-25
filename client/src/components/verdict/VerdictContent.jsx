@@ -752,7 +752,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             <span className="text-[14px] font-sans font-bold text-primary">논쟁</span>
             {category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-bold border border-primary/15">{category}</span>}
             {lens && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/25">{lens} 기준</span>}
-            {isChat && <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-500 font-bold border border-blue-100">실시간 논쟁</span>}
           </div>
 
           {/* 채팅 모드 */}
