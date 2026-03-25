@@ -32,20 +32,20 @@ export default function ChatLogViewer({ debateId, nicknameA, nicknameB }) {
 
           return (
             <div key={msg.id} className={`flex ${isA ? 'justify-start' : 'justify-end'}`}>
-              <div className={`max-w-[75%] ${isA ? '' : 'text-right'}`}>
-                <p className={`text-[11px] font-bold mb-1 ${
-                  isA ? 'text-[#059669]' : 'text-[#E63946]'
-                }`}>
+              <div className={`max-w-[75%]`}>
+                <p className={`text-[11px] font-bold mb-1 ${isA ? 'text-[#059669]' : 'text-[#E63946] text-right'}`}>
                   {nickname}
                 </p>
-                <div className={`inline-block px-3 py-2 rounded-xl text-[13px] leading-relaxed ${
-                  isA
-                    ? 'bg-[#059669]/10 text-[#1B2A4A] rounded-tl-none'
-                    : 'bg-[#E63946]/10 text-[#1B2A4A] rounded-tr-none'
-                }`}>
-                  {msg.content}
+                <div className={`flex items-end gap-1.5 ${isA ? '' : 'flex-row-reverse'}`}>
+                  <div className={`inline-block px-3 py-2 rounded-xl text-[13px] leading-relaxed ${
+                    isA
+                      ? 'bg-[#059669]/10 text-[#1B2A4A] rounded-tl-none'
+                      : 'bg-[#E63946]/10 text-[#1B2A4A] rounded-tr-none'
+                  }`}>
+                    {msg.content}
+                  </div>
+                  <span className="text-[9px] text-gray-400 shrink-0 pb-0.5">{time}</span>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">{time}</p>
               </div>
             </div>
           );

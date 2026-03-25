@@ -103,8 +103,8 @@ export default function MoragoraDetailPage() {
           <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
           <div className="flex items-center justify-center gap-2 mb-1">
             {isChat && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] text-[11px] font-bold">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#D4AF37" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 실시간
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#D4AF37]/20 text-[#D4AF37] text-[11px] font-bold">
+                실시간
               </span>
             )}
           </div>

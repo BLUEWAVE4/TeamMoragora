@@ -369,8 +369,8 @@ export default function DebateCard({ feed, formatTime }) {
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
           {debateData?.mode === 'chat' && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 text-[10px] font-bold">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#8B5CF6" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 실시간
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-500 text-[10px] font-bold">
+              실시간
             </span>
           )}
         </div>
