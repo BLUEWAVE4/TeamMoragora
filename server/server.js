@@ -53,6 +53,8 @@ io.on('connection', (socket) => {
     }
     const slots = buildSlots(debateId);
     io.to(debateId).emit('presence-sync', slots);
+    // 재접속 시 이탈 해제 알림
+    socket.to(debateId).emit('opponent-returned', { userId });
   });
 
   // ===== Presence: 사이드 선택 =====
@@ -88,9 +90,20 @@ io.on('connection', (socket) => {
     // 양쪽에 서버 기준 deadline 전달
     io.to(debateId).emit('game-start', { chat_deadline, chat_started_at });
 
-    // DB 저장
-    import('./src/config/supabase.js').then(({ supabaseAdmin }) => {
-      supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+    // DB 저장 + 알림
+    import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+      await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+      // 채팅 시작 알림
+      try {
+        const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, topic').eq('id', debateId).single();
+        if (debate) {
+          const { createNotification } = await import('./src/services/notification.service.js');
+          const targets = [debate.creator_id, debate.opponent_id].filter(Boolean);
+          for (const uid of targets) {
+            await createNotification({ userId: uid, type: 'chat_start', title: '실시간 논쟁이 시작되었습니다!', message: `"${debate.topic?.slice(0, 30)}"`, link: `/debate/${debateId}/chat` });
+          }
+        }
+      } catch {}
     }).catch(() => {});
 
     // 서버 타이머: 시간 만료 시 자동 판결 트리거
@@ -109,10 +122,30 @@ io.on('connection', (socket) => {
     }, CHAT_DURATION_MS);
   });
 
-  // ===== 실시간 메시지: 즉시 브로드캐스트 → DB 비동기 저장 =====
+  // ===== 실시간 메시지: 비속어 필터 → 즉시 브로드캐스트 → DB 비동기 저장 =====
   socket.on('send-message', async (payload) => {
     const { debateId, userId, nickname, content, side } = payload;
     if (!debateId || !userId || !content?.trim() || !side) return;
+
+    // 1. 비속어 필터
+    try {
+      const { filterByDictionary } = await import('./src/services/contentFilter.service.js');
+      const filterResult = filterByDictionary(content.trim());
+      if (filterResult.blocked) {
+        socket.emit('filter-blocked', { reason: filterResult.reason });
+        return;
+      }
+    } catch {}
+
+    // 2. 동시 접속 방어: A/B측만 메시지 가능
+    try {
+      const { supabaseAdmin } = await import('./src/config/supabase.js');
+      const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id').eq('id', debateId).single();
+      if (debate && userId !== debate.creator_id && userId !== debate.opponent_id) {
+        socket.emit('filter-blocked', { reason: '이 논쟁의 참여자만 채팅할 수 있습니다.' });
+        return;
+      }
+    } catch {}
 
     const msgId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -167,18 +200,38 @@ socket.on('vote-time-change', ({ debateId, userId, agree }) => {
   }).catch(console.error);
 }
 });
-  // ===== 소켓 끊김 시 참여자 제거 =====
+  // ===== 소켓 끊김 시 참여자 제거 + 이탈 알림 =====
   socket.on('disconnect', () => {
     for (const debateId of Object.keys(roomParticipants)) {
       for (const [userId, p] of Object.entries(roomParticipants[debateId])) {
         if (p.socketId === socket.id) {
           delete roomParticipants[debateId][userId];
           io.to(debateId).emit('presence-sync', buildSlots(debateId));
+
+          // 채팅 중 이탈 시 상대에게 알림 + 2분 후 자동 종료
+          io.to(debateId).emit('opponent-left', { userId, nickname: p.nickname });
+          setTimeout(async () => {
+            // 2분 후에도 복귀 안 했으면 자동 종료
+            if (!roomParticipants[debateId]?.[userId]) {
+              try {
+                const { supabaseAdmin } = await import('./src/config/supabase.js');
+                const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
+                if (debate?.status === 'chatting') {
+                  await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
+                  io.to(debateId).emit('chat-auto-ended', { reason: '상대방 이탈로 논쟁이 종료되었습니다.' });
+                  const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
+                  triggerJudgment(debateId).catch(err => console.error('[이탈] 판결 실패:', err.message));
+                  console.log(`[이탈] ${debateId} 상대 이탈 → 2분 후 자동 판결`);
+                }
+              } catch (err) { console.error('[이탈] 에러:', err.message); }
+            }
+          }, 2 * 60 * 1000);
           break;
         }
       }
     }
   });
+
 });
 
 function buildSlots(debateId) {
