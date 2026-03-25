@@ -116,14 +116,13 @@ export default function Step1Topic({
           {proSide && (
             <Card variant="base">
               {editingSide === "pro" ? (
-                <p
-                  contentEditable
-                  suppressContentEditableWarning
-                  ref={(el) => { if (el) { if (!el.textContent) el.textContent = tempText; el.focus(); } }}
-                  onBlur={(e) => setTempText(e.currentTarget.textContent)}
-                  onInput={(e) => setTempText(e.currentTarget.textContent)}
-                  className="text-primary/90 leading-relaxed text-[20px] outline-none dark-gold"
-                >{tempText}</p>
+                <textarea
+                  value={tempText}
+                  onChange={(e) => setTempText(e.target.value)}
+                  autoFocus
+                  rows={2}
+                  className="w-full text-primary/90 leading-relaxed text-[20px] outline-none bg-transparent resize-none dark-gold"
+                />
               ) : (
                 <p className="text-primary/90 leading-relaxed text-[20px]">{proSide}</p>
               )}
@@ -147,14 +146,13 @@ export default function Step1Topic({
           {conSide && (
             <Card variant="base">
               {editingSide === "con" ? (
-                <p
-                  contentEditable
-                  suppressContentEditableWarning
-                  ref={(el) => { if (el) { if (!el.textContent) el.textContent = tempText; el.focus(); } }}
-                  onBlur={(e) => setTempText(e.currentTarget.textContent)}
-                  onInput={(e) => setTempText(e.currentTarget.textContent)}
-                  className="text-primary/90 leading-relaxed text-[20px] outline-none dark-gold"
-                >{tempText}</p>
+                <textarea
+                  value={tempText}
+                  onChange={(e) => setTempText(e.target.value)}
+                  autoFocus
+                  rows={2}
+                  className="w-full text-primary/90 leading-relaxed text-[20px] outline-none bg-transparent resize-none dark-gold"
+                />
               ) : (
                 <p className="text-primary/90 leading-relaxed text-[20px]">{conSide}</p>
               )}
