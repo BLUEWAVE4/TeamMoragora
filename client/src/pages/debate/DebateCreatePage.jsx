@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { createDebate, generateDebateSides } from "../../services/api";
+import { createDebate, generateDebateSides, getMyActiveDebates } from "../../services/api";
 import MoragoraModal from '../../components/common/MoragoraModal';
 
 const DRAFT_KEY = 'debate_create_draft';
@@ -35,6 +35,7 @@ export default function DebateCreatePage() {
 
   const [showBackModal, setShowBackModal] = useState(false);
   const [aiLoading,     setAiLoading]     = useState(false);
+  const [activeDebateModal, setActiveDebateModal] = useState({ isOpen: false, debate: null });
 
   const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
   const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
@@ -105,16 +106,21 @@ export default function DebateCreatePage() {
   //   setGameStarted(true);
   // };
 
-  const handleModeStart = (selectedMode) => {
-    // if (selectedMode === "chat") {
-    //   navigate('/debate/chat/room');  // 바로 ChatRoom으로 이동
-    //   return;
-    // }
+  const handleModeStart = async (selectedMode) => {
+    if (selectedMode === 'chat') {
+      // 진행중인 실시간 논쟁 확인
+      try {
+        const { items: debates } = await getMyActiveDebates();
+        const activeChat = debates?.find(d => d.mode === 'chat' && (d.status === 'waiting' || d.status === 'chatting'));
+        if (activeChat) {
+          setActiveDebateModal({ isOpen: true, debate: activeChat });
+          return;
+        }
+      } catch { /* 조회 실패 시 그냥 진행 */ }
+    }
     setMode(selectedMode);
     if (selectedMode === 'chat') {
-      // 🚀 실시간 논쟁 루트: '대기실' 컴포넌트로 바로 이동
-      // (아직 방을 안 만들었으니 inviteCode가 없는 상태로 이동)
-      setGameStarted(true);; 
+      setGameStarted(true);
       return;
     }
     setGameStarted(true);
@@ -212,7 +218,8 @@ const handleSubmit = async () => {
     }
     } catch (err) {
       console.error(err);
-      showModal('논쟁 생성에 실패했습니다', '잠시 후 다시 시도해주세요.', 'error');
+      const msg = err?.response?.data?.error || err?.message || '잠시 후 다시 시도해주세요.';
+      showModal('논쟁 생성에 실패했습니다', msg, 'error');
     }
   };
 
@@ -249,7 +256,7 @@ const handleSubmit = async () => {
                 // AI 추천값 전달
                 aiSuggestedPurpose={aiResults[topic]?.aiPurpose || null}
                 aiSuggestedLens={aiResults[topic]?.aiLens || null}
-                nextStep={mode === 'chat' ? handleSubmit : nextStep}
+                nextStep={nextStep}
                 // nextStep={nextStep} 
                 prevStep={prevStep}
                 // isLastStep={currentStep === totalSteps}
@@ -263,6 +270,7 @@ const handleSubmit = async () => {
                 time={time}        setTime={setTime}
                 prevStep={prevStep}
                 handleSubmit={handleSubmit}
+                mode={mode}
               />
             )}
           </>
@@ -292,6 +300,23 @@ const handleSubmit = async () => {
         title={modalState.title}
         description={modalState.description}
         type={modalState.type}
+      />
+
+      <MoragoraModal
+        isOpen={activeDebateModal.isOpen}
+        onClose={() => setActiveDebateModal({ isOpen: false, debate: null })}
+        title="진행 중인 실시간 논쟁이 있습니다"
+        description={activeDebateModal.debate
+          ? `"${activeDebateModal.debate.topic}"\n\n진행 중인 논쟁으로 이동하시겠습니까?`
+          : ''}
+        type="confirm"
+        confirmText="이동하기"
+        cancelText="닫기"
+        onConfirm={() => {
+          const d = activeDebateModal.debate;
+          setActiveDebateModal({ isOpen: false, debate: null });
+          navigate(`/debate/${d.id}/chat`);
+        }}
       />
     </div>
   );

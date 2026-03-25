@@ -140,7 +140,7 @@ export async function getVerdict(req, res, next) {
   try {
     const { data: verdict, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side, status, vote_deadline, mode)')
+      .select('*, ai_judgments(*), debate:debates!debate_id(topic, category, lens, purpose, pro_side, con_side, status, vote_deadline, mode, creator_id, opponent_id)')
       .eq('debate_id', req.params.debateId)
       .maybeSingle();
 
@@ -161,14 +161,16 @@ export async function getVerdict(req, res, next) {
     const r2A = args?.find(a => a.side === 'A' && a.round === 2);
     const r2B = args?.find(a => a.side === 'B' && a.round === 2);
 
+    // chat 모드: arguments 테이블 대신 debate의 creator_id/opponent_id 사용
+    const isChat = verdict.debate?.mode === 'chat';
+
     verdict.arguments = {
       A: r1A?.content || null,
       B: r1B?.content || null,
-      nicknameA: r1A?.user?.nickname || null,
-      nicknameB: verdict.debate?.mode === 'solo' ? '소크라테스' : (r1B?.user?.nickname || null),
-      userIdA: r1A?.user_id || null,
-      userIdB: r1B?.user_id || null,
-      // 2라운드 반박
+      nicknameA: r1A?.user?.nickname || verdict.nickname_a || null,
+      nicknameB: verdict.debate?.mode === 'solo' ? '소크라테스' : (r1B?.user?.nickname || verdict.nickname_b || null),
+      userIdA: r1A?.user_id || (isChat ? verdict.debate?.creator_id : null),
+      userIdB: r1B?.user_id || (isChat ? verdict.debate?.opponent_id : null),
       rebuttalA: r2A?.content || null,
       rebuttalB: r2B?.content || null,
     };
@@ -429,7 +431,7 @@ export async function getVerdictFeed(req, res, next) {
     if (error) throw error;
 
     // daily 모드 제외 + 카테고리 + 검색 필터
-    let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily');
+    let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily' && v.debate?.mode !== 'chat');
     if (category) {
       filtered = filtered.filter(v => v.debate?.category === category);
     }

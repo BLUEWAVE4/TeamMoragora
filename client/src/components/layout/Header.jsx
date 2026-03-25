@@ -253,7 +253,7 @@ export default function Header() {
             {!isSearchOpen && <button aria-label="검색" onClick={() => setIsSearchOpen(true)} className="w-11 h-11 flex items-center justify-center text-[#2D3350]/50 rounded-full"><SearchIcon /></button>}
             <button aria-label="알림" onClick={() => user ? setShowNotif(!showNotif) : navigate('/login')} className="w-11 h-11 flex items-center justify-center text-[#2D3350]/50 rounded-full relative">
               <BellIcon active={unreadCount > 0} />
-              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+              {unreadCount > 0 && <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </button>
             <button aria-label="다크모드 전환" onClick={toggleTheme} className="w-11 h-11 flex items-center justify-center rounded-full">
               {isDark ? <Sun size={20} strokeWidth={2} className="text-[#D4AF37]" /> : <Moon size={20} strokeWidth={2} className="text-[#2D3350]/50" />}

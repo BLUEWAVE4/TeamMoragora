@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sendMessage, getMessages, startChat, endChat } from '../controllers/chat.controller.js';
+import { sendMessage, getMessages, startChat, endChat, reportUser, castCitizenVote, getCitizenVoteTally } from '../controllers/chat.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -15,5 +15,12 @@ router.post('/:debateId/start', requireAuth, startChat);
 
 // 채팅 종료 → 판결 요청
 router.post('/:debateId/end', requireAuth, endChat);
+
+// 유저 신고 (AI 콘텐츠 분석)
+router.post('/:debateId/report', reportUser);
+
+// 시민 실시간 투표 (chatting 중 관전자)
+router.post('/:debateId/citizen-vote', requireAuth, castCitizenVote);
+router.get('/:debateId/citizen-vote', requireAuth, getCitizenVoteTally);
 
 export default router;

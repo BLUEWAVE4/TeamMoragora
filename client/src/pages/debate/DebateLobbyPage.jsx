@@ -24,11 +24,14 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
     const remaining = Math.max(0, new Date(chatDeadline).getTime() - now);
     const min = (remaining / 60000) % 60;
     const sec = (remaining / 1000) % 60;
-    if (remaining <= 0) return <span className="text-red-500 font-black text-[11px]">종료 임박</span>;
+    const isUrgent = remaining <= 60000;
     return (
-      <span className="text-amber-600 font-black text-[12px] tabular-nums">
-        {pad(min)}:{pad(sec)} 남음
-      </span>
+      <div className="flex flex-col items-center">
+        <span className={`text-[18px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#D4AF37]'}`}>
+          {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
+        </span>
+        <span className="text-[9px] text-gray-400 font-bold mt-0.5">남은 시간</span>
+      </div>
     );
   }
 
@@ -59,6 +62,61 @@ function ParticipantSlot({ name, color, isEmpty }) {
   );
 }
 
+// ===== 채팅 진행 타이머 (ChatRoom 헤더 스타일) =====
+const CHAT_TOTAL_MS = 15 * 60 * 1000; // 15분
+
+function ChatProgressBar({ chatDeadline, proSide, conSide }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const deadlineMs = new Date(chatDeadline).getTime();
+  const startMs = deadlineMs - CHAT_TOTAL_MS;
+  const elapsed = Math.max(0, now - startMs);
+  const remaining = Math.max(0, deadlineMs - now);
+  const progress = Math.min(1, elapsed / CHAT_TOTAL_MS);
+
+  const pad = (n) => String(Math.floor(n)).padStart(2, '0');
+  const min = (remaining / 60000) % 60;
+  const sec = (remaining / 1000) % 60;
+  const isUrgent = remaining <= 60000;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-50">
+      {/* A측 — 타이머 — B측 (ChatRoom 헤더와 동일 레이아웃) */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+          <span className="text-[11px] font-bold text-emerald-600 truncate">{proSide || 'A측'}</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-0.5 px-3 shrink-0">
+          <span className={`text-[20px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#1B2A4A]'}`}>
+            {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
+          </span>
+          <span className="text-[9px] text-gray-400 font-bold">남은 시간</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+          <span className="text-[11px] font-bold text-red-500 truncate text-right">{conSide || 'B측'}</span>
+          <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+        </div>
+      </div>
+
+      {/* 프로그레스 바 */}
+      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ease-linear ${isUrgent ? 'bg-red-400' : 'bg-[#D4AF37]'}`}
+          style={{ width: `${(1 - progress) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ===== 카드 =====
 function LobbyDebateCard({ room, onCardClick }) {
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
@@ -66,6 +124,11 @@ function LobbyDebateCard({ room, onCardClick }) {
   const creatorName = room.creator?.nickname || '방장';
   const opponentName = room.opponent?.nickname || null;
   const currentTotal = [creatorName, opponentName].filter(Boolean).length;
+
+  // 방장의 실제 side (DB creator_side 컬럼, 기본 'A')
+  const creatorSide = room.creator_side || 'A';
+  const sideAName = creatorSide === 'A' ? creatorName : opponentName;
+  const sideBName = creatorSide === 'A' ? opponentName : creatorName;
 
   const statusConfig = {
     waiting: { bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500', label: '대기 중' },
@@ -94,7 +157,7 @@ function LobbyDebateCard({ room, onCardClick }) {
       <div className="flex items-center gap-2 mb-4">
         <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${sc.bg} ${sc.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} animate-pulse`} />
-          {sc.label} {currentTotal}/2
+          {sc.label} {currentTotal}/6
         </span>
         <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
       </div>
@@ -102,14 +165,22 @@ function LobbyDebateCard({ room, onCardClick }) {
       <div className="flex items-center gap-3">
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 border border-emerald-50">
           <div className="text-[9px] font-black text-emerald-700/40 text-center mb-0.5">A측</div>
-          <ParticipantSlot name={creatorName} color="emerald" isEmpty={false} />
+          {[0, 1, 2].map(i => (
+            <ParticipantSlot key={`a-${i}`} name={i === 0 ? sideAName : null} color="emerald" isEmpty={i === 0 ? !sideAName : true} />
+          ))}
         </div>
         <span className="text-[10px] font-black text-gray-200">VS</span>
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 border border-red-50">
           <div className="text-[9px] font-black text-red-600/40 text-center mb-0.5">B측</div>
-          <ParticipantSlot name={opponentName} color="red" isEmpty={!opponentName} />
+          {[0, 1, 2].map(i => (
+            <ParticipantSlot key={`b-${i}`} name={i === 0 ? sideBName : null} color="red" isEmpty={i === 0 ? !sideBName : true} />
+          ))}
         </div>
       </div>
+
+      {room.status === 'chatting' && room.chat_deadline && (
+        <ChatProgressBar chatDeadline={room.chat_deadline} proSide={room.pro_side} conSide={room.con_side} />
+      )}
     </div>
   );
 }
@@ -136,7 +207,15 @@ export default function DebateLobbyPage() {
       if (!silent) setLoading(true);
       const res = await getAllPublicDebates();
       const rawRooms = res?.data || res || [];
-      const lobbyRooms = rawRooms.filter(r => ['waiting', 'chatting'].includes(String(r.status).toLowerCase()));
+      const now = Date.now();
+      const STALE_MS = 30 * 60 * 1000; // 30분
+      const lobbyRooms = rawRooms.filter(r => {
+        const status = String(r.status).toLowerCase();
+        if (status === 'chatting') return true;
+        // waiting은 30분 이내 생성된 방만 표시
+        if (status === 'waiting') return (now - new Date(r.created_at).getTime()) < STALE_MS;
+        return false;
+      });
       setRooms(lobbyRooms);
     } catch (err) { console.error(err); } finally { if (!silent) setLoading(false); }
   }, []);

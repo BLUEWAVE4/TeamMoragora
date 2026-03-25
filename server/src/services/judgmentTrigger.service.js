@@ -194,6 +194,7 @@ export async function triggerJudgment(debateId) {
 // ===== 채팅 모드 판결 =====
 async function triggerChatJudgment(debate) {
   const debateId = debate.id;
+  console.log(`[triggerChatJudgment] 시작 (debate: ${debateId}, status: ${debate.status})`);
 
   const { data: existingVerdict } = await supabaseAdmin
     .from('verdicts')
@@ -201,7 +202,10 @@ async function triggerChatJudgment(debate) {
     .eq('debate_id', debateId)
     .maybeSingle();
 
-  if (existingVerdict) return;
+  if (existingVerdict) {
+    console.log(`[triggerChatJudgment] 이미 판결 존재 — 스킵 (debate: ${debateId})`);
+    return;
+  }
 
   const { data: messages } = await supabaseAdmin
     .from('chat_messages')
@@ -299,35 +303,28 @@ async function triggerChatJudgment(debate) {
       chatLog,
     }, verdictId);
   } catch (aiErr) {
-    console.error(`[triggerChatJudgment] AI 판결 실패, 롤백: ${aiErr.message}`);
+    console.error(`[triggerChatJudgment] AI 판결 실패, 롤백: ${aiErr.message}`, aiErr.stack);
     await supabaseAdmin.from('ai_judgments').delete().eq('verdict_id', verdictId);
     await supabaseAdmin.from('verdicts').delete().eq('id', verdictId);
     await supabaseAdmin
       .from('debates')
-      .update({ status: 'chatting' })
+      .update({ status: 'judging' }) // chatting이 아닌 judging 유지 (프론트 폴링 호환)
       .eq('id', debateId);
     throw aiErr;
   }
 
   await updateCompositeVerdict(verdictId, judgments);
 
-  if (!debate.vote_duration) {
-    await supabaseAdmin
-      .from('debates')
-      .update({ status: 'completed' })
-      .eq('id', debateId);
+  // 시민 투표 반영 (chatting 중 관전자 투표)
+  await applyCitizenVotes(debateId, verdictId);
 
-    await applyResult(debateId, verdictId);
-    console.log(`[triggerChatJudgment] 채팅 판결 완료 → completed (debate: ${debateId})`);
-  } else {
-    const durationMs = debate.vote_duration * 24 * 60 * 60 * 1000;
-    const voteDeadline = new Date(Date.now() + durationMs);
-    await supabaseAdmin
-      .from('debates')
-      .update({ status: 'voting', vote_deadline: voteDeadline.toISOString() })
-      .eq('id', debateId);
-    console.log(`[triggerChatJudgment] 채팅 판결 완료 → voting (debate: ${debateId})`);
-  }
+  await supabaseAdmin
+    .from('debates')
+    .update({ status: 'completed' })
+    .eq('id', debateId);
+
+  await applyResult(debateId, verdictId);
+  console.log(`[triggerChatJudgment] 채팅 판결 완료 → completed (debate: ${debateId})`);
 
   const participants = [debate.creator_id, debate.opponent_id].filter(Boolean);
   await createNotifications(participants.map(uid => ({
@@ -337,6 +334,52 @@ async function triggerChatJudgment(debate) {
     message: `"${debate.topic}" 채팅 판결 결과를 확인하세요.`,
     link: `/debate/${debateId}/judging`,
   })));
+}
+
+// ===== 시민 투표 반영 (AI 75% + 시민 25%) =====
+async function applyCitizenVotes(debateId, verdictId) {
+  const { data: votes } = await supabaseAdmin
+    .from('votes').select('voted_side').eq('debate_id', debateId);
+
+  const { data: verdict } = await supabaseAdmin
+    .from('verdicts').select('ai_score_a, ai_score_b').eq('id', verdictId).single();
+
+  if (!verdict) return;
+
+  const total = (votes || []).length;
+  const countA = (votes || []).filter(v => v.voted_side === 'A').length;
+  const countB = (votes || []).filter(v => v.voted_side === 'B').length;
+
+  let finalA = verdict.ai_score_a;
+  let finalB = verdict.ai_score_b;
+  let citizenApplied = false;
+  let citizenScoreA = null;
+  let citizenScoreB = null;
+
+  if (total > 0) {
+    citizenScoreA = Math.round((countA / total) * 100);
+    citizenScoreB = Math.round((countB / total) * 100);
+    // AI 75% + 시민 25%
+    finalA = Math.round(verdict.ai_score_a * 0.75 + citizenScoreA * 0.25);
+    finalB = Math.round(verdict.ai_score_b * 0.75 + citizenScoreB * 0.25);
+    citizenApplied = true;
+    console.log(`[시민투표] ${total}표 반영 — A: ${citizenScoreA}%, B: ${citizenScoreB}% → final: ${finalA} vs ${finalB}`);
+  }
+
+  const finalWinner = finalA > finalB ? 'A' : finalB > finalA ? 'B' : 'draw';
+
+  await supabaseAdmin
+    .from('verdicts')
+    .update({
+      final_score_a: finalA,
+      final_score_b: finalB,
+      winner_side: finalWinner,
+      citizen_score_a: citizenScoreA,
+      citizen_score_b: citizenScoreB,
+      citizen_vote_count: total,
+      is_citizen_applied: citizenApplied,
+    })
+    .eq('id', verdictId);
 }
 
 // ===== 복합 판결 업데이트 =====

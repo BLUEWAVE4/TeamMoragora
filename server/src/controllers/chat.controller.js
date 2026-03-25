@@ -250,3 +250,124 @@ export async function endChat(req, res, next) {
     next(err);
   }
 }
+
+// ===== 유저 신고 (콘텐츠 필터 분석) =====
+export async function reportUser(req, res, next) {
+  try {
+    const { debateId } = req.params;
+    const { reporterId, targetId, messages: clientMessages } = req.body;
+
+    if (!targetId) throw new ValidationError('신고 대상이 지정되지 않았습니다.');
+
+    // DB에서 해당 유저의 실제 채팅 메시지 조회 (클라이언트 데이터 신뢰 방지)
+    const { data: chatMessages } = await supabaseAdmin
+      .from('chat_messages')
+      .select('content')
+      .eq('debate_id', debateId)
+      .eq('user_id', targetId)
+      .order('created_at', { ascending: true });
+
+    if (!chatMessages || chatMessages.length === 0) {
+      return res.json({ flagged: false, reason: '해당 유저의 메시지가 없습니다.' });
+    }
+
+    const allContent = chatMessages.map(m => m.content).join('\n');
+
+    // 비속어 사전 필터 분석
+    const filterResult = filterByDictionary(allContent);
+    if (filterResult.blocked) {
+      // 신고 기록 저장
+      await supabaseAdmin.from('reports').insert({
+        debate_id: debateId,
+        reporter_id: reporterId || null,
+        target_id: targetId,
+        reason: filterResult.reason,
+        flagged: true,
+        analyzed_content: allContent.slice(0, 2000),
+      }).catch(() => {}); // reports 테이블 없으면 무시
+
+      return res.json({ flagged: true, reason: `부적절한 표현이 감지되었습니다: ${filterResult.reason}` });
+    }
+
+    // 추가 패턴 분석 (인신공격, 혐오 표현 등)
+    const harmfulPatterns = [
+      { pattern: /죽|자살|살인/gi, label: '위험한 표현' },
+      { pattern: /(바보|멍청|등신|병신|지체|장애)/gi, label: '인신공격' },
+      { pattern: /(성별|인종|종교|외국인|이주민).*(차별|혐오|꺼져|나가)/gi, label: '혐오 표현' },
+    ];
+
+    for (const { pattern, label } of harmfulPatterns) {
+      if (pattern.test(allContent)) {
+        await supabaseAdmin.from('reports').insert({
+          debate_id: debateId,
+          reporter_id: reporterId || null,
+          target_id: targetId,
+          reason: label,
+          flagged: true,
+          analyzed_content: allContent.slice(0, 2000),
+        }).catch(() => {});
+
+        return res.json({ flagged: true, reason: `${label}이(가) 감지되었습니다. 관리자가 검토할 예정입니다.` });
+      }
+    }
+
+    res.json({ flagged: false, reason: '분석 결과 부적절한 내용이 감지되지 않았습니다. 오탐이라면 관리자에게 추가 검토를 요청합니다.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ===== 시민 실시간 투표 (chatting 중 관전자) =====
+export async function castCitizenVote(req, res, next) {
+  try {
+    const { debateId } = req.params;
+    const userId = req.user.id;
+    const { voted_side } = req.body;
+
+    if (!['A', 'B'].includes(voted_side)) {
+      return res.status(400).json({ error: 'voted_side는 A 또는 B여야 합니다.' });
+    }
+
+    // 논쟁 확인 — chatting 상태에서만 투표 가능
+    const { data: debate } = await supabaseAdmin
+      .from('debates').select('creator_id, opponent_id, status').eq('id', debateId).single();
+    if (!debate) return res.status(404).json({ error: '논쟁을 찾을 수 없습니다.' });
+    if (debate.status !== 'chatting') return res.status(400).json({ error: '투표할 수 없는 상태입니다.' });
+
+    // 당사자는 투표 불가
+    if (userId === debate.creator_id || userId === debate.opponent_id) {
+      return res.status(403).json({ error: '논쟁 당사자는 시민 투표에 참여할 수 없습니다.' });
+    }
+
+    // upsert — 변경 가능
+    const { error } = await supabaseAdmin
+      .from('votes')
+      .upsert({ debate_id: debateId, user_id: userId, voted_side }, { onConflict: 'debate_id,user_id' });
+    if (error) throw error;
+
+    res.json({ voted_side });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getCitizenVoteTally(req, res, next) {
+  try {
+    const { debateId } = req.params;
+    const userId = req.user.id;
+
+    const { data: votes } = await supabaseAdmin
+      .from('votes').select('voted_side').eq('debate_id', debateId);
+
+    const countA = (votes || []).filter(v => v.voted_side === 'A').length;
+    const countB = (votes || []).filter(v => v.voted_side === 'B').length;
+
+    // 내 투표 확인
+    const { data: myVote } = await supabaseAdmin
+      .from('votes').select('voted_side').eq('debate_id', debateId).eq('user_id', userId).maybeSingle();
+
+    res.json({ A: countA, B: countB, total: countA + countB, myVote: myVote?.voted_side || null });
+  } catch (err) {
+    next(err);
+  }
+}

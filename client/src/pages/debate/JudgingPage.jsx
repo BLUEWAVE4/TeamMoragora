@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api, { getDebate, getVoteTally, getVerdict, getArguments } from '../../services/api';
+import api, { getDebate, getVoteTally, getVerdict, getArguments, endChat } from '../../services/api';
 import { trackEvent } from '../../services/analytics';
 import { useAuth } from '../../store/AuthContext';
 import VerdictContent from '../../components/verdict/VerdictContent';
@@ -356,7 +356,12 @@ export default function JudgingPage() {
         } catch (_) {}
         const debateData = await getDebate(debateId);
         const isVotingOrDone = ['voting', 'completed'].includes(debateData.status);
-        if (debateData.status === 'arguing') return;
+        // chatting 상태인데 데드라인 지났으면 서버에 종료 요청 (타이머 소실 대비)
+        if (debateData.status === 'chatting' && debateData.chat_deadline && new Date(debateData.chat_deadline) < new Date()) {
+          try { await endChat(debateId); } catch (_) {}
+          return;
+        }
+        if (['arguing', 'chatting', 'waiting', 'both_joined'].includes(debateData.status)) return;
         try {
           const verdictResponse = await getVerdict(debateId);
           if (!verdictResponse) return;
@@ -377,7 +382,9 @@ export default function JudgingPage() {
           }
           setJudgeStatus({ ...newStatus });
           setJudgeScores(newScores);
-          if (isVotingOrDone && aiJudgments.length > 0) {
+          // voting/completed 또는 judging에서 AI 판결 완료 시 (chat 모드는 빠르게 completed로 전환)
+          const hasAllJudgments = aiJudgments.length >= 3 || isVotingOrDone;
+          if (hasAllJudgments && aiJudgments.length > 0) {
             setVerdictData(verdictResponse);
             setIsAllDone(true);
             clearInterval(pollInterval);
@@ -512,33 +519,57 @@ export default function JudgingPage() {
           {!isAllDone && (
             <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
               <div className="flex items-center justify-between">
-                <div className="flex flex-col items-center gap-1.5 flex-1">
-                  <div className="w-8 h-8 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center">
-                    <span className="text-gold text-[12px] font-black">1</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-gold">주장 분석</span>
-                  <span className="text-[9px] text-white/30">진행 중</span>
-                </div>
-                <div className="w-8 h-px bg-white/10" />
-                <div className="flex flex-col items-center gap-1.5 flex-1">
-                  <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
-                    <span className="text-white/30 text-[12px] font-black">2</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-white/30 text-center leading-tight">
-                    현자 판결<br />+ 시민 투표
-                  </span>
-                  <span className="text-[9px] text-white/20">
-                    {voteTotalDays ? `${voteTotalDays}일간` : '시간 미설정'}
-                  </span>
-                </div>
-                <div className="w-8 h-px bg-white/10" />
-                <div className="flex flex-col items-center gap-1.5 flex-1">
-                  <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
-                    <span className="text-white/30 text-[12px] font-black">3</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-white/30">최종 판결</span>
-                  <span className="text-[9px] text-white/20">확정</span>
-                </div>
+                {isChat ? (
+                  <>
+                    {/* 실시간 모드: 2단계 */}
+                    <div className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center">
+                        <span className="text-gold text-[12px] font-black">1</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-gold text-center leading-tight">실시간 논쟁<br />시민 투표</span>
+                      <span className="text-[9px] text-white/30">완료</span>
+                    </div>
+                    <div className="w-8 h-px bg-white/10" />
+                    <div className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center animate-pulse">
+                        <span className="text-gold text-[12px] font-black">2</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-gold text-center leading-tight">주장 분석<br />AI 판결</span>
+                      <span className="text-[9px] text-white/30">진행 중</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* 일반 모드: 3단계 */}
+                    <div className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center">
+                        <span className="text-gold text-[12px] font-black">1</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-gold">주장 분석</span>
+                      <span className="text-[9px] text-white/30">진행 중</span>
+                    </div>
+                    <div className="w-8 h-px bg-white/10" />
+                    <div className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
+                        <span className="text-white/30 text-[12px] font-black">2</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-white/30 text-center leading-tight">
+                        AI 판결<br />+ 시민 투표
+                      </span>
+                      <span className="text-[9px] text-white/20">
+                        {voteTotalDays ? `${voteTotalDays}일간` : '시간 미설정'}
+                      </span>
+                    </div>
+                    <div className="w-8 h-px bg-white/10" />
+                    <div className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-white/20 flex items-center justify-center">
+                        <span className="text-white/30 text-[12px] font-black">3</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-white/30">최종 판결</span>
+                      <span className="text-[9px] text-white/20">확정</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

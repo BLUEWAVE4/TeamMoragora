@@ -13,12 +13,14 @@ export default function Step3CategoryTime({
   time,
   setTime,
   prevStep,
-  handleSubmit
+  handleSubmit,
+  mode
 }) {
 
+  const isChat = mode === 'chat';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorTime, setErrorTime] = useState("");
-  const [timerType, setTimerType] = useState("none");
+  const [timerType, setTimerType] = useState(isChat ? "none" : "none");
 
   const timeOptions = [
     { value: "1", label: "1일" },
@@ -57,89 +59,113 @@ export default function Step3CategoryTime({
   return (
     <div className="flex flex-col gap-8 mt-6">
 
-      {/* TITLE */}
-      <div className="flex flex-col gap-3">
-        <h3 className="font-bold text-xl">시민 투표 설정</h3>
-        <p className="text-sm text-gray-500 leading-relaxed">
-          이 논쟁에 참여한 시민들이 의견을 남기고 투표할 수 있습니다. <br />
-          투표 마감 시간을 설정하면 해당 시간이 지나면 시민 투표가 종료되고 결과가 집계됩니다. <br />
-          <span className="text-gray-700 font-medium">
-            AI 판결문은 시간 설정과 관계없이 언제든지 확인할 수 있습니다.
-          </span>
-        </p>
-      </div>
+      {isChat ? (
+        <>
+          {/* ===== 실시간 논쟁 — 15분 고정 ===== */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-bold text-xl">실시간 논쟁 설정</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              실시간 논쟁은 상대방과 채팅 형식으로 토론을 진행합니다.<br />
+              토론 시간은 <span className="text-gray-700 font-medium">15분</span>으로 고정되며, 종료 후 AI 판결이 진행됩니다.
+            </p>
+          </div>
 
-      {/* OPTION CARDS */}
-      <div className="flex flex-col gap-4">
-
-        {/* 시간 미설정 */}
-        <label
-          onClick={() => {
-            setTimerType("none");
-            setTime("");
-            setErrorTime("");
-          }}
-          className={`border rounded-xl p-4 cursor-pointer transition
-            ${timerType === "none"
-              ? "border-gold bg-[#FFF9E8]"
-              : "border-gray-200 hover:border-gold/50"
-            }`}
-        >
-          <div className="flex items-start gap-3">
-            <input type="radio" checked={timerType === "none"} readOnly />
-            <div>
-              <div className="font-semibold">시간 미설정</div>
-              <div className="text-sm text-gray-500 mt-1">
-                시민 투표를 진행하지 않고 AI 판결문 만으로 점수를 도출합니다.
+          <div className="border-2 border-gold bg-[#FFF9E8] rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold text-[#1B2A4A]">논쟁 시간</div>
+                <div className="text-sm text-gray-500 mt-1">채팅 형식 실시간 토론</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-black text-[#D4AF37]">15</span>
+                <span className="text-sm font-bold text-gray-500">분</span>
               </div>
             </div>
-          </div>
-        </label>
-
-        {/* 시간 설정 */}
-        <label
-          onClick={() => { setTimerType("limit"); if (!time) setTime("1"); }}
-          className={`border rounded-xl p-4 cursor-pointer transition
-            ${timerType === "limit"
-              ? "border-gold bg-[#FFF9E8]"
-              : "border-gray-200 hover:border-gold/50"
-            }`}
-        >
-          <div className="flex items-start gap-3">
-            <input type="radio" checked={timerType === "limit"} readOnly />
-            <div>
-              <div className="font-semibold">시간 설정</div>
-              <div className="text-sm text-gray-500 mt-1">
-                설정된 시간 동안 시민 투표가 진행되며, 마감 후
-                시민 투표 결과와 함께 AI 판결을 종합한 점수를 도출합니다.
-              </div>
+            <div className="mt-3 pt-3 border-t border-gold/20 space-y-1.5">
+              <p className="text-[12px] text-gray-500">시민 투표는 논쟁 중 실시간으로 진행됩니다</p>
+              <p className="text-[12px] text-gray-500">종료 후 AI 판결 (75%) + 시민 투표 (25%) 반영</p>
+              <p className="text-[12px] text-gray-500">채팅방 내 /스킵, /+5 명령어로 시간 조정 가능</p>
             </div>
           </div>
-        </label>
 
-      </div>
+          {/* BUTTON */}
+          <div className="flex gap-3">
+            <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
+            <Button onClick={() => setIsModalOpen(true)} className="w-full">논쟁 생성</Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* ===== 일반 모드 — 시민 투표 설정 ===== */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-bold text-xl">시민 투표 설정</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              이 논쟁에 참여한 시민들이 의견을 남기고 투표할 수 있습니다. <br />
+              투표 마감 시간을 설정하면 해당 시간이 지나면 시민 투표가 종료되고 결과가 집계됩니다. <br />
+              <span className="text-gray-700 font-medium">
+                AI 판결문은 시간 설정과 관계없이 언제든지 확인할 수 있습니다.
+              </span>
+            </p>
+          </div>
 
-      {timerType === "limit" && (
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <span className="font-semibold text-sm text-gray-800">시민 투표 마감 시간</span>
-            {errorTime && <span className="text-xs text-red-500">{errorTime}</span>}
+          <div className="flex flex-col gap-4">
+            <label
+              onClick={() => { setTimerType("none"); setTime(""); setErrorTime(""); }}
+              className={`border rounded-xl p-4 cursor-pointer transition
+                ${timerType === "none" ? "border-gold bg-[#FFF9E8]" : "border-gray-200 hover:border-gold/50"}`}
+            >
+              <div className="flex items-start gap-3">
+                <input type="radio" checked={timerType === "none"} readOnly />
+                <div>
+                  <div className="font-semibold">시간 미설정</div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    시민 투표를 진행하지 않고 AI 판결문 만으로 점수를 도출합니다.
+                  </div>
+                </div>
+              </div>
+            </label>
+
+            <label
+              onClick={() => { setTimerType("limit"); if (!time) setTime("1"); }}
+              className={`border rounded-xl p-4 cursor-pointer transition
+                ${timerType === "limit" ? "border-gold bg-[#FFF9E8]" : "border-gray-200 hover:border-gold/50"}`}
+            >
+              <div className="flex items-start gap-3">
+                <input type="radio" checked={timerType === "limit"} readOnly />
+                <div>
+                  <div className="font-semibold">시간 설정</div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    설정된 시간 동안 시민 투표가 진행되며, 마감 후
+                    시민 투표 결과와 함께 AI 판결을 종합한 점수를 도출합니다.
+                  </div>
+                </div>
+              </div>
+            </label>
           </div>
-          <div className="w-full">
-            <Input
-              value={time}
-              onChange={(e) => { setTime(e.target.value); setErrorTime(""); }}
-              options={timeOptions}
-            />
+
+          {timerType === "limit" && (
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-start">
+                <span className="font-semibold text-sm text-gray-800">시민 투표 마감 시간</span>
+                {errorTime && <span className="text-xs text-red-500">{errorTime}</span>}
+              </div>
+              <div className="w-full">
+                <Input
+                  value={time}
+                  onChange={(e) => { setTime(e.target.value); setErrorTime(""); }}
+                  options={timeOptions}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* BUTTON */}
+          <div className="flex gap-3">
+            <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
+            <Button onClick={handleStart} className="w-full">논쟁 생성</Button>
           </div>
-        </div>
+        </>
       )}
-
-      {/* BUTTON */}
-      <div className="flex gap-3">
-        <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-        <Button onClick={handleStart} className="w-full">논쟁 생성</Button>
-      </div>
 
       {/* CONFIRM MODAL */}
       {isModalOpen && (
@@ -164,9 +190,9 @@ export default function Step3CategoryTime({
               <div><span className="font-bold text-primary/50">목적</span> <span className="text-primary">{purpose}</span></div>
               <div><span className="font-bold text-primary/50">기준</span> <span className="text-primary">{lens || '미선택'}</span></div>
               <div>
-                <span className="font-bold text-primary/50">시민 투표</span>{' '}
+                <span className="font-bold text-primary/50">{isChat ? '논쟁 시간' : '시민 투표'}</span>{' '}
                 <span className="text-primary">
-                  {timerType === "limit" ? (
+                  {isChat ? '15분 (실시간)' : timerType === "limit" ? (
                     <>
                       {time}일간 진행
                       {getDeadlinePreview() && (

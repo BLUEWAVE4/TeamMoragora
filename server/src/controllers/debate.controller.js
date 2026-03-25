@@ -21,6 +21,20 @@ export async function createDebate(req, res, next) {
     const inviteCode = nanoid(8);
     const debateMode = ['duo', 'solo', 'chat'].includes(mode) ? mode : 'duo';
 
+    // 실시간 논쟁: 1인 1개 제한 — 진행 중인 chat 논쟁이 있으면 생성 불가
+    if (debateMode === 'chat') {
+      const { data: existing } = await supabaseAdmin
+        .from('debates')
+        .select('id')
+        .eq('mode', 'chat')
+        .in('status', ['waiting', 'chatting'])
+        .or(`creator_id.eq.${req.user.id},opponent_id.eq.${req.user.id}`)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        throw new ValidationError('이미 진행 중인 실시간 논쟁이 있습니다. 기존 논쟁을 종료한 후 생성해주세요.');
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from('debates')
       .insert({
@@ -44,6 +58,7 @@ export async function createDebate(req, res, next) {
       // console.log("supabase error:", error);
 
     if (error) throw error;
+
     res.status(201).json(data);
   } catch (err) {
     next(err);

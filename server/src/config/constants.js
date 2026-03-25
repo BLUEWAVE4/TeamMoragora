@@ -2,7 +2,7 @@
 
 // AI 호출
 export const AI_TIMEOUT_MS = 30000;
-export const AI_RETRY_DELAY_MS = 15000;
+export const AI_RETRY_DELAY_MS = 3000;   // 15초 → 3초 (재시도 대기 단축)
 export const AI_TEMPERATURE_JUDGE = 0.3;
 export const AI_TEMPERATURE_SOLO = 0.7;
 export const AI_MAX_TOKENS_CLAUDE = 2048;

@@ -55,6 +55,8 @@ export const getChatMessages = (debateId) => api.get(`/chat/${debateId}/messages
 export const sendChatMessage = (debateId, content) => api.post(`/chat/${debateId}/messages`, { content });
 export const startChat = (debateId) => api.post(`/chat/${debateId}/start`);
 export const endChat = (debateId) => api.post(`/chat/${debateId}/end`);
+export const castCitizenVote = (debateId, voted_side) => api.post(`/chat/${debateId}/citizen-vote`, { voted_side });
+export const getCitizenVoteTally = (debateId) => api.get(`/chat/${debateId}/citizen-vote`);
 
 // ===== 판결 (Judgments) =====
 export const getVerdict = (debateId) => api.get(`/judgments/${debateId}`);
