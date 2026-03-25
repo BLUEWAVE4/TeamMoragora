@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import CategoryFilter from '../../components/home/CategoryFilter';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { useAuth } from "../../store/AuthContext";
+import MoragoraModal from '../../components/common/MoragoraModal';
 
 // ===== 실시간 경과/남은 시간 표시 =====
 function LiveTimer({ createdAt, chatDeadline, status }) {
@@ -66,7 +68,31 @@ function LobbyDebateCard({ room }) {
     try { await incrementDebateView(room.id); } catch (e) {}
     navigate(`/debate/${room.id}/chat`);
   };
+  const userTier = room.creator?.tier || '시민';
+  const tierClass = tierColors[userTier] || tierColors['시민'];
 
+  // 방장 및 상대방 닉네임 백업 (토론 시작 후 슬롯 유실 방지)
+  const creatorName = room.creator?.nickname || room.side_a_1 || '방장';
+  const opponentName = room.opponent?.nickname || room.side_b_1 || '상대방';
+
+  // 명단 구성 로직: 시작(chatting) 상태면 최소한 1:1 명단은 유지
+  const sideA_List = [
+    room.side_a_1 || (room.status === 'chatting' ? creatorName : null),
+    room.side_a_2,
+    room.side_a_3
+  ];
+  const sideB_List = [
+    room.side_b_1 || (room.status === 'chatting' ? opponentName : null),
+    room.side_b_2,
+    room.side_b_3
+  ];
+
+  const activeA = sideA_List.filter(Boolean);
+  const activeB = sideB_List.filter(Boolean);
+  const currentTotal = activeA.length + activeB.length;
+
+  // 진행 중 조건: 양측 1명 이상 & chatting 상태
+  const isOngoing = activeA.length >= 1 && activeB.length >= 1 && room.status?.toLowerCase() === 'chatting';
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
   const currentTotal = [room.creator?.nickname, room.opponent?.nickname].filter(Boolean).length;
 
@@ -124,6 +150,7 @@ function LobbyDebateCard({ room }) {
 // ===== 메인 =====
 export default function DebateLobbyPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
 
@@ -135,7 +162,7 @@ export default function DebateLobbyPage() {
   const [visibleCount, setVisibleCount] = useState(10);
   const observerRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const dragX = useMotionValue(0);
+  const [direction, setDirection] = useState(0);
 
   const loadData = useCallback(async (silent = false) => {
     try {
@@ -189,6 +216,15 @@ export default function DebateLobbyPage() {
     else if (info.offset.x > 50) setCurrentIndex(prev => (prev - 1 + featuredRooms.length) % featuredRooms.length);
   };
 
+  const lastElementRef = useCallback((node) => {
+    if (loading) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) { setVisibleCount((prev) => prev + 5); }
+    });
+    if (node) observerRef.current.observe(node);
+  }, [loading]);
+
   const filteredRooms = rooms
     .filter(r => (filter === '전체' || r.category === filter) && (!searchQuery || r.topic.toLowerCase().includes(searchQuery)))
     .sort((a, b) => {
@@ -222,9 +258,11 @@ export default function DebateLobbyPage() {
                 transition={{ x: { type: "tween", ease: "easeOut", duration: 0.3 }, opacity: { duration: 0.2 } }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0}
-                onDragEnd={handleDragEnd}
-                className="h-full flex flex-col justify-between cursor-grab active:cursor-grabbing"
+                dragElastic={0} // ✅ 탄성 제거
+                onDragEnd={onDragEnd}
+                onClickCapture={(e) => { if (Math.abs(e.movementX) > 5) e.stopPropagation(); }}
+                onClick={() => handleCardClick(dailyItems[currentIndex])} // ✅ 클릭 시 이동
+                className="h-full w-full p-8 flex flex-col justify-between cursor-pointer active:cursor-grabbing touch-none"
               >
                 <div onClick={() => navigate(`/debate/${featuredRooms[currentIndex].id}/chat`)}>
                   <div className="flex items-center justify-between mb-2">
@@ -298,6 +336,15 @@ export default function DebateLobbyPage() {
           )}
         </section>
       </main>
+
+      <MoragoraModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        type="confirm"
+        title="로그인이 필요합니다"
+        description="논쟁에 참여하시려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?"
+        onConfirm={() => { setLoginModalOpen(false); navigate('/login'); }}
+      />
     </div>
   );
 }
