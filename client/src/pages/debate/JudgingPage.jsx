@@ -11,7 +11,6 @@ import { useAuth } from '../../store/AuthContext';
 import VerdictContent from '../../components/verdict/VerdictContent';
 import { AI_JUDGES, MODEL_MAP } from '../../constants/judges';
 import confetti from 'canvas-confetti';
-
 // ===== 분석 중 랜덤 메시지 =====
 const ANALYSIS_MESSAGES = [
   "심각한 표정을 짓는 중..",
@@ -27,7 +26,6 @@ const ANALYSIS_MESSAGES = [
   "한숨을 내쉬는 중..",
   "표정이 굳어지는 중..",
 ];
-
 // 타이핑 애니메이션 훅
 const useTypingMessage = (messages, typingSpeed = 60, pauseMs = 1800, erasingSpeed = 30) => {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * messages.length));
@@ -35,7 +33,6 @@ const useTypingMessage = (messages, typingSpeed = 60, pauseMs = 1800, erasingSpe
   const [phase, setPhase] = useState('typing');
   const timerRef = useRef(null);
   const msg = messages[index];
-
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (phase === 'typing') {
@@ -56,10 +53,8 @@ const useTypingMessage = (messages, typingSpeed = 60, pauseMs = 1800, erasingSpe
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [text, phase, msg, index, messages, typingSpeed, pauseMs, erasingSpeed]);
-
   return text;
 };
-
 // 카운트업 애니메이션 훅
 const useCountUp = (target, duration = 2000) => {
   const [value, setValue] = useState(0);
@@ -82,19 +77,13 @@ const useCountUp = (target, duration = 2000) => {
   }, [target, duration]);
   return value;
 };
-
 // ===== 카운트다운 훅 =====
-// deadline(Date), totalMs(전체 기간 ms) → { days, hours, minutes, seconds, expired, progressRatio }
 const useCountdown = (deadline, totalMs) => {
   const [timeLeft, setTimeLeft] = useState(null);
-
   useEffect(() => {
-    // deadline이 없으면 동작 안 함
     if (!deadline || !totalMs) return;
-
     const update = () => {
       const diff = deadline.getTime() - Date.now();
-
       if (diff <= 0) {
         setTimeLeft({
           days: 0, hours: 0, minutes: 0, seconds: 0,
@@ -102,34 +91,26 @@ const useCountdown = (deadline, totalMs) => {
         });
         return;
       }
-
       setTimeLeft({
         days:          Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours:         Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
         minutes:       Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
         seconds:       Math.floor((diff % (1000 * 60)) / 1000),
         expired:       false,
-        progressRatio: Math.min(diff / totalMs, 1), // 1(시작) → 0(마감)
+        progressRatio: Math.min(diff / totalMs, 1),
       });
     };
-
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
   }, [deadline, totalMs]);
-
   return timeLeft;
 };
-
 // ===== 투표 마감 카운트다운 + 마감 후 참여자 수 컴포넌트 =====
 const VoteStatusPanel = ({ deadline, totalMs, totalDays, voteCount }) => {
   const timeLeft = useCountdown(deadline, totalMs);
   const pad = (n) => String(n).padStart(2, '0');
-
-  // deadline 자체가 없으면 (시간 미설정) 렌더링 안 함
   if (!deadline) return null;
-
-  // 계산 전 로딩
   if (!timeLeft) {
     return (
       <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5 animate-pulse">
@@ -137,140 +118,83 @@ const VoteStatusPanel = ({ deadline, totalMs, totalDays, voteCount }) => {
       </div>
     );
   }
-
-  // ── 마감 후: 참여자 수 표시 ──
   if (timeLeft.expired) {
     return (
       <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-white/60 tracking-wider uppercase">
-            시민 투표 마감
-          </span>
+          <span className="text-xs font-bold text-white/60 tracking-wider uppercase">시민 투표 마감</span>
           <span className="text-[10px] text-white/30">{totalDays}일 투표</span>
         </div>
-
         <div className="flex flex-col items-center justify-center gap-2 py-3">
-          {/* 마감 뱃지 */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold">
-            투표 마감
-          </span>
-
-          {/* 참여자 수 */}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold">투표 마감</span>
           <div className="flex items-baseline gap-1 mt-2">
-            <span className="text-4xl font-black text-white tabular-nums">
-              {voteCount.toLocaleString()}
-            </span>
+            <span className="text-4xl font-black text-white tabular-nums">{voteCount.toLocaleString()}</span>
             <span className="text-sm text-white/50 font-medium">명 참여</span>
           </div>
-
           <span className="text-[10px] text-white/25 mt-1">
-            마감: {deadline.toLocaleString('ko-KR', {
-              month: 'long', day: 'numeric',
-              hour: '2-digit', minute: '2-digit',
-            })}
+            마감: {deadline.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-
-        {/* 꽉 찬 바 (회색 처리) */}
         <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-3">
           <div className="h-full w-full rounded-full bg-white/20" />
         </div>
       </div>
     );
   }
-
-  // ── 진행 중: 카운트다운 ──
-  // 남은 비율에 따라 색상: 초록 → 주황 → 빨강
   const barColor =
     timeLeft.progressRatio > 0.5 ? '#10b981'
     : timeLeft.progressRatio > 0.2 ? '#f59e0b'
     : '#ef4444';
-
   return (
     <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-
-      {/* 라벨 */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold text-white/60 tracking-wider uppercase">
-          시민 투표 마감까지
-        </span>
+        <span className="text-xs font-bold text-white/60 tracking-wider uppercase">시민 투표 마감까지</span>
         <span className="text-[10px] text-white/30">{totalDays}일 투표</span>
       </div>
-
-      {/* 숫자 타이머 */}
       <div className="flex items-end justify-center gap-1 mb-4">
-
-        {/* 일수: 1일 이상 남았을 때만 표시 */}
         {timeLeft.days > 0 && (
           <>
             <div className="flex flex-col items-center">
-              <span className="text-3xl font-black text-white tabular-nums leading-none">
-                {pad(timeLeft.days)}
-              </span>
+              <span className="text-3xl font-black text-white tabular-nums leading-none">{pad(timeLeft.days)}</span>
               <span className="text-[9px] text-white/40 mt-1">일</span>
             </div>
             <span className="text-white/30 text-2xl font-black pb-4">:</span>
           </>
         )}
-
         <div className="flex flex-col items-center">
-          <span className="text-3xl font-black text-white tabular-nums leading-none">
-            {pad(timeLeft.hours)}
-          </span>
+          <span className="text-3xl font-black text-white tabular-nums leading-none">{pad(timeLeft.hours)}</span>
           <span className="text-[9px] text-white/40 mt-1">시간</span>
         </div>
         <span className="text-white/30 text-2xl font-black pb-4">:</span>
-
         <div className="flex flex-col items-center">
-          <span className="text-3xl font-black text-white tabular-nums leading-none">
-            {pad(timeLeft.minutes)}
-          </span>
+          <span className="text-3xl font-black text-white tabular-nums leading-none">{pad(timeLeft.minutes)}</span>
           <span className="text-[9px] text-white/40 mt-1">분</span>
         </div>
         <span className="text-white/30 text-2xl font-black pb-4">:</span>
-
         <div className="flex flex-col items-center">
-          {/* 초는 남은 비율에 따라 색상 변경 */}
-          <span
-            className="text-3xl font-black tabular-nums leading-none transition-colors duration-500"
-            style={{ color: barColor }}
-          >
+          <span className="text-3xl font-black tabular-nums leading-none transition-colors duration-500" style={{ color: barColor }}>
             {pad(timeLeft.seconds)}
           </span>
           <span className="text-[9px] text-white/40 mt-1">초</span>
         </div>
-
       </div>
-
-      {/* 진행 바 (줄어드는 방향) */}
       <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-1000 ease-linear"
-          style={{
-            width: `${timeLeft.progressRatio * 100}%`,
-            backgroundColor: barColor,
-            boxShadow: `0 0 8px ${barColor}80`,
-          }}
+          style={{ width: `${timeLeft.progressRatio * 100}%`, backgroundColor: barColor, boxShadow: `0 0 8px ${barColor}80` }}
         />
       </div>
-
-      {/* 현재 참여자 수 + 마감 일시 */}
       <div className="flex items-center justify-between mt-3">
         <span className="text-[10px] text-white/30">
           현재 <span className="text-white/60 font-bold">{voteCount.toLocaleString()}명</span> 참여 중
         </span>
         <span className="text-[10px] text-white/25">
-          {deadline.toLocaleString('ko-KR', {
-            month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-          })} 마감
+          {deadline.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 마감
         </span>
       </div>
-
     </div>
   );
 };
-
 const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) => {
   const judge = AI_JUDGES[judgeKey];
   const isDone = status === 'done';
@@ -279,12 +203,10 @@ const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) =>
   const displayA = useCountUp(isDone && score ? score.a : null);
   const displayB = useCountUp(isDone && score ? score.b : null);
   const analysisMsg = useTypingMessage(ANALYSIS_MESSAGES);
-
   const avatarSrc = isFailed && !isRetrying ? judge.avatarFailed
     : isDone ? judge.avatarDone
     : isActive ? judge.avatarActive
     : judge.avatar;
-
   return (
     <div
       onClick={isDone ? onClick : undefined}
@@ -335,12 +257,10 @@ const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) =>
     </div>
   );
 };
-
 export default function JudgingPage() {
   const { debateId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [judgeStatus, setJudgeStatus]   = useState({ gpt: 'active', gemini: 'active', claude: 'active' });
   const [judgeScores, setJudgeScores]   = useState({ gpt: null, gemini: null, claude: null });
   const [voteCount, setVoteCount]       = useState(0);
@@ -356,15 +276,15 @@ export default function JudgingPage() {
   const [debateInfo, setDebateInfo]     = useState(null);
   const [rating, setRating]             = useState(0);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
-
-  // ===== 투표 타이머 관련 상태 =====
-  const [voteDeadline, setVoteDeadline]   = useState(null); // Date 객체
-  const [voteTotalDays, setVoteTotalDays] = useState(null); // 1 | 3 | 7
-  const [voteTotalMs, setVoteTotalMs]     = useState(null); // 전체 기간(ms)
-
+  const [voteDeadline, setVoteDeadline]   = useState(null);
+  const [voteTotalDays, setVoteTotalDays] = useState(null);
+  const [voteTotalMs, setVoteTotalMs]     = useState(null);
   const [deleted, setDeleted]    = useState(false);
   const verdictRef       = useRef(null);
   const confettiFiredRef = useRef(false);
+
+  // ✅ chat 모드 여부
+  const isChat = debateInfo?.mode === 'chat';
 
   const fireConfetti = () => {
     confetti({
@@ -375,7 +295,6 @@ export default function JudgingPage() {
       colors: ['#FEE500', '#E63946', '#4285F4', '#10A37F', '#FFFFFF']
     });
   };
-
   useEffect(() => {
     if (isAllDone && !confettiFiredRef.current) {
       fireConfetti();
@@ -383,7 +302,6 @@ export default function JudgingPage() {
       trackEvent('verdict_view', { debateId });
     }
   }, [isAllDone]);
-
   useEffect(() => {
     const initFetch = async () => {
       try {
@@ -392,56 +310,30 @@ export default function JudgingPage() {
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
-
-        // ── 마감 시각 계산 ──
-        // Step3에서 설정한 time 값("1" | "3" | "7" | "")
-        // ── 마감 시각 계산 ──
-const rawTime = data.time;
-const days = rawTime ? parseInt(rawTime, 10) : 0;
-
-if (days > 0) {
-  setVoteTotalDays(days);
-
-  const totalMs = days * 24 * 60 * 60 * 1000;
-  setVoteTotalMs(totalMs);
-
-  let deadlineDate = null;
-
-  // 1️⃣ 서버에서 deadline 제공
-  if (data.deadline) {
-
-    deadlineDate = new Date(data.deadline);
-
-  }
-
-  // 2️⃣ created_at 기반 계산
-  else if (data.created_at) {
-
-    deadlineDate = new Date(data.created_at);
-    deadlineDate.setDate(deadlineDate.getDate() + days);
-
-  }
-
-  // ⭐ 3️⃣ fallback (이게 추가된 부분)
-  else {
-
-    const now = new Date();
-    deadlineDate = new Date(
-      now.getTime() + days * 24 * 60 * 60 * 1000
-    );
-
-  }
-
-  if (deadlineDate && !isNaN(deadlineDate.getTime())) {
-    setVoteDeadline(deadlineDate);
-  }
-}
-
+        const rawTime = data.time;
+        const days = rawTime ? parseInt(rawTime, 10) : 0;
+        if (days > 0) {
+          setVoteTotalDays(days);
+          const totalMs = days * 24 * 60 * 60 * 1000;
+          setVoteTotalMs(totalMs);
+          let deadlineDate = null;
+          if (data.deadline) {
+            deadlineDate = new Date(data.deadline);
+          } else if (data.created_at) {
+            deadlineDate = new Date(data.created_at);
+            deadlineDate.setDate(deadlineDate.getDate() + days);
+          } else {
+            const now = new Date();
+            deadlineDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+          }
+          if (deadlineDate && !isNaN(deadlineDate.getTime())) {
+            setVoteDeadline(deadlineDate);
+          }
+        }
         try {
           const args = await getArguments(debateId);
           setDebateArgs(args || []);
         } catch (_) {}
-
       } catch (e) {
         console.error(e);
         if (e?.status === 404 || e?.response?.status === 404 || e?.message?.includes('찾을 수 없')) {
@@ -452,11 +344,8 @@ if (days > 0) {
       }
     };
     initFetch();
-    
-
     const pollInterval = setInterval(async () => {
       try {
-        // 투표 현황 갱신
         try {
           const voteResponse = await getVoteTally(debateId);
           const totalVotes =
@@ -465,19 +354,15 @@ if (days > 0) {
             voteResponse.total || 0;
           setVoteCount(totalVotes);
         } catch (_) {}
-
         const debateData = await getDebate(debateId);
         const isVotingOrDone = ['voting', 'completed'].includes(debateData.status);
         if (debateData.status === 'arguing') return;
-
         try {
           const verdictResponse = await getVerdict(debateId);
           if (!verdictResponse) return;
-
           const aiJudgments = verdictResponse.ai_judgments || [];
           const newStatus = { gpt: 'active', gemini: 'active', claude: 'active' };
           const newScores = { gpt: null, gemini: null, claude: null };
-
           aiJudgments.forEach((j) => {
             const key = MODEL_MAP[j.ai_model] || MODEL_MAP[j.ai_model?.split('-')[0]];
             if (key) {
@@ -485,16 +370,13 @@ if (days > 0) {
               newScores[key] = { a: j.score_a, b: j.score_b };
             }
           });
-
           if (isVotingOrDone) {
             Object.keys(newStatus).forEach(k => {
               if (newStatus[k] !== 'done') newStatus[k] = 'failed';
             });
           }
-
           setJudgeStatus({ ...newStatus });
           setJudgeScores(newScores);
-
           if (isVotingOrDone && aiJudgments.length > 0) {
             setVerdictData(verdictResponse);
             setIsAllDone(true);
@@ -503,25 +385,20 @@ if (days > 0) {
         } catch (_) {}
       } catch (error) {}
     }, 3000);
-
     return () => clearInterval(pollInterval);
   }, [debateId]);
-
   useEffect(() => {
     if (displayCount < voteCount) {
       const timer = setTimeout(() => setDisplayCount(prev => prev + 1), 30);
       return () => clearTimeout(timer);
     }
   }, [displayCount, voteCount]);
-
-  // 삭제된 논쟁 → 안내 후 홈으로 이동
   useEffect(() => {
     if (deleted) {
       const timer = setTimeout(() => navigate('/'), 3000);
       return () => clearTimeout(timer);
     }
   }, [deleted, navigate]);
-
   if (deleted) return (
     <div className="min-h-screen bg-[#FAFAF5] flex flex-col items-center justify-center p-7 text-center">
       <div className="w-16 h-16 rounded-full bg-[#1B2A4A]/10 flex items-center justify-center mb-5">
@@ -533,12 +410,10 @@ if (days > 0) {
       <p className="text-[13px] text-gray-400 mt-3">잠시 후 홈으로 이동됩니다.</p>
     </div>
   );
-
   return (
     <div className="fixed inset-0 top-16 flex justify-center bg-[#FAFAF5] z-50">
       <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#1a2744] via-60% to-[#FAFAF5] shadow-2xl overflow-hidden">
         <div className="flex-1 flex flex-col px-6 pt-16 pb-32 overflow-y-auto">
-
           {/* ===== 헤더 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (
@@ -551,6 +426,12 @@ if (days > 0) {
                 판결이 완료되었습니다!
               </h2>
             )}
+            {/* ✅ chat 모드 실시간 뱃지 */}
+            {isChat && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] text-[11px] font-bold">
+                ⚡ 실시간 논쟁
+              </span>
+            )}
             <p className="text-[13px] text-white/60 font-sans font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
               "{debateTitle}"
             </p>
@@ -562,7 +443,6 @@ if (days > 0) {
               </div>
             )}
           </div>
-
           {/* ===== AI 판사 카드 ===== */}
           <div className="flex gap-2 mt-8 shrink-0">
             {['gpt', 'gemini', 'claude'].map(key => (
@@ -581,7 +461,6 @@ if (days > 0) {
                     const result = res.data || res;
                     setJudgeStatus(prev => ({ ...prev, [key]: 'done' }));
                     setJudgeScores(prev => ({ ...prev, [key]: { a: result.score_a, b: result.score_b } }));
-                    // 판결 데이터 갱신 (VerdictContent 자동 반영)
                     const updatedVerdict = await getVerdict(debateId);
                     if (updatedVerdict) setVerdictData(updatedVerdict);
                   } catch {
@@ -593,11 +472,7 @@ if (days > 0) {
               />
             ))}
           </div>
-
-          {/* ===== 투표 상태 패널 =====
-              - 진행 중 → 카운트다운 타이머 + 현재 참여자 수
-              - 마감 후 → "N명 참여" 결과 표시
-              - 시간 미설정(voteDeadline null) → 렌더링 안 함          */}
+          {/* ===== 투표 상태 패널 ===== */}
           {!isAllDone && (
             <VoteStatusPanel
               deadline={voteDeadline}
@@ -606,9 +481,8 @@ if (days > 0) {
               voteCount={displayCount}
             />
           )}
-
-          {/* ===== 양측 주장 미리보기 ===== */}
-          {!isAllDone && debateArgs.length > 0 && (
+          {/* ===== 양측 주장 미리보기 (chat 모드는 표시 안 함) ===== */}
+          {!isAllDone && !isChat && debateArgs.length > 0 && (
             <div className="mt-8 shrink-0 space-y-2">
               {debateArgs.filter(a => a.side === 'A').map((arg, i) => (
                 <div key={`a-${i}`} className="bg-white/5 border border-emerald-500/20 rounded-2xl p-4">
@@ -634,7 +508,6 @@ if (days > 0) {
               ))}
             </div>
           )}
-
           {/* ===== 판결 프로세스 안내 ===== */}
           {!isAllDone && (
             <div className="mt-6 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
@@ -669,7 +542,6 @@ if (days > 0) {
               </div>
             </div>
           )}
-
           {/* ===== 판결 대기 버튼 ===== */}
           {!isAllDone && (
             <div className="mt-6 shrink-0">
@@ -681,12 +553,11 @@ if (days > 0) {
               </button>
             </div>
           )}
-
           {/* ===== 판결 결과 (완료 시) ===== */}
           {isAllDone && verdictData && (
             <div className="mt-8">
               <VerdictContent ref={verdictRef} verdictData={verdictData} topic={debateTitle} />
-              {/* 별점 평가 — 작성자/참여자만 (0.5단위) */}
+              {/* 별점 평가 */}
               {user && debateInfo && (user.id === debateInfo.creator_id || user.id === debateInfo.opponent_id) && (
                 <div className="mt-5 bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-5">
                   {ratingSubmitted ? (
@@ -721,16 +592,8 @@ if (days > 0) {
                       <div className="flex justify-center mb-3">
                         {[1,2,3,4,5].map(s => (
                           <div key={s} className="relative w-9 h-9 flex-shrink-0">
-                            {/* 왼쪽 반 = 0.5 */}
-                            <button
-                              onClick={() => setRating(s - 0.5)}
-                              className="absolute left-0 top-0 w-1/2 h-full z-10"
-                            />
-                            {/* 오른쪽 반 = 1.0 */}
-                            <button
-                              onClick={() => setRating(s)}
-                              className="absolute right-0 top-0 w-1/2 h-full z-10"
-                            />
+                            <button onClick={() => setRating(s - 0.5)} className="absolute left-0 top-0 w-1/2 h-full z-10" />
+                            <button onClick={() => setRating(s)} className="absolute right-0 top-0 w-1/2 h-full z-10" />
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="transition-all pointer-events-none">
                               {rating >= s ? (
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2"/>
@@ -740,9 +603,7 @@ if (days > 0) {
                                     <clipPath id={`sl${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath>
                                     <clipPath id={`sr${s}`}><rect x="12" y="0" width="12" height="24"/></clipPath>
                                   </defs>
-                                  {/* 왼쪽 반: gold 채움 + gold 외곽 */}
                                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2" clipPath={`url(#sl${s})`}/>
-                                  {/* 오른쪽 반: 빈 + 비활성 외곽 */}
                                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" clipPath={`url(#sr${s})`}/>
                                 </>
                               ) : (
@@ -772,11 +633,14 @@ if (days > 0) {
                   )}
                 </div>
               )}
-
+              {/* ✅ 공유 버튼 — /moragora/:debateId 로 수정 + chat 모드 타이틀 */}
               <button
                 onClick={() => {
-                  const url = `${window.location.origin}/debate/${debateId}`;
-                  navigator.clipboard.writeText(url).then(() => {
+                  const url = `${window.location.origin}/moragora/${debateId}`;
+                  const shareText = isChat
+                    ? `[실시간 논쟁] ${debateTitle}\n${url}`
+                    : url;
+                  navigator.clipboard.writeText(shareText).then(() => {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   });
@@ -787,7 +651,7 @@ if (days > 0) {
                     : 'bg-primary text-gold border-gold hover:bg-gold hover:text-primary hover:shadow-[0_0_15px_rgba(212,175,55,0.5)]'
                 }`}
               >
-                {copied ? '✓ 링크가 복사되었습니다!' : '판결 공유하기'}
+                {copied ? '✓ 링크가 복사되었습니다!' : `${isChat ? '[실시간] ' : ''}판결 공유하기`}
               </button>
               <button
                 onClick={() => navigate('/')}
@@ -797,7 +661,6 @@ if (days > 0) {
               </button>
             </div>
           )}
-
         </div>
       </div>
     </div>
