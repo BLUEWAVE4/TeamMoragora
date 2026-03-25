@@ -116,15 +116,29 @@ export async function getMyActiveDebates(req, res, next) {
   }
 }
 
-export async function listDebates(_req, res, next) {
+export async function listDebates(req, res, next) {
   try {
-    const { data, error } = await supabaseAdmin
+    const status = req.query.status; // 'lobby' → waiting/chatting, 기본 → completed
+    let query = supabaseAdmin
       .from('debates')
-      .select('*, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
-      .eq('status', 'completed')
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .select('*, creator:profiles!creator_id(nickname, tier, gender, avatar_url), opponent:profiles!opponent_id(nickname, tier, gender, avatar_url)');
 
+    if (status === 'lobby') {
+      // 실시간 로비: waiting/chatting 상태의 chat 모드 논쟁
+      query = query
+        .in('status', ['waiting', 'chatting'])
+        .eq('mode', 'chat')
+        .order('created_at', { ascending: false })
+        .limit(50);
+    } else {
+      // 기본: 완료된 논쟁
+      query = query
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(20);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     res.json(data);
   } catch (err) {

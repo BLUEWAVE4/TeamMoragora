@@ -24,22 +24,8 @@ api.interceptors.response.use(
   }
 );
 
-// 기존: { params: { sort: '-created_at', limit: 100 } }
-// 수정: limit을 500 정도로 넉넉하게 잡습니다.
-export const getAllPublicDebates = async () => {
-  const baseURL = import.meta.env.DEV
-    ? 'http://localhost:5000/api'
-    : 'https://teammoragora.onrender.com/api';
-  
-  const response = await axios.get(`${baseURL}/debates`, { 
-    params: { 
-      sort: '-created_at', 
-      limit: 500 // 👈 5개나 20개 제한을 풀기 위해 숫자를 크게 높입니다.
-    } 
-  });
-  
-  return response.data;
-};
+// 실시간 로비: waiting/chatting 상태의 chat 논쟁 전체 조회
+export const getAllPublicDebates = () => api.get('/debates', { params: { status: 'lobby' } });
 
 // ===== 논쟁 (Debates) =====
 export const createDebate = (data) => api.post('/debates', data);
@@ -51,8 +37,6 @@ export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { pa
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
 export const getChatRooms = () => api.get('/debates/chat/rooms');
 export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
-
-export const getChatRooms = () => api.get('/debates', { params: { sort: '-created_at', limit: 1000 } });
 
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
