@@ -58,6 +58,7 @@ export default function ChatRoom() {
   const [debate, setDebate] = useState(null);
   const [mySide, setMySide] = useState(null);
   const [myNickname, setMyNickname] = useState('');
+  const [myAvatarUrl, setMyAvatarUrl] = useState('');
   const [loading, setLoading] = useState(true);
 
   const [messages, setMessages] = useState([]);
@@ -132,6 +133,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         const { data: profile } = await supabase
           .from('profiles').select('nickname, avatar_url, gender').eq('id', user.id).single();
         setMyNickname(profile?.nickname || '익명');
+        setMyAvatarUrl(profile?.avatar_url || getAvatarUrl(user.id, profile?.gender) || DEFAULT_AVATAR_ICON);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
@@ -201,7 +203,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   // ===== Socket.io Presence =====
   useEffect(() => {
     if (!debateId || !user || !myNickname) return;
-    socket.emit('join-presence', { debateId, userId: user.id, nickname: myNickname, side: mySide, ready: false });
+    socket.emit('join-presence', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: mySide, ready: false });
     socket.on('presence-sync', (slots) => {
       if (slots && typeof slots === 'object') {
         setParticipants(prev => {
@@ -354,7 +356,7 @@ socket.on('chat-auto-ended', () => {
     return { A: cleanA, B: cleanB };
   });
 
-  socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, side: newSide, ready: false });
+  socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false });
 }, [mySide, participants, user, myNickname, gameStarted, myReady, debateId]);
 
   // ===== 준비완료 토글 =====
@@ -372,7 +374,7 @@ socket.on('chat-auto-ended', () => {
     return { ...prev, [mySide]: updated };
   });
 
-  socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, side: mySide, ready: newReady });
+  socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: mySide, ready: newReady });
 }, [mySide, myReady, gameStarted, debateId, user, myNickname]);
 
   // ===== 게임 시작 =====
@@ -532,10 +534,10 @@ const handleVote = (agree) => {
                         {p ? (
                           <>
                             <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-white/10 flex items-center justify-center">
-                              <img src={getAvatarUrl(p.userId) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                              <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                             </div>
                             <span className={`text-[11px] font-bold truncate flex-1 ${isMe ? (isA ? 'text-emerald-300' : 'text-red-300') : 'text-white/70'}`}>
-                              {isMe ? '나' : p.nickname}
+                              {isMe ? `${p.nickname}(나)` : p.nickname}
                             </span>
                             {p.ready
                               ? <span className={`text-[9px] font-black shrink-0 ${isA ? 'text-emerald-400' : 'text-red-400'}`}>준비완료</span>
