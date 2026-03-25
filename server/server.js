@@ -53,6 +53,8 @@ io.on('connection', (socket) => {
     }
     const slots = buildSlots(debateId);
     io.to(debateId).emit('presence-sync', slots);
+    // 재접속 시 이탈 해제 알림
+    socket.to(debateId).emit('opponent-returned', { userId });
   });
 
   // ===== Presence: 사이드 선택 =====
@@ -74,13 +76,13 @@ io.on('connection', (socket) => {
   });
 
   // ===== 타이핑 인디케이터 =====
-  socket.on('typing', ({ debateId, userId, typing }) => {
-    socket.to(debateId).emit('opponent-typing', typing);
+  socket.on('typing', ({ debateId, userId, typing, side }) => {
+    socket.to(debateId).emit('opponent-typing', { typing, side });
   });
 
   // ===== 게임 시작 (서버가 시간 관리) =====
   socket.on('start-game', async ({ debateId }) => {
-    const CHAT_DURATION_MS = 3 * 60 * 1000; // 3분
+    const CHAT_DURATION_MS = 15 * 60 * 1000; // 15분
     const now = new Date();
     const chat_deadline = new Date(now.getTime() + CHAT_DURATION_MS).toISOString();
     const chat_started_at = now.toISOString();
@@ -88,9 +90,20 @@ io.on('connection', (socket) => {
     // 양쪽에 서버 기준 deadline 전달
     io.to(debateId).emit('game-start', { chat_deadline, chat_started_at });
 
-    // DB 저장
-    import('./src/config/supabase.js').then(({ supabaseAdmin }) => {
-      supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+    // DB 저장 + 알림
+    import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+      await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+      // 채팅 시작 알림
+      try {
+        const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, topic').eq('id', debateId).single();
+        if (debate) {
+          const { createNotification } = await import('./src/services/notification.service.js');
+          const targets = [debate.creator_id, debate.opponent_id].filter(Boolean);
+          for (const uid of targets) {
+            await createNotification({ userId: uid, type: 'chat_start', title: '실시간 논쟁이 시작되었습니다!', message: `"${debate.topic?.slice(0, 30)}"`, link: `/debate/${debateId}/chat` });
+          }
+        }
+      } catch {}
     }).catch(() => {});
 
     // 서버 타이머: 시간 만료 시 자동 판결 트리거
@@ -109,10 +122,27 @@ io.on('connection', (socket) => {
     }, CHAT_DURATION_MS);
   });
 
-  // ===== 실시간 메시지: 즉시 브로드캐스트 → DB 비동기 저장 =====
+  // ===== 실시간 메시지: 비속어 필터 → 즉시 브로드캐스트 → DB 비동기 저장 =====
   socket.on('send-message', async (payload) => {
     const { debateId, userId, nickname, content, side } = payload;
     if (!debateId || !userId || !content?.trim() || !side) return;
+
+    // 1. 비속어 필터
+    try {
+      const { filterByDictionary } = await import('./src/services/contentFilter.service.js');
+      const filterResult = filterByDictionary(content.trim());
+      if (filterResult.blocked) {
+        socket.emit('filter-blocked', { reason: filterResult.reason });
+        return;
+      }
+    } catch {}
+
+    // 2. 동시 접속 방어: A/B측만 메시지 가능
+    const isParticipant = roomParticipants[debateId]?.[userId];
+    if (!isParticipant) {
+      socket.emit('filter-blocked', { reason: '이 논쟁의 참여자만 채팅할 수 있습니다.' });
+      return;
+    }
 
     const msgId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -130,6 +160,8 @@ io.on('connection', (socket) => {
 socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) => {
   const slots = buildSlots(debateId);
   const total = [...slots.A, ...slots.B].length;
+  const requester = roomParticipants[debateId]?.[userId];
+  if (!requester?.side) return;
   timeVotes[debateId] = { type, votes: { [userId]: true }, requiredCount: total, currentDeadline };
   io.to(debateId).emit('time-change-request', { type, requesterId: userId, votes: { [userId]: true }, requiredCount: total });
 });
@@ -137,6 +169,8 @@ socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) =
 socket.on('vote-time-change', ({ debateId, userId, agree }) => {
   const vote = timeVotes[debateId];
   if (!vote) return;
+  const voter = roomParticipants[debateId]?.[userId];
+  if (!voter?.side) return;
   if (agree) {
     vote.votes[userId] = true;
   } else {
@@ -146,39 +180,55 @@ socket.on('vote-time-change', ({ debateId, userId, agree }) => {
   }
   io.to(debateId).emit('time-change-request', { type: vote.type, votes: vote.votes, requiredCount: vote.requiredCount });
   if (Object.keys(vote.votes).length >= vote.requiredCount) {
-  const voteType = vote.type;
-  delete timeVotes[debateId];
+    const voteType = vote.type;
+    const savedDeadline = vote.currentDeadline;
+    delete timeVotes[debateId];
 
-  // 서버에서 deadline 계산
-  import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
-    let newDeadline;
-    if (voteType === 'skip') {
-      newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-    } else {
-      // DB 대신 현재 서버 시각 기준으로 참여자들의 남은 시간을 알 수 없으므로
-      // 클라이언트가 현재 deadline을 payload로 보내게 변경
-      const currentDeadline = timeVotes[debateId]?.currentDeadline;
-      const base = currentDeadline ? new Date(currentDeadline).getTime() : Date.now();
-      newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
-    }
-    await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
-    // deadline 포함해서 broadcast
-    io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
-  }).catch(console.error);
-}
+    import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+      let newDeadline;
+      if (voteType === 'skip') {
+        newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
+      } else {
+        const base = savedDeadline ? new Date(savedDeadline).getTime() : Date.now();
+        newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
+      }
+      await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+      io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
+    }).catch(console.error);
+  }
 });
-  // ===== 소켓 끊김 시 참여자 제거 =====
+  // ===== 소켓 끊김 시 참여자 제거 + 이탈 알림 =====
   socket.on('disconnect', () => {
     for (const debateId of Object.keys(roomParticipants)) {
       for (const [userId, p] of Object.entries(roomParticipants[debateId])) {
         if (p.socketId === socket.id) {
           delete roomParticipants[debateId][userId];
           io.to(debateId).emit('presence-sync', buildSlots(debateId));
+
+          // 채팅 중 이탈 시 상대에게 알림 + 2분 후 자동 종료
+          io.to(debateId).emit('opponent-left', { userId, nickname: p.nickname });
+          setTimeout(async () => {
+            // 2분 후에도 복귀 안 했으면 자동 종료
+            if (!roomParticipants[debateId]?.[userId]) {
+              try {
+                const { supabaseAdmin } = await import('./src/config/supabase.js');
+                const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
+                if (debate?.status === 'chatting') {
+                  await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
+                  io.to(debateId).emit('chat-auto-ended', { reason: '상대방 이탈로 논쟁이 종료되었습니다.' });
+                  const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
+                  triggerJudgment(debateId).catch(err => console.error('[이탈] 판결 실패:', err.message));
+                  console.log(`[이탈] ${debateId} 상대 이탈 → 2분 후 자동 판결`);
+                }
+              } catch (err) { console.error('[이탈] 에러:', err.message); }
+            }
+          }, 2 * 60 * 1000);
           break;
         }
       }
     }
   });
+
 });
 
 function buildSlots(debateId) {
@@ -237,4 +287,3 @@ app.use(errorHandler);
 httpServer.listen(env.PORT, () => {
   console.log(`Server running on http://localhost:${env.PORT}`);
 });
-

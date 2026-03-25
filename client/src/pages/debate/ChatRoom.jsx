@@ -58,7 +58,7 @@ export default function ChatRoom() {
   const [debate, setDebate] = useState(null);
   const [mySide, setMySide] = useState(null);
   const [myNickname, setMyNickname] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -68,12 +68,15 @@ export default function ChatRoom() {
   const [msgCount, setMsgCount] = useState(0);
   const [exhaustedUsers, setExhaustedUsers] = useState({});
   const [timeChangeRequest, setTimeChangeRequest] = useState(null);
+  const [filterError, setFilterError] = useState('');
+const [opponentLeft, setOpponentLeft] = useState(false);
 
   const msgEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const [showNewMsgBtn, setShowNewMsgBtn] = useState(false);
   const isNearBottom = useRef(true);
 
+  const [opponentTypingSide, setOpponentTypingSide] = useState(null);
   const [opponentTyping, setOpponentTyping] = useState(false);
   const typingTimeout = useRef(null);
 
@@ -107,12 +110,16 @@ export default function ChatRoom() {
       try {
         const data = await getDebate(debateId);
         setDebate(data);
-        if (data.status === 'chatting' && data.chat_deadline) {
-          setGameStarted(true);
-          setChatDeadline(data.chat_deadline);
-          if (data.creator_id === user.id) setMySide('A');
-          else if (data.opponent_id === user.id) setMySide('B');
-        }
+      if (data.status === 'chatting') {
+        setGameStarted(true);
+        if (data.chat_deadline) setChatDeadline(data.chat_deadline);
+        if (data.creator_id === user.id) setMySide('A');
+        else if (data.opponent_id === user.id) setMySide('B');
+      } else if (data.status === 'judging') {
+        // 채팅 종료 후 새로고침 시 바로 판결 페이지로
+        navigate(`/debate/${debateId}/judging`);
+        return;
+      }
         const { data: profile } = await supabase
           .from('profiles').select('nickname, avatar_url, gender').eq('id', user.id).single();
         setMyNickname(profile?.nickname || '익명');
@@ -206,10 +213,11 @@ export default function ChatRoom() {
         });
       }
     });
-    socket.on('opponent-typing', (isTyping) => {
-      setOpponentTyping(isTyping);
-      if (isTyping) { clearTimeout(window._typingTimeout); window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000); }
-    });
+    socket.on('opponent-typing', ({ typing, side }) => {
+    setOpponentTyping(typing);
+    if (side) setOpponentTypingSide(side);
+    if (typing) { clearTimeout(window._typingTimeout); window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000); }
+  });
     socket.on('game-start', ({ chat_deadline }) => {
       setGameStarted(true);
       if (chat_deadline) setChatDeadline(chat_deadline);
@@ -238,16 +246,22 @@ export default function ChatRoom() {
 });
 
     socket.on('time-change-approved', ({ type, chat_deadline }) => {
-      setTimeChangeRequest(null);
-      if (chat_deadline) setChatDeadline(chat_deadline);
-      // 시스템 메시지로 알림
-      setMessages(prev => [...prev, {
-        id: `sys-time-${Date.now()}`,
-        type: 'system',
-        content: type === 'skip' ? '⏩ 모든 참여자 동의로 시간이 스킵되었습니다.' : '⏱ 모든 참여자 동의로 5분이 추가되었습니다.',
-        created_at: new Date().toISOString(),
-      }]);
-    });
+  setTimeChangeRequest(null);
+  if (chat_deadline) setChatDeadline(chat_deadline);
+  setMessages(prev => [
+    ...(type === 'extend'
+      ? prev.filter(m => m.id !== 'sys-time-vote') 
+      : prev),
+    {
+      id: `sys-time-${Date.now()}`,
+      type: 'system',
+      content: type === 'skip'
+        ? '⏩ 모든 참여자 동의로 시간이 스킵되었습니다.'
+        : '⏱ 모든 참여자 동의로 5분이 추가되었습니다.',
+      created_at: new Date().toISOString(),
+    }
+  ]);
+});
 
     socket.on('time-change-cancelled', () => {
   setTimeChangeRequest(null);
@@ -261,6 +275,32 @@ export default function ChatRoom() {
     }
   ]);
 });
+socket.on('filter-blocked', ({ reason }) => {
+  setFilterError(reason || '부적절한 표현이 감지되었습니다.');
+  setTimeout(() => setFilterError(''), 3000);
+});
+
+socket.on('opponent-left', () => {
+  setOpponentLeft(true);
+});
+
+socket.on('opponent-returned', () => {
+  setOpponentLeft(false);
+});
+
+socket.on('chat-auto-ended', () => {
+  if (endTriggered.current) return;
+  endTriggered.current = true;
+  setChatEnded(true);
+  setMessages(prev => [...prev, {
+    id: `sys-auto-end-${Date.now()}`,
+    type: 'system',
+    content: '상대방 이탈로 논쟁이 종료되었습니다.',
+    created_at: new Date().toISOString(),
+  }]);
+  setTimeout(() => setShowEndOverlay(true), 500);
+  setTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
+});
     return () => {
       socket.emit('leave-presence', { debateId, userId: user.id });
       socket.off('presence-sync');
@@ -270,6 +310,10 @@ export default function ChatRoom() {
       socket.off('time-change-request');
       socket.off('time-change-approved');
       socket.off('time-change-cancelled');
+      socket.off('filter-blocked');
+      socket.off('opponent-left');
+      socket.off('opponent-returned');
+      socket.off('chat-auto-ended');
     };
   }, [debateId, user, myNickname, mySide]);
 
@@ -375,9 +419,9 @@ const handleVote = (agree) => {
   const handleTextChange = useCallback((e) => {
     setText(e.target.value);
     setMsgError('');
-    socket.emit('typing', { debateId, userId: user.id, typing: true });
+    socket.emit('typing', { debateId, userId: user.id, typing: true, side: mySide });
     clearTimeout(typingTimeout.current);
-    typingTimeout.current = setTimeout(() => socket.emit('typing', { debateId, userId: user.id, typing: false }), 1500);
+    typingTimeout.current = setTimeout(() => socket.emit('typing', { debateId, userId: user.id, typing: false, side: mySide }), 1500);
   }, [debateId, user]);
 
   const handleSend = useCallback(async () => {
@@ -422,10 +466,10 @@ const handleVote = (agree) => {
   const remainingMsgs = MAX_MSGS - msgCount;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0f1829]" style={{ paddingBottom: keyboardHeight }}>
+    <div className="flex h-screen overflow-hidden flex-col bg-[#0f1829]" style={{ paddingBottom: keyboardHeight }}>
 
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
-      {!gameStarted && (
+      {!loading && !gameStarted && (
         <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: 'rgba(15,24,41,0.98)' }}>
           <div className="flex flex-col items-center gap-5 px-5 py-10 min-h-full justify-center">
 
@@ -529,7 +573,7 @@ const handleVote = (agree) => {
       )}
 
       {/* ━━━━━ 헤더 ━━━━━ */}
-      <div className="shrink-0 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-10 pb-3 border-b border-white/5">
+      <div className="shrink-0 sticky top-0 z-20 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-10 pb-3 border-b border-white/5">
         {/* 1. 논쟁 제목 + 태그 */}
         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-1">실시간 논쟁</p>
         <h1 className="text-white text-[15px] font-black text-center leading-snug line-clamp-2 px-8">{debate?.topic || ''}</h1>
@@ -541,11 +585,13 @@ const handleVote = (agree) => {
 
         {/* A/B + 타이머 + 시간 버튼 */}
         <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-[11px] font-bold text-emerald-400 max-w-[75px] truncate">{debate?.pro_side || 'A측'}</span>
-            {mySide === 'A' && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">나</span>}
-          </div>
+<div className="flex flex-col items-start gap-0.5">
+  <span className={`text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold self-start ${mySide === 'A' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
+  <div className="flex items-center gap-1.5">
+    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+    <span className="text-[11px] font-bold text-emerald-400 max-w-[75px] truncate">{debate?.pro_side || 'A측'}</span>
+  </div>
+</div>
 
           {/* 2. 타이머 + 스킵/추가 버튼 */}
           <div className="flex flex-col items-center gap-1">
@@ -556,11 +602,11 @@ const handleVote = (agree) => {
             <span className="text-[9px] text-white/30">남은 시간</span>
             {gameStarted && (
   <div className="flex gap-1 mt-0.5">
-    <button onClick={handleSkipTime} disabled={!!timeChangeRequest}
+    <button onClick={handleSkipTime} disabled={!!timeChangeRequest || !mySide}
       className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold active:scale-90 transition-all disabled:opacity-30">
       스킵
     </button>
-    <button onClick={handleExtendTime} disabled={!!timeChangeRequest}
+    <button onClick={handleExtendTime} disabled={!!timeChangeRequest || !mySide}
       className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold active:scale-90 transition-all disabled:opacity-30">
       +5분
     </button>
@@ -568,13 +614,25 @@ const handleVote = (agree) => {
 )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-row-reverse">
-            <span className="w-2 h-2 rounded-full bg-red-400" />
-            <span className="text-[11px] font-bold text-red-400 max-w-[75px] truncate text-right">{debate?.con_side || 'B측'}</span>
-            {mySide === 'B' && <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold">나</span>}
-          </div>
+  <div className="flex flex-col items-end gap-0.5">
+  <span className={`text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold self-end ${mySide === 'B' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
+  <div className="flex items-center gap-1.5 flex-row-reverse">
+    <span className="w-2 h-2 rounded-full bg-red-400" />
+    <span className="text-[11px] font-bold text-red-400 max-w-[75px] truncate text-right">{debate?.con_side || 'B측'}</span>
+  </div>
+</div>
         </div>
       </div>
+      {/* ━━━━━ 상대방 이탈 배너 ━━━━━ */}
+<AnimatePresence>
+  {opponentLeft && (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+      className="shrink-0 bg-amber-500/20 border-b border-amber-500/30 px-4 py-2 flex items-center justify-center gap-2">
+      <span className="text-amber-400 text-[11px] font-black">⚠ 상대방이 자리를 비웠습니다</span>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* ━━━━━ 메시지 영역 ━━━━━ */}
       <div ref={scrollContainerRef} onScroll={handleScroll}
@@ -618,19 +676,14 @@ if (msg.type === 'vote') {
           <div className="h-full bg-amber-400 rounded-full transition-all"
             style={{ width: `${(agreedCount / msg.requiredCount) * 100}%` }} />
         </div>
-        {!iVoted && (
+        {!mySide ? (
+          <span className="text-[10px] text-white/20 font-bold">입장 선택자만 투표 가능</span>
+        ) : !iVoted ? (
           <div className="flex gap-2 mt-1">
-            <button onClick={() => handleVote(true)}
-              className="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-black active:scale-90 transition-all">
-              동의
-            </button>
-            <button onClick={() => handleVote(false)}
-              className="px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-black active:scale-90 transition-all">
-              거부
-            </button>
+            <button onClick={() => handleVote(true)} className="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-black active:scale-90 transition-all">동의</button>
+            <button onClick={() => handleVote(false)} className="px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-black active:scale-90 transition-all">거부</button>
           </div>
-        )}
-        {iVoted && (
+        ) : (
           <span className="text-[10px] text-emerald-400/60 font-bold">동의 완료 ✓</span>
         )}
       </div>
@@ -679,9 +732,9 @@ if (msg.type === 'vote') {
         <AnimatePresence>
           {opponentTyping && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-              className={`flex items-end gap-2 ${mySide === 'A' ? 'flex-row-reverse' : 'flex-row'}`}>
+              className="flex items-end gap-2 flex-row">
               <div className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
-              <div className={`px-4 py-3 rounded-2xl border ${mySide === 'A' ? 'bg-red-500/10 border-red-500/20 rounded-br-sm' : 'bg-emerald-500/10 border-emerald-500/20 rounded-bl-sm'}`}>
+              <div className={`px-4 py-3 rounded-2xl border ${opponentTypingSide === 'A' ? 'bg-emerald-500/10 border-emerald-500/20 rounded-bl-sm' : 'bg-red-500/10 border-red-500/20 rounded-bl-sm'}`}>
                 <div className="flex gap-1 items-center h-4">
                   {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
                 </div>
@@ -713,6 +766,16 @@ if (msg.type === 'vote') {
               {msgError && (
                 <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                   className="text-red-400 text-[11px] font-bold mb-2 px-1">⚠ {msgError}</motion.p>
+              )}
+            </AnimatePresence>
+            {/* 비속어 차단 에러 — 바로 아래에 추가 */}
+            <AnimatePresence>
+              {filterError && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                  className="text-red-400 text-[11px] font-bold mb-2 px-1">
+                  🚫 {filterError}
+                </motion.p>
               )}
             </AnimatePresence>
             <div className="flex items-center justify-between mb-2 px-1">
