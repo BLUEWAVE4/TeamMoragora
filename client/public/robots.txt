@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://team-moragora-client.vercel.app/sitemap.xml
