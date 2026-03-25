@@ -178,11 +178,9 @@ const handleSubmit = async () => {
       category: category || "기타",
       purpose,
       lens,
-      // ✅ 여기서 mode가 'chat'일 때 서버가 'duo'로 오해하지 않도록 명확히 전달
-      mode: mode === 'chat' ? 'chat' : mode, 
-      time: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),      
-      vote_duration: mode === 'chat' ? 10 : (time ? parseInt(time) : 0), 
-        mode,
+      mode: mode === 'chat' ? 'chat' : mode,
+      time: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),
+      vote_duration: mode === 'chat' ? 10 : (time ? parseInt(time) : 0),
         deadline: time
           ? (() => {
               const d = new Date();

@@ -598,7 +598,7 @@ export default function DebateCard({ feed, formatTime }) {
                                       </div>
                                     </div>
                                   </div>
-                                )
+                                )}
                               </div>
                             </div>
                           </div>
