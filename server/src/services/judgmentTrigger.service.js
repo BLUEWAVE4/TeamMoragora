@@ -210,11 +210,27 @@ async function triggerChatJudgment(debate) {
     .order('created_at', { ascending: true });
 
   if (!messages || messages.length === 0) {
-    console.error(`[triggerChatJudgment] 채팅 메시지 없음 (debate: ${debateId})`);
+    console.warn(`[triggerChatJudgment] 채팅 메시지 없음 → 무승부 처리 (debate: ${debateId})`);
+    // 메시지 없으면 무승부로 즉시 완료 처리 (스킵 후 메시지 없는 경우)
+    const { data: emptyVerdict } = await supabaseAdmin
+      .from('verdicts')
+      .insert({
+        debate_id: debateId,
+        winner_side: 'draw',
+        summary: '양측 주장이 제출되지 않아 무승부로 처리되었습니다.',
+        ai_score_a: 0, ai_score_b: 0,
+        final_score_a: 0, final_score_b: 0,
+        is_citizen_applied: false,
+      })
+      .select('id')
+      .maybeSingle();
+
     await supabaseAdmin
       .from('debates')
-      .update({ status: 'chatting' })
+      .update({ status: 'completed' })
       .eq('id', debateId);
+
+    if (emptyVerdict) await applyResult(debateId, emptyVerdict.id);
     return;
   }
 

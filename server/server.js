@@ -235,13 +235,14 @@ io.on('connection', (socket) => {
         if (remaining > 0) {
           setTimeout(async () => {
             try {
-              const { data: d } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
-              if (d?.status === 'chatting') {
-                await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId).eq('status', 'chatting');
+              const { data: d } = await supabaseAdmin.from('debates').select('status, mode').eq('id', debateId).single();
+              // chat 모드: waiting/chatting 상태 모두 처리 (start-game 없이 스킵 가능)
+              if (d?.mode === 'chat' && ['chatting', 'waiting', 'both_joined'].includes(d?.status)) {
+                await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
                 io.to(debateId).emit('chat-ended', { debateId });
                 const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
                 triggerJudgment(debateId).catch(err => console.error('[Skip/Extend Timer] 판결 실패:', err.message));
-                console.log(`[Skip/Extend Timer] ${debateId} 채팅 종료 → 판결 트리거`);
+                console.log(`[Skip/Extend Timer] ${debateId} (status: ${d.status}) → 판결 트리거`);
               }
             } catch (err) { console.error('[Skip/Extend Timer] 에러:', err.message); }
           }, remaining);
