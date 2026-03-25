@@ -76,8 +76,8 @@ io.on('connection', (socket) => {
   });
 
   // ===== 타이핑 인디케이터 =====
-  socket.on('typing', ({ debateId, userId, typing }) => {
-    socket.to(debateId).emit('opponent-typing', typing);
+  socket.on('typing', ({ debateId, userId, typing, side }) => {
+    socket.to(debateId).emit('opponent-typing', { typing, side });
   });
 
   // ===== 게임 시작 (서버가 시간 관리) =====
@@ -194,6 +194,8 @@ io.on('connection', (socket) => {
 socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) => {
   const slots = buildSlots(debateId);
   const total = [...slots.A, ...slots.B].length;
+  const requester = roomParticipants[debateId]?.[userId];
+  if (!requester?.side) return;
   timeVotes[debateId] = { type, votes: { [userId]: true }, requiredCount: total, currentDeadline };
   io.to(debateId).emit('time-change-request', { type, requesterId: userId, votes: { [userId]: true }, requiredCount: total });
 });
@@ -201,6 +203,8 @@ socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) =
 socket.on('vote-time-change', ({ debateId, userId, agree }) => {
   const vote = timeVotes[debateId];
   if (!vote) return;
+  const voter = roomParticipants[debateId]?.[userId];
+  if (!voter?.side) return;
   if (agree) {
     vote.votes[userId] = true;
   } else {
@@ -317,4 +321,3 @@ app.use(errorHandler);
 httpServer.listen(env.PORT, () => {
   console.log(`Server running on http://localhost:${env.PORT}`);
 });
-
