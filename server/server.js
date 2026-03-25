@@ -137,10 +137,10 @@ io.on('connection', (socket) => {
       }
     } catch {}
 
-    // 2. 참여자 확인 + opponent 자동 등록
+    // 2. 참여자 확인 + opponent 자동 등록 + 상태 전환
     try {
       const { supabaseAdmin } = await import('./src/config/supabase.js');
-      const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, mode').eq('id', debateId).single();
+      const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, mode, status').eq('id', debateId).single();
       if (!debate) return;
       if (userId === debate.creator_id) {
         // A측 — 정상
@@ -152,6 +152,29 @@ io.on('connection', (socket) => {
       } else {
         socket.emit('filter-blocked', { reason: '이 논쟁의 참여자만 채팅할 수 있습니다.' });
         return;
+      }
+      // waiting → chatting 자동 전환 (start-game 미실행 폴백)
+      if (debate.status !== 'chatting' && debate.mode === 'chat') {
+        const now = new Date();
+        const CHAT_DURATION_MS = 15 * 60 * 1000;
+        const chat_started_at = now.toISOString();
+        const chat_deadline = debate.chat_deadline || new Date(now.getTime() + CHAT_DURATION_MS).toISOString();
+        await supabaseAdmin.from('debates').update({ status: 'chatting', chat_started_at, chat_deadline }).eq('id', debateId);
+        // 서버 타이머도 시작
+        const remaining = new Date(chat_deadline).getTime() - now.getTime();
+        if (remaining > 0) {
+          setTimeout(async () => {
+            try {
+              const { data: d } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
+              if (d?.status === 'chatting') {
+                await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId).eq('status', 'chatting');
+                io.to(debateId).emit('chat-ended', { debateId });
+                const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
+                triggerJudgment(debateId).catch(err => console.error('[Socket Timer] 판결 실패:', err.message));
+              }
+            } catch (err) { console.error('[Socket Timer] 에러:', err.message); }
+          }, remaining);
+        }
       }
     } catch {}
 
