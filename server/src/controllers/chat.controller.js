@@ -35,9 +35,12 @@ export async function sendMessage(req, res, next) {
       throw new ConflictError('채팅 중인 논쟁이 아닙니다.');
     }
     if (debate.status !== 'chatting') {
+      const now = new Date();
+      const CHAT_DURATION_MS = 15 * 60 * 1000;
       await supabaseAdmin.from('debates').update({
         status: 'chatting',
-        chat_started_at: new Date().toISOString(),
+        chat_started_at: now.toISOString(),
+        chat_deadline: debate.chat_deadline || new Date(now.getTime() + CHAT_DURATION_MS).toISOString(),
       }).eq('id', debateId);
     }
 
