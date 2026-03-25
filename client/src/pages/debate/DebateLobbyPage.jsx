@@ -7,9 +7,43 @@ import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
-/**
- * 참여자 슬롯 컴포넌트
- */
+// ===== 실시간 경과/남은 시간 표시 =====
+function LiveTimer({ createdAt, chatDeadline, status }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const pad = (n) => String(Math.floor(n)).padStart(2, '0');
+
+  if (status === 'chatting' && chatDeadline) {
+    const remaining = Math.max(0, new Date(chatDeadline).getTime() - now);
+    const min = (remaining / 60000) % 60;
+    const sec = (remaining / 1000) % 60;
+    if (remaining <= 0) return <span className="text-red-500 font-black text-[11px]">종료 임박</span>;
+    return (
+      <span className="text-amber-600 font-black text-[12px] tabular-nums">
+        {pad(min)}:{pad(sec)} 남음
+      </span>
+    );
+  }
+
+  // waiting — 대기 경과 시간
+  const elapsed = Math.max(0, now - new Date(createdAt).getTime());
+  const min = (elapsed / 60000) % 60;
+  const sec = (elapsed / 1000) % 60;
+  const hr = elapsed / 3600000;
+  if (hr >= 1) return <span className="text-gray-400 font-bold text-[11px]">{Math.floor(hr)}시간 대기</span>;
+  return (
+    <span className="text-gray-400 font-bold text-[11px] tabular-nums">
+      {pad(min)}:{pad(sec)} 대기
+    </span>
+  );
+}
+
+// ===== 참여자 슬롯 =====
 function ParticipantSlot({ name, color, isEmpty }) {
   const colors = {
     emerald: "bg-[#F9FBF9] text-emerald-600 border-emerald-100 shadow-sm",
@@ -24,90 +58,82 @@ function ParticipantSlot({ name, color, isEmpty }) {
   );
 }
 
-/**
- * 일반 리스트 카드 컴포넌트
- */
-function LobbyDebateCard({ room, formatTime }) {
+// ===== 카드 =====
+function LobbyDebateCard({ room }) {
   const navigate = useNavigate();
   const handleRoomClick = async () => {
     if (!room?.id) return;
     try { await incrementDebateView(room.id); } catch (e) {}
-    const path = room.status === 'waiting' ? `/debate/${room.id}/chat` : `/debate/${room.id}`;
-    navigate(path);
+    navigate(`/debate/${room.id}/chat`);
   };
 
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
-  const sideA = [room.creator?.nickname, room.side_a_2, room.side_a_3];
-  const sideB = [room.opponent?.nickname, room.side_b_2, room.side_b_3];
-  const currentTotal = [...sideA, ...sideB].filter(Boolean).length;
+  const currentTotal = [room.creator?.nickname, room.opponent?.nickname].filter(Boolean).length;
+
+  const statusConfig = {
+    waiting: { bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500', label: '대기 중' },
+    chatting: { bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400', label: '토론 중' },
+    judging: { bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', label: '판결 중' },
+  };
+  const sc = statusConfig[room.status] || statusConfig.waiting;
 
   return (
-    <div onClick={handleRoomClick} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-all mb-4">
-      <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
-            <img src={creatorAvatarUrl} alt="프로필" className="w-full h-full object-cover" />
+    <div onClick={handleRoomClick} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-all mb-3">
+      {/* 상단: 프로필 + 타이머 */}
+      <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
+            <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-[#1B2A4A] text-[15px]">{room.creator?.nickname || '익명'}</span>
-            <span className="text-[10px] text-gray-400 font-bold tracking-tight">{room.creator?.tier || '시민'}</span>
+            <span className="font-black text-[#1B2A4A] text-[14px]">{room.creator?.nickname || '익명'}</span>
+            <span className="text-[10px] text-gray-400 font-bold">{room.creator?.tier || '시민'}</span>
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 font-bold">{formatTime ? formatTime(room.created_at) : '방금 전'}</span>
+        <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
       </div>
-      <div className="mb-6">
-        <h3 className="text-[18px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
-        <div className="flex items-center gap-2">
-          <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${
-            room.status === 'waiting' ? 'bg-emerald-50 text-emerald-600'
-            : room.status === 'chatting' ? 'bg-amber-50 text-amber-600'
-            : room.status === 'judging' ? 'bg-purple-50 text-purple-600'
-            : 'bg-gray-50 text-gray-500'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              room.status === 'waiting' ? 'bg-emerald-500'
-              : room.status === 'chatting' ? 'bg-amber-400'
-              : room.status === 'judging' ? 'bg-purple-500'
-              : 'bg-gray-400'
-            } animate-pulse`} />
-            {room.status === 'waiting' ? '참여 대기 중'
-              : room.status === 'chatting' ? '토론 진행 중'
-              : room.status === 'judging' ? '판결 중'
-              : '완료'} {currentTotal}/6
-          </span>
-          <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
-        </div>
+
+      {/* 주제 */}
+      <h3 className="text-[17px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
+
+      {/* 상태 뱃지 */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${sc.bg} ${sc.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} animate-pulse`} />
+          {sc.label} {currentTotal}/2
+        </span>
+        <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
       </div>
-      <div className="flex items-center gap-4 relative">
-        <div className="flex-1 flex flex-col gap-1.5 p-3 rounded-2xl bg-[#F9FBF9]/70 border border-emerald-50">
-          <div className="text-[10px] font-black text-emerald-700/40 mb-1 text-center">A측 명단</div>
-          {sideA.map((p, i) => <ParticipantSlot key={`a-${i}`} name={p} color="emerald" isEmpty={!p} />)}
+
+      {/* 참여자 */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 border border-emerald-50">
+          <div className="text-[9px] font-black text-emerald-700/40 text-center mb-0.5">A측</div>
+          <ParticipantSlot name={room.creator?.nickname} color="emerald" isEmpty={!room.creator?.nickname} />
         </div>
-        <div className="flex flex-col items-center justify-center"><span className="text-[11px] font-black text-gray-200 italic">VS</span></div>
-        <div className="flex-1 flex flex-col gap-1.5 p-3 rounded-2xl bg-[#FDF9F9]/70 border border-red-50">
-          <div className="text-[10px] font-black text-red-600/40 mb-1 text-center">B측 명단</div>
-          {sideB.map((p, i) => <ParticipantSlot key={`b-${i}`} name={p} color="red" isEmpty={!p} />)}
+        <span className="text-[10px] font-black text-gray-200">VS</span>
+        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 border border-red-50">
+          <div className="text-[9px] font-black text-red-600/40 text-center mb-0.5">B측</div>
+          <ParticipantSlot name={room.opponent?.nickname} color="red" isEmpty={!room.opponent?.nickname} />
         </div>
       </div>
     </div>
   );
 }
 
+// ===== 메인 =====
 export default function DebateLobbyPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
 
   const [rooms, setRooms] = useState([]);
-  const [dailyItems, setDailyItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
-  
-  // 무한 스크롤을 위한 상태와 Ref
-  const [visibleCount, setVisibleCount] = useState(5);
+
+  const [visibleCount, setVisibleCount] = useState(10);
   const observerRef = useRef(null);
-  
   const [currentIndex, setCurrentIndex] = useState(0);
   const dragX = useMotionValue(0);
 
@@ -118,176 +144,155 @@ export default function DebateLobbyPage() {
       const rawRooms = res?.data || res || [];
       const lobbyRooms = rawRooms.filter(r => ['waiting', 'chatting'].includes(String(r.status).toLowerCase()));
       setRooms(lobbyRooms);
-      setDailyItems(lobbyRooms.slice(0, 5));
     } catch (err) { console.error(err); } finally { if (!silent) setLoading(false); }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // 5초 폴링: 참여자 변경 등 실시간 반영
+  // 5초 폴링
   useEffect(() => {
     const timer = setInterval(() => loadData(true), 5000);
     return () => clearInterval(timer);
   }, [loadData]);
 
-  // Realtime: debates 테이블 변경 시 자동 새로고침
+  // Realtime
   useEffect(() => {
     const channel = supabase
       .channel('lobby_realtime')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'debates',
-        filter: 'mode=eq.chat',
-      }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debates', filter: 'mode=eq.chat' }, () => loadData(true))
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [loadData]);
 
-  // 무한 스크롤 옵저버 설정
   const lastElementRef = useCallback((node) => {
     if (loading) return;
     if (observerRef.current) observerRef.current.disconnect();
-
     observerRef.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount((prev) => prev + 5);
-      }
+      if (entries[0].isIntersecting) setVisibleCount(prev => prev + 10);
     });
-
     if (node) observerRef.current.observe(node);
   }, [loading]);
 
-  useEffect(() => { setVisibleCount(5); }, [filter, searchQuery]);
+  useEffect(() => { setVisibleCount(10); }, [filter, searchQuery]);
 
+  // 슬라이더 자동 회전
+  const featuredRooms = rooms.filter(r => r.status === 'chatting').slice(0, 5);
   useEffect(() => {
-    if (dailyItems.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % dailyItems.length);
-    }, 5000);
+    if (featuredRooms.length <= 1) return;
+    const timer = setInterval(() => setCurrentIndex(prev => (prev + 1) % featuredRooms.length), 5000);
     return () => clearInterval(timer);
-  }, [dailyItems.length]);
+  }, [featuredRooms.length]);
 
-  const handleDragEnd = (event, info) => {
-    const swipeThreshold = 50;
-    if (info.offset.x < -swipeThreshold) {
-      setCurrentIndex(prev => (prev + 1) % dailyItems.length);
-    } else if (info.offset.x > swipeThreshold) {
-      setCurrentIndex(prev => (prev - 1 + dailyItems.length) % dailyItems.length);
-    }
+  const handleDragEnd = (_, info) => {
+    if (featuredRooms.length <= 1) return;
+    if (info.offset.x < -50) setCurrentIndex(prev => (prev + 1) % featuredRooms.length);
+    else if (info.offset.x > 50) setCurrentIndex(prev => (prev - 1 + featuredRooms.length) % featuredRooms.length);
   };
 
   const filteredRooms = rooms
     .filter(r => (filter === '전체' || r.category === filter) && (!searchQuery || r.topic.toLowerCase().includes(searchQuery)))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    .sort((a, b) => {
+      // chatting 먼저, 그 안에서 최신순
+      if (a.status === 'chatting' && b.status !== 'chatting') return -1;
+      if (b.status === 'chatting' && a.status !== 'chatting') return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
 
   const processedRooms = filteredRooms.slice(0, visibleCount);
 
-  const formatTime = (dateString) => {
-    if (!dateString) return '';
-    const now = new Date();
-    const past = new Date(dateString);
-    const diffInMin = Math.floor((now - past) / 60000);
-    if (diffInMin < 1) return '방금 전';
-    if (diffInMin < 60) return `${diffInMin}분 전`;
-    if (diffInMin < 1440) return `${Math.floor(diffInMin / 60)}시간 전`;
-    return past.toLocaleDateString();
-  };
-
-  const getParticipantCount = (item) => {
-    return [item.creator?.nickname, item.side_a_2, item.side_a_3, item.opponent?.nickname, item.side_b_2, item.side_b_3].filter(Boolean).length;
-  };
-
-  if (loading) return <div className="min-h-screen bg-[#F3F1EC] flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F3F1EC] flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
-      {/* 슬라이더 영역 생략 (동일) */}
-      <section className="px-5 mb-8">
-        <div className="bg-[#1B2A4A] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden h-[220px]">
-          <AnimatePresence initial={false} mode="wait">
-            {dailyItems.length > 0 && (
-              <motion.div 
+      {/* 진행 중인 논쟁 슬라이더 */}
+      {featuredRooms.length > 0 && (
+        <section className="px-5 mb-6">
+          <div className="bg-[#1B2A4A] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden h-[200px]">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
                 key={currentIndex}
                 style={{ x: dragX }}
-                initial={{ opacity: 0, x: 100 }}
+                initial={{ opacity: 0, x: 80 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{
-                  x: { type: "tween", ease: "easeOut", duration: 0.35 },
-                  opacity: { duration: 0.2 }
-                }}
+                exit={{ opacity: 0, x: -80 }}
+                transition={{ x: { type: "tween", ease: "easeOut", duration: 0.3 }, opacity: { duration: 0.2 } }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0}
                 onDragEnd={handleDragEnd}
                 className="h-full flex flex-col justify-between cursor-grab active:cursor-grabbing"
               >
-                <div onClick={() => {
-                   const r = dailyItems[currentIndex];
-                   navigate(r.status === 'waiting' ? `/debate/${r.id}/chat` : `/debate/${r.id}`);
-                }}>
-                  <span className="text-[12px] text-[#D4AF37] font-extrabold mb-2 block tracking-widest">추천 실시간 논쟁</span>
-                  <h2 className="text-[22px] font-black leading-tight break-keep">"{dailyItems[currentIndex].topic}"</h2>
+                <div onClick={() => navigate(`/debate/${featuredRooms[currentIndex].id}/chat`)}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-[#D4AF37] font-extrabold tracking-widest">LIVE 토론 중</span>
+                    <LiveTimer
+                      createdAt={featuredRooms[currentIndex].created_at}
+                      chatDeadline={featuredRooms[currentIndex].chat_deadline}
+                      status="chatting"
+                    />
+                  </div>
+                  <h2 className="text-[20px] font-black leading-tight break-keep">"{featuredRooms[currentIndex].topic}"</h2>
                 </div>
-                <div className="flex justify-between items-end border-t border-white/10 pt-4 pointer-events-none">
-                  <span className="text-[12px] opacity-60 font-black">{dailyItems[currentIndex].category}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full ${
-                      dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-500/20 text-emerald-400'
-                      : dailyItems[currentIndex].status === 'chatting' ? 'bg-amber-500/20 text-amber-400'
-                      : dailyItems[currentIndex].status === 'judging' ? 'bg-purple-500/20 text-purple-400'
-                      : 'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      <span className={`w-1 h-1 rounded-full ${
-                        dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-400'
-                        : dailyItems[currentIndex].status === 'chatting' ? 'bg-amber-400'
-                        : dailyItems[currentIndex].status === 'judging' ? 'bg-purple-400'
-                        : 'bg-gray-400'
-                      } animate-pulse`} />
-                      {dailyItems[currentIndex].status === 'waiting' ? '대기 중'
-                        : dailyItems[currentIndex].status === 'chatting' ? '진행 중'
-                        : dailyItems[currentIndex].status === 'judging' ? '판결 중'
-                        : '완료'} {getParticipantCount(dailyItems[currentIndex])}/6
+                <div className="flex justify-between items-end border-t border-white/10 pt-3 pointer-events-none">
+                  <span className="text-[11px] opacity-50 font-bold">{featuredRooms[currentIndex].category}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-white/60 font-bold">
+                      {featuredRooms[currentIndex].creator?.nickname || '?'}
+                    </span>
+                    <span className="text-white/30 text-[10px]">vs</span>
+                    <span className="text-[11px] text-white/60 font-bold">
+                      {featuredRooms[currentIndex].opponent?.nickname || '대기 중'}
                     </span>
                   </div>
                 </div>
               </motion.div>
+            </AnimatePresence>
+            {featuredRooms.length > 1 && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                {featuredRooms.map((_, i) => (
+                  <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? 'w-5 bg-[#D4AF37]' : 'w-1.5 bg-white/20'}`} />
+                ))}
+              </div>
             )}
-          </AnimatePresence>
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-            {dailyItems.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? 'w-5 bg-[#D4AF37]' : 'w-1.5 bg-white/20'}`} />
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
+      {/* 빈 상태 */}
+      {rooms.length === 0 && !loading && (
+        <section className="px-5 mb-6">
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+            <div className="text-4xl mb-3">&#9878;</div>
+            <h3 className="text-[16px] font-black text-[#1B2A4A] mb-1">진행 중인 실시간 논쟁이 없습니다</h3>
+            <p className="text-[13px] text-gray-400">새 논쟁을 만들어보세요!</p>
+          </div>
+        </section>
+      )}
+
+      {/* 리스트 */}
       <main className="flex flex-col px-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[16px] font-black text-[#1B2A4A]">실시간 논쟁 ({filteredRooms.length})</h2>
+        </div>
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
-        <section className="mt-6 flex flex-col">
+        <section className="mt-4 flex flex-col">
           <AnimatePresence mode="popLayout">
             {processedRooms.map((room, index) => {
-              // 마지막 요소에 ref를 달아 스크롤 감지
-              if (processedRooms.length === index + 1 && filteredRooms.length > visibleCount) {
-                return (
-                  <motion.div key={room.id} ref={lastElementRef} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <LobbyDebateCard room={room} formatTime={formatTime} />
-                  </motion.div>
-                );
-              }
+              const isLast = processedRooms.length === index + 1 && filteredRooms.length > visibleCount;
               return (
-                <motion.div key={room.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <LobbyDebateCard room={room} formatTime={formatTime} />
+                <motion.div key={room.id} ref={isLast ? lastElementRef : null} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <LobbyDebateCard room={room} />
                 </motion.div>
               );
             })}
           </AnimatePresence>
 
-          {/* 더 불러올 데이터가 있을 때만 로딩 표시 (선택사항) */}
           {filteredRooms.length > visibleCount && (
-            <div className="h-20 flex items-center justify-center">
+            <div className="h-16 flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />
             </div>
           )}
