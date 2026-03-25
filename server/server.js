@@ -138,18 +138,22 @@ io.on('connection', (socket) => {
     } catch { }
 
     // 2. 참여자 확인 + opponent 자동 등록 + 상태 전환
+    let validSide = side;
     try {
       const { supabaseAdmin } = await import('./src/config/supabase.js');
       const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, mode, status').eq('id', debateId).single();
       if (!debate) return;
+      // 참여자 검증 + 사이드 강제
       if (userId === debate.creator_id) {
-        // A측 — 정상
+        validSide = 'A'; // 생성자는 항상 A측
       } else if (userId === debate.opponent_id) {
-        // B측 — 정상
-      } else if (!debate.opponent_id && debate.mode === 'chat') {
-        // B측 미등록 → 자동 등록
+        validSide = 'B'; // 상대방은 항상 B측
+      } else if (!debate.opponent_id && debate.mode === 'chat' && userId !== debate.creator_id) {
+        // B측 미등록 → 자동 등록 (본인이 아닌 경우에만)
         await supabaseAdmin.from('debates').update({ opponent_id: userId }).eq('id', debateId).is('opponent_id', null);
+        validSide = 'B';
       } else if (roomParticipants[debateId]?.[userId]?.side) {
+        validSide = roomParticipants[debateId][userId].side;
       } else {
         socket.emit('filter-blocked', { reason: '이 논쟁의 참여자만 채팅할 수 있습니다.' });
         return;
@@ -181,7 +185,7 @@ io.on('connection', (socket) => {
 
     const msgId = crypto.randomUUID();
     const now = new Date().toISOString();
-    const msg = { id: msgId, debate_id: debateId, user_id: userId, nickname, content: content.trim(), side, created_at: now };
+    const msg = { id: msgId, debate_id: debateId, user_id: userId, nickname, content: content.trim(), side: validSide, created_at: now };
 
     io.to(debateId).emit('new-message', msg);
 
