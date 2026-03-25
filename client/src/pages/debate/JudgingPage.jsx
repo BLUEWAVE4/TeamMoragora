@@ -429,7 +429,7 @@ export default function JudgingPage() {
             {/* ✅ chat 모드 실시간 뱃지 */}
             {isChat && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] text-[11px] font-bold">
-                ⚡ 실시간 논쟁
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#D4AF37" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 실시간 논쟁
               </span>
             )}
             <p className="text-[13px] text-white/60 font-sans font-medium text-center italic line-clamp-2 px-4 mt-1 bg-white/5 py-2 rounded-lg w-full">
