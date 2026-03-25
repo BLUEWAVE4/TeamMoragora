@@ -217,6 +217,21 @@ export async function deleteDebate(req, res, next) {
   }
 }
 
+// ===== 대기실 — 전체 chat 모드 논쟁 목록 =====
+export async function listChatRooms(_req, res, next) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('debates')
+      .select('id, topic, pro_side, con_side, category, status, creator_id, opponent_id, chat_deadline, created_at, creator:profiles!creator_id(nickname, avatar_url, gender, tier)')
+      .eq('mode', 'chat')
+      .in('status', ['waiting', 'chatting'])
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) { next(err); }
+}
+
 export async function joinByInvite(req, res, next) {
   try {
     const { inviteCode } = req.params;
