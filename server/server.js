@@ -67,6 +67,16 @@ io.on('connection', (socket) => {
       roomParticipants[debateId][userId].ready = ready || false;
     }
     io.to(debateId).emit('presence-sync', buildSlots(debateId));
+
+    // B측 선택 시 DB opponent_id 즉시 업데이트 (로비 피드 실시간 반영)
+    if (side === 'B') {
+      import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+        const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id').eq('id', debateId).single();
+        if (debate && !debate.opponent_id && userId !== debate.creator_id) {
+          await supabaseAdmin.from('debates').update({ opponent_id: userId }).eq('id', debateId).is('opponent_id', null);
+        }
+      }).catch(() => {});
+    }
   });
 
   // ===== Presence: 퇴장 =====

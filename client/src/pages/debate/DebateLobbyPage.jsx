@@ -111,18 +111,24 @@ export default function DebateLobbyPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const dragX = useMotionValue(0);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await getAllPublicDebates();
       const rawRooms = res?.data || res || [];
       const lobbyRooms = rawRooms.filter(r => ['waiting', 'chatting'].includes(String(r.status).toLowerCase()));
       setRooms(lobbyRooms);
       setDailyItems(lobbyRooms.slice(0, 5));
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) { console.error(err); } finally { if (!silent) setLoading(false); }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // 5초 폴링: 참여자 변경 등 실시간 반영
+  useEffect(() => {
+    const timer = setInterval(() => loadData(true), 5000);
+    return () => clearInterval(timer);
+  }, [loadData]);
 
   // Realtime: debates 테이블 변경 시 자동 새로고침
   useEffect(() => {
