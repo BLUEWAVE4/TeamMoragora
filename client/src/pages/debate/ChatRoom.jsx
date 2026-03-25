@@ -59,6 +59,7 @@ export default function ChatRoom() {
   const [mySide, setMySide] = useState(null);
   const [myNickname, setMyNickname] = useState('');
   const [myAvatarUrl, setMyAvatarUrl] = useState('');
+  const [avatarMap, setAvatarMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   const [messages, setMessages] = useState([]);
@@ -111,7 +112,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       try {
         const data = await getDebate(debateId);
         setDebate(data);
-        console.log(data);
+        // 참여자 아바타 맵 구성
+        const map = {};
+        if (data.creator) map[data.creator_id] = data.creator.avatar_url || getAvatarUrl(data.creator_id, data.creator.gender) || DEFAULT_AVATAR_ICON;
+        if (data.opponent) map[data.opponent_id] = data.opponent.avatar_url || getAvatarUrl(data.opponent_id, data.opponent.gender) || DEFAULT_AVATAR_ICON;
+        setAvatarMap(map);
         if (data.status === 'chatting') {
           setGameStarted(true);
           if (data.chat_deadline) setChatDeadline(data.chat_deadline);
@@ -133,7 +138,9 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         const { data: profile } = await supabase
           .from('profiles').select('nickname, avatar_url, gender').eq('id', user.id).single();
         setMyNickname(profile?.nickname || '익명');
-        setMyAvatarUrl(profile?.avatar_url || getAvatarUrl(user.id, profile?.gender) || DEFAULT_AVATAR_ICON);
+        const myAvt = profile?.avatar_url || getAvatarUrl(user.id, profile?.gender) || DEFAULT_AVATAR_ICON;
+        setMyAvatarUrl(myAvt);
+        setAvatarMap(prev => ({ ...prev, [user.id]: myAvt }));
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
@@ -714,7 +721,7 @@ const handleVote = (agree) => {
             const isMe = msg.user_id === user?.id;
             const isA = msg.side === 'A';
             const nickname = msg.nickname || '익명';
-            const avatar = getAvatarUrl(msg.user_id) || DEFAULT_AVATAR_ICON;
+            const avatar = avatarMap[msg.user_id] || DEFAULT_AVATAR_ICON;
             const isExhausted = exhaustedUsers[msg.user_id];
 
             return (
