@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 
 import CategoryFilter from '../../components/home/CategoryFilter';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 
 /**
@@ -57,9 +58,22 @@ function LobbyDebateCard({ room, formatTime }) {
       <div className="mb-6">
         <h3 className="text-[18px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
         <div className="flex items-center gap-2">
-          <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${room.status === 'waiting' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${room.status === 'waiting' ? 'bg-emerald-500' : 'bg-amber-400'} animate-pulse`} />
-            {room.status === 'waiting' ? '참여 대기 중' : '토론 진행 중'} {currentTotal}/6
+          <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${
+            room.status === 'waiting' ? 'bg-emerald-50 text-emerald-600'
+            : room.status === 'chatting' ? 'bg-amber-50 text-amber-600'
+            : room.status === 'judging' ? 'bg-purple-50 text-purple-600'
+            : 'bg-gray-50 text-gray-500'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              room.status === 'waiting' ? 'bg-emerald-500'
+              : room.status === 'chatting' ? 'bg-amber-400'
+              : room.status === 'judging' ? 'bg-purple-500'
+              : 'bg-gray-400'
+            } animate-pulse`} />
+            {room.status === 'waiting' ? '참여 대기 중'
+              : room.status === 'chatting' ? '토론 진행 중'
+              : room.status === 'judging' ? '판결 중'
+              : '완료'} {currentTotal}/6
           </span>
           <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
         </div>
@@ -109,6 +123,21 @@ export default function DebateLobbyPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Realtime: debates 테이블 변경 시 자동 새로고침
+  useEffect(() => {
+    const channel = supabase
+      .channel('lobby_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'debates',
+        filter: 'mode=eq.chat',
+      }, () => loadData())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
 
   // 무한 스크롤 옵저버 설정
   const lastElementRef = useCallback((node) => {
@@ -200,10 +229,21 @@ export default function DebateLobbyPage() {
                   <span className="text-[12px] opacity-60 font-black">{dailyItems[currentIndex].category}</span>
                   <div className="flex items-center gap-1.5">
                     <span className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full ${
-                      dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                      dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-500/20 text-emerald-400'
+                      : dailyItems[currentIndex].status === 'chatting' ? 'bg-amber-500/20 text-amber-400'
+                      : dailyItems[currentIndex].status === 'judging' ? 'bg-purple-500/20 text-purple-400'
+                      : 'bg-gray-500/20 text-gray-400'
                     }`}>
-                      <span className={`w-1 h-1 rounded-full ${dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
-                      {dailyItems[currentIndex].status === 'waiting' ? '대기 중' : '진행 중'} {getParticipantCount(dailyItems[currentIndex])}/6
+                      <span className={`w-1 h-1 rounded-full ${
+                        dailyItems[currentIndex].status === 'waiting' ? 'bg-emerald-400'
+                        : dailyItems[currentIndex].status === 'chatting' ? 'bg-amber-400'
+                        : dailyItems[currentIndex].status === 'judging' ? 'bg-purple-400'
+                        : 'bg-gray-400'
+                      } animate-pulse`} />
+                      {dailyItems[currentIndex].status === 'waiting' ? '대기 중'
+                        : dailyItems[currentIndex].status === 'chatting' ? '진행 중'
+                        : dailyItems[currentIndex].status === 'judging' ? '판결 중'
+                        : '완료'} {getParticipantCount(dailyItems[currentIndex])}/6
                     </span>
                   </div>
                 </div>
