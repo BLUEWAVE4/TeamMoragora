@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getVerdict, getDebate } from "../../services/api";
+import { useAuth } from "../../store/AuthContext";
 import VerdictContent from "../../components/verdict/VerdictContent";
+import api from "../../services/api";
 
 export default function MoragoraDetailPage() {
   const { debateId } = useParams();
@@ -11,6 +13,9 @@ export default function MoragoraDetailPage() {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +122,67 @@ export default function MoragoraDetailPage() {
         <div className="px-5 -mt-5 pb-6">
           <VerdictContent verdictData={verdict} topic={topic} />
           <div className="space-y-2 mt-5">
+            {/* 별점 평가 — 생성자/참여자만 */}
+            {user && debate && (user.id === debate.creator_id || user.id === debate.opponent_id) && (
+              <div className="mb-4 bg-[#1B2A4A]/5 border border-[#D4AF37]/20 rounded-2xl p-5">
+                {ratingSubmitted ? (
+                  <div className="text-center">
+                    <p className="text-[14px] font-bold text-[#D4AF37]">평가해주셔서 감사합니다!</p>
+                    <div className="flex justify-center gap-1 mt-2">
+                      {[1,2,3,4,5].map(s => (
+                        <svg key={s} width="20" height="20" viewBox="0 0 24 24" stroke="#D4AF37" strokeWidth="2" fill={rating >= s ? '#D4AF37' : rating >= s-0.5 ? 'none' : 'none'}>
+                          {rating >= s ? (
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37"/>
+                          ) : rating >= s-0.5 ? (
+                            <><defs><clipPath id={`dh${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath></defs>
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" clipPath={`url(#dh${s})`}/></>
+                          ) : (
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          )}
+                        </svg>
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-[#1B2A4A]/40 mt-1">{rating}점</p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-[12px] text-[#1B2A4A]/50 font-bold mb-3">이 판결에 만족하셨나요?</p>
+                    <div className="flex justify-center mb-3">
+                      {[1,2,3,4,5].map(s => (
+                        <div key={s} className="relative w-9 h-9 flex-shrink-0">
+                          <button onClick={() => setRating(s-0.5)} className="absolute left-0 top-0 w-1/2 h-full z-10"/>
+                          <button onClick={() => setRating(s)} className="absolute right-0 top-0 w-1/2 h-full z-10"/>
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="transition-all pointer-events-none">
+                            {rating >= s ? (
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2"/>
+                            ) : rating >= s-0.5 ? (
+                              <><defs><clipPath id={`dl${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath><clipPath id={`dr${s}`}><rect x="12" y="0" width="12" height="24"/></clipPath></defs>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2" clipPath={`url(#dl${s})`}/>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke="#1B2A4A" strokeWidth="2" opacity="0.15" clipPath={`url(#dr${s})`}/></>
+                            ) : (
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#1B2A4A" strokeWidth="2" opacity="0.15"/>
+                            )}
+                          </svg>
+                        </div>
+                      ))}
+                    </div>
+                    {rating > 0 && (
+                      <>
+                        <p className="text-[13px] text-[#D4AF37] font-bold mb-2">{rating}점</p>
+                        <button
+                          onClick={async () => {
+                            try { await api.post(`/judgments/${debateId}/rate`, { score: rating }); } catch {}
+                            setRatingSubmitted(true);
+                          }}
+                          className="px-6 py-2 bg-[#D4AF37] text-[#1B2A4A] font-bold text-[13px] rounded-xl active:scale-95 transition-all"
+                        >평가 제출</button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={async () => {
                 await navigator.clipboard.writeText(window.location.href);
