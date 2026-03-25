@@ -149,6 +149,7 @@ io.on('connection', (socket) => {
       } else if (!debate.opponent_id && debate.mode === 'chat') {
         // B측 미등록 → 자동 등록
         await supabaseAdmin.from('debates').update({ opponent_id: userId }).eq('id', debateId).is('opponent_id', null);
+      } else if (roomParticipants[debateId]?.[userId]?.side) {
       } else {
         socket.emit('filter-blocked', { reason: '이 논쟁의 참여자만 채팅할 수 있습니다.' });
         return;
@@ -233,35 +234,51 @@ socket.on('vote-time-change', ({ debateId, userId, agree }) => {
 });
   // ===== 소켓 끊김 시 참여자 제거 + 이탈 알림 =====
   socket.on('disconnect', () => {
-    for (const debateId of Object.keys(roomParticipants)) {
-      for (const [userId, p] of Object.entries(roomParticipants[debateId])) {
-        if (p.socketId === socket.id) {
-          delete roomParticipants[debateId][userId];
-          io.to(debateId).emit('presence-sync', buildSlots(debateId));
+  for (const debateId of Object.keys(roomParticipants)) {
+    const room = roomParticipants[debateId];
+    if (!room) continue;
+    for (const [userId, p] of Object.entries(room)) {
+      if (p.socketId !== socket.id) continue;
 
-          // 채팅 중 이탈 시 상대에게 알림 + 2분 후 자동 종료
-          io.to(debateId).emit('opponent-left', { userId, nickname: p.nickname });
-          setTimeout(async () => {
-            // 2분 후에도 복귀 안 했으면 자동 종료
-            if (!roomParticipants[debateId]?.[userId]) {
-              try {
-                const { supabaseAdmin } = await import('./src/config/supabase.js');
-                const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
-                if (debate?.status === 'chatting') {
-                  await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
-                  io.to(debateId).emit('chat-auto-ended', { reason: '상대방 이탈로 논쟁이 종료되었습니다.' });
-                  const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
-                  triggerJudgment(debateId).catch(err => console.error('[이탈] 판결 실패:', err.message));
-                  console.log(`[이탈] ${debateId} 상대 이탈 → 2분 후 자동 판결`);
-                }
-              } catch (err) { console.error('[이탈] 에러:', err.message); }
+      const leftNickname = p.nickname;
+      delete roomParticipants[debateId][userId];
+      io.to(debateId).emit('presence-sync', buildSlots(debateId));
+      io.to(debateId).emit('opponent-left', { userId, nickname: leftNickname });
+
+      console.log(`[이탈] ${leftNickname}(${userId}) 이탈 감지 — 2분 후 복귀 없으면 종료`);
+
+      // debateId, userId 클로저로 캡처
+      const capturedDebateId = debateId;
+      const capturedUserId = userId;
+
+      setTimeout(async () => {
+        // 2분 후 복귀 여부 확인
+        const stillGone = !roomParticipants[capturedDebateId]?.[capturedUserId];
+        console.log(`[이탈] 2분 경과 — 복귀 여부: ${stillGone ? '미복귀' : '복귀'}`);
+        if (stillGone) {
+          try {
+            const { supabaseAdmin } = await import('./src/config/supabase.js');
+            const { data: debate } = await supabaseAdmin
+              .from('debates').select('status').eq('id', capturedDebateId).single();
+            console.log(`[이탈] DB status: ${debate?.status}`);
+            if (debate?.status === 'chatting') {
+              await supabaseAdmin
+                .from('debates').update({ status: 'judging' })
+                .eq('id', capturedDebateId).eq('status', 'chatting');
+              io.to(capturedDebateId).emit('chat-auto-ended', { reason: '상대방 이탈로 논쟁이 종료되었습니다.' });
+              const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
+              triggerJudgment(capturedDebateId).catch(err =>
+                console.error('[이탈] 판결 실패:', err.message));
+              console.log(`[이탈] ${capturedDebateId} 자동 종료 완료`);
             }
-          }, 2 * 60 * 1000);
-          break;
+          } catch (err) { console.error('[이탈] 에러:', err.message); }
         }
-      }
+      }, 2 * 60 * 1000);
+
+      break;
     }
-  });
+  }
+});
 
 });
 
