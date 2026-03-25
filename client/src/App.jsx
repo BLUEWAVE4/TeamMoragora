@@ -46,6 +46,7 @@ export default function App() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/debate/lobby/:inviteCode" element={<DebateLobbyPage />} />
         <Route path="/debate/:debateId" element={<DebateDetailPage />} />
+        <Route path="/debate/lobby" element={<DebateLobbyPage />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
@@ -61,7 +62,6 @@ export default function App() {
           <Route path="/debate/:debateId/judging" element={<JudgingPage />} />
           <Route path="/debate/:debateId/vote" element={<VotePage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/debate/lobby" element={<DebateLobbyPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
         </Route>
       </Route>

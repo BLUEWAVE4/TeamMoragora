@@ -33,10 +33,11 @@ export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
 export const acceptInvitation = joinByInvite;
-export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 1000, ...(cursor ? { cursor } : {}) } });
+export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 100, ...(cursor ? { cursor } : {}) } });
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
-export const getChatRooms = () => api.get('/debates/chat/rooms');
 export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
+export const getChatRooms = () => api.get('/debates', { params: { sort: '-created_at', limit: 100 } });
+export const getRealTimeDebates = () => api.get('/debates/realtime');
 
 // ===== AI 분석 =====
 export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
@@ -72,6 +73,8 @@ export const getComments = (debateId) => api.get(`/comments/${debateId}`);
 export const createComment = (debateId, content) => api.post(`/comments/${debateId}`, { content });
 export const deleteComment = (commentId) => api.delete(`/comments/${commentId}`);
 export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}/like`);
+
+export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
 
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/auth/me');
