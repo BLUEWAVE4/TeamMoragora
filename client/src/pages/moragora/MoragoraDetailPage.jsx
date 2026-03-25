@@ -185,7 +185,7 @@ export default function MoragoraDetailPage() {
             )}
             <button
               onClick={async () => {
-                await navigator.clipboard.writeText(window.location.href);
+                await navigator.clipboard.writeText(`${shareTitle}\n${window.location.href}`);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
