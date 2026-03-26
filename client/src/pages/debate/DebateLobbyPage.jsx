@@ -30,7 +30,7 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
         <span className={`text-[18px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#D4AF37]'}`}>
           {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
         </span>
-        <span className="text-[9px] text-gray-400 font-bold mt-0.5">남은 시간</span>
+        <span className="text-[9px] text-gray-400 dark:text-white/40 font-bold mt-0.5">남은 시간</span>
       </div>
     );
   }
@@ -39,9 +39,9 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
   const min = (elapsed / 60000) % 60;
   const sec = (elapsed / 1000) % 60;
   const hr = elapsed / 3600000;
-  if (hr >= 1) return <span className="text-gray-400 font-bold text-[11px]">{Math.floor(hr)}시간 대기</span>;
+  if (hr >= 1) return <span className="text-gray-400 dark:text-white/40 font-bold text-[11px]">{Math.floor(hr)}시간 대기</span>;
   return (
-    <span className="text-gray-400 font-bold text-[11px] tabular-nums">
+    <span className="text-gray-400 dark:text-white/40 font-bold text-[11px] tabular-nums">
       {pad(min)}:{pad(sec)} 대기
     </span>
   );
