@@ -185,6 +185,29 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
         </div>
       </div>
 
+      {/* 참여자 아바타 (생성자 제외) */}
+      {(() => {
+        const others = [...liveA, ...liveB, ...(liveSlots?.citizen || [])]
+          .filter(p => p.userId !== room.creator_id);
+        return others.length > 0 ? (
+          <div className="mt-3 flex items-center gap-1">
+            <div className="flex -space-x-1.5">
+              {others.slice(0, 6).map((p, i) => (
+                <div key={p.userId || i} className="w-6 h-6 rounded-full overflow-hidden border-2 border-white bg-gray-100" style={{ zIndex: 6 - i }}>
+                  <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+              {others.length > 6 && (
+                <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+                  <span className="text-[8px] text-gray-400 font-black">+{others.length - 6}</span>
+                </div>
+              )}
+            </div>
+            <span className="text-[10px] text-gray-400 font-bold ml-1">{others.length}명 참여 중</span>
+          </div>
+        ) : null;
+      })()}
+
       {room.status === 'chatting' && room.chat_deadline && (
         <ChatProgressBar chatDeadline={room.chat_deadline} proSide={room.pro_side} conSide={room.con_side} />
       )}
