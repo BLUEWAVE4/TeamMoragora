@@ -409,16 +409,6 @@ function DebateBannerCard({ item }) {
                             </svg>
                             {c.likes_count > 0 && <span className={`text-[9px] ${isDark ? 'text-white/30' : 'text-[#1B2A4A]/30'}`}>{c.likes_count}</span>}
                           </button>
-                          {isMine && (
-                            <button
-                              onClick={async () => {
-                                await supabase.from('comments').delete().eq('id', c.id);
-                                setComments(prev => prev.filter(x => x.id !== c.id));
-                                setCommentCount(prev => prev - 1);
-                              }}
-                              className={`text-[9px] active:text-red-400 transition-colors shrink-0 pb-0.5 ${isDark ? 'text-white/15' : 'text-[#1B2A4A]/15'}`}
-                            >삭제</button>
-                          )}
                         </div>
                       </div>
                     </div>
