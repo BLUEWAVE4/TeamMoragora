@@ -135,11 +135,13 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       try {
         const data = await getDebate(debateId);
         setDebate(data);
-        // 참여자 아바타 맵 구성
-        const map = {};
-        if (data.creator) map[data.creator_id] = data.creator.avatar_url || getAvatarUrl(data.creator_id, data.creator.gender) || DEFAULT_AVATAR_ICON;
-        if (data.opponent) map[data.opponent_id] = data.opponent.avatar_url || getAvatarUrl(data.opponent_id, data.opponent.gender) || DEFAULT_AVATAR_ICON;
-        setAvatarMap(map);
+        // 참여자 아바타 맵 구성 (기존 맵에 누적, 덮어쓰기 X)
+        setAvatarMap(prev => {
+          const updated = { ...prev };
+          if (data.creator) updated[data.creator_id] = data.creator.avatar_url || getAvatarUrl(data.creator_id, data.creator.gender) || DEFAULT_AVATAR_ICON;
+          if (data.opponent) updated[data.opponent_id] = data.opponent.avatar_url || getAvatarUrl(data.opponent_id, data.opponent.gender) || DEFAULT_AVATAR_ICON;
+          return updated;
+        });
         // 당사자 side 복원 (모든 상태에서 공통)
         const creatorActualSide = data.creator_side || 'A';
         const opponentActualSide = creatorActualSide === 'A' ? 'B' : 'A';
@@ -188,6 +190,22 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         const exhausted = {};
         Object.entries(countMap).forEach(([uid, cnt]) => { if (cnt >= MAX_MSGS) exhausted[uid] = true; });
         setExhaustedUsers(exhausted);
+
+        // 메시지 참여자 아바타 일괄 조회
+        const userIds = [...new Set(data.map(m => m.user_id).filter(Boolean))];
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles').select('id, avatar_url, gender').in('id', userIds);
+          if (profiles) {
+            setAvatarMap(prev => {
+              const updated = { ...prev };
+              profiles.forEach(p => {
+                updated[p.id] = p.avatar_url || getAvatarUrl(p.id, p.gender) || DEFAULT_AVATAR_ICON;
+              });
+              return updated;
+            });
+          }
+        }
       }
     };
     fetchMessages();
