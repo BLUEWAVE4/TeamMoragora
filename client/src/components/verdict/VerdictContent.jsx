@@ -981,7 +981,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     type="text"
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && handleSubmitComment()}
+                    onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)}
                     placeholder="의견을 입력하세요..."
                     maxLength={500}
                     className="flex-1 h-9 bg-primary/5 rounded-full px-4 text-[12px] text-primary placeholder:text-primary/25 focus:outline-none focus:ring-2 focus:ring-gold/20"

@@ -199,6 +199,26 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     socket.connect();
     socket.emit('join-room', debateId);
 
+    // 재연결 시 room 자동 재참여 (최초 연결 제외)
+    let isFirstConnect = true;
+    const handleReconnect = () => {
+      if (isFirstConnect) { isFirstConnect = false; return; }
+      console.log('[Socket] 재연결 — room 재참여');
+      socket.emit('join-room', debateId);
+      if (user && myNickname) {
+        socket.emit('join-presence', {
+          debateId,
+          userId: user.id,
+          nickname: myNickname,
+          avatarUrl: myAvatarUrl,
+          side: mySideRef.current,
+          ready: myReady,
+          isReconnect: true,
+        });
+      }
+    };
+    socket.on('connect', handleReconnect);
+
     const handleNewMessage = (msg) => {
       setMessages(prev => {
         if (msg.user_id === user?.id) {
@@ -227,11 +247,12 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     socket.on('new-message', handleNewMessage);
     socket.on('user-exhausted', handleExhausted);
     return () => {
+      socket.off('connect', handleReconnect);
       socket.off('new-message', handleNewMessage);
       socket.off('user-exhausted', handleExhausted);
       socket.emit('leave-room', debateId);
     };
-  }, [debateId, user]);
+  }, [debateId, user, myNickname, myAvatarUrl]);
 
   // ===== Socket.io Presence =====
   // mySide를 ref로 추적 — join-presence는 최초 1회만, side 변경은 select-side로만 처리
@@ -239,7 +260,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   useEffect(() => { mySideRef.current = mySide; }, [mySide]);
 
   useEffect(() => {
-    if (!debateId || !user || !myNickname) return;
+    if (!debateId || !user || !myNickname || loading) return;
     socket.emit('join-presence', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: mySideRef.current, ready: false });
     socket.on('presence-sync', (slots) => {
       if (slots && typeof slots === 'object') {
@@ -281,6 +302,10 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     if (nickname) setOpponentTypingNickname(nickname);
     if (typing) { clearTimeout(window._typingTimeout); window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000); }
   });
+    socket.on('already-in-room', ({ reason, activeDebateId }) => {
+      alert(reason);
+      navigate(`/debate/${activeDebateId}/chat`);
+    });
     socket.on('citizen-vote-tally', (tally) => {
       if (tally) setVoteTally({ A: tally.A, B: tally.B, total: tally.total });
     });
@@ -446,10 +471,10 @@ socket.on('kick-cancelled', ({ reason }) => {
   setKickRequest(null);
   setMessages(prev => [...prev, { id: `sys-kick-cancel-${Date.now()}`, type: 'system', content: reason || '강퇴 투표가 부결되었습니다.', created_at: new Date().toISOString() }]);
 });
-// 참여자 입장 시스템 메시지
-socket.on('participant-joined', ({ message }) => {
-  setMessages(prev => [...prev, { id: `sys-join-${Date.now()}`, type: 'system', content: message, created_at: new Date().toISOString() }]);
-  // 대기실 채팅에도 입장 알림
+// 참여자 입장 — 상단 토스트로 표시 (A측 green, B측 red)
+socket.on('participant-joined', ({ message, side }) => {
+  const toastType = side === 'A' ? 'side-a' : side === 'B' ? 'side-b' : 'info';
+  showToast(message, toastType);
   setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now() }]);
 });
 // 대기실 채팅 메시지 수신
@@ -489,13 +514,14 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('kicked-blocked');
       socket.off('kick-skip-countdown');
       socket.off('lobby-chat');
+      socket.off('already-in-room');
       socket.off('citizen-vote-tally');
       socket.off('duplicate-login');
       socket.off('chat-auto-ended');
       socket.off('chat-ended');
       socket.off('chat-cancelled');
     };
-  }, [debateId, user, myNickname]);
+  }, [debateId, user, myNickname, loading]);
 
   // ===== 사이드 선택 (3명 제한) =====
   const selectSide = useCallback((side) => {
@@ -759,9 +785,17 @@ const handleVote = (agree) => {
               <motion.div
                 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
                 className={`px-4 py-2 flex items-center justify-center gap-2 ${
-                  toast.type === 'warning' ? 'bg-amber-500/20 border-b border-amber-500/30' : 'bg-emerald-500/20 border-b border-emerald-500/30'
+                  toast.type === 'warning' ? 'bg-amber-500/20 border-b border-amber-500/30'
+                  : toast.type === 'side-a' ? 'bg-emerald-500/20 border-b border-emerald-500/30'
+                  : toast.type === 'side-b' ? 'bg-red-500/20 border-b border-red-500/30'
+                  : 'bg-emerald-500/20 border-b border-emerald-500/30'
                 }`}>
-                <span className={`text-[11px] font-black ${toast.type === 'warning' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <span className={`text-[11px] font-black ${
+                  toast.type === 'warning' ? 'text-amber-400'
+                  : toast.type === 'side-a' ? 'text-emerald-400'
+                  : toast.type === 'side-b' ? 'text-red-400'
+                  : 'text-emerald-400'
+                }`}>
                   {toast.message}
                 </span>
               </motion.div>
@@ -928,30 +962,28 @@ const handleVote = (agree) => {
           {debate?.lens && debate.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]/70 font-bold">{debate.lens}</span>}
         </div>
 
-        {/* A/B + 타이머 + 시간 버튼 */}
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex flex-col items-start gap-0.5">
-            <span className={`text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold self-start ${mySide === 'A' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
+        {/* A/B + 타이머 (3등분 레이아웃 — 타이머 항상 정중앙) */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center mt-3">
+          <div className="flex flex-col items-start gap-0.5 min-w-0">
+            <span className={`text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold ${mySide === 'A' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-[11px] font-bold text-emerald-400 max-w-[120px] leading-tight break-keep">{debate?.pro_side || 'A측'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="text-[11px] font-bold text-emerald-400 leading-tight break-keep line-clamp-2">{debate?.pro_side || 'A측'}</span>
             </div>
           </div>
 
-          {/* 2. 타이머 + 스킵/추가 버튼 */}
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1 px-3">
             <span className={`text-2xl font-black tabular-nums leading-none ${isWarningTime ? 'animate-pulse' : ''}`}
               style={{ color: isWarningTime ? '#ef4444' : '#D4AF37' }}>
               {formatTime(timeLeft)}
             </span>
-            {/* 남은 시간 텍스트 삭제 — 타이머만 표시 */}
           </div>
 
-            <div className="flex flex-col items-end gap-0.5">
-            <span className={`text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold self-end ${mySide === 'B' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
+          <div className="flex flex-col items-end gap-0.5 min-w-0">
+            <span className={`text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold ${mySide === 'B' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
             <div className="flex items-center gap-1.5 flex-row-reverse">
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-[11px] font-bold text-red-400 max-w-[120px] leading-tight break-keep text-right">{debate?.con_side || 'B측'}</span>
+              <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+              <span className="text-[11px] font-bold text-red-400 leading-tight break-keep text-right line-clamp-2">{debate?.con_side || 'B측'}</span>
             </div>
           </div>
         </div>

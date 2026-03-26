@@ -418,9 +418,9 @@ export default function JudgingPage() {
     </div>
   );
   return (
-    <div className="fixed inset-0 top-16 flex justify-center bg-[#FAFAF5] z-50">
+    <div className="fixed inset-0 top-16 flex justify-center bg-[#FAFAF5] z-50" style={{ height: 'calc(100dvh - 64px)' }}>
       <div className="relative flex flex-col w-full max-w-md bg-gradient-to-b from-[#1a2744] via-[#1a2744] via-60% to-[#FAFAF5] shadow-2xl overflow-hidden">
-        <div className="flex-1 flex flex-col px-6 pt-16 pb-32 overflow-y-auto">
+        <div className="flex-1 flex flex-col px-6 pt-16 pb-32 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {/* ===== 헤더 ===== */}
           <div className="flex flex-col items-center text-center space-y-4 shrink-0">
             {!isAllDone && (

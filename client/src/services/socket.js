@@ -7,4 +7,9 @@ const URL = import.meta.env.DEV
 export const socket = io(URL, {
   autoConnect: false,
   transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
 });

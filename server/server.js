@@ -45,7 +45,20 @@ io.on('connection', (socket) => {
   socket.on('leave-room', (debateId) => socket.leave(debateId));
 
   // ===== Presence: 참여자 입장 (다중 소켓 지원) =====
-  socket.on('join-presence', ({ debateId, userId, nickname, avatarUrl, side }) => {
+  socket.on('join-presence', ({ debateId, userId, nickname, avatarUrl, side, isReconnect }) => {
+    // 다른 채팅룸에 이미 참여 중인지 확인 (관전자 제외, side가 있는 참여자만 차단)
+    for (const [otherDebateId, room] of Object.entries(roomParticipants)) {
+      if (otherDebateId === debateId) continue;
+      const existing = room[userId];
+      if (existing?.side) {
+        socket.emit('already-in-room', {
+          reason: '이미 다른 실시간 논쟁에 참여 중입니다. 기존 논쟁을 먼저 종료해주세요.',
+          activeDebateId: otherDebateId,
+        });
+        socket.leave(debateId);
+        return;
+      }
+    }
     // 소켓이 room에 반드시 join (join-room보다 늦게 도착할 수 있으므로 보장)
     socket.join(debateId);
     // 강퇴된 유저 재참여 차단
@@ -85,15 +98,10 @@ io.on('connection', (socket) => {
     if (roomParticipants[debateId][userId]?.side) {
       socket.to(debateId).emit('opponent-returned', { userId });
     }
-    // 새 참여자 입장 시스템 메시지 (게임 시작 전에만)
-    if (isNewJoin) {
-      import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
-        const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
-        if (debate?.status === 'waiting' || debate?.status === 'both_joined') {
-          const sideLabel = side === 'A' ? 'A측 입장' : side === 'B' ? 'B측 입장' : '시민';
-          io.to(debateId).emit('participant-joined', { nickname, side: side || null, message: `${nickname}님이 ${sideLabel}으로 참여하였습니다.` });
-        }
-      }).catch(() => {});
+    // 새 참여자 입장 알림 (재연결은 제외)
+    if (isNewJoin && !isReconnect) {
+      const sideLabel = side === 'A' ? 'A측 입장' : side === 'B' ? 'B측 입장' : '시민';
+      io.to(debateId).emit('participant-joined', { nickname, side: side || null, message: `${nickname}님이 ${sideLabel}으로 참여하였습니다.` });
     }
   });
 
@@ -416,11 +424,16 @@ io.on('connection', (socket) => {
     // 혼자면(1/1) 즉시 강퇴
     if (Object.keys(votes).length >= total) {
       const targetSide = target.side;
+      const targetSocketIds = target.socketIds || (target.socketId ? new Set([target.socketId]) : new Set());
+      // 먼저 강퇴 대상에게 직접 이벤트 전송
+      targetSocketIds.forEach(sid => {
+        const s = io.sockets.sockets.get(sid);
+        if (s) s.emit('kick-approved', { targetId, targetNickname });
+      });
       delete roomParticipants[debateId][targetId];
       io.to(debateId).emit('presence-sync', buildSlots(debateId));
       io.to(debateId).emit('kick-approved', { targetId, targetNickname });
-      // 강퇴 대상의 소켓 연결 끊기
-      const targetSocketIds = target.socketIds || (target.socketId ? new Set([target.socketId]) : new Set());
+      // 이벤트 전송 후 room에서 제거
       targetSocketIds.forEach(sid => { const s = io.sockets.sockets.get(sid); if (s) s.leave(debateId); });
       handlePostKick(debateId, targetId, targetSide);
       console.log(`[강퇴] ${targetNickname} 즉시 강퇴 (1/1)`);
@@ -455,11 +468,20 @@ io.on('connection', (socket) => {
       const targetSide = target?.side;
       if (target) {
         const targetSocketIds = target.socketIds || new Set();
-        targetSocketIds.forEach(sid => { const s = io.sockets.sockets.get(sid); if (s) s.leave(debateId); });
+        // 먼저 강퇴 대상에게 직접 이벤트 전송
+        targetSocketIds.forEach(sid => {
+          const s = io.sockets.sockets.get(sid);
+          if (s) s.emit('kick-approved', { targetId, targetNickname });
+        });
         delete roomParticipants[debateId][targetId];
+        io.to(debateId).emit('presence-sync', buildSlots(debateId));
+        io.to(debateId).emit('kick-approved', { targetId, targetNickname });
+        // 이벤트 전송 후 room에서 제거
+        targetSocketIds.forEach(sid => { const s = io.sockets.sockets.get(sid); if (s) s.leave(debateId); });
+      } else {
+        io.to(debateId).emit('presence-sync', buildSlots(debateId));
+        io.to(debateId).emit('kick-approved', { targetId, targetNickname });
       }
-      io.to(debateId).emit('presence-sync', buildSlots(debateId));
-      io.to(debateId).emit('kick-approved', { targetId, targetNickname });
       handlePostKick(debateId, targetId, targetSide);
       console.log(`[강퇴] ${targetNickname} 강퇴 완료`);
     }
