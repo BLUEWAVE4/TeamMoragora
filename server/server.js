@@ -124,6 +124,13 @@ io.on('connection', (socket) => {
     socket.to(debateId).emit('lobby-chat', msg);
   });
 
+  // ===== 방 삭제 알림 =====
+  socket.on('room-deleted', ({ debateId }) => {
+    socket.to(debateId).emit('room-deleted', { reason: '방장이 논쟁을 삭제하였습니다.' });
+    // 참여자 정리
+    delete roomParticipants[debateId];
+  });
+
   // ===== 시민(관전자) 등록 =====
   socket.on('join-citizen', ({ debateId, userId }) => {
     if (!roomParticipants[debateId]?.[userId]) return;

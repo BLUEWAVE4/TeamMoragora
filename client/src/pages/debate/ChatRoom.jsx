@@ -379,6 +379,10 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     socket.on('citizen-vote-tally', (tally) => {
       if (tally) setVoteTally({ A: tally.A, B: tally.B, total: tally.total });
     });
+    socket.on('room-deleted', ({ reason }) => {
+      alert(reason || '방장이 논쟁을 삭제하였습니다.');
+      navigate('/debate/lobby');
+    });
     socket.on('duplicate-login', ({ reason }) => {
       alert(reason);
       navigate('/debate/lobby');
@@ -590,6 +594,7 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('kick-skip-countdown');
       socket.off('lobby-chat');
       socket.off('already-in-room');
+      socket.off('room-deleted');
       socket.off('citizen-vote-tally');
       socket.off('duplicate-login');
       socket.off('chat-auto-ended');
@@ -1650,7 +1655,10 @@ const handleVote = (agree) => {
         cancelText="아니오"
         onConfirm={async () => {
           shouldBlockRef.current = false;
-          try { await deleteDebate(debateId); } catch {}
+          try {
+            await deleteDebate(debateId);
+            socket.emit('room-deleted', { debateId });
+          } catch {}
           setShowLeaveModal(false);
           if (pendingNavPath.current === 'back') {
             navigate(-1);
