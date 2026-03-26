@@ -1029,8 +1029,8 @@ const handleVote = (agree) => {
                           {countdown}
                         </span>
                       ) : (
-                        <span className="text-[60px] font-black text-emerald-400 leading-none drop-shadow-[0_0_40px_rgba(16,185,129,0.5)]">
-                          GO!
+                        <span className="text-[22px] font-black text-[#D4AF37] leading-none drop-shadow-[0_0_30px_rgba(212,175,55,0.4)]">
+                          논쟁이 시작됩니다
                         </span>
                       )}
                     </motion.div>
@@ -1041,7 +1041,7 @@ const handleVote = (agree) => {
                     transition={{ delay: 0.2 }}
                     className="text-white/40 text-[13px] font-bold"
                   >
-                    {countdown > 0 ? '논쟁이 곧 시작됩니다' : '논쟁 시작!'}
+                    {countdown > 0 ? '' : ''}
                   </motion.p>
                 </div>
               </motion.div>
