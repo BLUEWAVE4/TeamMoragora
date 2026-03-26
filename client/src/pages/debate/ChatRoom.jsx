@@ -864,7 +864,6 @@ const handleVote = (agree) => {
               <p className="text-[#D4AF37]/50 text-[10px] font-black uppercase tracking-widest mb-1">논제</p>
               <h2 className="text-white text-[17px] font-black leading-snug">{debate?.topic || ''}</h2>
               <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                {debate?.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/40 font-bold">{debate.category}</span>}
                 {debate?.purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/40 font-bold">{debate.purpose}</span>}
                 {debate?.lens && debate.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] font-bold">{debate.lens}</span>}
               </div>
@@ -1054,7 +1053,6 @@ const handleVote = (agree) => {
         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-1">실시간 논쟁</p>
         <h1 className="text-white text-[15px] font-black text-center leading-snug line-clamp-2 px-8">{debate?.topic || ''}</h1>
         <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
-          {debate?.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/8 text-white/30 font-bold">{debate.category}</span>}
           {debate?.purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/8 text-white/30 font-bold">{debate.purpose}</span>}
           {debate?.lens && debate.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]/70 font-bold">{debate.lens}</span>}
         </div>
