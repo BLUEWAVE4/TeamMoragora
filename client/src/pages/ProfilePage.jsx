@@ -667,7 +667,7 @@ const [showInfo, setShowInfo] = useState(false);
             </div>
           </div>
 
-          <div className="bg-gray-50/80 dark:bg-white/[0.06] px-4 py-2.5 rounded-2xl border border-gray-100/50 dark:border-white/[0.06] text-right">
+          <div className="bg-gray-50/80 dark:bg-white/[0.06] px-4 py-2.5 rounded-2xl border border-gray-100/50 dark:border-white/[0.06] text-center">
             <p className="text-[12px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest mt-1">Total</p>
             <p className="text-[22px] font-black text-gray-900 dark:text-[#D4AF37] leading-none">{totalGames}</p>
           </div>
