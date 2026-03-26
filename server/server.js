@@ -129,10 +129,14 @@ io.on('connection', (socket) => {
     if (!roomParticipants[debateId]?.[userId]) return;
 
     // 즉시 동기 업데이트 (presence-sync 지연 방지)
-    roomParticipants[debateId][userId].side = side;
-    roomParticipants[debateId][userId].nickname = nickname;
-    if (avatarUrl) roomParticipants[debateId][userId].avatarUrl = avatarUrl;
-    roomParticipants[debateId][userId].ready = ready || false;
+    const prev = roomParticipants[debateId][userId];
+    const sideChanged = prev.side !== side;
+    prev.side = side;
+    prev.nickname = nickname;
+    if (avatarUrl) prev.avatarUrl = avatarUrl;
+    prev.ready = ready || false;
+    // 사이드 변경 시 joinedAt 갱신 (입장 선택 순서 정렬용)
+    if (sideChanged && side) prev.joinedAt = Date.now();
     io.to(debateId).emit('presence-sync', buildSlots(debateId));
 
     // DB 비동기 업데이트 (로비 피드 실시간 반영)

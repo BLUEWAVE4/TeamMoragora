@@ -573,9 +573,12 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => clearInterval(iv);
   }, [!!kickRequest]);
 
-  // ===== 사이드 선택 (3명 제한) =====
+  // ===== 사이드 선택 (3명 제한, 빠른 연속 클릭 방지) =====
+  const sideSelectCooldown = useRef(false);
   const selectSide = useCallback((side) => {
-  if (gameStarted || myReady) return;
+  if (gameStarted || myReady || sideSelectCooldown.current) return;
+  sideSelectCooldown.current = true;
+  setTimeout(() => { sideSelectCooldown.current = false; }, 500);
   const sideList = Array.isArray(participants[side]) ? participants[side] : [];
   if (sideList.length >= MAX_PER_SIDE && !sideList.some(p => p.userId === user.id)) return;
   const newSide = mySide === side ? null : side;
@@ -588,14 +591,14 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     // 기존 사이드에서 나 제거
     const cleanA = prevA.filter(p => p.userId !== user.id);
     const cleanB = prevB.filter(p => p.userId !== user.id);
-    const me = { userId: user.id, nickname: myNickname, side: newSide, ready: false };
+    if (newSide === null) return { A: cleanA, B: cleanB };
+    const me = { userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false, joinedAt: Date.now() };
     if (newSide === 'A') return { A: [...cleanA, me], B: cleanB };
-    if (newSide === 'B') return { A: cleanA, B: [...cleanB, me] };
-    return { A: cleanA, B: cleanB };
+    return { A: cleanA, B: [...cleanB, me] };
   });
 
   socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false });
-}, [mySide, participants, user, myNickname, gameStarted, myReady, debateId]);
+}, [mySide, participants, user, myNickname, myAvatarUrl, gameStarted, myReady, debateId]);
 
   // ===== 준비완료 토글 =====
   const toggleReady = useCallback(() => {
@@ -829,12 +832,12 @@ const handleVote = (agree) => {
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
       {!loading && !gameStarted && (
         <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: '#0f1829' }}>
-          {/* 상단 토스트 알림 (대기실) */}
+          {/* 상단 토스트 알림 (대기실) — 레이아웃 영향 없도록 absolute */}
           <AnimatePresence>
             {toast && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                className={`px-4 py-2 flex items-center justify-center gap-2 ${
+                className={`absolute top-0 left-0 right-0 z-40 px-4 py-2 flex items-center justify-center gap-2 ${
                   toast.type === 'warning' ? 'bg-amber-500/20 border-b border-amber-500/30'
                   : toast.type === 'side-a' ? 'bg-emerald-500/20 border-b border-emerald-500/30'
                   : toast.type === 'side-b' ? 'bg-red-500/20 border-b border-red-500/30'
@@ -890,7 +893,7 @@ const handleVote = (agree) => {
                       : 'bg-transparent';
 
                     return (
-                      <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all overflow-visible ${borderColor} ${bgColor} ${!p ? 'border-dashed' : ''}`}>
+                      <div key={i} className={`flex items-center gap-2 px-3 h-10 rounded-xl border transition-all overflow-visible ${borderColor} ${bgColor} ${!p ? 'border-dashed' : ''}`}>
                         {p ? (
                           <>
                             <div className="relative w-6 h-6 shrink-0">
