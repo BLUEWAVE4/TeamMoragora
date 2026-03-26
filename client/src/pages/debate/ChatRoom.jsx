@@ -77,6 +77,8 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [voteTally, setVoteTally] = useState({ A: 0, B: 0, total: 0 });
   const [actionTarget, setActionTarget] = useState(null); // { userId, nickname, side }
   const [kickRequest, setKickRequest] = useState(null); // { targetId, targetNickname, votes, requiredCount }
+  const [timeVoteCountdown, setTimeVoteCountdown] = useState(null); // 10초 카운트다운
+  const [kickVoteCountdown, setKickVoteCountdown] = useState(null); // 10초 카운트다운
   const [reportLoading, setReportLoading] = useState(false);
   const [reportResult, setReportResult] = useState(null); // { safe, reason }
   const [reportedUsers, setReportedUsers] = useState({}); // { [userId]: true }
@@ -545,6 +547,31 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('chat-cancelled');
     };
   }, [debateId, user, myNickname, loading]);
+
+  // ===== 투표 카운트다운 타이머 =====
+  useEffect(() => {
+    if (!timeChangeRequest) { setTimeVoteCountdown(null); return; }
+    setTimeVoteCountdown(10);
+    const iv = setInterval(() => {
+      setTimeVoteCountdown(prev => {
+        if (prev === null || prev <= 1) { clearInterval(iv); return null; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [!!timeChangeRequest]);
+
+  useEffect(() => {
+    if (!kickRequest) { setKickVoteCountdown(null); return; }
+    setKickVoteCountdown(10);
+    const iv = setInterval(() => {
+      setKickVoteCountdown(prev => {
+        if (prev === null || prev <= 1) { clearInterval(iv); return null; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [!!kickRequest]);
 
   // ===== 사이드 선택 (3명 제한) =====
   const selectSide = useCallback((side) => {
@@ -1201,6 +1228,7 @@ const handleVote = (agree) => {
               </span>
               <span className="text-[10px] text-white/30">
                 {Object.keys(timeChangeRequest.votes || {}).length}/{timeChangeRequest.requiredCount}명 동의
+                {timeVoteCountdown != null && <span className="ml-1.5 text-amber-400/80">({timeVoteCountdown}초)</span>}
               </span>
               <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-amber-400 rounded-full transition-all"
@@ -1473,6 +1501,7 @@ const handleVote = (agree) => {
               </span>
               <span className="text-[10px] text-white/30">
                 {Object.keys(kickRequest.votes || {}).length}/{kickRequest.requiredCount}명 동의
+                {kickVoteCountdown != null && <span className="ml-1.5 text-red-400/80">({kickVoteCountdown}초)</span>}
               </span>
               <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-red-400 rounded-full transition-all"

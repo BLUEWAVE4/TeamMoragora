@@ -39,6 +39,8 @@ const timeVotes = {};
 const kickVotes = {};
 const kickedUsers = {};       // { debateId: Set(userId) } — 강퇴된 유저 재참여 차단
 const kickSkipTimers = {};    // { debateId: setTimeout } — 강퇴 후 빈 사이드 스킵 타이머
+const timeVoteTimers = {};   // { debateId: setTimeout } — 시간 변경 투표 자동 취소 타이머
+const kickVoteTimers = {};   // { debateId: setTimeout } — 강퇴 투표 자동 취소 타이머
 
 io.on('connection', (socket) => {
   socket.on('join-room', (debateId) => socket.join(debateId));
@@ -350,6 +352,17 @@ io.on('connection', (socket) => {
 
     timeVotes[debateId] = { type, votes, requiredCount: total, currentDeadline };
     io.to(debateId).emit('time-change-request', { type, requesterId: userId, votes, requiredCount: total });
+
+    // 10초 자동 취소 타이머
+    if (timeVoteTimers[debateId]) clearTimeout(timeVoteTimers[debateId]);
+    timeVoteTimers[debateId] = setTimeout(() => {
+      if (timeVotes[debateId]) {
+        delete timeVotes[debateId];
+        delete timeVoteTimers[debateId];
+        io.to(debateId).emit('time-change-cancelled', { reason: '10초 경과로 투표가 자동 취소되었습니다.' });
+        console.log(`[TimeVote] ${debateId} 10초 타임아웃 자동 취소`);
+      }
+    }, 10 * 1000);
   });
 
   socket.on('vote-time-change', ({ debateId, userId, agree }) => {
@@ -361,6 +374,7 @@ io.on('connection', (socket) => {
       vote.votes[userId] = true;
     } else {
       delete timeVotes[debateId];
+      if (timeVoteTimers[debateId]) { clearTimeout(timeVoteTimers[debateId]); delete timeVoteTimers[debateId]; }
       io.to(debateId).emit('time-change-cancelled', { reason: '참여자가 거부했습니다.' });
       return;
     }
@@ -369,6 +383,7 @@ io.on('connection', (socket) => {
       const voteType = vote.type;
       const savedDeadline = vote.currentDeadline;
       delete timeVotes[debateId];
+      if (timeVoteTimers[debateId]) { clearTimeout(timeVoteTimers[debateId]); delete timeVoteTimers[debateId]; }
 
       import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
         if (voteType === 'skip') {
@@ -439,6 +454,18 @@ io.on('connection', (socket) => {
 
     kickVotes[debateId] = { targetId, targetNickname, votes, requiredCount: total };
     io.to(debateId).emit('kick-request', { targetId, targetNickname, votes, requiredCount: total });
+
+    // 10초 자동 취소 타이머
+    if (kickVoteTimers[debateId]) clearTimeout(kickVoteTimers[debateId]);
+    kickVoteTimers[debateId] = setTimeout(() => {
+      if (kickVotes[debateId]) {
+        const name = kickVotes[debateId].targetNickname;
+        delete kickVotes[debateId];
+        delete kickVoteTimers[debateId];
+        io.to(debateId).emit('kick-cancelled', { reason: `${name}님에 대한 강퇴 투표가 10초 경과로 자동 취소되었습니다.` });
+        console.log(`[KickVote] ${debateId} 10초 타임아웃 자동 취소`);
+      }
+    }, 10 * 1000);
   });
 
   socket.on('vote-kick', ({ debateId, userId, agree }) => {
@@ -452,6 +479,7 @@ io.on('connection', (socket) => {
     } else {
       const cancelledName = vote.targetNickname;
       delete kickVotes[debateId];
+      if (kickVoteTimers[debateId]) { clearTimeout(kickVoteTimers[debateId]); delete kickVoteTimers[debateId]; }
       io.to(debateId).emit('kick-cancelled', { reason: `${cancelledName}님에 대한 강퇴 투표가 부결되었습니다.` });
       return;
     }
@@ -461,6 +489,7 @@ io.on('connection', (socket) => {
     if (Object.keys(vote.votes).length >= vote.requiredCount) {
       const { targetId, targetNickname } = vote;
       delete kickVotes[debateId];
+      if (kickVoteTimers[debateId]) { clearTimeout(kickVoteTimers[debateId]); delete kickVoteTimers[debateId]; }
       const target = roomParticipants[debateId]?.[targetId];
       const targetSide = target?.side;
       if (target) {

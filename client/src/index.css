@@ -277,6 +277,15 @@ input, textarea, select {
 /* 바텀시트/모달 배경 */
 .dark .bg-gradient-to-b.from-\[\#F5F0E8\] { background: linear-gradient(to bottom, #14202e, #1a2332); }
 
+/* ===== 전역 스크롤바 숨김 (PC에서도 스크롤바 UI 안 보이게) ===== */
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* 스크롤바 숨김 기능 (준민님 코드 유지) */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
