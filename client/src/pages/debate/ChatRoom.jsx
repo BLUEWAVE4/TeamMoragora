@@ -935,21 +935,21 @@ const handleVote = (agree) => {
             {/* 시민 관전 안내/버튼 */}
             {(
               <button
+                disabled={myReady}
                 onClick={() => {
-                  if (mySide) {
-                    if (myReady) {
-                      setMyReady(false);
-                      socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: null, ready: false });
-                    }
-                    selectSide(mySide); // toggle off
-                  }
+                  if (myReady || !mySide) return;
+                  selectSide(mySide); // toggle off
                 }}
-                className="w-full py-3 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+                className={`w-full py-3 rounded-2xl border flex items-center justify-center gap-2 transition-all ${
+                  myReady
+                    ? 'border-white/10 bg-white/5 cursor-not-allowed opacity-40'
+                    : 'border-[#D4AF37]/20 bg-[#D4AF37]/5 active:scale-[0.97]'
+                }`}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={myReady ? '#666' : '#D4AF37'} strokeWidth="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
-                <span className="text-[#D4AF37]/70 text-[12px] font-bold">
+                <span className={`text-[12px] font-bold ${myReady ? 'text-white/30' : 'text-[#D4AF37]/70'}`}>
                   {mySide ? '시민(관전자)으로 전환' : '입장을 선택하지 않으면 시민(관전자)으로 참여됩니다'}
                 </span>
               </button>
