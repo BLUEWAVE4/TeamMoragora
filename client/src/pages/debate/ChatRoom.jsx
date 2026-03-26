@@ -933,7 +933,7 @@ const handleVote = (agree) => {
             </div>
 
             {/* 시민 관전 안내/버튼 */}
-            {!isCreator && !myReady && (
+            {!myReady && (
               <button
                 onClick={() => {
                   if (mySide) {
