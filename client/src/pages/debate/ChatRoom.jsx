@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
 import { socket } from '../../services/socket';
@@ -116,10 +116,47 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const isCreator = debate ? debate.creator_id === user?.id : false;
 
   // ===== 방장 이탈 차단 =====
-  const shouldBlock = isCreator && !gameStarted && !loading && !chatEnded && debate?.status === 'waiting';
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    return shouldBlock && currentLocation.pathname !== nextLocation.pathname;
-  });
+  const shouldBlockRef = useRef(false);
+  shouldBlockRef.current = isCreator && !gameStarted && !loading && !chatEnded && debate?.status === 'waiting';
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const pendingNavPath = useRef(null);
+
+  // 탭바 등 내부 navigate 가로채기
+  useEffect(() => {
+    if (!shouldBlockRef.current) return;
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    const intercept = function (state, title, url) {
+      if (shouldBlockRef.current && url && !url.includes(`/debate/${debateId}/chat`)) {
+        pendingNavPath.current = url;
+        setShowLeaveModal(true);
+        return;
+      }
+      return origPush.apply(this, arguments);
+    };
+    window.history.pushState = intercept;
+    window.history.replaceState = function (state, title, url) {
+      if (shouldBlockRef.current && url && !url.includes(`/debate/${debateId}/chat`)) {
+        pendingNavPath.current = url;
+        setShowLeaveModal(true);
+        return;
+      }
+      return origReplace.apply(this, arguments);
+    };
+    const handlePop = (e) => {
+      if (shouldBlockRef.current) {
+        window.history.pushState(null, '', window.location.pathname);
+        pendingNavPath.current = 'back';
+        setShowLeaveModal(true);
+      }
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => {
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
+      window.removeEventListener('popstate', handlePop);
+    };
+  }, [debateId, shouldBlockRef.current]);
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     setToast({ message, type });
@@ -1602,7 +1639,7 @@ const handleVote = (agree) => {
       </AnimatePresence>
 
       {/* ━━━━━ 방장 이탈 확인 모달 ━━━━━ */}
-      {blocker.state === 'blocked' && (
+      {showLeaveModal && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center px-8">
           <div className="w-full max-w-[320px] bg-[#1a2744] rounded-2xl border border-white/10 p-6 flex flex-col items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
@@ -1615,15 +1652,23 @@ const handleVote = (agree) => {
             <p className="text-white/40 text-[12px] text-center leading-relaxed">이동 시 생성된 논쟁이 삭제됩니다.</p>
             <div className="flex gap-3 w-full">
               <button
-                onClick={() => blocker.reset()}
+                onClick={() => { setShowLeaveModal(false); pendingNavPath.current = null; }}
                 className="flex-1 py-3 rounded-xl bg-white/10 text-white/60 text-[13px] font-bold active:scale-95 transition-all"
               >
                 아니오
               </button>
               <button
                 onClick={async () => {
+                  shouldBlockRef.current = false;
                   try { await deleteDebate(debateId); } catch {}
-                  blocker.proceed();
+                  setShowLeaveModal(false);
+                  if (pendingNavPath.current === 'back') {
+                    navigate(-1);
+                  } else if (pendingNavPath.current) {
+                    navigate(pendingNavPath.current);
+                  } else {
+                    navigate('/');
+                  }
                 }}
                 className="flex-1 py-3 rounded-xl bg-red-500 text-white text-[13px] font-bold active:scale-95 transition-all"
               >
