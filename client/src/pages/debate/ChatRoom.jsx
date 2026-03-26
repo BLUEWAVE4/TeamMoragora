@@ -196,7 +196,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         if (data.creator_id === user.id) setMySide(creatorActualSide);
         else if (data.opponent_id === user.id) setMySide(opponentActualSide);
 
-        if (data.status === 'chatting') {
+        if (data.status === 'chatting' || data.status === 'both_joined') {
           setGameStarted(true);
           if (data.chat_deadline) setChatDeadline(data.chat_deadline);
         } else if (data.status === 'judging') {
@@ -1345,7 +1345,7 @@ const handleVote = (agree) => {
         {!chatEnded && (
           <motion.div initial={{ y: 0 }} exit={{ y: 100, opacity: 0 }} transition={{ duration: 0.4, ease: 'easeIn' }}
             className="shrink-0 bg-[#0f1829] border-t border-white/5 px-4 py-3"
-            style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
+            style={{ paddingBottom: `max(16px, env(safe-area-inset-bottom))` }}>
             <AnimatePresence>
               {msgError && (
                 <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
