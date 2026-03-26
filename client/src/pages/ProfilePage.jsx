@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
+import TierModal from './TierModal';
 
 // ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
@@ -840,36 +841,7 @@ const [showInfo, setShowInfo] = useState(false);
       </div>
 
       {/* ─── 등급 시스템 바텀시트 ─────────────────────────────────── */}
-      <BottomSheet isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} maxHeight="80vh" bgColor="#F2F2F7" zIndex={100}>
-        <div className="px-6 overflow-y-auto flex-1 pb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-[26px] font-black text-black leading-tight">등급 시스템</h3>
-              <p className="text-[16px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Point Milestones</p>
-            </div>
-          </div>
-          <div className="space-y-4 mb-10">
-            {[...TIER_LIST].reverse().map((t) => {
-              const isCurrent = t.name === tier.name;
-              return (
-                <motion.div key={t.name}
-                  className="rounded-[28px] p-6 flex items-center gap-5 border-2 transition-all shadow-sm"
-                  style={{ backgroundColor: isCurrent ? 'white' : 'rgba(255,255,255,0.6)', borderColor: isCurrent ? t.color : 'transparent' }}
-                >
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.bg }}>
-                    <t.icon size={32} style={{ color: t.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[18px] font-black" style={{ color: t.color }}>{t.name}</span>
-                    <p className="text-[16px] text-gray-500 font-bold leading-tight">{t.desc}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-          <button onClick={() => setIsTierSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px]">확인</button>
-        </div>
-      </BottomSheet>
+      <TierModal isOpen={isTierSheetOpen} onClose={() => setIsTierSheetOpen(false)} currentTierName={tier?.name} />
 
       {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
       <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor={isDark ? '#1a2332' : '#F5F0E8'} zIndex={100}>
