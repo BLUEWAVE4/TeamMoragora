@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../store/AuthContext';
-import { castVote, getVoteTally, cancelVote } from '../../services/api';
+import { castVote, getVoteTally, cancelVote, getComments, toggleCommentLike } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -148,6 +148,7 @@ function DebateBannerCard({ item }) {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [likingSet, setLikingSet] = useState(new Set());
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
   const commentInputRef = useRef(null);
@@ -164,14 +165,30 @@ function DebateBannerCard({ item }) {
 
   useEffect(() => {
     if (!isCommentOpen || !debateId) return;
-    const fetch = async () => {
-      const { data } = await supabase.from('comments').select('*, profiles(nickname, gender, avatar_url)').eq('debate_id', debateId).order('created_at', { ascending: true });
-      setComments(data || []);
-      setCommentCount(data?.length ?? 0);
+    const fetchComments = async () => {
+      try {
+        const data = await getComments(debateId);
+        setComments(data || []);
+        setCommentCount((data || []).length);
+      } catch { }
     };
-    fetch();
+    fetchComments();
     setTimeout(() => commentInputRef.current?.focus(), 300);
   }, [isCommentOpen, debateId]);
+
+  const handleToggleLike = async (commentId) => {
+    if (!user || likingSet.has(commentId)) return;
+    setLikingSet(prev => new Set(prev).add(commentId));
+    const prevComments = comments;
+    setComments(prev => prev.map(c =>
+      c.id === commentId
+        ? { ...c, is_liked: !c.is_liked, likes_count: Math.max((c.likes_count || 0) + (c.is_liked ? -1 : 1), 0) }
+        : c
+    ));
+    try { await toggleCommentLike(commentId); }
+    catch { setComments(prevComments); }
+    finally { setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; }); }
+  };
 
   const handleSendComment = async () => {
     if (!user || !commentText.trim() || isSending) return;
@@ -368,12 +385,12 @@ function DebateBannerCard({ item }) {
                     <p className="text-[11px] text-[#1B2A4A]/20 mt-1">이 논쟁에 대한 의견을 남겨보세요</p>
                   </div>
                 ) : comments.map((c) => {
-                  const nickname = c.profiles?.nickname || '익명';
+                  const nickname = c.user?.nickname || c.profiles?.nickname || '익명';
                   const isMine = user?.id === c.user_id;
                   return (
                     <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                        <img src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                        <img src={c.user?.avatar_url || c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.user?.gender || c.profiles?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
                         <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
@@ -381,9 +398,15 @@ function DebateBannerCard({ item }) {
                           <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
                         </div>
                         <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
-                          <div className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
+                          <div className={`px-3 py-2 rounded-2xl max-w-[70%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'}`}>
                             <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
                           </div>
+                          <button onClick={() => handleToggleLike(c.id)} className="w-9 h-9 flex items-center justify-center gap-0.5 shrink-0">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" className={c.is_liked ? '' : 'opacity-30'}>
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            {c.likes_count > 0 && <span className="text-[9px] text-[#1B2A4A]/30">{c.likes_count}</span>}
+                          </button>
                           {isMine && (
                             <button
                               onClick={async () => {
