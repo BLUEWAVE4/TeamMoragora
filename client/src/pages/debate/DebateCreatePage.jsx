@@ -111,7 +111,14 @@ export default function DebateCreatePage() {
       // 진행중인 실시간 논쟁 확인
       try {
         const { items: debates } = await getMyActiveDebates();
-        const activeChat = debates?.find(d => d.mode === 'chat' && (d.status === 'waiting' || d.status === 'chatting'));
+        const now = Date.now();
+        const activeChat = debates?.find(d => {
+          if (d.mode !== 'chat') return false;
+          if (d.status === 'chatting') return true;
+          // waiting은 30분 이내 생성된 것만 진행 중으로 간주
+          if (d.status === 'waiting' && (now - new Date(d.created_at).getTime()) < 30 * 60 * 1000) return true;
+          return false;
+        });
         if (activeChat) {
           setActiveDebateModal({ isOpen: true, debate: activeChat });
           return;
