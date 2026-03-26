@@ -332,7 +332,9 @@ const [showInfo, setShowInfo] = useState(false);
           setShowProfileSetup(true);
         }
         if (error) throw error;
-        setMyJudgments(debates || []);
+        // 판결 결과가 있는 논쟁만 표시
+        const completedDebates = (debates || []).filter(d => d.verdicts && d.verdicts.length > 0);
+        setMyJudgments(completedDebates);
       } catch (error) {
         console.error('fetchAllData error:', error);
       } finally {
