@@ -933,11 +933,14 @@ const handleVote = (agree) => {
             </div>
 
             {/* 시민 관전 안내/버튼 */}
-            {!myReady && (
+            {(
               <button
                 onClick={() => {
                   if (mySide) {
-                    // 입장 해제 → 시민으로 전환
+                    if (myReady) {
+                      setMyReady(false);
+                      socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: null, ready: false });
+                    }
                     selectSide(mySide); // toggle off
                   }
                 }}
