@@ -185,7 +185,7 @@ io.on('connection', (socket) => {
 
     // DB 비동기 업데이트 (로비 피드 실시간 반영)
     import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
-      const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, creator_side').eq('id', debateId).single();
+      const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, creator_side, topic').eq('id', debateId).single();
       if (!debate) return;
 
       // 방장의 side 변경 → creator_side 업데이트 (null 해제 시 제외)
