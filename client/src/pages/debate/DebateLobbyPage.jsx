@@ -143,10 +143,10 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
   return (
-    <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-xl pb-5 mb-1 transition-all ${
+    <div className={`rounded-xl pb-5 mb-1 transition-all ${
       isKicked
         ? 'bg-gray-100 dark:bg-gray-800 opacity-60 cursor-not-allowed'
-        : 'bg-white dark:bg-white/[0.04] cursor-pointer active:scale-[0.99]'
+        : 'bg-white dark:bg-white/[0.04]'
     }`}>
       {/* 프로필 헤더 */}
       <div className="px-4 pt-4 pb-3 flex items-center gap-3">
@@ -157,7 +157,9 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
           <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate block">{creatorName}</span>
           <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold">{room.creator?.tier || '시민'}</span>
         </div>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0"><polyline points="9 6 15 12 9 18"/></svg>
+        <button onClick={() => !isKicked && onCardClick(room)} className="w-9 h-9 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
       </div>
 
       <div className="mx-4 border-t border-gray-100 dark:border-white/[0.06]" />
