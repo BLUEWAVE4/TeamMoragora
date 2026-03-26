@@ -146,16 +146,16 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
     <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-xl pb-5 mb-1 transition-all ${
       isKicked
         ? 'bg-gray-100 dark:bg-gray-800 opacity-60 cursor-not-allowed'
-        : 'bg-white/70 dark:bg-white/[0.04] cursor-pointer active:scale-[0.99]'
+        : 'bg-white dark:bg-white/[0.04] cursor-pointer active:scale-[0.99]'
     }`}>
       {/* 프로필 헤더 */}
       <div className="px-4 pt-4 pb-2 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 shrink-0">
           <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
         </div>
-        <div className="flex-1 min-w-0 flex items-center gap-1.5">
-          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate">{creatorName}</span>
-          <span className="text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 bg-[#FFF5EB] dark:bg-[#2a2210] text-[#FF9500] dark:text-[#f59e0b80]">{room.creator?.tier || '시민'}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate block">{creatorName}</span>
+          <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold">{room.creator?.tier || '시민'}</span>
         </div>
         <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
       </div>
