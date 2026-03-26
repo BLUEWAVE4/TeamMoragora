@@ -790,7 +790,6 @@ const handleVote = (agree) => {
 
     // ===== 일반 메시지 =====
     if (!mySide) return;
-    if (trimmed.length > MAX_CHARS) return;
     if (msgCount >= MAX_MSGS) { setMsgError(`발언권(${MAX_MSGS}개)을 모두 사용했습니다.`); return; }
 
     setSending(true);
@@ -1325,9 +1324,6 @@ const handleVote = (agree) => {
                   남은 발언권{' '}
                   <span className={`font-bold ${remainingMsgs <= 5 ? 'text-amber-400' : 'text-white/40'}`}>{remainingMsgs}개</span>
                 </span>
-                <span className={`text-[10px] font-bold ${text.length > MAX_CHARS * 0.9 ? 'text-amber-400' : 'text-white/20'}`}>
-                  {text.length} / {MAX_CHARS}
-                </span>
               </div>
             )}
 
@@ -1380,16 +1376,16 @@ const handleVote = (agree) => {
   </div>
 ) : (
   <div className="flex items-end gap-2">
-    <div className={`w-1 h-9 rounded-full shrink-0 ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
+    <div className={`w-1 rounded-full shrink-0 self-stretch ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
                 <textarea value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
-                  disabled={isInputDisabled} maxLength={MAX_CHARS} rows={1}
+                  disabled={isInputDisabled} rows={1}
                   placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장을 입력하세요...`}
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20 transition-colors leading-relaxed disabled:opacity-40"
                   style={{ minHeight: '42px', maxHeight: '100px' }}
                   onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'; }}
                 />
                 <button onClick={handleSend} disabled={isInputDisabled || !text.trim() || cooldown || sending}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 ${
+                  className={`w-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 self-stretch ${
                     !isInputDisabled && text.trim() && !cooldown ? (mySide === 'A' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white/5 text-white/20'
                   }`}>
                   {sending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
