@@ -1,21 +1,8 @@
 import { Router } from 'express';
 import { getComments, createComment, deleteComment, toggleLike } from '../controllers/comment.controller.js';
-import { requireAuth } from '../middleware/auth.middleware.js';
-import { supabaseAdmin } from '../config/supabase.js';
+import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
-
-// Optional auth — 로그인 시 좋아요 여부 확인용
-async function optionalAuth(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token) {
-    try {
-      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      if (user) req.user = user;
-    } catch (_) {}
-  }
-  next();
-}
 
 // 댓글 목록 (로그인 시 좋아요 여부 포함)
 router.get('/:debateId', optionalAuth, getComments);

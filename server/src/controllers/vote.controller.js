@@ -42,7 +42,22 @@ export async function castVote(req, res, next) {
 
     if (error) throw error;
 
-    // 투표 XP는 마감 후 적중/미적중으로 정산 (참여 즉시 지급 없음)
+    // 투표 후 집계 갱신 + 소켓 브로드캐스트
+    const { data: allVotes } = await supabaseAdmin
+      .from('votes').select('voted_side').eq('debate_id', debateId);
+    const tally = { A: 0, B: 0, total: (allVotes || []).length };
+    (allVotes || []).forEach(v => { tally[v.voted_side]++; });
+
+    // verdict citizen_score 즉시 갱신
+    await supabaseAdmin.from('verdicts').update({
+      citizen_score_a: tally.A,
+      citizen_score_b: tally.B,
+      citizen_vote_count: tally.total,
+    }).eq('debate_id', debateId);
+
+    // 소켓으로 실시간 집계 브로드캐스트
+    const io = req.app.get('io');
+    if (io) io.to(debateId).emit('vote-tally-update', tally);
 
     res.json(data);
   } catch (err) {
@@ -116,6 +131,21 @@ export async function cancelVote(req, res, next) {
       .eq('user_id', req.user.id);
 
     if (error) throw error;
+
+    // 취소 후 집계 갱신 + 소켓 브로드캐스트
+    const { data: allVotes } = await supabaseAdmin
+      .from('votes').select('voted_side').eq('debate_id', debateId);
+    const tally = { A: 0, B: 0, total: (allVotes || []).length };
+    (allVotes || []).forEach(v => { tally[v.voted_side]++; });
+
+    await supabaseAdmin.from('verdicts').update({
+      citizen_score_a: tally.A,
+      citizen_score_b: tally.B,
+      citizen_vote_count: tally.total,
+    }).eq('debate_id', debateId);
+
+    const io = req.app.get('io');
+    if (io) io.to(debateId).emit('vote-tally-update', tally);
 
     res.json({ message: '투표가 취소되었습니다.' });
   } catch (err) {

@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -40,9 +42,8 @@ export function AuthProvider({ children }) {
           const redirect = sessionStorage.getItem('redirectAfterLogin');
           if (redirect) {
             sessionStorage.removeItem('redirectAfterLogin');
-            // 현재 페이지가 이미 해당 경로가 아닐 때만 이동
             if (window.location.pathname !== redirect) {
-              window.location.href = redirect;
+              navigate(redirect, { replace: true });
             }
           }
         }

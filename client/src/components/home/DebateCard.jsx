@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView } from '../../services/api';
-import { supabase } from '../../services/supabase';
+import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView, getMyVote } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolveAvatar } from '../../utils/avatar';
 import { timeAgo } from '../../utils/dateFormatter';
@@ -54,27 +53,23 @@ function DebateCard({ feed }) {
   const barColor = !timeLeft || timeLeft.progressRatio > 0.5 ? '#10b981'
     : timeLeft.progressRatio > 0.2 ? '#f59e0b' : '#ef4444';
 
-  const [optionAText, setOptionAText] = useState(debateData?.pro_side || feed?.pro_side || "");
-  const [optionBText, setOptionBText] = useState(debateData?.con_side || feed?.con_side || "");
-
-  useEffect(() => {
-    if (optionAText && optionBText) return;
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchSides = async () => {
-      try {
-        const { data } = await supabase.from('debates').select('pro_side, con_side').eq('id', debateId).single();
-        if (data?.pro_side) setOptionAText(data.pro_side);
-        if (data?.con_side) setOptionBText(data.con_side);
-      } catch (e) { console.log('fetch 실패:', e); }
-    };
-    fetchSides();
-  }, [feed?.debate_id, debateData?.id]);
+  const optionAText = debateData?.pro_side || feed?.pro_side || "";
+  const optionBText = debateData?.con_side || feed?.con_side || "";
 
   const storageKey = `my_vote_${feed?.debate_id || debateData?.id}_${user?.id}`;
-  const savedVote = localStorage.getItem(storageKey);
+  const [myVote, setMyVote] = useState(() => localStorage.getItem(storageKey) || null);
 
-  const [myVote, setMyVote] = useState(savedVote || null);
+  // サーバーで投票状態を検証 (localStorage と同期)
+  useEffect(() => {
+    const debateId = feed?.debate_id || debateData?.id;
+    if (!debateId || !user) return;
+    getMyVote(debateId).then(res => {
+      const serverVote = res?.voted_side || null;
+      setMyVote(serverVote);
+      if (serverVote) localStorage.setItem(storageKey, serverVote);
+      else localStorage.removeItem(storageKey);
+    }).catch(() => {});
+  }, [feed?.debate_id, debateData?.id, user]);
   const [voteCounts, setVoteCounts] = useState({
     agree: feed?.citizen_score_a ?? 0,
     disagree: feed?.citizen_score_b ?? 0,

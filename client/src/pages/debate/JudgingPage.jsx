@@ -310,8 +310,7 @@ export default function JudgingPage() {
         setDebateTitle(data.topic || data.title || "주제 없음");
         setProSide(data.pro_side || null);
         setConSide(data.con_side || null);
-        const rawTime = data.time;
-        const days = rawTime ? parseInt(rawTime, 10) : 0;
+        const days = data.vote_duration ? parseInt(data.vote_duration, 10) : 0;
         if (days > 0) {
           setVoteTotalDays(days);
           const totalMs = days * 24 * 60 * 60 * 1000;
@@ -383,8 +382,8 @@ export default function JudgingPage() {
           setJudgeStatus({ ...newStatus });
           setJudgeScores(newScores);
           // voting/completed 또는 judging에서 AI 판결 완료 시 (chat 모드는 빠르게 completed로 전환)
-          const hasAllJudgments = aiJudgments.length >= 3 || isVotingOrDone;
-          if (hasAllJudgments && aiJudgments.length > 0) {
+          const hasAllJudgments = (aiJudgments.length >= 3) || (isVotingOrDone && aiJudgments.length > 0);
+          if (hasAllJudgments) {
             setVerdictData(verdictResponse);
             setIsAllDone(true);
             clearInterval(pollInterval);

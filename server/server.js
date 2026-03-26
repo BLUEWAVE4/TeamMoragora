@@ -769,6 +769,9 @@ app.use(express.json({ limit: '1mb' }));
 // const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: 'AI 요청 제한에 도달했습니다. 1분 후 다시 시도해주세요.' } });
 // app.use('/api', globalLimiter);
 
+// io를 controller에서 접근 가능하도록 app에 연결
+app.set('io', io);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/debates', debateRoutes);

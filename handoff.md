@@ -1,108 +1,120 @@
-# Handoff — 2026-03-26 (수)
+# Handoff — 2026-03-27 (목)
 
-## 이전 세션 요약 (3/23 이전)
+## 이전 세션 요약 (3/26 이전)
+- OG 동적 텍스트 + 카카오 공유, 티어 시스템, 초대링크 개선, 알림 시스템
+- AI 프롬프트 개선, 연습 모드(solo), 실시간 채팅 논쟁, 콘텐츠 필터
+- 회원탈퇴, 명예의 전당 + TabBar 재구성, UI/UX 개선 다수
+- 타이핑 인디케이터 버그, 진행중 논쟁 모달, 강퇴 시스템 강화
+- AI 판결 트리거 복구, 무메시지 무효처리 버그 수정
 
-### 핵심 완료 항목
-- OG 동적 텍스트 + 카카오 공유
-- 티어 시스템 (XP → total_score 통일)
-- 초대링크 개선 (race condition 방지)
-- 알림 시스템 (notifications 테이블 + 폴링)
-- AI 프롬프트 개선 (반박 R2, 렌즈 배점, 합의/분석 모드)
-- 연습 모드(solo) 구현 (GPT-4o-mini)
-- 실시간 채팅 논쟁 백엔드 Day 1 (API + 프롬프트 + 상태 전이)
-- 콘텐츠 필터 로그 저장
-- 회원탈퇴
-- 명예의 전당 + TabBar 재구성
-- UI/UX 개선 다수
+---
 
-## 오늘 작업 요약 (3/26)
+## 이번 세션 작업 요약 (3/27)
 
-### 1. 타이핑 인디케이터 색상 버그 수정
-- `handleTextChange`의 useCallback deps에 `mySide` 누락 → 클로저에 `null` 캡처
-- B 화면에서 A의 타이핑 말풍선이 항상 빨간색(B색)으로 표시되던 버그
-- 수정: deps에 `mySide` 추가 → 정확한 side 전달
+### 1. 성능 최적화
+- **홈피드**: DB 쿼리 최적화 (inner join, mode/category 필터), N+1 제거 (카드당 5건→0건), stale-while-revalidate 캐싱
+- **프로필**: `select(*, verdicts(*, ai_judgments(*)))` 3중 조인 → 필요 컬럼만 + `!inner` + `limit(50)`, 논리 분석 lazy fetch
+- **랭킹**: stale-while-revalidate 캐싱
+- **throttle/debounce**: 스크롤 핸들러 4곳 throttle, 타이핑 socket emit debounce 300ms
+- **React.memo**: DebateCard, DebateBannerCard
+- **Lazy loading**: App.jsx 18개 페이지 `React.lazy()` + `Suspense`
+- **useCallback**: VerdictContent 4개 + ProfilePage 5개 핸들러
 
-### 2. 진행중 논쟁 모달
-- DebateCreatePage: 실시간 논쟁 "게임 시작" 클릭 시 `getMyActiveDebates` 조회
-- waiting/chatting 상태의 chat 논쟁이 있으면 알림 모달 → "이동하기" / "닫기"
+### 2. Zustand 마이그레이션
+- `useThemeStore` — ThemeContext 대체 (10개 파일 적용), ThemeProvider 제거
+- `useNotifStore` — Header 알림 카운트 전역화
+- `useSocketStore` — 소켓 연결 상태 + ChatRoom 연결 끊김 배너
 
-### 3. 강퇴 시스템 강화
-- **재참여 차단**: `kickedUsers` 블록리스트 → `join-presence` 시 차단 + 안내 메시지
-- **빈 사이드 스킵**: 강퇴 후 한쪽 참여자 0명 → 10초 카운트다운 → 종료+판결
-- **참여자 입장 메시지**: `participant-joined` 이벤트 → "닉네임님이 A측 입장으로 참여하였습니다" / "시민으로 참여하였습니다"
-- 서버: `handlePostKick()` 헬퍼 함수, `kickedUsers`/`kickSkipTimers` 메모리 관리
+### 3. 코드 품질 (DRY)
+- `useModalState` 커스텀 훅 — 11곳 모달 보일러플레이트 제거
+- `dateFormatter.js` — `timeAgo`, `formatDate`, `formatCountdown`, `formatMsgTime` 통합 (6곳)
+- `resolveAvatar()` 래퍼 — 23곳 아바타 URL 해석 패턴 통합
+- `CommentBottomSheet` 공통 컴포넌트 — TodayDebate + DebateCard 인라인 바텀시트 ~300줄 제거
 
-### 4. AI 판결 트리거 복구 (실시간 논쟁)
-- **원인**: 서버 타이머(setTimeout) 메모리 기반 → 서버 재시작 시 소실 → status가 chatting으로 남음
-- JudgingPage 폴링에서 `chatting` 상태면 즉시 return → AI 호출 안 됨 → 에러도 없음
-- **수정**: 폴링에서 `chatting` + 데드라인 경과 감지 시 `endChat` API 호출 → 서버 판결 트리거
+### 4. 에러 처리
+- `alert()`/`confirm()` 8건 → `MoragoraModal`로 교체 (ProfilePage, ChatRoom)
+- JudgingPage 빈 catch 블록 → `console.warn` 추가
+- 서버 errorHandler에 `status`, `code` 필드 추가 → 응답 형식 통일
+- `ErrorBoundary` 컴포넌트 추가 — 렌더 에러 시 복구 UI
 
-### 5. UI 텍스트 수정
-- JudgingPage: "논쟁 및" → "실시간 논쟁" 변경
+### 5. 타입 안전성
+- `verdict.debates` 혼용 제거 → `verdict.debate`로 통일
+- `winner_side` fallback `'A'` → `'draw'`로 변경
+- `data.time` → `data.vote_duration` 필드명 수정 (JudgingPage)
 
-## 수정된 파일 목록 (이번 세션)
+### 6. 메모리 누수 수정
+- **클라이언트 ChatRoom**: `safeTimeout` 헬퍼 (setTimeout 9곳 추적), `countdown-start` socket.off 추가, `opponentTypingTimeout` cleanup
+- **서버**: `cleanupDebateRoom()` 함수 — 논쟁 종료 시 6개 메모리 객체 + 3개 타이머 일괄 해제
+- **SRP 훅 추출**: `useTypingIndicator`, `useLobbyChat`, `useCitizenVoting` (ChatRoom에서 분리)
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `client/src/pages/debate/ChatRoom.jsx` | 타이핑 인디케이터 mySide deps 수정, 참여자/강퇴 소켓 이벤트 핸들러 |
-| `client/src/pages/debate/DebateCreatePage.jsx` | 진행중 논쟁 확인 모달 + getMyActiveDebates import |
-| `client/src/pages/debate/JudgingPage.jsx` | endChat 폴백 호출 + 텍스트 수정 |
-| `client/src/services/api.js` | (기존 변경 포함) |
-| `server/server.js` | kickedUsers/kickSkipTimers 추가, handlePostKick 헬퍼, participant-joined 이벤트 |
+### 7. 보안/안정성
+- `reportUser` 엔드포인트 `requireAuth` 추가
+- `import().then()` 2곳 `.catch()` 추가
+- `process.on('unhandledRejection')` 핸들러
+- `comment.routes.js` 인라인 optionalAuth → 공용 미들웨어 import
 
-### 6. 논쟁 생성 — 타이프라이터 플레이스홀더
-- 주제 입력 필드에 38개 랜덤 주제가 타이핑→삭제→다음 주제 애니메이션으로 순환
-- 카테고리: 연애(자극적 깻잎류), 사회, 결혼, 경제, 철학, 생활과학
-- `useTypewriter` 커스텀 훅 (typeSpeed 60ms, deleteSpeed 30ms, pause 1.5s)
-- 포커스/입력 시 애니메이션 정지, 커서 깜빡임 포함
+### 8. 데이터 플로우 수정
+- **투표 실시간 반영**: `vote-tally-update` 소켓 이벤트 — 투표 cast/cancel 시 서버에서 브로드캐스트, VerdictContent에서 수신
+- **citizen_score DB 즉시 갱신**: 투표마다 `verdicts.citizen_score_a/b` + `citizen_vote_count` 업데이트
+- **투표 서버 검증**: DebateCard + TodayDebate에서 `getMyVote()` 서버 검증 추가 (localStorage만 신뢰 방지)
+- **localStorage 키 통일**: `today_vote_` → `my_vote_`
+- **AuthContext redirect loop 수정**: `window.location.href` → `navigate(replace: true)`
+- **Supabase 직접 호출 제거**: TodayDebate(좋아요 5곳), DebateCard(pro_side fetch) → 서버 API 경유
+- `app.set('io', io)` — controller에서 소켓 접근 가능
 
-### 7. 실시간 채팅 무메시지 무효처리 버그 수정
-- **원인**: 클라이언트 타이머가 서버보다 먼저 `endTriggered=true` 세팅 + 판결 페이지로 navigate → 서버의 `chat-cancelled` 이벤트가 가드에 의해 무시됨
-- **수정**: 타이머 만료 시 직접 navigate 제거, 서버 이벤트(`chat-ended`/`chat-cancelled`) 대기 방식으로 변경
-  - `chat-ended` → 판결 페이지 이동
-  - `chat-cancelled` → 로비로 이동
-  - fallback: 10초 내 서버 응답 없으면 로비 이동
+### 9. 폴더 정리 + Dead Code 삭제
+- 모달 → `components/modals/` (FeedbackModal, TierModal)
+- `AdminDashboardPage` → `pages/admin/`, `ProfilePage` → `pages/profile/`
+- Dead code 삭제: 컴포넌트 5개 (LogicChartModal, VerdictDetailModal, IndicatorDots, PurposeCard, Tab) + API export 8개
+- **총 +421줄 / -874줄 (순 453줄 감소)**
 
-### 8. 홈피드 로딩 레이턴시 최적화
-- **서버 쿼리 최적화**:
-  - `getDailyVerdicts`: 100개 fetch+JS필터 → inner join `.eq('debate.mode','daily')` + limit 직접 적용 (95% 데이터 감소)
-  - `getVerdictFeed`: JS mode/category 필터 → DB 레벨 `.not('debate.mode','in','("daily","chat")')` + `.eq('debate.category')` + DB 페이지네이션
-  - `enrichWithCounts` 헬퍼 분리
-- **클라이언트 N+1 제거**:
-  - DebateCard: 카드당 좋아요수/댓글수/조회수/투표수 개별 fetch 4건 제거 → 서버 응답값(`likes_count`, `comments_count`, `views_count`) 사용
-  - TodayDebate: `getVoteTally` 개별 호출 제거 → `citizen_score_a/b` 초기값 사용
-  - **피드 5개 기준 ~25개 → ~5개 네트워크 요청으로 감소**
-- **세션 토큰 캐싱**: axios interceptor에서 매 요청마다 `getSession()` 호출 → 만료 30초 전까지 캐시 히트
+---
 
-### 9. TodayDebate 인디케이터 여백 조정
-- 카드-인디케이터 간격 축소 (`-mt-5`), 전체 하단 패딩 축소 (`pb-1`)
+## 3~5라운드 코드리뷰 미진행 내용
 
-## 수정된 파일 목록 (이번 세션 추가분)
+### 3라운드: 보안/안정성 (미진행)
+검토 필요 항목:
+- 서버 입력 검증: `category`, `purpose`, `lens`, `pro_side`/`con_side` 길이 미검증 (debate.controller.js)
+- `vote_duration` parseInt 시 max 미제한 → 999999일 가능
+- XSS: 사용자 닉네임이 HTML에 직접 렌더 (ChatRoom 시스템 메시지)
+- RLS 정책과 supabaseAdmin 사용 적절성 검토
+- `POST /debates/:id/view` rate limiting 미적용 (주석 처리된 상태)
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `client/src/components/debate/Step1Topic.jsx` | `useTypewriter` 훅 + 38개 랜덤 주제 타이프라이터 플레이스홀더 |
-| `client/src/components/common/Input.jsx` | `onFocus`/`onBlur` prop 전달 지원 |
-| `client/src/pages/debate/ChatRoom.jsx` | 타이머 만료 시 서버 이벤트 대기 방식으로 변경 |
-| `client/src/components/home/DebateCard.jsx` | N+1 쿼리 제거 (좋아요/댓글/조회수/투표 개별 fetch → 서버 응답값) |
-| `client/src/components/home/TodayDebate.jsx` | `getVoteTally` 제거 + 인디케이터 여백 조정 |
-| `client/src/services/api.js` | 세션 토큰 캐싱 (`onAuthStateChange` + 만료 체크) |
-| `server/src/controllers/judgment.controller.js` | DB 레벨 mode/category 필터 + `enrichWithCounts` 헬퍼 |
+### 4라운드: 성능 (미진행)
+검토 필요 항목:
+- `select('*')` 서버 10곳+ 남음 (debate.controller, profile.controller, notification.controller 등)
+- VerdictContent 1,053줄 — 차트 데이터 `useMemo` 미적용
+- 번들 사이즈: `recharts`, `chart.js`, `framer-motion` 전역 로드
+- ChatRoom 1,695줄 — 나머지 4개 훅 추출 필요 (useGameLifecycle, useParticipants, useChatMessages, useChatVoting)
+
+### 5라운드: 유지보수성 (미진행)
+검토 필요 항목:
+- server.js 821줄 — 소켓 핸들러 30개를 `server/src/socket/` 디렉토리로 분리
+- VerdictContent 1,053줄 — 댓글CRUD, 투표, 차트를 훅으로 분리
+- ProfilePage 1,319줄 — 아바타 에디터, 판결 이력, 논리 분석을 컴포넌트로 분리
+- RankingPage 978줄 — Podium, PlayerProfileSheet, HallOfFame 컴포넌트 분리
+- `BottomSheet`, `CountUp` 중복 (ProfilePage + RankingPage) → 공통 컴포넌트 추출
+- 매직 넘버: `MAX_MSGS=20`, `COOLDOWN_MS=1000`, `MAX_PER_SIDE=3` 등 상수 파일 통합
+- Supabase 직접 호출 8곳 잔여 — 서버 API 이관 필요 (프로필 fetch, analytics, ProfilePage debates/profiles update)
+
+---
 
 ## 현재 상태
 
-- **브랜치**: develop
-- **DB**: 추가 마이그레이션 없음
+- **브랜치**: master
+- **DB**: 추가 마이그레이션 없음 (citizen_score_a/b는 기존 컬럼, 투표 시 즉시 갱신으로 변경)
 
 ## 미해결 / 후속 작업
 
 ### 알려진 제한
-- 서버 타이머는 여전히 메모리 기반 — JudgingPage의 endChat 폴백으로 복구 가능하지만, 근본 해결은 DB 기반 스케줄러 필요
-- `kickedUsers`/`kickSkipTimers`도 메모리 기반 — 서버 재시작 시 초기화됨
-- 강퇴 블록리스트는 서버 세션 동안만 유효 (영구 차단 필요 시 DB 저장 고려)
+- 서버 타이머 메모리 기반 — `cleanupDebateRoom()`으로 정리하지만 근본은 DB 기반 스케줄러 필요
+- `kickedUsers` 메모리 기반 — 서버 재시작 시 초기화 (영구 차단 필요 시 DB 저장)
+- Supabase 직접 호출 8곳 잔여 — 프로필 아바타, analytics, ProfilePage
+- 세션 토큰 캐싱 제거됨 — onAuthStateChange 충돌로 원복, 매 요청마다 getSession() 호출
 
 ## 참고사항
 
 - AI 비용: 판결당 ~185원 (GPT 80 + Claude 100 + Gemini 5), solo는 GPT-4o-mini로 ~5원
 - 실시간 채팅: Socket.io 기반 (Supabase Realtime에서 전환됨)
 - 실시간 논쟁 인원: 사이드당 최대 3명
+- Zustand store: useThemeStore, useNotifStore, useSocketStore (AuthContext는 React Context 유지)

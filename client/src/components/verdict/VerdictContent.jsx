@@ -15,6 +15,7 @@ import { timeAgo } from "../../utils/dateFormatter";
 import MoragoraModal from '../common/MoragoraModal';
 import ChatLogViewer from './ChatLogViewer';
 import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally } from "../../services/api";
+import { socket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
@@ -188,6 +189,20 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       setLiveVoteA(res.A || 0);
       setLiveVoteB(res.B || 0);
     }).catch(() => {});
+
+    // 실시간 투표 집계 수신
+    socket.emit('join-room', debateId);
+    const handleTallyUpdate = (tally) => {
+      if (tally) {
+        setLiveVoteA(tally.A || 0);
+        setLiveVoteB(tally.B || 0);
+      }
+    };
+    socket.on('vote-tally-update', handleTallyUpdate);
+    return () => {
+      socket.off('vote-tally-update', handleTallyUpdate);
+      socket.emit('leave-room', debateId);
+    };
   }, [debateId, user]);
 
   const handleVote = useCallback(async (side) => {

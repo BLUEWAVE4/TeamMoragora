@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../store/AuthContext';
-import { castVote, cancelVote } from '../../services/api';
-import { supabase } from '../../services/supabase';
+import api, { castVote, cancelVote, toggleDebateLike, getMyVote } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
@@ -18,10 +17,18 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
   const debateId = item?.debate_id;
   const isVotingStatus = item?.debate?.status === 'voting';
   const isCompleted = item?.debate?.status === 'completed';
-  const storageKey = `today_vote_${debateId}_${user?.id}`;
-  const savedVote = localStorage.getItem(storageKey);
+  const storageKey = `my_vote_${debateId}_${user?.id}`;
+  const [myVote, setMyVote] = useState(() => localStorage.getItem(storageKey) || null);
 
-  const [myVote, setMyVote] = useState(savedVote || null);
+  useEffect(() => {
+    if (!debateId || !user) return;
+    getMyVote(debateId).then(res => {
+      const serverVote = res?.voted_side || null;
+      setMyVote(serverVote);
+      if (serverVote) localStorage.setItem(storageKey, serverVote);
+      else localStorage.removeItem(storageKey);
+    }).catch(() => {});
+  }, [debateId, user]);
   const [voteCounts, setVoteCounts] = useState({ A: item?.citizen_score_a ?? 0, B: item?.citizen_score_b ?? 0 });
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
@@ -99,23 +106,10 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
   const [commentCount, setCommentCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
 
+  // 내가 좋아요 했는지 서버 API로 조회
   useEffect(() => {
-    if (!debateId) return;
-    const fetchCounts = async () => {
-      try {
-        const [{ count: lc }, { count: cc }] = await Promise.all([
-          supabase.from('debate_likes').select('*', { count: 'exact', head: true }).eq('debate_id', debateId),
-          supabase.from('comments').select('*', { count: 'exact', head: true }).eq('debate_id', debateId),
-        ]);
-        setLikeCount(lc ?? 0);
-        setCommentCount(cc ?? 0);
-        if (user) {
-          const { data: myLike } = await supabase.from('debate_likes').select('id').eq('debate_id', debateId).eq('user_id', user.id).maybeSingle();
-          setLiked(!!myLike);
-        }
-      } catch {}
-    };
-    fetchCounts();
+    if (!debateId || !user) return;
+    api.get(`/debates/${debateId}/like/me`).then(res => setLiked(!!res?.liked)).catch(() => {});
   }, [debateId, user]);
 
   const handleLike = async () => {
@@ -125,8 +119,7 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
     setLiked(!prev);
     setLikeCount(prev ? Math.max(0, prevCount - 1) : prevCount + 1);
     try {
-      if (prev) await supabase.from('debate_likes').delete().eq('debate_id', debateId).eq('user_id', user.id);
-      else await supabase.from('debate_likes').insert({ debate_id: debateId, user_id: user.id });
+      await toggleDebateLike(debateId);
     } catch { setLiked(prev); setLikeCount(prevCount); }
   };
 
