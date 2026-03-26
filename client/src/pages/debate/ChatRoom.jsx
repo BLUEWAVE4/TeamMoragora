@@ -948,9 +948,12 @@ const handleVote = (agree) => {
                       <div key={i} className={`flex items-center gap-2 px-3 h-10 rounded-xl border transition-all overflow-visible ${borderColor} ${bgColor} ${!p ? 'border-dashed' : ''}`}>
                         {p ? (
                           <>
-                            <div className="relative w-6 h-6 shrink-0">
+                            <div
+                              className={`relative w-6 h-6 shrink-0 ${!isMe && mySide ? 'cursor-pointer active:scale-90' : ''}`}
+                              onClick={() => { if (!isMe && mySide) setActionTarget({ userId: p.userId, nickname: p.nickname, side }); }}
+                            >
                               <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
-                                <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                                <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover pointer-events-none" />
                               </div>
                               {p.userId === debate?.creator_id && (
                                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-50 text-[7px] text-[#D4AF37] bg-[#1a2744] px-1 py-0.5 rounded-full font-black leading-none border border-[#D4AF37]/40 whitespace-nowrap">방장</span>
