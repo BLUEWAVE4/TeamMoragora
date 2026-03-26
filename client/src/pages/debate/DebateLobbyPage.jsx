@@ -153,11 +153,19 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
         <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 shrink-0">
           <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
         </div>
-        <div className="flex-1 min-w-0">
-          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate block">{creatorName}</span>
-          <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold">{room.creator?.tier || '시민'}</span>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate">{creatorName}</span>
+          {(() => {
+            const tier = room.creator?.tier || '시민';
+            const colors = { '시민': '#8E8E93', '배심원': '#007AFF', '변호사': '#AF52DE', '판사': '#FF9500', '대법관': '#FF3B30' };
+            const bgs = { '시민': '#F5F5F7', '배심원': '#EBF5FF', '변호사': '#F9F0FF', '판사': '#FFF5EB', '대법관': '#FFF0EF' };
+            return <span className="text-[9px] font-black px-1.5 py-0.5 rounded shrink-0" style={{ color: colors[tier], backgroundColor: bgs[tier] }}>{tier}</span>;
+          })()}
         </div>
-        <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
+        <div className="flex items-center gap-2 shrink-0">
+          <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0"><polyline points="9 6 15 12 9 18"/></svg>
+        </div>
       </div>
 
       <div className="px-4">
