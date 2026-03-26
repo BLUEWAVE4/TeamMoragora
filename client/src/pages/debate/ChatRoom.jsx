@@ -972,15 +972,29 @@ const handleVote = (agree) => {
               })()}
             </div>
 
-            {/* 준비완료 버튼 (방장 제외) */}
-            {mySide && !isCreator && (
-              <button onClick={toggleReady}
-                className={`w-full py-3.5 rounded-2xl font-black text-[14px] transition-all active:scale-[0.97] border-2 ${
-                  myReady ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300' : 'bg-white/5 border-white/10 text-white/50'
-                }`}>
-                {myReady ? '준비완료' : '준비'}
-              </button>
-            )}
+            {/* 준비완료 버튼 (방장 제외) / 시민 안내 */}
+            {!isCreator && (() => {
+              const citizenList = Array.isArray(participants.citizen) ? participants.citizen : [];
+              const isMeCitizen = !mySide && citizenList.some(c => c.userId === user?.id);
+              if (isMeCitizen) {
+                return (
+                  <div className="w-full py-3.5 rounded-2xl border-2 border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center">
+                    <span className="text-[11px] text-[#D4AF37]/60 font-bold leading-snug">관전자는 시민 투표만 참여가 가능하고 채팅 참여는 불가합니다</span>
+                  </div>
+                );
+              }
+              if (mySide) {
+                return (
+                  <button onClick={toggleReady}
+                    className={`w-full py-3.5 rounded-2xl font-black text-[14px] transition-all active:scale-[0.97] border-2 ${
+                      myReady ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300' : 'bg-white/5 border-white/10 text-white/50'
+                    }`}>
+                    {myReady ? '준비완료' : '준비'}
+                  </button>
+                );
+              }
+              return null;
+            })()}
 
             {/* 방장: 게임 시작 버튼 (allReady 시 활성화) */}
             {isCreator && (
