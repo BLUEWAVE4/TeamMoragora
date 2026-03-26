@@ -980,10 +980,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                             onClick={() => handleToggleLike(c.id)}
                             className="w-11 h-11 flex items-center justify-center gap-0.5 transition-colors shrink-0"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c.is_liked ? 1 : 0.25}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : 'currentColor'} strokeWidth="2" className={c.is_liked ? '' : 'text-primary/30'}>
                               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                             </svg>
-                            {c.likes_count > 0 && <span className="text-[9px] text-[#1B2A4A]/30">{c.likes_count}</span>}
+                            {c.likes_count > 0 && <span className="text-[9px] text-primary/30">{c.likes_count}</span>}
                           </button>
                           {c._confirmDelete && (
                             <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))}>
