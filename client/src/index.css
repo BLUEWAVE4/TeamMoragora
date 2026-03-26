@@ -279,11 +279,13 @@ input, textarea, select {
 
 /* ===== 전역 스크롤바 숨김 (PC에서도 스크롤바 UI 안 보이게) ===== */
 *::-webkit-scrollbar {
-  display: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 * {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* 스크롤바 숨김 기능 (준민님 코드 유지) */
