@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback, getMyFeedbacks } from '../services/api';
 import MoragoraModal from '../components/common/MoragoraModal';
+import { useTheme } from '../store/ThemeContext';
 
 const RATING_ITEMS = [
   { key: 'satisfaction', label: '전반적 만족도', desc: '모라고라 서비스를 전반적으로 어떻게 평가하시나요?' },
@@ -25,7 +26,7 @@ const STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 1
 const STAR_W = 36;
 const STAR_GAP = 6;
 
-function StarRating({ id: ratingId, value, onChange }) {
+function StarRating({ id: ratingId, value, onChange, isDark }) {
   const [hover, setHover] = useState(0);
   const containerRef = useRef(null);
   const active = hover || value;
@@ -68,7 +69,7 @@ function StarRating({ id: ratingId, value, onChange }) {
         <svg width={totalW} height={STAR_W} viewBox={`0 0 ${totalW} ${STAR_W}`} className="absolute inset-0">
           {[0, 1, 2, 3, 4].map((i) => (
             <g key={i} transform={`translate(${i * (STAR_W + STAR_GAP)}, 0) scale(${STAR_W / 24})`}>
-              <path d={STAR_PATH} fill="#E5E7EB" />
+              <path d={STAR_PATH} fill={isDark ? '#3a4555' : '#E5E7EB'} />
             </g>
           ))}
         </svg>
@@ -109,7 +110,7 @@ function StarRating({ id: ratingId, value, onChange }) {
       {value > 0 && (
         <div className="flex flex-col items-start">
           <span className="text-base font-black text-[#FFBD43] leading-none">{value}</span>
-          <span className="text-[10px] text-gray-400 font-medium">{getLabel(value)}</span>
+          <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(224,221,213,0.5)' : '#9ca3af' }}>{getLabel(value)}</span>
         </div>
       )}
     </div>
@@ -117,6 +118,7 @@ function StarRating({ id: ratingId, value, onChange }) {
 }
 
 export default function FeedbackModal({ isOpen, onClose }) {
+  const { isDark } = useTheme();
   const [ratings, setRatings] = useState({
     satisfaction: 0, ai_accuracy: 0, ui_ease: 0, fairness: 0, recommend: 0,
   });
@@ -202,18 +204,19 @@ export default function FeedbackModal({ isOpen, onClose }) {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="w-full max-w-[440px] bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto shadow-xl pointer-events-auto"
+              className="w-full max-w-[440px] rounded-t-2xl max-h-[85vh] overflow-y-auto shadow-xl pointer-events-auto"
+              style={{ background: isDark ? '#1a2332' : '#fff' }}
               onClick={(e) => e.stopPropagation()}
             >
         {submitted ? (
           <div className="p-8 text-center">
             <div className="text-5xl mb-4">&#9989;</div>
-            <h3 className="text-xl font-black text-[#2D3350] mb-2">감사합니다!</h3>
-            <p className="text-sm text-gray-500 mb-2">
+            <h3 className="text-xl font-black mb-2" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>감사합니다!</h3>
+            <p className="text-sm mb-2" style={{ color: isDark ? 'rgba(224,221,213,0.5)' : '#6b7280' }}>
               평균 평점: <span className="font-bold text-[#FFBD43]">{avgScore}/5.0</span>
             </p>
-            <p className="text-sm text-gray-400 mb-6">소중한 피드백이 서비스 개선에 반영됩니다.</p>
-            <button onClick={handleClose} className="bg-[#2D3350] text-white px-8 py-3 rounded-2xl font-bold">
+            <p className="text-sm mb-6" style={{ color: isDark ? 'rgba(224,221,213,0.4)' : '#9ca3af' }}>소중한 피드백이 서비스 개선에 반영됩니다.</p>
+            <button onClick={handleClose} className="text-white px-8 py-3 rounded-2xl font-bold" style={{ background: isDark ? '#2a3a52' : '#2D3350' }}>
               확인
             </button>
           </div>
@@ -221,31 +224,46 @@ export default function FeedbackModal({ isOpen, onClose }) {
           <div className="p-6 pb-8">
             {/* 헤더 + 핸들바 */}
             <div className="flex justify-center mb-3 sm:hidden">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
+              <div className="w-10 h-1 rounded-full" style={{ background: isDark ? '#3a4555' : '#d1d5db' }} />
             </div>
             <div className="flex justify-between items-center mb-">
-              <h3 className="text-lg font-black text-[#2D3350]">서비스 평가</h3>
-              <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 text-lg">&times;</button>
+              <h3 className="text-lg font-black" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>서비스 평가</h3>
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-lg"
+                style={{ background: isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6', color: isDark ? 'rgba(224,221,213,0.5)' : '#9ca3af' }}
+              >
+                &times;
+              </button>
             </div>
-            <p className="text-xs text-gray-400 mb-5">
+            <p className="text-xs mb-5" style={{ color: isDark ? 'rgba(224,221,213,0.5)' : '#9ca3af' }}>
               모라고라 서비스 품질 향상을 위해 솔직한 평가를 부탁드립니다.
             </p>
 
             {/* 별점 항목 */}
             <div className="flex flex-col gap-1 mb-6">
               {RATING_ITEMS.map((item, idx) => (
-                <div key={item.key} className={`p-3 rounded-2xl ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                <div
+                  key={item.key}
+                  className="p-3 rounded-2xl"
+                  style={{
+                    background: idx % 2 === 0
+                      ? (isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb')
+                      : (isDark ? 'transparent' : '#fff'),
+                  }}
+                >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-black text-[#2D3350]">{item.label}</span>
+                    <span className="text-sm font-black" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>{item.label}</span>
                     {ratings[item.key] > 0 && (
                       <span className="text-[10px] bg-[#FFBD43]/15 text-[#FFBD43] font-bold px-1.5 py-0.5 rounded-full">{ratings[item.key]}</span>
                     )}
                   </div>
-                  <p className="text-[11px] text-gray-400 mb-2">{item.desc}</p>
+                  <p className="text-[11px] mb-2" style={{ color: isDark ? 'rgba(224,221,213,0.4)' : '#9ca3af' }}>{item.desc}</p>
                   <StarRating
                     id={item.key}
                     value={ratings[item.key]}
                     onChange={(v) => setRatings((prev) => ({ ...prev, [item.key]: v }))}
+                    isDark={isDark}
                   />
                 </div>
               ))}
@@ -253,7 +271,9 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 가장 좋았던 기능 */}
             <div className="mb-5">
-              <p className="text-sm font-black text-[#2D3350] mb-2">가장 좋았던 기능 <span className="text-gray-300 font-medium">(복수선택 가능)</span></p>
+              <p className="text-sm font-black mb-2" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>
+                가장 좋았던 기능 <span style={{ color: isDark ? 'rgba(224,221,213,0.3)' : '#d1d5db' }} className="font-medium">(복수선택 가능)</span>
+              </p>
               <div className="flex flex-wrap gap-2">
                 {BEST_FEATURES.map((feat) => {
                   const selected = bestFeatures.includes(feat);
@@ -264,11 +284,16 @@ export default function FeedbackModal({ isOpen, onClose }) {
                       onClick={() => setBestFeatures((prev) =>
                         selected ? prev.filter((f) => f !== feat) : [...prev, feat]
                       )}
-                      className={`text-xs px-3 py-2 rounded-xl border transition-colors ${
+                      className={`text-xs px-3 py-2 rounded-xl transition-colors ${
                         selected
-                          ? 'bg-[#2D3350] text-white border-[#2D3350]'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 active:border-gray-400'
+                          ? 'bg-[#2D3350] text-white border border-[#2D3350]'
+                          : ''
                       }`}
+                      style={!selected ? {
+                        background: isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb',
+                        color: isDark ? 'rgba(224,221,213,0.7)' : '#4b5563',
+                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
+                      } : undefined}
                     >
                       {feat}
                     </button>
@@ -279,27 +304,41 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* 개선점 */}
             <div className="mb-5">
-              <p className="text-sm font-black text-[#2D3350] mb-2">개선이 필요한 부분 <span className="text-gray-300 font-medium">(선택)</span></p>
+              <p className="text-sm font-black mb-2" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>
+                개선이 필요한 부분 <span style={{ color: isDark ? 'rgba(224,221,213,0.3)' : '#d1d5db' }} className="font-medium">(선택)</span>
+              </p>
               <textarea
                 value={improvement}
                 onChange={(e) => setImprovement(e.target.value)}
                 placeholder="불편했던 점이나 개선 아이디어를 알려주세요"
                 maxLength={500}
                 rows={3}
-                className="w-full p-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-[#2D3350]"
+                className="w-full p-3 rounded-xl text-sm resize-none focus:outline-none"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
+                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
+                  color: isDark ? '#e0ddd5' : '#1f2937',
+                }}
               />
             </div>
 
             {/* 추가 의견 */}
             <div className="mb-6">
-              <p className="text-sm font-black text-[#2D3350] mb-2">추가 의견 <span className="text-gray-300 font-medium">(선택)</span></p>
+              <p className="text-sm font-black mb-2" style={{ color: isDark ? '#e0ddd5' : '#2D3350' }}>
+                추가 의견 <span style={{ color: isDark ? 'rgba(224,221,213,0.3)' : '#d1d5db' }} className="font-medium">(선택)</span>
+              </p>
               <textarea
                 value={additional}
                 onChange={(e) => setAdditional(e.target.value)}
                 placeholder="자유롭게 의견을 남겨주세요"
                 maxLength={500}
                 rows={2}
-                className="w-full p-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-[#2D3350]"
+                className="w-full p-3 rounded-xl text-sm resize-none focus:outline-none"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
+                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
+                  color: isDark ? '#e0ddd5' : '#1f2937',
+                }}
               />
             </div>
 
@@ -307,11 +346,15 @@ export default function FeedbackModal({ isOpen, onClose }) {
             <button
               onClick={handleSubmit}
               disabled={!allRated || submitting}
-              className={`w-full py-4 rounded-2xl font-black text-sm transition-colors ${
-                allRated
-                  ? 'bg-[#2D3350] text-white active:bg-[#1a1f35]'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+              className="w-full py-4 rounded-2xl font-black text-sm transition-colors"
+              style={allRated ? {
+                background: isDark ? '#2a3a52' : '#2D3350',
+                color: '#fff',
+              } : {
+                background: isDark ? '#2a3344' : '#e5e7eb',
+                color: isDark ? 'rgba(224,221,213,0.3)' : '#9ca3af',
+                cursor: 'not-allowed',
+              }}
             >
               {submitting ? '제출 중...' : isEdit ? '평가 수정하기' : '평가 제출하기'}
             </button>
