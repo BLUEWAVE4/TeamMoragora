@@ -4,10 +4,10 @@ import {
   PolarAngleAxis, ResponsiveContainer
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../store/ThemeContext';
+import useThemeStore from '../store/useThemeStore';
 
 export default function LogicChartModal({ isOpen, onClose }) {
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
 
   // 이미지의 분석 데이터 반영
   const data = [

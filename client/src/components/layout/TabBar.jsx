@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { throttle } from '../../utils/perf';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Swords } from 'lucide-react';
 import { useAuth } from "../../store/AuthContext";
-import { useTheme } from "../../store/ThemeContext";
+import useThemeStore from "../../store/useThemeStore";
 import { getMyActiveDebates, deleteDebate } from "../../services/api";
 import MoragoraModal from '../common/MoragoraModal';
 
@@ -137,7 +138,7 @@ export default function TabBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
 
   const isLoggedIn = !!user;
   const isCreateActive = location.pathname === '/debate/create';
@@ -174,8 +175,8 @@ export default function TabBar() {
   // 로그인 상태 변경 시 + 페이지 이동 시 갱신
   useEffect(() => { fetchActiveDebates(); }, [fetchActiveDebates, location.pathname]);
 
-  // 스크롤 감지 → 추가 로드
-  const handleScroll = useCallback(() => {
+  // 스크롤 감지 → 추가 로드 (throttle 적용)
+  const handleScroll = useMemo(() => throttle(() => {
     if (!hasMore || loadingMore) return;
     const el = listRef.current;
     if (!el) return;
@@ -184,7 +185,7 @@ export default function TabBar() {
       const lastItem = activeDebates[activeDebates.length - 1];
       fetchActiveDebates(lastItem?.created_at).finally(() => setLoadingMore(false));
     }
-  }, [hasMore, loadingMore, activeDebates, fetchActiveDebates]);
+  }, 150), [hasMore, loadingMore, activeDebates, fetchActiveDebates]);
 
   // 바텀시트 바깥 클릭 닫기 + 외부 스크롤 차단
   useEffect(() => {

@@ -201,7 +201,7 @@ io.on('connection', (socket) => {
           userId: debate.creator_id,
           type: 'opponent_joined',
           title: '상대방이 논쟁에 참여했습니다!',
-          message: `"${debate.topic?.slice(0, 30)}" — ${nickname}님이 ${side}측으로 입장`,
+          message: `"${(debate.topic || '논쟁').slice(0, 30)}" — ${nickname || '익명'}님이 ${side}측으로 입장`,
           link: `/debate/${debateId}/chat`,
         }).catch(() => {});
       }
@@ -266,7 +266,7 @@ io.on('connection', (socket) => {
           const { createNotification } = await import('./src/services/notification.service.js');
           const targets = [debate.creator_id, debate.opponent_id].filter(Boolean);
           for (const uid of targets) {
-            await createNotification({ userId: uid, type: 'chat_start', title: '실시간 논쟁이 시작되었습니다!', message: `"${debate.topic?.slice(0, 30)}"`, link: `/debate/${debateId}/chat` });
+            await createNotification({ userId: uid, type: 'chat_start', title: '실시간 논쟁이 시작되었습니다!', message: `"${(debate.topic || '논쟁').slice(0, 30)}"`, link: `/debate/${debateId}/chat` });
           }
         }
       } catch { }

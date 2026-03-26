@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { useTheme } from '../../store/ThemeContext';
+import useThemeStore from '../../store/useThemeStore';
 
 /**
  * 모라고라 공통 모달
@@ -26,7 +26,7 @@ export default function MoragoraModal({
 }) {
   if (!isOpen) return null;
 
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
 
   const isSingleButton = type === 'error' || type === 'info';
   const defaultConfirmText = isSingleButton ? '확인'

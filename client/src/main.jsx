@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { AuthProvider } from './store/AuthContext';
-import { ThemeProvider } from './store/ThemeContext';
 import { BrowserRouter } from 'react-router-dom';
+import './store/useThemeStore'; // 초기 dark 클래스 동기화
 
 // 카카오 SDK 초기화
 if (window.Kakao && !window.Kakao.isInitialized()) {
@@ -14,11 +14,9 @@ if (window.Kakao && !window.Kakao.isInitialized()) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

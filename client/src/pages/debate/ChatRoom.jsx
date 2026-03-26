@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { throttle, debounce } from '../../utils/perf';
+import useSocketStore from '../../store/useSocketStore';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
@@ -50,6 +52,7 @@ export default function ChatRoom() {
   const { debateId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const socketConnected = useSocketStore(s => s.connected);
 
   const [gameStarted, setGameStarted] = useState(false);
   // participants: { A: [{userId, nickname, ready},...], B: [...] }
@@ -93,6 +96,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [opponentTyping, setOpponentTyping] = useState(false);
   const [opponentTypingNickname, setOpponentTypingNickname] = useState('');
   const typingTimeout = useRef(null);
+  const opponentTypingTimeout = useRef(null);
 
   const [chatEnded, setChatEnded] = useState(false);
   const [showEndOverlay, setShowEndOverlay] = useState(false);
@@ -372,10 +376,9 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     setOpponentTyping(typing);
     if (side) setOpponentTypingSide(side);
     if (nickname) setOpponentTypingNickname(nickname);
-    if (typing) { clearTimeout(window._typingTimeout); window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000); }
+    if (typing) { clearTimeout(opponentTypingTimeout.current); opponentTypingTimeout.current = setTimeout(() => setOpponentTyping(false), 3000); }
   });
     socket.on('already-in-room', ({ reason, activeDebateId }) => {
-      alert(reason);
       navigate(`/debate/${activeDebateId}/chat`);
     });
     socket.on('citizen-vote-tally', (tally) => {
@@ -500,7 +503,6 @@ socket.on('chat-auto-ended', () => {
 // ===== 채팅 종료/취소 =====
 socket.on('chat-ended', () => {
   sessionStorage.removeItem(`chat_session_${debateId}`);
-  if (endTriggered.current) return;
   endTriggered.current = true;
   setChatEnded(true);
   setMessages(prev => [...prev, {
@@ -515,14 +517,13 @@ socket.on('chat-ended', () => {
 
 socket.on('chat-cancelled', () => {
   sessionStorage.removeItem(`chat_session_${debateId}`);
-  if (endTriggered.current) return;
   endTriggered.current = true;
   setChatEnded(true);
   setIsCancelled(true);
   setMessages(prev => [...prev, {
     id: `sys-cancelled-${Date.now()}`,
     type: 'system',
-    content: '이 논쟁은 진행이 취소되었습니다.',
+    content: '채팅 내용이 없어 논쟁이 취소되었습니다.',
     created_at: new Date().toISOString(),
   }]);
   setTimeout(() => setShowEndOverlay(true), 500);
@@ -766,14 +767,20 @@ const handleVote = (agree) => {
   if (!agree) setTimeChangeRequest(null);
 };
 
-  // ===== 타이머 종료 =====
+  // ===== 타이머 종료 (서버 판정 대기 — navigate 하지 않음) =====
   useEffect(() => {
     if (timeLeft === 0 && !endTriggered.current) {
       endTriggered.current = true;
       setChatEnded(true);
-      sessionStorage.removeItem(`chat_session_${debateId}`); // ← 추가
+      sessionStorage.removeItem(`chat_session_${debateId}`);
       setTimeout(() => setShowEndOverlay(true), 500);
-      setTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
+      // 서버 이벤트(chat-ended / chat-cancelled)가 navigate 결정
+      // fallback: 10초 내 서버 응답 없으면 로비로 이동
+      const fallback = setTimeout(() => navigate('/debate/lobby'), 10000);
+      const clear = () => clearTimeout(fallback);
+      socket.on('chat-ended', clear);
+      socket.on('chat-cancelled', clear);
+      return () => { clearTimeout(fallback); socket.off('chat-ended', clear); socket.off('chat-cancelled', clear); };
     }
   }, [timeLeft, debateId, navigate]);
 
@@ -781,13 +788,13 @@ const handleVote = (agree) => {
     if (isNearBottom.current) msgEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, opponentTyping]);
 
-  const handleScroll = useCallback(() => {
+  const handleScroll = useMemo(() => throttle(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
     isNearBottom.current = dist < SCROLL_THRESHOLD;
     if (isNearBottom.current) setShowNewMsgBtn(false);
-  }, []);
+  }, 100), []);
 
   useEffect(() => {
     if (!window.visualViewport) return;
@@ -799,13 +806,18 @@ const handleVote = (agree) => {
     return () => window.visualViewport.removeEventListener('resize', onResize);
   }, []);
 
+  // 타이핑 상태 emit을 300ms debounce — 매 키입력마다 emit 방지
+  const emitTyping = useMemo(() => debounce((dId, uId, side) => {
+    socket.emit('typing', { debateId: dId, userId: uId, typing: true, side });
+  }, 300), []);
+
   const handleTextChange = useCallback((e) => {
     setText(e.target.value);
     setMsgError('');
-    socket.emit('typing', { debateId, userId: user.id, typing: true, side: mySide });
+    emitTyping(debateId, user.id, mySide);
     clearTimeout(typingTimeout.current);
     typingTimeout.current = setTimeout(() => socket.emit('typing', { debateId, userId: user.id, typing: false, side: mySide }), 1500);
-  }, [debateId, user, mySide]);
+  }, [debateId, user, mySide, emitTyping]);
 
   const handleSend = useCallback(async () => {
     const trimmed = text.trim();
@@ -883,6 +895,21 @@ const handleVote = (agree) => {
 
   return (
     <div className="flex overflow-hidden flex-col bg-[#0f1829]" style={{ height: 'calc(100dvh - var(--tab-h, 60px))', paddingBottom: keyboardHeight }}>
+
+      {/* 소켓 연결 끊김 배너 */}
+      <AnimatePresence>
+        {!socketConnected && gameStarted && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-amber-500 flex items-center justify-center gap-2 px-4 py-2 z-50"
+          >
+            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="text-white text-xs font-bold">연결이 끊어졌습니다. 재연결 시도 중...</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
       {!loading && !gameStarted && (

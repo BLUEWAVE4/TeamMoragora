@@ -50,9 +50,48 @@
 | `client/src/services/api.js` | (기존 변경 포함) |
 | `server/server.js` | kickedUsers/kickSkipTimers 추가, handlePostKick 헬퍼, participant-joined 이벤트 |
 
+### 6. 논쟁 생성 — 타이프라이터 플레이스홀더
+- 주제 입력 필드에 38개 랜덤 주제가 타이핑→삭제→다음 주제 애니메이션으로 순환
+- 카테고리: 연애(자극적 깻잎류), 사회, 결혼, 경제, 철학, 생활과학
+- `useTypewriter` 커스텀 훅 (typeSpeed 60ms, deleteSpeed 30ms, pause 1.5s)
+- 포커스/입력 시 애니메이션 정지, 커서 깜빡임 포함
+
+### 7. 실시간 채팅 무메시지 무효처리 버그 수정
+- **원인**: 클라이언트 타이머가 서버보다 먼저 `endTriggered=true` 세팅 + 판결 페이지로 navigate → 서버의 `chat-cancelled` 이벤트가 가드에 의해 무시됨
+- **수정**: 타이머 만료 시 직접 navigate 제거, 서버 이벤트(`chat-ended`/`chat-cancelled`) 대기 방식으로 변경
+  - `chat-ended` → 판결 페이지 이동
+  - `chat-cancelled` → 로비로 이동
+  - fallback: 10초 내 서버 응답 없으면 로비 이동
+
+### 8. 홈피드 로딩 레이턴시 최적화
+- **서버 쿼리 최적화**:
+  - `getDailyVerdicts`: 100개 fetch+JS필터 → inner join `.eq('debate.mode','daily')` + limit 직접 적용 (95% 데이터 감소)
+  - `getVerdictFeed`: JS mode/category 필터 → DB 레벨 `.not('debate.mode','in','("daily","chat")')` + `.eq('debate.category')` + DB 페이지네이션
+  - `enrichWithCounts` 헬퍼 분리
+- **클라이언트 N+1 제거**:
+  - DebateCard: 카드당 좋아요수/댓글수/조회수/투표수 개별 fetch 4건 제거 → 서버 응답값(`likes_count`, `comments_count`, `views_count`) 사용
+  - TodayDebate: `getVoteTally` 개별 호출 제거 → `citizen_score_a/b` 초기값 사용
+  - **피드 5개 기준 ~25개 → ~5개 네트워크 요청으로 감소**
+- **세션 토큰 캐싱**: axios interceptor에서 매 요청마다 `getSession()` 호출 → 만료 30초 전까지 캐시 히트
+
+### 9. TodayDebate 인디케이터 여백 조정
+- 카드-인디케이터 간격 축소 (`-mt-5`), 전체 하단 패딩 축소 (`pb-1`)
+
+## 수정된 파일 목록 (이번 세션 추가분)
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `client/src/components/debate/Step1Topic.jsx` | `useTypewriter` 훅 + 38개 랜덤 주제 타이프라이터 플레이스홀더 |
+| `client/src/components/common/Input.jsx` | `onFocus`/`onBlur` prop 전달 지원 |
+| `client/src/pages/debate/ChatRoom.jsx` | 타이머 만료 시 서버 이벤트 대기 방식으로 변경 |
+| `client/src/components/home/DebateCard.jsx` | N+1 쿼리 제거 (좋아요/댓글/조회수/투표 개별 fetch → 서버 응답값) |
+| `client/src/components/home/TodayDebate.jsx` | `getVoteTally` 제거 + 인디케이터 여백 조정 |
+| `client/src/services/api.js` | 세션 토큰 캐싱 (`onAuthStateChange` + 만료 체크) |
+| `server/src/controllers/judgment.controller.js` | DB 레벨 mode/category 필터 + `enrichWithCounts` 헬퍼 |
+
 ## 현재 상태
 
-- **브랜치**: master
+- **브랜치**: develop
 - **DB**: 추가 마이그레이션 없음
 
 ## 미해결 / 후속 작업

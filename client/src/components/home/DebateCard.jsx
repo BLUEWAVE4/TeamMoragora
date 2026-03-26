@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
-import { castVote, getVoteTally, cancelVote, incrementDebateView } from '../../services/api';
+import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
-import { useTheme } from '../../store/ThemeContext';
+import CommentBottomSheet from '../common/CommentBottomSheet';
+import useThemeStore from '../../store/useThemeStore';
 
 function useVoteCountdown(createdAt, voteDuration) {
   const [timeLeft, setTimeLeft] = useState(null);
@@ -31,9 +32,9 @@ function useVoteCountdown(createdAt, voteDuration) {
   return timeLeft;
 }
 
-export default function DebateCard({ feed, formatTime }) {
+function DebateCard({ feed, formatTime }) {
   const { user } = useAuth();
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
   const navigate = useNavigate();
 
   const debateData = feed?.debate || feed || {};
@@ -79,47 +80,16 @@ export default function DebateCard({ feed, formatTime }) {
   const [isVoting, setIsVoting] = useState(false);
 
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  // 서버에서 내려준 좋아요 수 사용
+  const [likeCount, setLikeCount] = useState(feed?.likes_count ?? 0);
   const [isLiking, setIsLiking] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [isSendingComment, setIsSendingComment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
   const showModal = (title, description) => setModalState({ isOpen: true, title, description });
   const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
-  const [localCommentCount, setLocalCommentCount] = useState(0);
-  const [sideUsers, setSideUsers] = useState({ A: null, B: null });
-  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
-  const commentInputRef = useRef(null);
-
-  const [viewCount, setViewCount] = useState(0);
-
-  useEffect(() => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchViewCount = async () => {
-      try {
-        const { count } = await supabase
-          .from('page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('path', `/moragora/${debateId}`);
-        setViewCount(count ?? 0);
-      } catch (e) { console.log('조회수 fetch 실패:', e); }
-    };
-    fetchViewCount();
-  }, [feed?.debate_id, debateData?.id]);
-
-  const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
-  useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
-        if (data?.gender) setMyGender(data.gender);
-      });
-  }, [user]);
+  const [localCommentCount, setLocalCommentCount] = useState(feed?.comments_count ?? 0);
+  const [viewCount, setViewCount] = useState(feed?.views_count ?? debateData?.view_count ?? 0);
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -131,71 +101,13 @@ export default function DebateCard({ feed, formatTime }) {
     '기타': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
   };
 
+  // 내가 좋아요 했는지 서버 API로 조회
   useEffect(() => {
     const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchVoteCounts = async () => {
-      try {
-        const res = await getVoteTally(debateId);
-        setVoteCounts({ agree: res?.A ?? 0, disagree: res?.B ?? 0 });
-      } catch (err) { console.log('에러:', err); }
-    };
-    fetchVoteCounts();
-  }, [feed?.debate_id, debateData?.id]);
-
-  useEffect(() => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchLikeData = async () => {
-      try {
-        const { count } = await supabase.from('debate_likes').select('*', { count: 'exact', head: true }).eq('debate_id', debateId);
-        setLikeCount(count ?? 0);
-        if (user) {
-          const { data } = await supabase.from('debate_likes').select('id').eq('debate_id', debateId).eq('user_id', user.id).maybeSingle();
-          setLiked(!!data);
-        }
-      } catch (e) { console.log('좋아요 실패:', e); }
-    };
-    fetchLikeData();
+    if (!debateId || !user) return;
+    api.get(`/debates/${debateId}/like/me`).then(res => setLiked(!!res?.liked)).catch(() => {});
   }, [feed?.debate_id, debateData?.id, user]);
 
-  useEffect(() => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!debateId) return;
-    const fetchCommentCount = async () => {
-      try {
-        const { count } = await supabase.from('comments').select('*', { count: 'exact', head: true }).eq('debate_id', debateId);
-        setLocalCommentCount(count ?? 0);
-      } catch (e) { console.log('댓글 실패:', e); }
-    };
-    fetchCommentCount();
-  }, [feed?.debate_id, debateData?.id]);
-
-  useEffect(() => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!isCommentOpen || !debateId) return;
-    const fetchComments = async () => {
-      try {
-        const { getComments: fetchComments } = await import('../../services/api');
-        const [data, { data: args }] = await Promise.all([
-          fetchComments(debateId),
-          supabase.from('arguments').select('side, user_id').eq('debate_id', debateId),
-        ]);
-        const mapped = (data || []).map(c => ({ ...c, profiles: c.user, _liked: c.is_liked, _likeCount: c.like_count || 0 }));
-        setComments(mapped);
-        setLocalCommentCount(data?.length ?? 0);
-        if (args) {
-          const a = args.find(x => x.side === 'A');
-          const b = args.find(x => x.side === 'B');
-          const aId = a?.user_id || null;
-          const bId = b?.user_id || null;
-          setSideUsers({ A: aId, B: aId === bId ? null : bId });
-        }
-      } catch (e) { console.log('댓글 fetch 실패:', e); }
-    };
-    fetchComments();
-    setTimeout(() => commentInputRef.current?.focus(), 300);
-  }, [isCommentOpen, feed?.debate_id, debateData?.id]);
 
   if (!feed) return null;
 
@@ -263,26 +175,8 @@ export default function DebateCard({ feed, formatTime }) {
     setLikeCount(prev => prevLiked ? Math.max(0, prev - 1) : prev + 1);
     setIsLiking(true);
     try {
-      if (prevLiked) await supabase.from('debate_likes').delete().eq('debate_id', debateId).eq('user_id', user.id);
-      else await supabase.from('debate_likes').insert({ debate_id: debateId, user_id: user.id });
+      await toggleDebateLike(debateId);
     } catch (err) { setLiked(prevLiked); setLikeCount(prevCount); } finally { setIsLiking(false); }
-  };
-
-  const handleSendComment = async () => {
-    const debateId = feed?.debate_id || debateData?.id;
-    if (!user || !commentText.trim() || isSendingComment) return;
-    setIsSendingComment(true);
-    try {
-      const { data, error } = await supabase.from('comments').insert({
-        debate_id: debateId,
-        user_id: user.id,
-        content: commentText.trim(),
-      }).select('*, profiles(nickname, gender, avatar_url)').single();
-      if (error) throw error;
-      setComments(prev => [...prev, data]);
-      setCommentText('');
-      setLocalCommentCount(prev => prev + 1);
-    } catch (e) { showModal('댓글 작성에 실패했습니다', '잠시 후 다시 시도해주세요.'); } finally { setIsSendingComment(false); }
   };
 
   const handleDetailClick = async () => {
@@ -294,30 +188,14 @@ export default function DebateCard({ feed, formatTime }) {
       sessionStorage.setItem(viewKey, 'true');
       setViewCount(prev => prev + 1);
       try {
-        await supabase.from('page_views').insert({
-          path: `/moragora/${debateId}`,
-          user_id: user?.id ?? null,
-          session_id: crypto.randomUUID(),
-        });
+        await incrementDebateView(debateId);
       } catch (e) {
-        console.error('❌ 조회수 기록 실패:', e);
         sessionStorage.removeItem(viewKey);
       }
     }
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }
     });
-  };
-
-  const formatCommentTime = (iso) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = Math.floor((now - d) / 60000);
-    if (diff < 1) return '방금';
-    if (diff < 60) return `${diff}분 전`;
-    if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`;
-    return `${d.getMonth() + 1}.${d.getDate()}`;
   };
 
   return (
@@ -478,150 +356,12 @@ export default function DebateCard({ feed, formatTime }) {
         </div>
       </div>
 
-      {/* 시민 의견 바텀시트 */}
-      <AnimatePresence>
-        {isCommentOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200]" />
-            <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
-              <motion.div
-                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                className="w-full max-w-[440px] bg-gradient-to-b from-[#F5F0E8] to-white rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto"
-              >
-                <div className="flex-shrink-0 px-5 pt-3 pb-3 border-b border-[#D4AF37]/10">
-                  <div className="w-10 h-1 bg-[#1B2A4A]/10 rounded-full mx-auto mb-3" />
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[14px] font-bold text-[#1B2A4A]">시민 의견 <span className="text-[11px] text-[#1B2A4A]/40 ml-1">{localCommentCount}개</span></h3>
-                    <button onClick={() => setIsCommentOpen(false)} className="text-[#1B2A4A]/30 text-[12px] font-bold">닫기</button>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-                  {comments.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-[13px] text-[#1B2A4A]/30">아직 의견이 없습니다</p>
-                      <p className="text-[11px] text-[#1B2A4A]/20 mt-1">이 판결에 대한 의견을 남겨보세요</p>
-                    </div>
-                  ) : (
-                    comments.map((c) => {
-                      const nickname = c.profiles?.nickname || '익명';
-                      const isMine = user?.id === c.user_id;
-                      return (
-                        <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                            <img
-                              src={c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender) || DEFAULT_AVATAR_ICON}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
-                            <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
-                              <span className="text-[12px] font-bold text-[#1B2A4A]">{nickname}</span>
-                              {c.user_id === sideUsers.A && (
-                                <span className="text-[9px] text-white bg-emerald-500 px-1.5 py-0.5 rounded-full font-bold">A측</span>
-                              )}
-                              {c.user_id === sideUsers.B && (
-                                <span className="text-[9px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold">B측</span>
-                              )}
-                              <span className="text-[10px] text-[#1B2A4A]/25">{formatCommentTime(c.created_at)}</span>
-                            </div>
-                            <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
-                              <div
-                                className={`px-3 py-2 rounded-2xl max-w-[75%] ${isMine ? 'bg-[#1B2A4A]/8 rounded-tr-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm'} ${isMine ? 'active:bg-[#1B2A4A]/15' : ''} transition-colors`}
-                                onContextMenu={(e) => { if (isMine) { e.preventDefault(); setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: true } : x)); } }}
-                                onTouchStart={isMine ? (() => { c._longPress = setTimeout(() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: true } : x)), 500); }) : undefined}
-                                onTouchEnd={isMine ? (() => clearTimeout(c._longPress)) : undefined}
-                                onTouchMove={isMine ? (() => clearTimeout(c._longPress)) : undefined}
-                              >
-                                <p className="text-[12px] text-[#1B2A4A]/70 leading-[1.6] break-words text-left">{c.content}</p>
-                              </div>
-                              <button
-                                aria-label="좋아요"
-                                onClick={async () => {
-                                  if (c._liking) return;
-                                  const liked = c._liked;
-                                  setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: !liked, _likeCount: (x._likeCount || 0) + (liked ? -1 : 1), _liking: true } : x));
-                                  try {
-                                    const { toggleCommentLike } = await import('../../services/api');
-                                    await toggleCommentLike(c.id);
-                                  } catch {
-                                    setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liked: liked, _likeCount: (x._likeCount || 0) + (liked ? 1 : -1) } : x));
-                                  } finally {
-                                    setComments(prev => prev.map(x => x.id === c.id ? { ...x, _liking: false } : x));
-                                  }
-                                }}
-                                className="w-11 h-11 flex items-center justify-center gap-0.5 transition-colors shrink-0"
-                              >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill={c._liked ? '#E63946' : 'none'} stroke={c._liked ? '#E63946' : '#1B2A4A'} strokeWidth="2" opacity={c._liked ? 1 : 0.25}>
-                                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                                {(c._likeCount || 0) > 0 && <span className="text-[9px] text-[#1B2A4A]/30">{c._likeCount}</span>}
-                              </button>
-                              {c._confirmDelete && (
-                                <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))}>
-                                  <div className="bg-white rounded-2xl p-5 w-[280px] text-center shadow-xl" onClick={e => e.stopPropagation()}>
-                                    <p className="text-[14px] font-bold text-[#1B2A4A] mb-1">의견 삭제</p>
-                                    <p className="text-[12px] text-[#1B2A4A]/50 mb-4">이 의견을 삭제하시겠습니까?</p>
-                                    <div className="flex gap-2">
-                                      <button onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-[#1B2A4A]/50 bg-gray-100">취소</button>
-                                      <button onClick={async () => {
-                                        try {
-                                          const { deleteComment } = await import('../../services/api');
-                                          await deleteComment(c.id);
-                                          setComments(prev => prev.filter(x => x.id !== c.id));
-                                          setLocalCommentCount(prev => prev - 1);
-                                        } catch {}
-                                      }} className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#E63946]">삭제</button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="flex-shrink-0 px-4 py-3 border-t border-[#D4AF37]/10 flex items-center gap-2" style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
-                  {user && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1B2A4A]/10 shrink-0">
-                      <img
-                        src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <input
-                    ref={commentInputRef}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }}
-                    placeholder={user ? "의견을 입력하세요..." : "로그인 후 의견을 남길 수 있어요"}
-                    disabled={!user}
-                    maxLength={500}
-                    className="flex-1 h-9 bg-[#1B2A4A]/5 rounded-full px-4 text-[12px] text-[#1B2A4A] placeholder:text-[#1B2A4A]/25 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
-                  />
-                  <button
-                    onClick={handleSendComment}
-                    disabled={!commentText.trim() || isSendingComment || !user}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                      commentText.trim() ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37]/20 text-[#D4AF37]/40'
-                    }`}
-                  >
-                    {isSendingComment
-                      ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      : <span className="text-[14px] font-bold">↑</span>
-                    }
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+      <CommentBottomSheet
+        isOpen={isCommentOpen}
+        onClose={() => setIsCommentOpen(false)}
+        debateId={feed?.debate_id || debateData?.id}
+        onCountChange={setLocalCommentCount}
+      />
       <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
       <MoragoraModal
         isOpen={modalState.isOpen}
@@ -633,3 +373,5 @@ export default function DebateCard({ feed, formatTime }) {
     </>
   );
 }
+
+export default React.memo(DebateCard);

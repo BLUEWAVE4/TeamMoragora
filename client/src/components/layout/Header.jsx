@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { throttle } from '../../utils/perf';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
-import { useTheme } from '../../store/ThemeContext';
+import useThemeStore from '../../store/useThemeStore';
+import useNotifStore from '../../store/useNotifStore';
 import { Sun, Moon } from 'lucide-react';
 import {
   getNotifications,
@@ -145,7 +147,8 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
+  const toggleTheme = useThemeStore(s => s.toggleTheme);
   const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,7 +157,8 @@ export default function Header() {
 
   const [showNotif, setShowNotif] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const unreadCount = useNotifStore(s => s.unreadCount);
+  const setUnreadCount = useNotifStore(s => s.setUnreadCount);
   const notifRef = useRef(null);
 
   const pathname = location.pathname;
@@ -168,17 +172,18 @@ export default function Header() {
     setShowNotif(false);
   }, [pathname]);
 
+  const handleScroll = useMemo(() => throttle(() => {
+    const currentY = window.scrollY;
+    if (currentY < 10) setVisible(true);
+    else if (currentY > lastScrollY.current + 5) setVisible(false);
+    else if (currentY < lastScrollY.current - 5) setVisible(true);
+    lastScrollY.current = currentY;
+  }, 100), []);
+
   useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      if (currentY < 10) setVisible(true);
-      else if (currentY > lastScrollY.current + 5) setVisible(false);
-      else if (currentY < lastScrollY.current - 5) setVisible(true);
-      lastScrollY.current = currentY;
-    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   useEffect(() => {
     if (!user) return;

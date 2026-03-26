@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback, getMyFeedbacks } from '../services/api';
 import MoragoraModal from '../components/common/MoragoraModal';
-import { useTheme } from '../store/ThemeContext';
+import useThemeStore from '../store/useThemeStore';
 
 const RATING_ITEMS = [
   { key: 'satisfaction', label: '전반적 만족도', desc: '모라고라 서비스를 전반적으로 어떻게 평가하시나요?' },
@@ -118,7 +118,7 @@ function StarRating({ id: ratingId, value, onChange, isDark }) {
 }
 
 export default function FeedbackModal({ isOpen, onClose }) {
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
   const [ratings, setRatings] = useState({
     satisfaction: 0, ai_accuracy: 0, ui_ease: 0, fairness: 0, recommend: 0,
   });

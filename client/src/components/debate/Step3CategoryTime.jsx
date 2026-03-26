@@ -91,7 +91,7 @@ export default function Step3CategoryTime({
           {/* BUTTON */}
           <div className="flex gap-3">
             <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-            <Button onClick={() => setIsModalOpen(true)} className="w-full">논쟁 생성</Button>
+            <Button onClick={() => setIsModalOpen(true)} className="w-full" autoFocus>논쟁 생성</Button>
           </div>
         </>
       ) : (
@@ -162,7 +162,7 @@ export default function Step3CategoryTime({
           {/* BUTTON */}
           <div className="flex gap-3">
             <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-            <Button onClick={handleStart} className="w-full">논쟁 생성</Button>
+            <Button onClick={handleStart} className="w-full" autoFocus>논쟁 생성</Button>
           </div>
         </>
       )}
@@ -178,6 +178,7 @@ export default function Step3CategoryTime({
             className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl bg-white"
             style={{ animation: 'modal-pop 0.2s ease-out' }}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           >
             <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2a3f6a] px-5 py-3">
               <p className="text-[13px] font-extrabold text-[#D4AF37] tracking-[0.05em]">논쟁 생성 확인</p>
@@ -213,6 +214,7 @@ export default function Step3CategoryTime({
               </button>
               <button
                 onClick={handleSubmit}
+                autoFocus
                 className="flex-1 py-3 rounded-xl font-extrabold text-[14px] bg-[#D4AF37] text-[#1B2A4A] border-2 border-[#D4AF37]/50 active:scale-95 transition-all"
               >
                 논쟁 생성

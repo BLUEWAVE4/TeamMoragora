@@ -6,6 +6,8 @@ const Input = ({
   value,
   onChange,
   onKeyDown,
+  onFocus,
+  onBlur,
   type = "text",
   multiline = false,
   rows = 6,
@@ -81,6 +83,8 @@ const Input = ({
             value={value}
             onChange={onChange}
             onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
             placeholder={placeholder}
             enterKeyHint="next"
             className={`${sharedClasses} ${variantClasses}`}

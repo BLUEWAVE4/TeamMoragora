@@ -224,9 +224,10 @@ export default function Step2PurposeLens({
       {/* ── 하단 버튼 ── */}
       <div className="flex gap-3">
         <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-        <Button 
-         onClick={handleNext} // 부모에서 mode에 따라 handleSubmit 또는 nextStep이 전달됨
+        <Button
+         onClick={handleNext}
          className="w-full"
+         autoFocus
         >
         {/* 🔥 조건부 텍스트 적용 */}
          {isLastStep ? "방 생성 및 입장" : "다음"}

@@ -321,3 +321,28 @@ export async function joinByInvite(req, res, next) {
   }
 }
 
+// ===== 좋아요 토글 =====
+export async function toggleLike(req, res, next) {
+  try {
+    const debateId = req.params.id;
+    const userId = req.user.id;
+    const { data: existing } = await supabaseAdmin
+      .from('debate_likes').select('id').eq('debate_id', debateId).eq('user_id', userId).maybeSingle();
+    if (existing) {
+      await supabaseAdmin.from('debate_likes').delete().eq('id', existing.id);
+      res.json({ liked: false });
+    } else {
+      await supabaseAdmin.from('debate_likes').insert({ debate_id: debateId, user_id: userId });
+      res.json({ liked: true });
+    }
+  } catch (err) { next(err); }
+}
+
+// ===== 내 좋아요 여부 =====
+export async function getMyLikeStatus(req, res, next) {
+  try {
+    const { data } = await supabaseAdmin
+      .from('debate_likes').select('id').eq('debate_id', req.params.id).eq('user_id', req.user.id).maybeSingle();
+    res.json({ liked: !!data });
+  } catch (err) { next(err); }
+}

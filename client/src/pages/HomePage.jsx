@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { throttle } from '../utils/perf';
 import { useSearchParams } from 'react-router-dom';
 import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import TodayDebate from '../components/home/TodayDebate';
@@ -67,16 +68,36 @@ export default function HomePage() {
     }
   }, [filter]);
 
-  // 초기 로드 + daily
+  // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
   useEffect(() => {
+    const CACHE_KEY = 'home_cache';
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
+      if (cached?.feeds && cached?.daily) {
+        setFeeds(cached.feeds);
+        setDailyItems(cached.daily);
+        setHasNext(cached.hasNext ?? false);
+        hasNextRef.current = cached.hasNext ?? false;
+        setLoading(false);
+      }
+    } catch {}
+
     const init = async () => {
-      setLoading(true);
-      const [_, dailyRes] = await Promise.all([
-        loadFeeds('전체', false),
-        getDailyVerdicts(5).catch(() => []),
+      if (feeds.length === 0) setLoading(true);
+      const [feedResult, dailyResult] = await Promise.allSettled([
+        getVerdictFeed(1, 5),
+        getDailyVerdicts(5),
       ]);
-      setDailyItems(dailyRes || []);
+      const freshFeeds = feedResult.status === 'fulfilled' ? feedResult.value?.data ?? [] : [];
+      const freshDaily = dailyResult.status === 'fulfilled' ? dailyResult.value || [] : [];
+      const freshHasNext = feedResult.status === 'fulfilled' ? feedResult.value?.hasNext ?? false : false;
+      setFeeds(freshFeeds);
+      setDailyItems(freshDaily);
+      setHasNext(freshHasNext);
+      hasNextRef.current = freshHasNext;
+      pageRef.current = 1;
       setLoading(false);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ feeds: freshFeeds, daily: freshDaily, hasNext: freshHasNext }));
     };
     init();
   }, []);
@@ -86,22 +107,18 @@ export default function HomePage() {
     loadFeeds(filter, false, searchQuery || null);
   }, [filter, searchQuery, loadFeeds]);
 
-  // 스크롤 이벤트
+  // 스크롤 이벤트 (throttle 적용)
+  const handleScroll = useMemo(() => throttle(() => {
+    const distanceFromBottom = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+    if (distanceFromBottom < 200 && hasNextRef.current && !loadingMoreRef.current) {
+      loadMore();
+    }
+  }, 150), [loadMore]);
+
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      const distanceFromBottom = docHeight - scrollTop - windowHeight;
-
-      if (distanceFromBottom < 200 && hasNextRef.current && !loadingMoreRef.current) {
-        loadMore();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMore]);
+  }, [handleScroll]);
 
 
   const getProcessedFeeds = () => {

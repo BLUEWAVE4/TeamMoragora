@@ -326,18 +326,17 @@ export async function getDailyVerdicts(req, res, next) {
   try {
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
 
-    // daily 모드만 가져오기 위해 넉넉하게 조회 후 필터
+    // DB 레벨에서 daily 모드 필터링
     const { data, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .select('*, debate:debates!inner(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .eq('debate.mode', 'daily')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(limit);
 
     if (error) throw error;
 
-    const dailyItems = (data || []).filter(v => v.debate?.mode === 'daily').slice(0, limit);
-
-    res.json(dailyItems);
+    res.json(data || []);
   } catch (err) {
     next(err);
   }
@@ -420,59 +419,75 @@ export async function getVerdictFeed(req, res, next) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // 넉넉하게 가져와서 필터
-    const fetchLimit = search ? 200 : to + 50;
-    const { data: rawData, error } = await supabaseAdmin
+    // DB 레벨에서 mode 필터 + 카테고리 필터 (inner join)
+    let query = supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, vote_duration, created_at, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
-      .order('created_at', { ascending: false })
-      .range(0, fetchLimit);
+      .select('*, debate:debates!inner(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, vote_duration, created_at, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .not('debate.mode', 'in', '("daily","chat")')
+      .order('created_at', { ascending: false });
 
-    if (error) throw error;
-
-    // daily 모드 제외 + 카테고리 + 검색 필터
-    let filtered = (rawData || []).filter(v => v.debate?.mode !== 'daily' && v.debate?.mode !== 'chat');
     if (category) {
-      filtered = filtered.filter(v => v.debate?.category === category);
+      query = query.eq('debate.category', category);
     }
+
+    // 검색이 있으면 넉넉히 가져와서 JS 필터 (topic/nickname 복합 검색)
     if (search) {
+      const fetchLimit = 200;
+      const { data: rawData, error } = await query.range(0, fetchLimit);
+      if (error) throw error;
+
       const q = search.toLowerCase();
-      filtered = filtered.filter(v => {
+      const filtered = (rawData || []).filter(v => {
         const topic = (v.debate?.topic || '').toLowerCase();
         const creator = (v.debate?.creator?.nickname || '').toLowerCase();
         return topic.includes(q) || creator.includes(q);
       });
-    }
-    const data = filtered.slice(from, to + 1);
-    const count = filtered.length;
+      const data = filtered.slice(from, to + 1);
+      const count = filtered.length;
 
-    // 댓글수 + 좋아요수 일괄 조회
-    const debateIds = data.map(v => v.debate_id).filter(Boolean);
-    let commentMap = {}, likeMap = {};
-    if (debateIds.length > 0) {
-      const [{ data: comments }, { data: likes }] = await Promise.all([
-        supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
-        supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
-      ]);
-      (comments || []).forEach(c => { commentMap[c.debate_id] = (commentMap[c.debate_id] || 0) + 1; });
-      (likes || []).forEach(l => { likeMap[l.debate_id] = (likeMap[l.debate_id] || 0) + 1; });
+      const enriched = await enrichWithCounts(data);
+      return res.json({ data: enriched, page, limit, total: count, hasNext: to < count - 1 });
     }
 
-    const enriched = data.map(v => ({
-      ...v,
-      comments_count: commentMap[v.debate_id] || 0,
-      likes_count: likeMap[v.debate_id] || 0,
-      views_count: v.debate?.view_count || 0,
-    }));
+    // 검색 없으면 DB 페이지네이션 직접 사용
+    let countQuery = supabaseAdmin
+      .from('verdicts')
+      .select('*, debate:debates!inner(mode, category)', { count: 'exact', head: true })
+      .not('debate.mode', 'in', '("daily","chat")');
+    if (category) countQuery = countQuery.eq('debate.category', category);
 
-    res.json({
-      data: enriched,
-      page,
-      limit,
-      total: count,
-      hasNext: to < count - 1,
-    });
+    const [{ data, error }, { count }] = await Promise.all([
+      query.range(from, to),
+      countQuery,
+    ]);
+
+    if (error) throw error;
+
+    const enriched = await enrichWithCounts(data || []);
+    res.json({ data: enriched, page, limit, total: count || 0, hasNext: to < (count || 0) - 1 });
   } catch (err) {
     next(err);
   }
+}
+
+// 댓글수 + 좋아요수 일괄 조회 헬퍼
+async function enrichWithCounts(data) {
+  const debateIds = data.map(v => v.debate_id).filter(Boolean);
+  if (debateIds.length === 0) return data;
+
+  const [{ data: comments }, { data: likes }] = await Promise.all([
+    supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
+    supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
+  ]);
+
+  const commentMap = {}, likeMap = {};
+  (comments || []).forEach(c => { commentMap[c.debate_id] = (commentMap[c.debate_id] || 0) + 1; });
+  (likes || []).forEach(l => { likeMap[l.debate_id] = (likeMap[l.debate_id] || 0) + 1; });
+
+  return data.map(v => ({
+    ...v,
+    comments_count: commentMap[v.debate_id] || 0,
+    likes_count: likeMap[v.debate_id] || 0,
+    views_count: v.debate?.view_count || 0,
+  }));
 }

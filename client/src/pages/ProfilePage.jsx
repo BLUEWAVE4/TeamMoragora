@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../store/AuthContext';
-import { useTheme } from '../store/ThemeContext';
+import useThemeStore from '../store/useThemeStore';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
@@ -13,6 +13,7 @@ import {
 import VerdictContent from '../components/verdict/VerdictContent';
 import FeedbackModal from './FeedbackModal';
 import TierModal from './TierModal';
+import MoragoraModal from '../components/common/MoragoraModal';
 
 // ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
@@ -311,7 +312,7 @@ function VerdictModal({ verdict, onClose }) {
 // ─── ProfilePage ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user, isAdmin } = useAuth();
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
@@ -320,8 +321,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info', onConfirm: null });
+  const showModal = (title, description, type = 'info', onConfirm = null) => setModalState({ isOpen: true, title, description, type, onConfirm });
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info', onConfirm: null });
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(5);
   const [isListEditing, setIsListEditing] = useState(false);
@@ -356,15 +362,34 @@ const [showInfo, setShowInfo] = useState(false);
     ? Math.min(100, Math.max(0, ((currentScore - tier.min) / (nextTier.min - tier.min)) * 100))
     : 100;
 
+  // stale-while-revalidate: 캐시 즉시 표시 → 백그라운드 갱신
   useEffect(() => {
+    if (!user) return;
+
+    // 1) 캐시가 있으면 즉시 표시 (로딩 스피너 생략)
+    const cacheKey = `profile_cache_${user.id}`;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey));
+      if (cached?.profile && cached?.debates) {
+        setProfileData(cached.profile);
+        setNewNickname(cached.profile.nickname || '');
+        setMyJudgments(cached.debates);
+        setLoading(false);
+      }
+    } catch {}
+
+    // 2) 네트워크에서 최신 데이터 fetch
     const fetchAllData = async () => {
-      if (!user) return;
       try {
-        setLoading(true);
-        // 프로필 + 논쟁 목록 병렬 조회
+        if (!profileData) setLoading(true);
         const [pRes, { data: debates, error }] = await Promise.all([
           api.get('/auth/me'),
-          supabase.from('debates').select(`*, verdicts (*, ai_judgments (*))`).or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`).order('created_at', { ascending: false }),
+          supabase.from('debates')
+            .select(`id, topic, category, status, mode, creator_id, opponent_id, created_at, pro_side, con_side, verdicts!inner(id, ai_score_a, ai_score_b, final_score_a, final_score_b, winner_side, created_at)`)
+            .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
+            .in('status', ['completed', 'voting'])
+            .order('created_at', { ascending: false })
+            .limit(50),
         ]);
         const profile = pRes.data || pRes;
         setProfileData(profile);
@@ -376,13 +401,9 @@ const [showInfo, setShowInfo] = useState(false);
           setShowProfileSetup(true);
         }
         if (error) throw error;
-        // 판결 결과가 있는 논쟁만 표시 (verdicts가 배열 또는 단일 객체)
-        const completedDebates = (debates || []).filter(d => {
-          if (!d.verdicts) return false;
-          if (Array.isArray(d.verdicts)) return d.verdicts.length > 0;
-          return true; // 단일 객체
-        });
-        setMyJudgments(completedDebates);
+        setMyJudgments(debates || []);
+        // 캐시 저장
+        sessionStorage.setItem(cacheKey, JSON.stringify({ profile, debates: debates || [] }));
       } catch (error) {
         console.error('fetchAllData error:', error);
       } finally {
@@ -409,7 +430,7 @@ const [showInfo, setShowInfo] = useState(false);
       setIsEditing(false);
       window.location.reload();
     } catch (err) {
-      alert('변경 중 오류가 발생했습니다.');
+      showModal('닉네임 변경 실패', '변경 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -422,34 +443,38 @@ const [showInfo, setShowInfo] = useState(false);
       setSelectedVerdict(data);
     } catch (err) {
       console.error('판결 데이터 로드 실패:', err);
-      alert('판결 데이터를 불러올 수 없습니다.');
+      showModal('불러오기 실패', '판결 데이터를 불러올 수 없습니다.', 'error');
     } finally {
       setVerdictLoading(false);
     }
   };
 
-  const handleDeleteDebate = async (debateId, e) => {
+  const handleDeleteDebate = (debateId, e) => {
     e.stopPropagation();
-    if (!window.confirm("이 논쟁 기록을 리스트에서 삭제하시겠습니까?")) return;
-    try {
-      await api.delete(`/profiles/me/verdicts/${debateId}`);
-      setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
-    } catch (err) {
-      console.error('삭제 실패:', err);
-      alert('삭제 처리 중 오류가 발생했습니다.');
-    }
+    showModal('논쟁 기록 삭제', '이 논쟁 기록을 리스트에서 삭제하시겠습니까?', 'confirm', async () => {
+      closeModal();
+      try {
+        await api.delete(`/profiles/me/verdicts/${debateId}`);
+        setMyJudgments(prev => prev.filter(debate => debate.id !== debateId));
+      } catch (err) {
+        console.error('삭제 실패:', err);
+        showModal('삭제 실패', '삭제 처리 중 오류가 발생했습니다.', 'error');
+      }
+    });
   };
 
-  const handleLogout = async () => {
-    if (!window.confirm("로그아웃 하시겠습니까?")) return;
-    try {
-      await api.post('/auth/logout');
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    } catch (err) {
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    }
+  const handleLogout = () => {
+    showModal('로그아웃', '로그아웃 하시겠습니까?', 'confirm', async () => {
+      closeModal();
+      try {
+        await api.post('/auth/logout');
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      } catch {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }
+    });
   };
 
   // ─── 회원탈퇴 ───
@@ -465,7 +490,7 @@ const [showInfo, setShowInfo] = useState(false);
       await supabase.auth.signOut();
       window.location.href = '/';
     } catch (err) {
-      alert('회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      showModal('탈퇴 실패', '회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       setWithdrawing(false);
     }
   };
@@ -690,7 +715,19 @@ const [showInfo, setShowInfo] = useState(false);
 {/*========================================================================================================================================================================== */}
         {/* Menu Buttons */}
         <div className="space-y-3 mb-10">
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsSheetOpen(true)}
+          <motion.button whileTap={{ scale: 0.98 }} onClick={async () => {
+            setIsSheetOpen(true);
+            if (analysisData) return;
+            setAnalysisLoading(true);
+            try {
+              const { data } = await supabase.from('debates')
+                .select(`id, creator_id, verdicts!inner(ai_judgments(score_detail_a, score_detail_b))`)
+                .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
+                .in('status', ['completed', 'voting'])
+                .limit(50);
+              setAnalysisData(data || []);
+            } catch {} finally { setAnalysisLoading(false); }
+          }}
             className="w-full bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
@@ -831,8 +868,12 @@ const [showInfo, setShowInfo] = useState(false);
 
       {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
       <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor={isDark ? '#1a2332' : '#F5F0E8'} zIndex={100}>
-        {(() => {
-          const completedDebates = myJudgments.filter(d => {
+        {analysisLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (() => {
+          const completedDebates = (analysisData || []).filter(d => {
             const v = Array.isArray(d.verdicts) ? d.verdicts[0] : d.verdicts;
             return v && v.ai_judgments;
           });
@@ -1170,7 +1211,7 @@ const [showInfo, setShowInfo] = useState(false);
                 setShowProfileSetup(false);
                 window.location.reload();
               } catch (e) {
-                alert('저장 중 오류가 발생했습니다.');
+                showModal('저장 실패', '저장 중 오류가 발생했습니다.', 'error');
               } finally {
                 setSetupSaving(false);
               }
@@ -1266,6 +1307,14 @@ const [showInfo, setShowInfo] = useState(false);
           </motion.div>
         )}
       </AnimatePresence>
+      <MoragoraModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        description={modalState.description}
+        type={modalState.type}
+        onConfirm={modalState.onConfirm}
+      />
     </div>
   );
 }

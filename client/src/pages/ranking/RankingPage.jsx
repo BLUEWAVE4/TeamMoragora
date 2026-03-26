@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
-import { useTheme } from '../../store/ThemeContext';
+import useThemeStore from '../../store/useThemeStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
@@ -452,7 +452,7 @@ export default function RankingPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [isHallInfoOpen, setIsHallInfoOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -464,33 +464,40 @@ export default function RankingPage() {
   const [hallVisible, setHallVisible] = useState(10);
   const [hallLoadingMore, setHallLoadingMore] = useState(false);
 
+  // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
   useEffect(() => {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem('ranking_cache'));
+      if (cached) { setRankings(cached); setIsLoading(false); }
+    } catch {}
     const fetchRankings = async () => {
+      if (rankings.length === 0) setIsLoading(true);
       try {
-        setIsLoading(true);
         const res = await api.get('/profiles/ranking');
         setRankings(res);
+        sessionStorage.setItem('ranking_cache', JSON.stringify(res));
       } catch (err) {
         console.error('랭킹 불러오기 실패:', err);
-      } finally {
-        setIsLoading(false);
-      }
+      } finally { setIsLoading(false); }
     };
     fetchRankings();
   }, []);
 
   useEffect(() => {
     if (activeTab !== 'debate') return;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem('hall_cache'));
+      if (cached) { setHallData(cached); setHallLoading(false); return; }
+    } catch {}
     const fetchHall = async () => {
+      setHallLoading(true);
       try {
-        setHallLoading(true);
         const res = await api.get('/judgments/hall?limit=20');
         setHallData(res);
+        sessionStorage.setItem('hall_cache', JSON.stringify(res));
       } catch (err) {
         console.error('명예의 전당 불러오기 실패:', err);
-      } finally {
-        setHallLoading(false);
-      }
+      } finally { setHallLoading(false); }
     };
     fetchHall();
   }, [activeTab]);

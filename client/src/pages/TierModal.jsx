@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../store/ThemeContext';
+import useThemeStore from '../store/useThemeStore';
 import { User, Gavel, FileText, Scale, Crown } from 'lucide-react';
 
 const TIERS = [
@@ -12,7 +12,7 @@ const TIERS = [
 ];
 
 export default function TierModal({ isOpen, onClose, currentTierName }) {
-  const { isDark } = useTheme();
+  const isDark = useThemeStore(s => s.isDark);
 
   return (
     <AnimatePresence>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
+const Button = ({ children, onClick, variant = 'primary', className = '', ...rest }) => {
   // 베이스 스타일
   const baseStyles = "relative px-8 py-3 font-sans font-bold rounded-xl uppercase transition-all duration-300 border-2 rounded-sm shadow-md active:transform active:scale-95";
 
@@ -13,9 +13,10 @@ const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
   };
 
   return (
-    <button 
+    <button
       onClick={onClick}
       className={`${baseStyles} ${variants[variant]} ${className}`}
+      {...rest}
     >
       <span className="relative z-10">{children}</span>
       

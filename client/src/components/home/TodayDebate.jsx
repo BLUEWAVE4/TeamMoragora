@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useAuth } from '../../store/AuthContext';
-import { useTheme } from '../../store/ThemeContext';
-import { castVote, getVoteTally, cancelVote, getComments, toggleCommentLike } from '../../services/api';
+import { castVote, cancelVote } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
+import CommentBottomSheet from '../common/CommentBottomSheet';
 
 // 개별 카드 컴포넌트
-function DebateBannerCard({ item }) {
+const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
   const { user } = useAuth();
-  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const debateId = item?.debate_id;
@@ -24,7 +21,7 @@ function DebateBannerCard({ item }) {
   const savedVote = localStorage.getItem(storageKey);
 
   const [myVote, setMyVote] = useState(savedVote || null);
-  const [voteCounts, setVoteCounts] = useState({ A: 0, B: 0 });
+  const [voteCounts, setVoteCounts] = useState({ A: item?.citizen_score_a ?? 0, B: item?.citizen_score_b ?? 0 });
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const [voteExpired, setVoteExpired] = useState(false);
@@ -33,18 +30,7 @@ function DebateBannerCard({ item }) {
   const showModal = (title, description) => setModalState({ isOpen: true, title, description });
   const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
 
-  useEffect(() => {
-    if (!debateId) return;
-    const fetchVoteCounts = async () => {
-      try {
-        const res = await getVoteTally(debateId);
-        setVoteCounts({ A: res?.A ?? 0, B: res?.B ?? 0 });
-      } catch (err) {
-        console.log('투표 현황 에러:', err);
-      }
-    };
-    fetchVoteCounts();
-  }, [debateId]);
+  // 투표 수는 서버에서 citizen_score_a/b로 이미 내려옴 — 개별 fetch 제거
 
   // 타이머: vote_duration(일) 기반 카운트다운, 없으면 24시간 기본
   useEffect(() => {
@@ -147,71 +133,6 @@ function DebateBannerCard({ item }) {
 
   // 댓글 바텀시트
   const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [likingSet, setLikingSet] = useState(new Set());
-  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
-  const [myGender, setMyGender] = useState(user?.user_metadata?.gender || null);
-  const commentInputRef = useRef(null);
-
-  // 현재 유저 아바타 URL (profiles 테이블)
-  useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
-        if (data?.gender) setMyGender(data.gender);
-      });
-  }, [user]);
-
-  useEffect(() => {
-    if (!isCommentOpen || !debateId) return;
-    const fetchComments = async () => {
-      try {
-        const data = await getComments(debateId);
-        setComments(data || []);
-        setCommentCount((data || []).length);
-      } catch { }
-    };
-    fetchComments();
-    setTimeout(() => commentInputRef.current?.focus(), 300);
-  }, [isCommentOpen, debateId]);
-
-  const handleToggleLike = async (commentId) => {
-    if (!user || likingSet.has(commentId)) return;
-    setLikingSet(prev => new Set(prev).add(commentId));
-    const prevComments = comments;
-    setComments(prev => prev.map(c =>
-      c.id === commentId
-        ? { ...c, is_liked: !c.is_liked, likes_count: Math.max((c.likes_count || 0) + (c.is_liked ? -1 : 1), 0) }
-        : c
-    ));
-    try { await toggleCommentLike(commentId); }
-    catch { setComments(prevComments); }
-    finally { setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; }); }
-  };
-
-  const handleSendComment = async () => {
-    if (!user || !commentText.trim() || isSending) return;
-    setIsSending(true);
-    try {
-      const { data } = await supabase.from('comments').insert({ debate_id: debateId, user_id: user.id, content: commentText.trim() }).select('*, profiles(nickname, gender, avatar_url)').single();
-      setComments(prev => [...prev, data]);
-      setCommentText('');
-      setCommentCount(prev => prev + 1);
-    } catch {} finally { setIsSending(false); }
-  };
-
-  const formatCommentTime = (iso) => {
-    if (!iso) return '';
-    const diff = Math.floor((new Date() - new Date(iso)) / 60000);
-    if (diff < 1) return '방금';
-    if (diff < 60) return `${diff}분 전`;
-    if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`;
-    const d = new Date(iso);
-    return `${d.getMonth() + 1}.${d.getDate()}`;
-  };
 
   if (!item) return null;
 
@@ -362,90 +283,12 @@ function DebateBannerCard({ item }) {
       </div>
     </div>
 
-    {/* 시민 의견 바텀시트 — Portal로 body에 렌더링 */}
-    {createPortal(<AnimatePresence>
-      {isCommentOpen && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCommentOpen(false)} className="fixed inset-0 bg-black/40 z-[200]" />
-          <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className={`w-full max-w-[440px] rounded-t-2xl max-h-[70vh] flex flex-col shadow-xl pointer-events-auto ${isDark ? 'bg-[#1a2332]' : 'bg-gradient-to-b from-[#F5F0E8] to-white'}`}
-            >
-              <div className={`flex-shrink-0 px-5 pt-3 pb-3 border-b ${isDark ? 'border-white/10' : 'border-[#D4AF37]/10'}`}>
-                <div className={`w-10 h-1 rounded-full mx-auto mb-3 ${isDark ? 'bg-white/20' : 'bg-[#1B2A4A]/10'}`} />
-                <div className="flex items-center justify-between">
-                  <h3 className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-[#1B2A4A]'}`}>시민 의견</h3>
-                  <button onClick={() => setIsCommentOpen(false)} className={`text-[12px] font-bold ${isDark ? 'text-white/30' : 'text-[#1B2A4A]/30'}`}>닫기</button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-                {comments.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className={`text-[13px] ${isDark ? 'text-white/30' : 'text-[#1B2A4A]/30'}`}>아직 의견이 없습니다</p>
-                    <p className={`text-[11px] mt-1 ${isDark ? 'text-white/20' : 'text-[#1B2A4A]/20'}`}>이 논쟁에 대한 의견을 남겨보세요</p>
-                  </div>
-                ) : comments.map((c) => {
-                  const nickname = c.user?.nickname || c.profiles?.nickname || '익명';
-                  const isMine = user?.id === c.user_id;
-                  return (
-                    <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full overflow-hidden shrink-0 ${isDark ? 'bg-white/10' : 'bg-[#1B2A4A]/10'}`}>
-                        <img src={c.user?.avatar_url || c.profiles?.avatar_url || getAvatarUrl(c.user_id, c.user?.gender || c.profiles?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : ''}`}>
-                        <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : ''}`}>
-                          <span className={`text-[12px] font-bold ${isDark ? 'text-white' : 'text-[#1B2A4A]'}`}>{nickname}</span>
-                          <span className={`text-[10px] ${isDark ? 'text-white/25' : 'text-[#1B2A4A]/25'}`}>{formatCommentTime(c.created_at)}</span>
-                        </div>
-                        <div className={`flex items-end gap-1.5 mt-1 ${isMine ? 'flex-row-reverse' : ''}`}>
-                          <div className={`px-3 py-2 rounded-2xl max-w-[70%] ${isMine ? (isDark ? 'bg-white/10 rounded-tr-sm' : 'bg-[#1B2A4A]/8 rounded-tr-sm') : (isDark ? 'bg-white/[0.06] rounded-tl-sm' : 'bg-[#1B2A4A]/5 rounded-tl-sm')}`}>
-                            <p className={`text-[12px] leading-[1.6] break-words text-left ${isDark ? 'text-white/70' : 'text-[#1B2A4A]/70'}`}>{c.content}</p>
-                          </div>
-                          <button onClick={() => handleToggleLike(c.id)} className="w-9 h-9 flex items-center justify-center gap-0.5 shrink-0">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : 'currentColor'} strokeWidth="2" className={c.is_liked ? '' : (isDark ? 'text-white/30' : 'text-[#1B2A4A]/30')}>
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                            {c.likes_count > 0 && <span className={`text-[9px] ${isDark ? 'text-white/30' : 'text-[#1B2A4A]/30'}`}>{c.likes_count}</span>}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className={`flex-shrink-0 px-4 py-3 border-t flex items-center gap-2 ${isDark ? 'border-white/10' : 'border-[#D4AF37]/10'}`} style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
-                {user && (
-                  <div className={`w-8 h-8 rounded-full overflow-hidden shrink-0 ${isDark ? 'bg-white/10' : 'bg-[#1B2A4A]/10'}`}>
-                    <img src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <input
-                  ref={commentInputRef}
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendComment(); } }}
-                  placeholder={user ? "의견을 입력하세요..." : "로그인 후 의견을 남길 수 있어요"}
-                  disabled={!user}
-                  maxLength={500}
-                  className={`flex-1 min-w-0 h-9 rounded-full px-4 text-[12px] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 ${isDark ? 'bg-white/[0.06] text-white placeholder:text-white/25' : 'bg-[#1B2A4A]/5 text-[#1B2A4A] placeholder:text-[#1B2A4A]/25'}`}
-                />
-                <button
-                  onClick={handleSendComment}
-                  disabled={!commentText.trim() || isSending || !user}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                    commentText.trim() ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37]/20 text-[#D4AF37]/40'
-                  }`}
-                >
-                  {isSending ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <span className="text-[14px] font-bold">↑</span>}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>, document.body)}
+    <CommentBottomSheet
+      isOpen={isCommentOpen}
+      onClose={() => setIsCommentOpen(false)}
+      debateId={debateId}
+      onCountChange={setCommentCount}
+    />
     <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo="/" />
     <MoragoraModal
       isOpen={modalState.isOpen}
@@ -456,7 +299,7 @@ function DebateBannerCard({ item }) {
     />
     </>
   );
-}
+});
 
 // 슬라이드 화살표 버튼
 function SlideArrow({ direction, onClick, disabled }) {
@@ -519,7 +362,7 @@ export default function TodayDebate({ items = [] }) {
   };
 
   return (
-    <div className="px-5 pt-3 pb-6">
+    <div className="px-5 pt-3 pb-1">
       {/* 슬라이드 영역 (화살표 포함) */}
       <div className="relative">
         {/* 카드 영역 */}
@@ -547,7 +390,7 @@ export default function TodayDebate({ items = [] }) {
 
       {/* 인디케이터 dots */}
       {validItems.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-3">
+        <div className="flex justify-center gap-1.5 -mt-5">
           {validItems.map((_, i) => (
             <button
               key={i}
