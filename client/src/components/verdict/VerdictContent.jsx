@@ -574,7 +574,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         };
 
         return (
-          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10">
+          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
             <button
               onClick={() => setShowScoreChart(prev => !prev)}
               className="w-full flex items-center justify-between p-5 pb-3"
@@ -902,7 +902,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         else if (!canVote) disabledMsg = '투표가 마감되었습니다';
 
         return (
-          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10">
+          <div className="bg-gradient-to-b from-surface to-surface-alt rounded-2xl shadow-sm border border-gold/10 overflow-hidden">
             <div className="px-5 pt-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
@@ -1005,7 +1005,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               </div>
 
               {user ? (
-                <div className="flex items-center gap-2 pt-3 border-t border-gold/10">
+                <div className="flex items-center gap-2 pt-3 border-t border-gold/10 min-w-0">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                     <img src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                   </div>
@@ -1017,7 +1017,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)}
                     placeholder="의견을 입력하세요..."
                     maxLength={500}
-                    className="flex-1 h-9 bg-primary/5 rounded-full px-4 text-[12px] text-primary placeholder:text-primary/25 focus:outline-none focus:ring-2 focus:ring-gold/20"
+                    className="flex-1 min-w-0 h-9 bg-primary/5 rounded-full px-4 text-[12px] text-primary placeholder:text-primary/25 focus:outline-none focus:ring-2 focus:ring-gold/20"
                   />
                   <button
                     onClick={handleSubmitComment}
