@@ -354,122 +354,88 @@ export default function DebateLobbyPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] pb-32 pt-4">
       {/* 인기 실시간 논쟁 (참여자 가장 많은 1개) */}
-      {hotRoom && (
+      {hotRoom && (() => {
+        const live = liveParticipants[hotRoom.id];
+        const liveA = live?.A || [];
+        const liveB = live?.B || [];
+        const creatorSide = hotRoom.creator_side || 'A';
+        const creatorAvatar = hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON;
+        const opponentAvatar = hotRoom.opponent?.avatar_url || getAvatarUrl(hotRoom.opponent_id, hotRoom.opponent?.gender) || DEFAULT_AVATAR_ICON;
+        const avatarA = creatorSide === 'A' ? creatorAvatar : (hotRoom.opponent ? opponentAvatar : null);
+        const avatarB = creatorSide === 'A' ? (hotRoom.opponent ? opponentAvatar : null) : creatorAvatar;
+        const nameA = creatorSide === 'A' ? (hotRoom.creator?.nickname || '방장') : (hotRoom.opponent?.nickname || null);
+        const nameB = creatorSide === 'A' ? (hotRoom.opponent?.nickname || null) : (hotRoom.creator?.nickname || '방장');
+        return (
         <section className="px-5 mb-6">
           <div
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
             className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
           >
-            {/* 상단 배너 */}
-            <div className="px-5 pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#D4AF37] font-black uppercase tracking-widest">인기 실시간 논쟁</span>
+            {/* 상단 아바타 구도 (오늘의 논쟁 스타일) */}
+            <div className="flex items-center justify-center gap-4 pt-5 pb-3">
+              {avatarA ? (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-500/40 bg-white/10">
+                    <img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-bold">{liveA[0]?.nickname || nameA}</span>
                 </div>
-                <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status="chatting" />
-              </div>
-              <h2 className="text-white text-[19px] font-black leading-snug break-keep mb-2">
-                {hotRoom.topic}
+              ) : (
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-emerald-500/30" />
+              )}
+              <span className="text-white/20 text-[11px] font-black">VS</span>
+              {avatarB ? (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-red-500/40 bg-white/10">
+                    <img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-[10px] text-red-400 font-bold">{liveB[0]?.nickname || nameB}</span>
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-red-500/30" />
+              )}
+            </div>
+
+            {/* 논제 */}
+            <div className="px-5 pb-3 text-center">
+              <h2 className="text-white text-[17px] font-black leading-snug break-keep mb-2">
+                "{hotRoom.topic}"
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 {hotRoom.purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
                 {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
               </div>
             </div>
 
-            {/* A/B 슬롯 (기본 피드와 동일 디자인) */}
-            <div className="px-5 pb-4">
-              {(() => {
-                const live = liveParticipants[hotRoom.id];
-                const liveA = live?.A || [];
-                const liveB = live?.B || [];
-                const hasLive = liveA.length > 0 || liveB.length > 0;
-                const creatorSide = hotRoom.creator_side || 'A';
-                const creatorName = hotRoom.creator?.nickname || '방장';
-                const opponentName = hotRoom.opponent?.nickname || null;
-                const sideAName = creatorSide === 'A' ? creatorName : opponentName;
-                const sideBName = creatorSide === 'A' ? opponentName : creatorName;
-                return (
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.03] border border-emerald-500/20">
-                      <div className="text-[9px] font-black text-emerald-400 text-center mb-0.5">A측</div>
-                      {[0, 1, 2].map(i => {
-                        const p = hasLive ? liveA[i] : (i === 0 ? { nickname: sideAName } : null);
-                        return (
-                          <div key={`a-${i}`} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${
-                            p?.nickname ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 border-dashed'
-                          }`}>
-                            {p?.nickname ? (
-                              <><span className="w-1 h-1 rounded-full bg-emerald-400" /><span className="text-white/70 font-bold truncate">{p.nickname}</span></>
-                            ) : (
-                              <span className="text-white/20 font-bold w-full text-center">빈 자리</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <span className="text-white/15 text-[10px] font-black shrink-0">VS</span>
-                    <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.03] border border-red-500/20">
-                      <div className="text-[9px] font-black text-red-400 text-center mb-0.5">B측</div>
-                      {[0, 1, 2].map(i => {
-                        const p = hasLive ? liveB[i] : (i === 0 ? { nickname: sideBName } : null);
-                        return (
-                          <div key={`b-${i}`} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${
-                            p?.nickname ? 'border-red-500/30 bg-red-500/10' : 'border-white/10 border-dashed'
-                          }`}>
-                            {p?.nickname ? (
-                              <><span className="w-1 h-1 rounded-full bg-red-400" /><span className="text-white/70 font-bold truncate">{p.nickname}</span></>
-                            ) : (
-                              <span className="text-white/20 font-bold w-full text-center">빈 자리</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
+            {/* A vs B 입장 텍스트 */}
+            <div className="px-5 pb-4 flex items-center gap-3">
+              <div className="flex-1 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  {avatarA && <div className="w-4 h-4 rounded-full overflow-hidden bg-white/10"><img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" /></div>}
+                  <span className="text-[11px] text-emerald-400 font-bold truncate">{hotRoom.pro_side || 'A측'}</span>
+                </div>
+              </div>
+              <span className="text-white/10 text-[10px] font-black">VS</span>
+              <div className="flex-1 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-[11px] text-red-400 font-bold truncate">{hotRoom.con_side || 'B측'}</span>
+                  {avatarB && <div className="w-4 h-4 rounded-full overflow-hidden bg-white/10"><img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" /></div>}
+                </div>
+              </div>
             </div>
 
-            {/* 참여자 아바타 나열 (생성자 제외) */}
-            {(() => {
-              const live = liveParticipants[hotRoom.id];
-              const others = [...(live?.A || []), ...(live?.B || []), ...(live?.citizen || [])]
-                .filter(p => p.userId !== hotRoom.creator_id);
-              return others.length > 0 ? (
-                <div className="px-5 pb-3 flex items-center">
-                  <div className="flex -space-x-2">
-                    {others.slice(0, 8).map((p, i) => (
-                      <div key={p.userId || i} className="w-7 h-7 rounded-full overflow-hidden border-2 border-[#0f1829] bg-white/10" style={{ zIndex: 8 - i }}>
-                        <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                    {others.length > 8 && (
-                      <div className="w-7 h-7 rounded-full bg-white/10 border-2 border-[#0f1829] flex items-center justify-center">
-                        <span className="text-[8px] text-white/50 font-black">+{others.length - 8}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : null;
-            })()}
-
-            {/* 하단 바 */}
+            {/* 하단 바: 입장하기 왼쪽, 시간 오른쪽 */}
             <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10">
-                  <img src={hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-white/50 text-[11px] font-bold">{hotRoom.creator?.nickname || '방장'}</span>
-              </div>
               <span className="text-[#D4AF37] text-[12px] font-black flex items-center gap-1">
                 {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
               </span>
+              <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status={hotRoom.status} />
             </div>
           </div>
         </section>
-      )}
+        );
+      })()}
 
       {/* 빈 상태 */}
       {rooms.length === 0 && !loading && (
