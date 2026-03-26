@@ -371,29 +371,21 @@ export default function DebateLobbyPage() {
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
             className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
           >
-            {/* 상단 아바타 구도 (오늘의 논쟁 스타일) */}
+            {/* 상단 아바타 구도 */}
             <div className="flex items-center justify-center gap-4 pt-5 pb-3">
-              {avatarA ? (
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-500/40 bg-white/10">
-                    <img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-[10px] text-emerald-400 font-bold">{liveA[0]?.nickname || nameA}</span>
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-10 h-10 rounded-full overflow-hidden bg-white/10 ${avatarA ? 'border-2 border-emerald-500/40' : 'border-2 border-dashed border-emerald-500/30'}`}>
+                  {avatarA && <img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" />}
                 </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-emerald-500/30" />
-              )}
+                <span className="text-[10px] text-emerald-400 font-bold">{liveA[0]?.nickname || nameA || '대기중'}</span>
+              </div>
               <span className="text-white/20 text-[11px] font-black">VS</span>
-              {avatarB ? (
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-red-500/40 bg-white/10">
-                    <img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-[10px] text-red-400 font-bold">{liveB[0]?.nickname || nameB}</span>
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-10 h-10 rounded-full overflow-hidden bg-white/10 ${avatarB ? 'border-2 border-red-500/40' : 'border-2 border-dashed border-red-500/30'}`}>
+                  {avatarB && <img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" />}
                 </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-red-500/30" />
-              )}
+                <span className="text-[10px] text-red-400 font-bold">{liveB[0]?.nickname || nameB || '대기중'}</span>
+              </div>
             </div>
 
             {/* 논제 */}
@@ -401,27 +393,16 @@ export default function DebateLobbyPage() {
               <h2 className="text-white text-[17px] font-black leading-snug break-keep mb-2">
                 "{hotRoom.topic}"
               </h2>
-              <div className="flex items-center justify-center gap-2">
-                {hotRoom.purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
-                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
-              </div>
             </div>
 
-            {/* A vs B 입장 텍스트 */}
-            <div className="px-5 pb-4 flex items-center gap-3">
-              <div className="flex-1 text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  {avatarA && <div className="w-4 h-4 rounded-full overflow-hidden bg-white/10"><img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" /></div>}
-                  <span className="text-[11px] text-emerald-400 font-bold truncate">{hotRoom.pro_side || 'A측'}</span>
-                </div>
+            {/* A측 입장 | 뱃지 | B측 입장 */}
+            <div className="px-5 pb-4 flex items-center">
+              <span className="flex-1 text-[11px] text-emerald-400 font-bold truncate">{hotRoom.pro_side || 'A측'}</span>
+              <div className="flex items-center gap-1.5 shrink-0 mx-2">
+                {hotRoom.purpose && <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
+                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
               </div>
-              <span className="text-white/10 text-[10px] font-black">VS</span>
-              <div className="flex-1 text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-[11px] text-red-400 font-bold truncate">{hotRoom.con_side || 'B측'}</span>
-                  {avatarB && <div className="w-4 h-4 rounded-full overflow-hidden bg-white/10"><img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" /></div>}
-                </div>
-              </div>
+              <span className="flex-1 text-[11px] text-red-400 font-bold truncate text-right">{hotRoom.con_side || 'B측'}</span>
             </div>
 
             {/* 하단 바: 입장하기 왼쪽, 시간 오른쪽 */}
