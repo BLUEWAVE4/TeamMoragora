@@ -1376,7 +1376,7 @@ const handleVote = (agree) => {
   </div>
 ) : (
   <div className="flex items-end gap-2">
-    <div className={`w-1 rounded-full shrink-0 ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} style={{ height: 'calc(100% - 10px)', alignSelf: 'center' }} />
+    <div className={`w-1 h-8 rounded-full shrink-0 self-center ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
                 <textarea value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
                   disabled={isInputDisabled} rows={1}
                   placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장을 입력하세요...`}
