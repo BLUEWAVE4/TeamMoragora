@@ -95,3 +95,8 @@ export function buildAvatarUrl(userId, gender, options = {}) {
 }
 
 export const DEFAULT_AVATAR_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#E8E8ED"/><circle cx="50" cy="38" r="16" fill="#C7C7CC"/><ellipse cx="50" cy="75" rx="26" ry="18" fill="#C7C7CC"/></svg>`)}`;
+
+// 아바타 URL 해석 래퍼 — avatar_url 우선, 없으면 생성, 최종 기본 아이콘
+export function resolveAvatar(avatarUrl, userId, gender) {
+  return avatarUrl || getAvatarUrl(userId, gender) || DEFAULT_AVATAR_ICON;
+}

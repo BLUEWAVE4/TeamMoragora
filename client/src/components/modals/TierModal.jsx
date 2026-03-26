@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import useThemeStore from '../store/useThemeStore';
+import useThemeStore from '../../store/useThemeStore';
 import { User, Gavel, FileText, Scale, Crown } from 'lucide-react';
 
 const TIERS = [

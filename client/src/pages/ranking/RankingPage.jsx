@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
+import { formatDate } from '../../utils/dateFormatter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 import {
   Gavel, Scale, User, Trophy, Info, ChevronRight, FileText, Crown, Sparkles, X, History, MessageSquarePlus, Plus
 } from 'lucide-react';
@@ -25,11 +26,6 @@ const categoryMap = {
   사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
 };
 
-const formatDate = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-};
 
 const findTierByScore = (score) => {
   const pts = score || 0;
@@ -255,7 +251,7 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
           <div className="relative">
             <div className="w-24 h-24 rounded-[24px] overflow-hidden border-2 shadow-lg" style={{ borderColor: tier.color }}>
               <img
-                src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON}
+                src={resolveAvatar(player.avatar_url, player.id, player.gender)}
                 alt="avatar" className="w-full h-full object-cover"
               />
             </div>
@@ -610,7 +606,7 @@ export default function RankingPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <img 
-                        src={creator.avatar_url || getAvatarUrl(creator.id || d.creator_id, creator.gender) || DEFAULT_AVATAR_ICON} 
+                        src={resolveAvatar(creator.avatar_url, creator.id || d.creator_id, creator.gender)} 
                         className="w-5 h-5 rounded-full object-cover border border-gray-100" 
                         alt="" 
                       />
@@ -735,7 +731,7 @@ export default function RankingPage() {
                         <div className={`rounded-full p-0.5 bg-gradient-to-tr ${p.color} shadow-lg ${isPodiumMe ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}>
                           <div className="rounded-full bg-white p-0.5">
                             <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20' : 'w-16 h-16'} bg-gray-50`}>
-                              <img src={p.avatar_url || getAvatarUrl(p.id, p.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                              <img src={resolveAvatar(p.avatar_url, p.id, p.gender)} alt="avatar" className="w-full h-full object-cover" />
                             </div>
                           </div>
                         </div>
@@ -768,7 +764,7 @@ export default function RankingPage() {
                 <div className="flex items-center gap-3 relative z-10">
                   <span className="text-[24px] font-black italic min-w-[32px] text-center" style={{ color: currentTier.color }}>{myRank}</span>
                   <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 flex-shrink-0">
-                    <img src={myData?.avatar_url || getAvatarUrl(myData?.id, myData?.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                    <img src={resolveAvatar(myData?.avatar_url, myData?.id, myData?.gender)} alt="avatar" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -813,7 +809,7 @@ export default function RankingPage() {
                       <span className="text-[18px] font-black italic" style={{ color: isListMe ? playerTier.color : (isDark ? 'rgba(224,221,213,0.2)' : 'rgba(0,0,0,0.15)') }}>{rank}</span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
-                      <img src={player.avatar_url || getAvatarUrl(player.id, player.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                      <img src={resolveAvatar(player.avatar_url, player.id, player.gender)} alt="avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -846,7 +842,7 @@ export default function RankingPage() {
                       <span className="text-[18px] font-black italic" style={{ color: currentTier.color }}>{myRankIndex + 1}</span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden mr-3 flex-shrink-0">
-                      <img src={myData.avatar_url || getAvatarUrl(myData.id, myData.gender) || DEFAULT_AVATAR_ICON} alt="avatar" className="w-full h-full object-cover" />
+                      <img src={resolveAvatar(myData.avatar_url, myData.id, myData.gender)} alt="avatar" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">

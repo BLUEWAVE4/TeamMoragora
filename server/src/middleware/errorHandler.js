@@ -12,5 +12,7 @@ export function errorHandler(err, req, res, _next) {
 
   res.status(status).json({
     error: err.message || '서버 내부 오류가 발생했습니다.',
+    status,
+    code: err.name || 'InternalError',
   });
 }

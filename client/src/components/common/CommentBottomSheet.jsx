@@ -5,7 +5,7 @@ import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
 import { getComments, toggleCommentLike, deleteComment } from '../../services/api';
 import { supabase } from '../../services/supabase';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 
 function formatCommentTime(iso) {
   if (!iso) return '';
@@ -33,11 +33,14 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
   const [myGender, setMyGender] = useState(null);
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
         if (data?.gender) setMyGender(data.gender);
       });
+    return () => { cancelled = true; };
   }, [user]);
 
   // 댓글 fetch
@@ -149,7 +152,7 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
                 ) : comments.map((c) => {
                   const nickname = c.profiles?.nickname || c.user?.nickname || '익명';
                   const isMine = user?.id === c.user_id;
-                  const avatarSrc = c.profiles?.avatar_url || c.user?.avatar_url || getAvatarUrl(c.user_id, c.profiles?.gender || c.user?.gender) || DEFAULT_AVATAR_ICON;
+                  const avatarSrc = resolveAvatar(c.profiles?.avatar_url || c.user?.avatar_url, c.user_id, c.profiles?.gender || c.user?.gender);
 
                   return (
                     <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
@@ -197,7 +200,7 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
               <div className={`flex-shrink-0 px-4 py-3 border-t flex items-center gap-2 ${border}`} style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}>
                 {user && (
                   <div className={`w-8 h-8 rounded-full overflow-hidden shrink-0 ${avatarBg}`}>
-                    <img src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                    <img src={resolveAvatar(myAvatarUrl, user.id, myGender)} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <input

@@ -17,7 +17,7 @@ const ArgumentPage = lazy(() => import('./pages/debate/ArgumentPage'));
 const MoragoraDetailPage = lazy(() => import('./pages/moragora/MoragoraDetailPage'));
 const MoragoraFeedPage = lazy(() => import('./pages/moragora/MoragoraFeedPage'));
 const VotePage = lazy(() => import('./pages/vote/VotePage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
 const RankingPage = lazy(() => import('./pages/ranking/RankingPage'));
 const NicknamePage = lazy(() => import('./pages/auth/NicknamePage'));
 const JudgingPage = lazy(() => import('./pages/debate/JudgingPage'));
@@ -25,7 +25,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const ChatRoom = lazy(() => import('./pages/debate/ChatRoom'));
 const DebateLobbyPage = lazy(() => import('./pages/debate/DebateLobbyPage'));
-const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const ChatLobby = lazy(() => import('./pages/debate/ChatLobby'));
 const ChatLobbyList = lazy(() => import('./pages/debate/ChatLobbyList'));
 

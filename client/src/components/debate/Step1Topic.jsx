@@ -4,6 +4,7 @@ import Button from "../common/Button";
 import Card from "../common/Card";
 import { HelpCircle } from "lucide-react";
 import MoragoraModal from "../common/MoragoraModal";
+import useModalState from "../../hooks/useModalState";
 
 const PLACEHOLDER_TOPICS = [
   "노키즈존은 차별인가 권리인가?",
@@ -111,9 +112,7 @@ export default function Step1Topic({
   const [editingSide, setEditingSide] = useState(null);
   const [tempText, setTempText] = useState("");
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
-  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   const hasDraft = !!(topic && aiResults[topic] && proSide && conSide);
   const [showDraft, setShowDraft] = useState(hasDraft);

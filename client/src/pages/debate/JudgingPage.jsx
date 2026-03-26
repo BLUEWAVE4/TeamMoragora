@@ -333,7 +333,7 @@ export default function JudgingPage() {
         try {
           const args = await getArguments(debateId);
           setDebateArgs(args || []);
-        } catch (_) {}
+        } catch (e) { console.warn('[JudgingPage] 주장 로드 실패:', e.message); }
       } catch (e) {
         console.error(e);
         if (e?.status === 404 || e?.response?.status === 404 || e?.message?.includes('찾을 수 없')) {
@@ -389,8 +389,8 @@ export default function JudgingPage() {
             setIsAllDone(true);
             clearInterval(pollInterval);
           }
-        } catch (_) {}
-      } catch (error) {}
+        } catch (e) { console.warn('[JudgingPage] 판결 폴링:', e.message); }
+      } catch (e) { console.warn('[JudgingPage] 폴링 에러:', e.message); }
     }, 3000);
     return () => clearInterval(pollInterval);
   }, [debateId]);

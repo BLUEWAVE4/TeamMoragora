@@ -4,11 +4,13 @@ import { useAuth } from '../../store/AuthContext.jsx';
 import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
+import { timeAgo } from '../../utils/dateFormatter';
 import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
 import CommentBottomSheet from '../common/CommentBottomSheet';
 import useThemeStore from '../../store/useThemeStore';
+import useModalState from '../../hooks/useModalState';
 
 function useVoteCountdown(createdAt, voteDuration) {
   const [timeLeft, setTimeLeft] = useState(null);
@@ -32,7 +34,7 @@ function useVoteCountdown(createdAt, voteDuration) {
   return timeLeft;
 }
 
-function DebateCard({ feed, formatTime }) {
+function DebateCard({ feed }) {
   const { user } = useAuth();
   const isDark = useThemeStore(s => s.isDark);
   const navigate = useNavigate();
@@ -85,9 +87,7 @@ function DebateCard({ feed, formatTime }) {
   const [isLiking, setIsLiking] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+  const { modalState, showModal, closeModal } = useModalState();
   const [localCommentCount, setLocalCommentCount] = useState(feed?.comments_count ?? 0);
   const [viewCount, setViewCount] = useState(feed?.views_count ?? debateData?.view_count ?? 0);
 
@@ -206,7 +206,7 @@ function DebateCard({ feed, formatTime }) {
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
             <img
-              src={debateData?.creator?.avatar_url || getAvatarUrl(debateData?.creator_id, debateData?.creator?.gender) || DEFAULT_AVATAR_ICON}
+              src={resolveAvatar(debateData?.creator?.avatar_url, debateData?.creator_id, debateData?.creator?.gender)}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -352,7 +352,7 @@ function DebateCard({ feed, formatTime }) {
               </>);
             })()}
           </div>
-          <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{formatTime ? formatTime(feed.created_at) : ''}</span>
+          <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{timeAgo(feed.created_at)}</span>
         </div>
       </div>
 

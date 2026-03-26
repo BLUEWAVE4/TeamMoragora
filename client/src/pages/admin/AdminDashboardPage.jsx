@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../store/AuthContext';
+import { useAuth } from '../../store/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getAdminStats, getAdminAI, getAdminTrends, getAdminAnalytics } from '../services/api';
+import { getAdminStats, getAdminAI, getAdminTrends, getAdminAnalytics } from '../../services/api';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 import { ArrowLeft, Users, Gavel, MessageSquare, ThumbsUp, Shield, Star, TrendingUp, Eye, Zap, X, ChevronRight } from 'lucide-react';

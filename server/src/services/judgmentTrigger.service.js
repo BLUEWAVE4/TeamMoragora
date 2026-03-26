@@ -29,15 +29,16 @@ async function applyResult(debateId, verdictId) {
 
   if (verdict.winner_side === 'draw') {
     const uids = [debate.creator_id, debate.opponent_id].filter(Boolean);
-    const profiles = await Promise.all(uids.map(uid => supabaseAdmin.from('profiles').select('draws').eq('id', uid).single()));
-    await Promise.all(profiles.map(({ data: p }, i) =>
-      p ? supabaseAdmin.from('profiles').update({ draws: (p.draws || 0) + 1 }).eq('id', uids[i]) : null
-    ));
+    if (uids.length > 0) {
+      const { data: profiles } = await supabaseAdmin.from('profiles').select('id, draws').in('id', uids);
+      await Promise.all((profiles || []).map(p =>
+        supabaseAdmin.from('profiles').update({ draws: (p.draws || 0) + 1 }).eq('id', p.id)
+      ));
+    }
   } else if (winnerId && loserId) {
-    const [{ data: wp }, { data: lp }] = await Promise.all([
-      supabaseAdmin.from('profiles').select('wins').eq('id', winnerId).single(),
-      supabaseAdmin.from('profiles').select('losses').eq('id', loserId).single(),
-    ]);
+    const { data: profiles } = await supabaseAdmin.from('profiles').select('id, wins, losses').in('id', [winnerId, loserId]);
+    const wp = profiles?.find(p => p.id === winnerId);
+    const lp = profiles?.find(p => p.id === loserId);
     await Promise.all([
       wp ? supabaseAdmin.from('profiles').update({ wins: (wp.wins || 0) + 1 }).eq('id', winnerId) : null,
       lp ? supabaseAdmin.from('profiles').update({ losses: (lp.losses || 0) + 1 }).eq('id', loserId) : null,
@@ -49,7 +50,7 @@ async function applyResult(debateId, verdictId) {
 export async function triggerJudgment(debateId) {
   const { data: debate } = await supabaseAdmin
     .from('debates')
-    .select('*')
+    .select('id, topic, description, category, purpose, lens, mode, status, creator_id, opponent_id, pro_side, con_side, vote_duration, skip_cutoff')
     .eq('id', debateId)
     .single();
 
@@ -72,7 +73,7 @@ export async function triggerJudgment(debateId) {
 
   const { data: args } = await supabaseAdmin
     .from('arguments')
-    .select('*')
+    .select('id, side, round, content, created_at')
     .eq('debate_id', debateId);
 
   const r1A = args?.find((a) => a.side === 'A' && (a.round || 1) === 1);
@@ -210,7 +211,7 @@ async function triggerChatJudgment(debate) {
   // skip_cutoff가 있으면 그 시점 이전 메시지만 판결에 사용
   let msgQuery = supabaseAdmin
     .from('chat_messages')
-    .select('*')
+    .select('id, user_id, nickname, content, side, created_at')
     .eq('debate_id', debateId)
     .order('created_at', { ascending: true });
   if (debate.skip_cutoff) {

@@ -5,6 +5,7 @@ import { trackEvent } from '../../services/analytics';
 import { supabase } from '../../services/supabase';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import MoragoraModal from '../../components/common/MoragoraModal';
+import useModalState from '../../hooks/useModalState';
 
 export default function NicknamePage() {
   const { user, updateProfile } = useAuth();
@@ -18,9 +19,7 @@ export default function NicknamePage() {
   const [isAvailable, setIsAvailable] = useState(null);
   const [lastCheckedNickname, setLastCheckedNickname] = useState('');
 
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   const isInvalid =
     nickname.trim().length < 2 ||

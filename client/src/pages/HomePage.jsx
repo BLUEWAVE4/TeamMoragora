@@ -135,17 +135,6 @@ export default function HomePage() {
   });
 };
 
-  const formatTime = (dateString) => {
-    const now = new Date();
-    const past = new Date(dateString);
-    const diffInMs = now - past;
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    if (diffInMinutes < 1) return '방금 전';
-    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}시간 전`;
-    return past.toLocaleDateString();
-  };
-
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
       <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
@@ -160,7 +149,7 @@ export default function HomePage() {
 
         <section className="mt-2 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
-            <DebateCard key={feed.id} feed={feed} formatTime={formatTime} />
+            <DebateCard key={feed.id} feed={feed} />
           ))}
         </section>
 

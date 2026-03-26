@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CategoryFilter from '../../components/home/CategoryFilter';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 import { useAuth } from '../../store/AuthContext';
 import MoragoraModal from '../../components/common/MoragoraModal';
 
@@ -119,7 +119,7 @@ function ChatProgressBar({ chatDeadline, proSide, conSide }) {
 
 // ===== 카드 =====
 function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
-  const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
+  const creatorAvatarUrl = resolveAvatar(room.creator?.avatar_url, room.creator_id, room.creator?.gender);
 
   // 실시간 참여자가 있으면 소켓 데이터 사용, 없으면 DB 폴백
   const liveA = liveSlots?.A || [];
@@ -369,8 +369,8 @@ export default function DebateLobbyPage() {
         const liveA = live?.A || [];
         const liveB = live?.B || [];
         const creatorSide = hotRoom.creator_side || 'A';
-        const creatorAvatar = hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON;
-        const opponentAvatar = hotRoom.opponent?.avatar_url || getAvatarUrl(hotRoom.opponent_id, hotRoom.opponent?.gender) || DEFAULT_AVATAR_ICON;
+        const creatorAvatar = resolveAvatar(hotRoom.creator?.avatar_url, hotRoom.creator_id, hotRoom.creator?.gender);
+        const opponentAvatar = resolveAvatar(hotRoom.opponent?.avatar_url, hotRoom.opponent_id, hotRoom.opponent?.gender);
         const avatarA = creatorSide === 'A' ? creatorAvatar : (hotRoom.opponent ? opponentAvatar : null);
         const avatarB = creatorSide === 'A' ? (hotRoom.opponent ? opponentAvatar : null) : creatorAvatar;
         const nameA = creatorSide === 'A' ? (hotRoom.creator?.nickname || '방장') : (hotRoom.opponent?.nickname || null);

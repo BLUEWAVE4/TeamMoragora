@@ -17,7 +17,7 @@ router.post('/:debateId/start', requireAuth, startChat);
 router.post('/:debateId/end', requireAuth, endChat);
 
 // 유저 신고 (AI 콘텐츠 분석)
-router.post('/:debateId/report', reportUser);
+router.post('/:debateId/report', requireAuth, reportUser);
 
 // 시민 실시간 투표 (chatting 중 관전자)
 router.post('/:debateId/citizen-vote', requireAuth, castCitizenVote);

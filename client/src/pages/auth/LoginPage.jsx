@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import MoragoraModal from '../../components/common/MoragoraModal';
+import useModalState from '../../hooks/useModalState';
 import kakaoBtn from '../../assets/KakaoLoginButton.svg';
 import googleBtn from '../../assets/GoogleLoginButton.svg';
 
@@ -9,9 +10,7 @@ export default function LoginPage({ isKakaoOnly = false }) {
   const { user, signInWithKakao, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   const ua = navigator.userAgent.toLowerCase();
   const isKakaoTalk = ua.includes('kakao');

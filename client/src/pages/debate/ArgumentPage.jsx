@@ -4,6 +4,7 @@ import { getDebate, getArguments, submitArgument, generateSoloArgument } from '.
 import { useAuth } from '../../store/AuthContext'
 import { CircleCheck, CircleDot, Circle } from 'lucide-react'
 import MoragoraModal from '../../components/common/MoragoraModal'
+import useModalState from '../../hooks/useModalState'
 
 const labelMap = {
   battle: '승부', consensus: '합의', analysis: '분석',
@@ -236,9 +237,7 @@ export default function ArgumentPage() {
   const [r1Content, setR1Content] = useState('')
   const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' })
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description })
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' })
+  const { modalState, showModal, closeModal } = useModalState()
 
   const fetchData = useCallback(async () => {
     try {

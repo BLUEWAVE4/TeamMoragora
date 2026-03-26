@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDebate, generateDebateSides, getMyActiveDebates } from "../../services/api";
 import MoragoraModal from '../../components/common/MoragoraModal';
+import useModalState from '../../hooks/useModalState';
 
 const DRAFT_KEY = 'debate_create_draft';
 
@@ -37,9 +38,7 @@ export default function DebateCreatePage() {
   const [aiLoading,     setAiLoading]     = useState(false);
   const [activeDebateModal, setActiveDebateModal] = useState({ isOpen: false, debate: null });
 
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
-  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   // ⭐ topic별 AI 결과 저장 (purpose, lens 포함)
   const [aiResults, setAiResults] = useState({});

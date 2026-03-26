@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { getHallOfFame } from '../../services/api';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 
 const CATEGORY_LABELS = {
   daily: '일상', romance: '연애', work: '직장', education: '교육',
@@ -107,7 +107,7 @@ export default function MoragoraFeedPage() {
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-50 flex-shrink-0">
                   <img
-                    src={debate.creator?.avatar_url || getAvatarUrl(debate.creator_id, debate.creator?.gender) || DEFAULT_AVATAR_ICON}
+                    src={resolveAvatar(debate.creator?.avatar_url, debate.creator_id, debate.creator?.gender)}
                     alt=""
                     className="w-full h-full object-cover"
                   />

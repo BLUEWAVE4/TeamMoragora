@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AI_JUDGES } from '../../constants/judges';
 import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
+import useModalState from '../../hooks/useModalState';
 import CommentBottomSheet from '../common/CommentBottomSheet';
 
 // 개별 카드 컴포넌트
@@ -26,9 +27,7 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [voteExpired, setVoteExpired] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   // 투표 수는 서버에서 citizen_score_a/b로 이미 내려옴 — 개별 fetch 제거
 

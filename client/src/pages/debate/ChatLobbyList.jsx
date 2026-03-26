@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 import { motion } from 'framer-motion';
 
 export default function ChatLobbyList() {
@@ -101,7 +101,7 @@ export default function ChatLobbyList() {
             <div className="flex flex-col gap-3">
               {lobbies.map((lobby, i) => {
                 const creator = lobby.profiles;
-                const avatar = creator?.avatar_url || getAvatarUrl(lobby.creator_id, creator?.gender) || DEFAULT_AVATAR_ICON;
+                const avatar = resolveAvatar(creator?.avatar_url, lobby.creator_id, creator?.gender);
                 const categoryColor = {
                   '사회': 'text-blue-400', '연애': 'text-pink-400', '기술': 'text-cyan-400',
                   '철학': 'text-purple-400', '정치': 'text-amber-400',

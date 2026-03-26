@@ -23,7 +23,7 @@ export async function sendMessage(req, res, next) {
     // 논쟁 조회
     const { data: debate, error: debateErr } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('id, status, mode, creator_id, opponent_id, topic, category')
       .eq('id', debateId)
       .single();
 
@@ -136,7 +136,7 @@ export async function getMessages(req, res, next) {
 
     const { data, error } = await supabaseAdmin
       .from('chat_messages')
-      .select('*')
+      .select('id, debate_id, user_id, nickname, content, side, created_at')
       .eq('debate_id', debateId)
       .order('created_at', { ascending: true });
 
@@ -157,7 +157,7 @@ export async function startChat(req, res, next) {
     // 논쟁 조회
     const { data: debate, error: debateErr } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('id, status, mode, creator_id, opponent_id, topic, category')
       .eq('id', debateId)
       .single();
 
@@ -211,7 +211,7 @@ export async function endChat(req, res, next) {
     // 논쟁 조회
     const { data: debate, error: debateErr } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('id, status, mode, creator_id, opponent_id, topic, category')
       .eq('id', debateId)
       .single();
 

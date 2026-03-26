@@ -2,14 +2,16 @@
  * VerdictContent.jsx — 판결 상세 공통 컴포넌트
  * JudgingPage(인라인), ProfilePage(모달), MoragoraDetailPage(페이지)에서 공유
  */
-import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { GoLaw } from "react-icons/go";
 import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from "chart.js";
 import { AI_JUDGES, resolveJudgeKey } from "../../constants/judges";
 import { supabase } from "../../services/supabase";
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
+import { resolveAvatar, getAvatarUrl, DEFAULT_AVATAR_ICON } from "../../utils/avatar";
+import useModalState from "../../hooks/useModalState";
+import { timeAgo } from "../../utils/dateFormatter";
 import MoragoraModal from '../common/MoragoraModal';
 import ChatLogViewer from './ChatLogViewer';
 import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally } from "../../services/api";
@@ -17,15 +19,6 @@ import { useAuth } from "../../store/AuthContext";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
-const timeAgo = (dateStr) => {
-  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if (diff < 60) return '방금';
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
-  if (diff < 31536000) return `${Math.floor(diff / 2592000)}개월 전`;
-  return `${Math.floor(diff / 31536000)}년 전`;
-};
 
 const fallbackAvatar = (name, color) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="${color}22"/><text x="32" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="${color}">${(name || '?')[0]}</text></svg>`)}`;
@@ -81,9 +74,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null);
   const [showVoteInfo, setShowVoteInfo] = useState(false);
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '' });
-  const showModal = (title, description) => setModalState({ isOpen: true, title, description });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
@@ -157,13 +148,13 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     return () => supabase.removeChannel(channel);
   }, [debateId, user?.id]);
 
-  const handleSubmitComment = async () => {
+  const handleSubmitComment = useCallback(async () => {
     if (!commentInput.trim() || isSubmittingComment) return;
     setIsSubmittingComment(true);
     try {
       const newComment = await createComment(debateId, commentInput.trim());
       if (newComment.user) {
-        newComment.user.avatar_url = myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON;
+        newComment.user.avatar_url = resolveAvatar(myAvatarUrl, user.id, myGender);
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
@@ -172,16 +163,16 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     } finally {
       setIsSubmittingComment(false);
     }
-  };
+  }, [commentInput, isSubmittingComment, debateId, myAvatarUrl, user, myGender]);
 
-  const handleDeleteComment = async (commentId) => {
+  const handleDeleteComment = useCallback(async (commentId) => {
     try {
       await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (err) {
       showModal('삭제 실패', err.message || '삭제에 실패했습니다.');
     }
-  };
+  }, []);
 
   const [myVote, setMyVote] = useState(null);
   const [isVoting, setIsVoting] = useState(false);
@@ -199,7 +190,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     }).catch(() => {});
   }, [debateId, user]);
 
-  const handleVote = async (side) => {
+  const handleVote = useCallback(async (side) => {
     if (!user || isVoting) return;
     setIsVoting(true);
     const prevVote = myVote;
@@ -234,10 +225,10 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       }
     }
     setIsVoting(false);
-  };
+  }, [user, isVoting, myVote, liveVoteA, liveVoteB, debateId]);
 
   const [likingSet, setLikingSet] = useState(new Set());
-  const handleToggleLike = async (commentId) => {
+  const handleToggleLike = useCallback(async (commentId) => {
     if (!user || likingSet.has(commentId)) return;
     setLikingSet(prev => new Set(prev).add(commentId));
     const prevComments = comments;
@@ -253,11 +244,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     } finally {
       setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; });
     }
-  };
+  }, [user, likingSet, comments]);
 
   if (!verdictData) return null;
 
-  const debateData = verdictData.debate || verdictData.debates || {};
+  const debateData = verdictData.debate || {};
   const purpose = debateData.purpose || 'battle';
   const isConsensus = purpose === '합의' || purpose === 'consensus';
   const isAnalysis = purpose === '분석' || purpose === 'analysis';
@@ -282,7 +273,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     };
   }).sort((a, b) => JUDGE_ORDER.indexOf(a.key) - JUDGE_ORDER.indexOf(b.key));
 
-  const winnerSide = verdictData.winner_side || debateData.winner_side || debateData.win_side || 'A';
+  const winnerSide = verdictData.winner_side || debateData.winner_side || 'draw';
   const activeArgSide = argSide || (winnerSide === 'B' ? 'B' : 'A');
 
   const finalScoreA = verdictData.final_score_a || verdictData.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
@@ -951,7 +942,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     <div key={c.id} className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : ''}`}>
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
                         <img
-                          src={c.user?.avatar_url || getAvatarUrl(c.user_id, c.user?.gender) || DEFAULT_AVATAR_ICON}
+                          src={resolveAvatar(c.user?.avatar_url, c.user_id, c.user?.gender)}
                           alt="" className="w-full h-full object-cover"
                         />
                       </div>
@@ -1007,7 +998,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
               {user ? (
                 <div className="flex items-center gap-2 pt-3 border-t border-gold/10 min-w-0">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 shrink-0">
-                    <img src={myAvatarUrl || getAvatarUrl(user.id, myGender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                    <img src={resolveAvatar(myAvatarUrl, user.id, myGender)} alt="" className="w-full h-full object-cover" />
                   </div>
                   <input
                     type="text"

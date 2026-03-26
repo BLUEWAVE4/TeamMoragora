@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../store/AuthContext';
-import useThemeStore from '../store/useThemeStore';
+import { useAuth } from '../../store/AuthContext';
+import useThemeStore from '../../store/useThemeStore';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabase';
-import api, { getVerdict } from '../services/api';
-import { getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../utils/avatar';
+import { supabase } from '../../services/supabase';
+import api, { getVerdict } from '../../services/api';
+import { resolveAvatar, getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
   Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X, Shield
 } from 'lucide-react';
-import VerdictContent from '../components/verdict/VerdictContent';
-import FeedbackModal from './FeedbackModal';
-import TierModal from './TierModal';
-import MoragoraModal from '../components/common/MoragoraModal';
+import VerdictContent from '../../components/verdict/VerdictContent';
+import FeedbackModal from '../../components/modals/FeedbackModal';
+import TierModal from '../../components/modals/TierModal';
+import MoragoraModal from '../../components/common/MoragoraModal';
+import { formatDate } from '../../utils/dateFormatter';
+import useModalState from '../../hooks/useModalState';
 
 // ─── CountUp ────────────────────────────────────────────────────────────────
 const CountUp = ({ end }) => {
@@ -128,11 +130,6 @@ const categoryMap = {
   social: '사회', politics: '정치', technology: '기술', philosophy: '철학',
   culture: '문화', 일상: '일상', 연애: '연애', 직장: '직장', 교육: '교육',
   사회: '사회', 정치: '정치', 기술: '기술', 철학: '철학', 문화: '문화', 기타: '기타',
-};
-const formatDate = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
 
 // ─── iOS-like BottomSheet ─────────────────────────────────────────────────────
@@ -297,7 +294,7 @@ function VerdictModal({ verdict, onClose }) {
             <button onClick={onClose} className="absolute top-4 left-4 text-white/60 text-xl">←</button>
             <p className="text-white/50 text-xs font-medium mb-1">판결 결과</p>
             <h2 className="text-white text-lg font-extrabold leading-snug px-4 line-clamp-2">
-              "{verdict.debate?.topic || verdict.debates?.topic || '논쟁 주제'}"
+              "{verdict.debate?.topic || '논쟁 주제'}"
             </h2>
           </div>
           <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8 -mt-3">
@@ -325,9 +322,7 @@ export default function ProfilePage() {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [isTierSheetOpen, setIsTierSheetOpen] = useState(false);
   const [newNickname, setNewNickname] = useState('');
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info', onConfirm: null });
-  const showModal = (title, description, type = 'info', onConfirm = null) => setModalState({ isOpen: true, title, description, type, onConfirm });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info', onConfirm: null });
+  const { modalState, showModal, closeModal } = useModalState();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(5);
   const [isListEditing, setIsListEditing] = useState(false);
@@ -422,7 +417,7 @@ const [showInfo, setShowInfo] = useState(false);
     return verdict.winner_side === mySide ? '승리' : '패배';
   };
 
-  const handleUpdateNickname = async () => {
+  const handleUpdateNickname = useCallback(async () => {
     if (!newNickname.trim()) return;
     setLoading(true);
     try {
@@ -434,9 +429,9 @@ const [showInfo, setShowInfo] = useState(false);
     } finally {
       setLoading(false);
     }
-  };
+  }, [newNickname]);
 
-  const handleVerdictClick = async (debateId) => {
+  const handleVerdictClick = useCallback(async (debateId) => {
     setVerdictLoading(true);
     try {
       const data = await getVerdict(debateId);
@@ -447,9 +442,9 @@ const [showInfo, setShowInfo] = useState(false);
     } finally {
       setVerdictLoading(false);
     }
-  };
+  }, []);
 
-  const handleDeleteDebate = (debateId, e) => {
+  const handleDeleteDebate = useCallback((debateId, e) => {
     e.stopPropagation();
     showModal('논쟁 기록 삭제', '이 논쟁 기록을 리스트에서 삭제하시겠습니까?', 'confirm', async () => {
       closeModal();
@@ -461,9 +456,9 @@ const [showInfo, setShowInfo] = useState(false);
         showModal('삭제 실패', '삭제 처리 중 오류가 발생했습니다.', 'error');
       }
     });
-  };
+  }, [showModal, closeModal]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     showModal('로그아웃', '로그아웃 하시겠습니까?', 'confirm', async () => {
       closeModal();
       try {
@@ -475,14 +470,14 @@ const [showInfo, setShowInfo] = useState(false);
         window.location.href = '/';
       }
     });
-  };
+  }, [showModal, closeModal]);
 
   // ─── 회원탈퇴 ───
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawConfirm, setWithdrawConfirm] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
 
-  const handleWithdraw = async () => {
+  const handleWithdraw = useCallback(async () => {
     if (withdrawConfirm !== '탈퇴합니다') return;
     setWithdrawing(true);
     try {
@@ -493,7 +488,7 @@ const [showInfo, setShowInfo] = useState(false);
       showModal('탈퇴 실패', '회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       setWithdrawing(false);
     }
-  };
+  }, [withdrawConfirm]);
 
   const resetAvatarOptions = () => setAvatarOptions({
     top: '', skinColor: '', hairColor: '', clothing: '', clothesColor: '',
@@ -543,7 +538,7 @@ const [showInfo, setShowInfo] = useState(false);
             <img
               src={avatarOptions.top
                 ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions)
-                : (profileData?.avatar_url || getAvatarUrl(user.id, profileData?.gender) || DEFAULT_AVATAR_ICON)}
+                : (resolveAvatar(profileData?.avatar_url, user.id, profileData?.gender))}
               alt="avatar"
               className="w-full h-full object-cover"
             />

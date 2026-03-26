@@ -6,9 +6,12 @@ import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
 import { socket } from '../../services/socket';
 import { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate } from '../../services/api';
-import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
+import { resolveAvatar } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import MoragoraModal from '../../components/common/MoragoraModal';
+import useTypingIndicator from '../../hooks/chat/useTypingIndicator';
+import useLobbyChat from '../../hooks/chat/useLobbyChat';
+import useCitizenVoting from '../../hooks/chat/useCitizenVoting';
 
 const MAX_CHARS = 200;
 const COOLDOWN_MS = 1000;
@@ -76,9 +79,7 @@ export default function ChatRoom() {
   const [timeChangeRequest, setTimeChangeRequest] = useState(null);
   const [filterError, setFilterError] = useState('');
 const [opponentLeft, setOpponentLeft] = useState(false);
-  const [citizenVote, setCitizenVote] = useState(null); // 'A' | 'B' | null
-  const [citizenVoteLoading, setCitizenVoteLoading] = useState(false);
-  const [voteTally, setVoteTally] = useState({ A: 0, B: 0, total: 0 });
+  const { citizenVote, citizenVoteLoading, voteTally, setVoteTally, handleCitizenVote } = useCitizenVoting(debateId, gameStarted);
   const [actionTarget, setActionTarget] = useState(null); // { userId, nickname, side }
   const [kickRequest, setKickRequest] = useState(null); // { targetId, targetNickname, votes, requiredCount }
   const [timeVoteCountdown, setTimeVoteCountdown] = useState(null); // 10초 카운트다운
@@ -92,11 +93,9 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [showNewMsgBtn, setShowNewMsgBtn] = useState(false);
   const isNearBottom = useRef(true);
 
-  const [opponentTypingSide, setOpponentTypingSide] = useState(null);
-  const [opponentTyping, setOpponentTyping] = useState(false);
-  const [opponentTypingNickname, setOpponentTypingNickname] = useState('');
-  const typingTimeout = useRef(null);
-  const opponentTypingTimeout = useRef(null);
+  const { opponentTyping, opponentTypingSide, opponentTypingNickname, broadcastTyping, stopTyping } = useTypingIndicator(debateId, user, mySide);
+  const pendingTimers = useRef([]);
+  const toastTimer = useRef(null);
 
   const [chatEnded, setChatEnded] = useState(false);
   const [showEndOverlay, setShowEndOverlay] = useState(false);
@@ -109,9 +108,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [kickConfirm, setKickConfirm] = useState(null); // { userId, nickname }
 
   // ===== 대기실 채팅 =====
-  const [lobbyMessages, setLobbyMessages] = useState([]);
-  const [lobbyInput, setLobbyInput] = useState('');
-  const lobbyChatEndRef = useRef(null);
+  const { lobbyMessages, setLobbyMessages, lobbyInput, setLobbyInput, lobbyChatEndRef, sendLobbyMessage } = useLobbyChat(debateId, user);
 
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatDeadline, setChatDeadline] = useState(null);
@@ -167,7 +164,15 @@ const [opponentLeft, setOpponentLeft] = useState(false);
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), duration);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), duration);
+  }, []);
+
+  // 추적 가능한 setTimeout — 언마운트 시 일괄 정리
+  const safeTimeout = useCallback((fn, ms) => {
+    const id = setTimeout(fn, ms);
+    pendingTimers.current.push(id);
+    return id;
   }, []);
 
   const allReady = useCallback(() => {
@@ -192,8 +197,8 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         // 참여자 아바타 맵 구성 (기존 맵에 누적, 덮어쓰기 X)
         setAvatarMap(prev => {
           const updated = { ...prev };
-          if (data.creator) updated[data.creator_id] = data.creator.avatar_url || getAvatarUrl(data.creator_id, data.creator.gender) || DEFAULT_AVATAR_ICON;
-          if (data.opponent) updated[data.opponent_id] = data.opponent.avatar_url || getAvatarUrl(data.opponent_id, data.opponent.gender) || DEFAULT_AVATAR_ICON;
+          if (data.creator) updated[data.creator_id] = resolveAvatar(data.creator.avatar_url, data.creator_id, data.creator.gender);
+          if (data.opponent) updated[data.opponent_id] = resolveAvatar(data.opponent.avatar_url, data.opponent_id, data.opponent.gender);
           return updated;
         });
         // 당사자 side 복원 (모든 상태에서 공통)
@@ -220,7 +225,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         const { data: profile } = await supabase
           .from('profiles').select('nickname, avatar_url, gender').eq('id', user.id).single();
         setMyNickname(profile?.nickname || '익명');
-        const myAvt = profile?.avatar_url || getAvatarUrl(user.id, profile?.gender) || DEFAULT_AVATAR_ICON;
+        const myAvt = resolveAvatar(profile?.avatar_url, user.id, profile?.gender);
         setMyAvatarUrl(myAvt);
         setAvatarMap(prev => ({ ...prev, [user.id]: myAvt }));
       } catch (e) { console.error(e); }
@@ -254,7 +259,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
             setAvatarMap(prev => {
               const updated = { ...prev };
               profiles.forEach(p => {
-                updated[p.id] = p.avatar_url || getAvatarUrl(p.id, p.gender) || DEFAULT_AVATAR_ICON;
+                updated[p.id] = resolveAvatar(p.avatar_url, p.id, p.gender);
               });
               return updated;
             });
@@ -372,18 +377,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         });
       }
     });
-    socket.on('opponent-typing', ({ typing, side, nickname }) => {
-    setOpponentTyping(typing);
-    if (side) setOpponentTypingSide(side);
-    if (nickname) setOpponentTypingNickname(nickname);
-    if (typing) { clearTimeout(opponentTypingTimeout.current); opponentTypingTimeout.current = setTimeout(() => setOpponentTyping(false), 3000); }
-  });
+    // opponent-typing → useTypingIndicator 훅에서 처리
     socket.on('already-in-room', ({ reason, activeDebateId }) => {
       navigate(`/debate/${activeDebateId}/chat`);
     });
-    socket.on('citizen-vote-tally', (tally) => {
-      if (tally) setVoteTally({ A: tally.A, B: tally.B, total: tally.total });
-    });
+    // citizen-vote-tally → useCitizenVoting 훅에서 처리
     socket.on('room-deleted', ({ reason }) => {
       sessionStorage.setItem('roomAlert', reason || '방장이 논쟁을 삭제하였습니다.');
       navigate('/debate/lobby');
@@ -472,7 +470,7 @@ socket.on('filter-blocked', ({ reason }) => {
   setMessages(prev => prev.filter(m => !m.id?.startsWith('temp-') || m.user_id !== user?.id));
   setMsgCount(prev => Math.max(0, prev - 1)); // 발언권 복구
   setFilterError(reason || '부적절한 표현이 감지되었습니다.');
-  setTimeout(() => setFilterError(''), 3000);
+  safeTimeout(() => setFilterError(''), 3000);
 });
 
 socket.on('opponent-left', ({ nickname }) => {
@@ -497,8 +495,8 @@ socket.on('chat-auto-ended', () => {
     content: '상대방 이탈로 논쟁이 종료되었습니다.',
     created_at: new Date().toISOString(),
   }]);
-  setTimeout(() => setShowEndOverlay(true), 500);
-  setTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
+  safeTimeout(() => setShowEndOverlay(true), 500);
+  safeTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
 });
 // ===== 채팅 종료/취소 =====
 socket.on('chat-ended', () => {
@@ -511,8 +509,8 @@ socket.on('chat-ended', () => {
     content: '논쟁이 종료되었습니다. 판결을 진행합니다.',
     created_at: new Date().toISOString(),
   }]);
-  setTimeout(() => setShowEndOverlay(true), 500);
-  setTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
+  safeTimeout(() => setShowEndOverlay(true), 500);
+  safeTimeout(() => navigate(`/debate/${debateId}/judging`), 3500);
 });
 
 socket.on('chat-cancelled', () => {
@@ -526,8 +524,8 @@ socket.on('chat-cancelled', () => {
     content: '채팅 내용이 없어 논쟁이 취소되었습니다.',
     created_at: new Date().toISOString(),
   }]);
-  setTimeout(() => setShowEndOverlay(true), 500);
-  setTimeout(() => navigate('/debate/lobby'), 3500);
+  safeTimeout(() => setShowEndOverlay(true), 500);
+  safeTimeout(() => navigate('/debate/lobby'), 3500);
 });
 
 // ===== 강퇴 투표 =====
@@ -546,7 +544,7 @@ socket.on('kick-approved', ({ targetId, targetNickname }) => {
     setMessages(prev => [...prev, { id: `sys-kicked-${Date.now()}`, type: 'system', content: '강퇴 투표로 퇴장되었습니다.', created_at: new Date().toISOString() }]);
     setChatEnded(true);
     sessionStorage.setItem('kickedAlert', '강퇴 투표로 논쟁에서 퇴장되었습니다.');
-    setTimeout(() => navigate('/debate/lobby'), 2000);
+    safeTimeout(() => navigate('/debate/lobby'), 2000);
   } else {
     setMessages(prev => [...prev, { id: `sys-kicked-${Date.now()}`, type: 'system', content: `${targetNickname}님이 강퇴되었습니다.`, created_at: new Date().toISOString() }]);
   }
@@ -561,17 +559,12 @@ socket.on('participant-joined', ({ message, side }) => {
   showToast(message, toastType);
   setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now() }]);
 });
-// 대기실 채팅 메시지 수신
-socket.on('lobby-chat', (msg) => {
-  if (msg.userId !== user?.id) {
-    setLobbyMessages(prev => [...prev, msg]);
-  }
-});
+// lobby-chat → useLobbyChat 훅에서 처리
 // 강퇴된 유저 재참여 차단
 socket.on('kicked-blocked', ({ reason }) => {
   setChatEnded(true);
   setMessages(prev => [...prev, { id: `sys-blocked-${Date.now()}`, type: 'system', content: reason, created_at: new Date().toISOString() }]);
-  setTimeout(() => navigate('/debate/lobby'), 2000);
+  safeTimeout(() => navigate('/debate/lobby'), 2000);
 });
 // 강퇴 후 빈 사이드 스킵 카운트다운
 socket.on('kick-skip-countdown', ({ side, seconds }) => {
@@ -582,7 +575,7 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => {
       socket.emit('leave-presence', { debateId, userId: user.id });
       socket.off('presence-sync');
-      socket.off('opponent-typing');
+      // opponent-typing → useTypingIndicator 훅에서 cleanup
       socket.off('game-start');
       socket.off('time-update');
       socket.off('time-change-request');
@@ -597,14 +590,19 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('participant-joined');
       socket.off('kicked-blocked');
       socket.off('kick-skip-countdown');
-      socket.off('lobby-chat');
+      // lobby-chat → useLobbyChat 훅에서 cleanup
       socket.off('already-in-room');
       socket.off('room-deleted');
-      socket.off('citizen-vote-tally');
+      // citizen-vote-tally → useCitizenVoting 훅에서 cleanup
       socket.off('duplicate-login');
+      socket.off('countdown-start');
       socket.off('chat-auto-ended');
       socket.off('chat-ended');
       socket.off('chat-cancelled');
+      // 모든 pending timer 정리
+      clearTimeout(toastTimer.current);
+      pendingTimers.current.forEach(id => clearTimeout(id));
+      pendingTimers.current = [];
     };
   }, [debateId, user, myNickname, loading]);
 
@@ -726,31 +724,7 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   // loading 중에는 side가 아직 복원 안 됐으므로 시민으로 판별하지 않음
   const isCitizen = gameStarted && !loading && !mySide && user && debate && debate.creator_id !== user.id && debate.opponent_id !== user.id;
 
-  // 시민투표 집계 — 게임 시작 후 모든 유저가 확인 가능
-  useEffect(() => {
-    if (!gameStarted || !debateId) return;
-    getCitizenVoteTally(debateId).then(res => {
-      const d = res.data || res;
-      setVoteTally({ A: d.A, B: d.B, total: d.total });
-      if (d.myVote) setCitizenVote(d.myVote);
-    }).catch(() => {});
-  }, [gameStarted, debateId]);
-
-  const handleCitizenVote = async (side) => {
-    if (citizenVoteLoading) return;
-    setCitizenVoteLoading(true);
-    try {
-      await castCitizenVote(debateId, side);
-      setCitizenVote(side);
-      // 집계 갱신 + 전체 브로드캐스트
-      const res = await getCitizenVoteTally(debateId);
-      const d = res.data || res;
-      const tally = { A: d.A, B: d.B, total: d.total };
-      setVoteTally(tally);
-      socket.emit('citizen-vote-update', { debateId, tally });
-    } catch (e) { console.error(e); }
-    finally { setCitizenVoteLoading(false); }
-  };
+  // 시민투표 → useCitizenVoting 훅에서 처리
 
 const handleSkipTime = () => {
   if (timeChangeRequest) return;
@@ -773,10 +747,10 @@ const handleVote = (agree) => {
       endTriggered.current = true;
       setChatEnded(true);
       sessionStorage.removeItem(`chat_session_${debateId}`);
-      setTimeout(() => setShowEndOverlay(true), 500);
+      safeTimeout(() => setShowEndOverlay(true), 500);
       // 서버 이벤트(chat-ended / chat-cancelled)가 navigate 결정
       // fallback: 10초 내 서버 응답 없으면 로비로 이동
-      const fallback = setTimeout(() => navigate('/debate/lobby'), 10000);
+      const fallback = safeTimeout(() => navigate('/debate/lobby'), 10000);
       const clear = () => clearTimeout(fallback);
       socket.on('chat-ended', clear);
       socket.on('chat-cancelled', clear);
@@ -806,18 +780,11 @@ const handleVote = (agree) => {
     return () => window.visualViewport.removeEventListener('resize', onResize);
   }, []);
 
-  // 타이핑 상태 emit을 300ms debounce — 매 키입력마다 emit 방지
-  const emitTyping = useMemo(() => debounce((dId, uId, side) => {
-    socket.emit('typing', { debateId: dId, userId: uId, typing: true, side });
-  }, 300), []);
-
   const handleTextChange = useCallback((e) => {
     setText(e.target.value);
     setMsgError('');
-    emitTyping(debateId, user.id, mySide);
-    clearTimeout(typingTimeout.current);
-    typingTimeout.current = setTimeout(() => socket.emit('typing', { debateId, userId: user.id, typing: false, side: mySide }), 1500);
-  }, [debateId, user, mySide, emitTyping]);
+    broadcastTyping();
+  }, [broadcastTyping]);
 
   const handleSend = useCallback(async () => {
     const trimmed = text.trim();
@@ -828,20 +795,20 @@ const handleVote = (agree) => {
     if (cmd === '/help' || cmd === '/도움') {
       setText('');
       setShowHelpPanel(true);
-      setTimeout(() => setShowHelpPanel(false), 5000);
+      safeTimeout(() => setShowHelpPanel(false), 5000);
       return;
     }
     if (cmd === '/스킵' || cmd === '/skip') {
       setText('');
-      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); setTimeout(() => setMsgError(''), 2000); return; }
-      if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); setTimeout(() => setMsgError(''), 2000); return; }
+      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
+      if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       handleSkipTime();
       return;
     }
     if (cmd === '/시간추가' || cmd === '/+5') {
       setText('');
-      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); setTimeout(() => setMsgError(''), 2000); return; }
-      if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); setTimeout(() => setMsgError(''), 2000); return; }
+      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
+      if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       handleExtendTime();
       return;
     }
@@ -860,7 +827,7 @@ const handleVote = (agree) => {
     setSending(true);
     setCooldown(true);
     setText('');
-    socket.emit('typing', { debateId, userId: user.id, typing: false });
+    stopTyping();
 
     const newCount = msgCount + 1;
     const optimisticMsg = { id: `temp-${Date.now()}`, debate_id: debateId, user_id: user.id, nickname: myNickname, content: trimmed, side: mySide, created_at: new Date().toISOString() };
@@ -874,7 +841,7 @@ const handleVote = (agree) => {
 
     socket.emit('send-message', { debateId, userId: user.id, nickname: myNickname, content: trimmed, side: mySide });
     setSending(false);
-    setTimeout(() => setCooldown(false), COOLDOWN_MS);
+    safeTimeout(() => setCooldown(false), COOLDOWN_MS);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname, timeChangeRequest]);
 

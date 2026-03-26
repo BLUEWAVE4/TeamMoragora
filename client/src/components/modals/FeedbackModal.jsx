@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { submitFeedback, getMyFeedbacks } from '../services/api';
-import MoragoraModal from '../components/common/MoragoraModal';
-import useThemeStore from '../store/useThemeStore';
+import { submitFeedback, getMyFeedbacks } from '../../services/api';
+import MoragoraModal from '../common/MoragoraModal';
+import useModalState from '../../hooks/useModalState';
+import useThemeStore from '../../store/useThemeStore';
 
 const RATING_ITEMS = [
   { key: 'satisfaction', label: '전반적 만족도', desc: '모라고라 서비스를 전반적으로 어떻게 평가하시나요?' },
@@ -128,9 +129,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' });
-  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type });
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' });
+  const { modalState, showModal, closeModal } = useModalState();
 
   // 기존 피드백 불러오기
   useEffect(() => {

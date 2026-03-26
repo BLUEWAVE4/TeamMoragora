@@ -32,15 +32,9 @@ export const createDebate = (data) => api.post('/debates', data);
 export const getDebate = (id) => api.get(`/debates/${id}`);
 export const getDebateByInviteCode = (inviteCode) => api.get(`/debates/invite/${inviteCode}`);
 export const joinByInvite = (inviteCode) => api.post(`/debates/join/${inviteCode}`);
-export const acceptInvitation = joinByInvite;
 export const getMyActiveDebates = (cursor) => api.get('/debates/my/active', { params: { limit: 100, ...(cursor ? { cursor } : {}) } });
 export const deleteDebate = (debateId) => api.delete(`/debates/${debateId}`);
 export const incrementDebateView = (debateId) => api.post(`/debates/${debateId}/view`);
-export const getChatRooms = () => api.get('/debates', { params: { sort: '-created_at', limit: 100 } });
-export const getRealTimeDebates = () => api.get('/debates/realtime');
-
-// ===== AI 분석 =====
-export const analyzeTopic = (data) => api.post('/ai/analyze-topic', data);
 
 // ===== AI =====
 export const generateDebateSides = (data) => api.post('/ai/generate-sides', data);
@@ -52,8 +46,6 @@ export const generateSoloArgument = (debateId) => api.post(`/arguments/${debateI
 
 // ===== 채팅 (Chat) =====
 export const getChatMessages = (debateId) => api.get(`/chat/${debateId}/messages`);
-export const sendChatMessage = (debateId, content) => api.post(`/chat/${debateId}/messages`, { content });
-export const startChat = (debateId) => api.post(`/chat/${debateId}/start`);
 export const endChat = (debateId) => api.post(`/chat/${debateId}/end`);
 export const castCitizenVote = (debateId, voted_side) => api.post(`/chat/${debateId}/citizen-vote`, { voted_side });
 export const getCitizenVoteTally = (debateId) => api.get(`/chat/${debateId}/citizen-vote`);
@@ -79,8 +71,6 @@ export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}
 export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
 
 // ===== 프로필 (Profiles) =====
-export const getMyProfile = () => api.get('/auth/me');
-export const getMyVerdicts = () => api.get('/profiles/me/verdicts');
 
 // ===== 피드백 (Feedbacks) =====
 export const submitFeedback = (data) => api.post('/feedbacks', data);

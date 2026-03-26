@@ -4,6 +4,7 @@ import { getDebate, getDebateByInviteCode, joinByInvite, getArguments } from '..
 import { useAuth } from '../../store/AuthContext'
 import { ShieldBan } from 'lucide-react'
 import MoragoraModal from '../../components/common/MoragoraModal'
+import useModalState from '../../hooks/useModalState'
 
 const INVITE_TIMEOUT = 300
 
@@ -48,9 +49,7 @@ export default function InvitePage() {
   const [opponentWriting, setOpponentWriting] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
   const [isCreator, setIsCreator] = useState(null)
-  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' })
-  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type })
-  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' })
+  const { modalState, showModal, closeModal } = useModalState()
 
   const shareOrigin = import.meta.env.VITE_CLIENT_URL || window.location.origin
   const shareUrl = `${shareOrigin}/invite/${inviteCode}`
