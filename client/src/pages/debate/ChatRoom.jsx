@@ -979,7 +979,7 @@ const handleVote = (agree) => {
               if (isMeCitizen) {
                 return (
                   <div className="w-full py-3.5 rounded-2xl border-2 border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center">
-                    <span className="text-[11px] text-[#D4AF37]/60 font-bold leading-snug">관전자는 시민 투표만 참여가 가능하고 채팅 참여는 불가합니다</span>
+                    <span className="text-[11px] text-[#D4AF37]/60 font-bold leading-snug">시민으로 참여합니다 · 투표만 가능</span>
                   </div>
                 );
               }
