@@ -378,6 +378,7 @@ export default function DebateLobbyPage() {
                   const p = liveA[i];
                   const fallback = i === 0 ? avatarA : null;
                   const hasAvatar = p?.avatarUrl || fallback;
+                  if (!hasAvatar && hotRoom.status === 'chatting') return null;
                   return (
                     <div key={`ha-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
                       <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
@@ -394,6 +395,7 @@ export default function DebateLobbyPage() {
                   const p = liveB[i];
                   const fallback = i === 0 ? avatarB : null;
                   const hasAvatar = p?.avatarUrl || fallback;
+                  if (!hasAvatar && hotRoom.status === 'chatting') return null;
                   return (
                     <div key={`hb-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
                       <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
