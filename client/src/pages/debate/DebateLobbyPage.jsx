@@ -149,7 +149,7 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
         : 'bg-white dark:bg-white/[0.04] cursor-pointer active:scale-[0.99]'
     }`}>
       {/* 프로필 헤더 */}
-      <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+      <div className="px-4 pt-4 pb-3 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 shrink-0">
           <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
         </div>
@@ -157,13 +157,12 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
           <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate block">{creatorName}</span>
           <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold">{room.creator?.tier || '시민'}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0"><polyline points="9 6 15 12 9 18"/></svg>
-        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" className="shrink-0"><polyline points="9 6 15 12 9 18"/></svg>
       </div>
 
-      <div className="px-4">
+      <div className="mx-4 border-t border-gray-100 dark:border-white/[0.06]" />
+
+      <div className="px-4 pt-3">
         <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
 
         <div className="flex items-center gap-2 mb-4">
@@ -225,6 +224,11 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
           <span className="text-[11px] font-bold text-red-400">강퇴된 논쟁 — 재참여 불가</span>
         </div>
       )}
+
+      {/* 하단: 타이머 */}
+      <div className="px-4 pt-3 flex justify-end">
+        <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
+      </div>
     </div>
   );
 }
