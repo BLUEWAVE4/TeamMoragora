@@ -118,7 +118,7 @@ function ChatProgressBar({ chatDeadline, proSide, conSide }) {
 }
 
 // ===== 카드 =====
-function LobbyDebateCard({ room, onCardClick }) {
+function LobbyDebateCard({ room, onCardClick, isKicked }) {
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
 
   const creatorName = room.creator?.nickname || '방장';
@@ -138,7 +138,11 @@ function LobbyDebateCard({ room, onCardClick }) {
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
   return (
-    <div onClick={() => onCardClick(room)} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-all mb-3">
+    <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-2xl p-5 shadow-sm border transition-all mb-3 ${
+      isKicked
+        ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
+        : 'bg-white border-gray-100 cursor-pointer active:scale-[0.99]'
+    }`}>
       <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
@@ -180,6 +184,15 @@ function LobbyDebateCard({ room, onCardClick }) {
 
       {room.status === 'chatting' && room.chat_deadline && (
         <ChatProgressBar chatDeadline={room.chat_deadline} proSide={room.pro_side} conSide={room.con_side} />
+      )}
+
+      {isKicked && (
+        <div className="mt-3 flex items-center gap-1.5 justify-center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span className="text-[11px] font-bold text-red-400">강퇴된 논쟁 — 재참여 불가</span>
+        </div>
       )}
     </div>
   );
@@ -262,9 +275,12 @@ export default function DebateLobbyPage() {
     else if (info.offset.x > 50) setCurrentIndex(prev => (prev - 1 + featuredRooms.length) % featuredRooms.length);
   };
 
+  const kickedDebates = JSON.parse(localStorage.getItem('kickedDebates') || '[]');
+
   const handleCardClick = async (room) => {
     if (!room?.id) return;
     if (!user) { setLoginModalOpen(true); return; }
+    if (kickedDebates.includes(room.id)) return; // 강퇴 방 클릭 차단
     try { await incrementDebateView(room.id); } catch (e) {}
     navigate(`/debate/${room.id}/chat`);
   };
@@ -302,7 +318,7 @@ export default function DebateLobbyPage() {
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0}
                 onDragEnd={handleDragEnd}
-                onClick={() => handleCardClick(featuredRooms[currentIndex])}
+                onClick={() => !kickedDebates.includes(featuredRooms[currentIndex]?.id) && handleCardClick(featuredRooms[currentIndex])}
                 className="h-full flex flex-col justify-between cursor-pointer active:cursor-grabbing touch-none"
               >
                 <div>
@@ -364,7 +380,7 @@ export default function DebateLobbyPage() {
               const isLast = processedRooms.length === index + 1 && filteredRooms.length > visibleCount;
               return (
                 <motion.div key={room.id} ref={isLast ? lastElementRef : null} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <LobbyDebateCard room={room} onCardClick={handleCardClick} />
+                  <LobbyDebateCard room={room} onCardClick={handleCardClick} isKicked={kickedDebates.includes(room.id)} />
                 </motion.div>
               );
             })}

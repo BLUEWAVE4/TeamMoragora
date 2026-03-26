@@ -477,7 +477,12 @@ socket.on('kick-request', ({ targetId, targetNickname, votes, requiredCount }) =
 socket.on('kick-approved', ({ targetId, targetNickname }) => {
   setKickRequest(null);
   if (targetId === user?.id) {
-    // 본인이 강퇴됨
+    // 본인이 강퇴됨 — localStorage에 기록
+    const kicked = JSON.parse(localStorage.getItem('kickedDebates') || '[]');
+    if (!kicked.includes(debateId)) {
+      kicked.push(debateId);
+      localStorage.setItem('kickedDebates', JSON.stringify(kicked));
+    }
     setMessages(prev => [...prev, { id: `sys-kicked-${Date.now()}`, type: 'system', content: '강퇴 투표로 퇴장되었습니다.', created_at: new Date().toISOString() }]);
     setChatEnded(true);
     setTimeout(() => navigate('/debate/lobby'), 2000);
@@ -970,7 +975,7 @@ const handleVote = (agree) => {
       )}
 
       {/* ━━━━━ 헤더 ━━━━━ */}
-      <div className="shrink-0 sticky top-0 z-20 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-10 pb-3 border-b border-white/5">
+      <div className="shrink-0 sticky top-0 z-20 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-4 pb-3 border-b border-white/5">
         {/* 1. 논쟁 제목 + 태그 */}
         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-1">실시간 논쟁</p>
         <h1 className="text-white text-[15px] font-black text-center leading-snug line-clamp-2 px-8">{debate?.topic || ''}</h1>
@@ -1328,9 +1333,9 @@ const handleVote = (agree) => {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setActionTarget(null)}
-              className="absolute inset-0 bg-black/40 z-[60]" />
+              className="fixed inset-0 bg-black/40 z-[60]" />
             <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-              className="absolute bottom-0 left-0 right-0 z-[61] bg-[#1a2744] rounded-t-2xl border-t border-white/10 p-5">
+              className="fixed bottom-0 left-0 right-0 z-[61] bg-[#1a2744] rounded-t-2xl border-t border-white/10 p-5 max-w-md mx-auto">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10">
                   <img src={avatarMap[actionTarget.userId] || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
@@ -1407,7 +1412,7 @@ const handleVote = (agree) => {
       <AnimatePresence>
         {(reportLoading || reportResult) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 z-[62] flex items-center justify-center px-8"
+            className="fixed inset-0 bg-black/60 z-[62] flex items-center justify-center px-8"
             onClick={() => { if (reportResult) setReportResult(null); }}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
               className="w-full max-w-[300px] bg-[#1a2744] rounded-2xl border border-white/10 p-6 flex flex-col items-center gap-3"
