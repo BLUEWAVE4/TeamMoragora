@@ -31,31 +31,42 @@
 
 ---
 
-## 프론트B — 이채진 (codbwls1089)
+## 프론트B — 채유진 (codbwls1089)
 
-### 담당 영역: 인증/프로필 + 로비 + 투표 + AI 연동 초기 작업
+### 담당 영역: 인증/로그인 + 로비 + 판결 대기 + 초대/공유 + 디자인 통일 + 서버 초기 작업
 
 | 파일 | 핵심 기능 |
 |------|----------|
-| `client/src/pages/auth/LoginPage.jsx` | 로그인 페이지 (카카오/구글 OAuth) |
-| `client/src/pages/auth/NicknamePage.jsx` | 닉네임 설정 (특수문자/공백 제한) |
-| `client/src/pages/ProfilePage.jsx` | 프로필 페이지 (전적, 티어, 아바타, 통계) |
-| `client/src/pages/debate/DebateLobbyPage.jsx` | 실시간 논쟁 로비 (방 목록, 인기 방, 참여자 현황) |
-| `client/src/pages/debate/ArgumentPage.jsx` | 주장 페이지 디자인 수정 + 뱃지 통일 |
-| `client/src/pages/debate/InvitePage.jsx` | 초대 페이지 뱃지 통일 |
+| **인증/로그인** | |
+| `client/src/pages/auth/LoginPage.jsx` | 로그인 페이지 (카카오/구글 OAuth, 인앱 브라우저 감지) |
+| `client/src/pages/auth/NicknamePage.jsx` | 닉네임 설정 (특수문자/공백 제한, 중복 방지, 이모지 아이콘) |
 | `client/src/components/common/ProtectedRoute.jsx` | 인증 필요 라우트 가드 |
-| `client/src/components/verdict/VerdictContent.jsx` | 판결 상세 공통 컴포넌트 (AI 점수+차트+댓글+투표) |
-| `client/src/constants/judges.js` | AI 판사 상수 (GPT/Gemini/Claude 아바타, 색상) |
+| `client/src/store/AuthContext.jsx` | 인증 컨텍스트 (초기 작업) |
+| **로비/실시간 논쟁** | |
+| `client/src/pages/debate/DebateLobbyPage.jsx` | 실시간 논쟁 로비 생성 + 디자인 + 참여 인원 반영 |
+| `client/src/components/ui/ModeSelector.jsx` | 모드 선택 UI 수정 (실시간 논쟁 버튼 텍스트) |
+| **판결/초대** | |
+| `client/src/pages/debate/JudgingPage.jsx` | 판결 대기 화면 생성 + confetti 구현 |
+| `client/src/pages/debate/InvitePage.jsx` | 초대 링크 + 카카오 공유 + 링크 복사 |
+| `client/src/pages/debate/ArgumentPage.jsx` | 주장 페이지 디자인 수정 + 뱃지 통일 + 타이머 기능 |
+| **디자인/UI 작업** | |
+| `client/src/pages/ProfilePage.jsx` | 프로필 페이지 디자인 + 논쟁 리스트 삭제 버튼 |
 | `client/src/pages/PrivacyPage.jsx` | 개인정보처리방침 |
 | `client/src/pages/TermsPage.jsx` | 이용약관 |
 | `client/src/pages/FeedbackModal.jsx` | 서비스 평가 모달 |
-| `server/src/controllers/debate.controller.js` | 논쟁 CRUD 컨트롤러 (초기 작업) |
-| `server/src/controllers/argument.controller.js` | 주장 제출 컨트롤러 (초기 작업) |
-| `server/src/controllers/vote.controller.js` | 투표 컨트롤러 (초기 작업) |
-| `server/src/services/ai/*.js` | AI 판결 서비스 초기 연동 (GPT, Gemini, Claude, Grok) |
-| `server/src/services/judgmentTrigger.service.js` | 판결 트리거 서비스 (초기 작업) |
-| `server/src/services/verdict.service.js` | 판결 확정 서비스 (초기 작업) |
-| `server/src/services/xp.service.js` | XP 경험치 시스템 (초기 작업) |
+| `client/src/components/verdict/VerdictContent.jsx` | 판결 상세 UI 작업 |
+| `client/src/constants/judges.js` | AI 판사 상수 (GPT/Gemini/Claude 아바타, 색상) |
+| `client/src/components/home/DebateCard.jsx` | 피드 카드 디자인 |
+| `client/src/components/home/TodayDebate.jsx` | 오늘의 논쟁 디자인 |
+| `client/src/components/layout/TabBar.jsx` | 탭바 논쟁 페이지 이동 연결 |
+| **서버 연동 (판결/투표 프론트↔서버)** | |
+| `server/src/controllers/vote.controller.js` | 투표 컨트롤러 수정 |
+| `server/src/controllers/judgment.controller.js` | 판결 컨트롤러 수정 |
+| `server/src/services/verdict.service.js` | 판결 확정 + 시민투표 반영 수정 |
+| `server/src/services/ai/*.js` | AI 서비스 응답 형식 수정 (GPT, Gemini, Claude, Grok) |
+| `server/src/config/ai.js` | AI 모델 설정 수정 |
+| `server/src/db/schema.sql` | 스키마 수정 |
+| `server/src/db/seed.sql` | 시드 데이터 작성 |
 
 ---
 
