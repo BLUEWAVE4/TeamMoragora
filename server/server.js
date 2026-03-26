@@ -317,20 +317,14 @@ io.on('connection', (socket) => {
     // 혼자 남았으면(1/1) 즉시 승인 — vote-time-change 로직으로 위임
     if (Object.keys(votes).length >= total) {
       timeVotes[debateId] = { type, votes, requiredCount: total, currentDeadline };
-      // 즉시 승인 처리 (vote-time-change와 동일 로직)
+      // 즉시 승인 처리
       delete timeVotes[debateId];
       import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
-        let newDeadline;
         if (type === 'skip') {
-          newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-        } else {
-          const base = currentDeadline ? new Date(currentDeadline).getTime() : Date.now();
-          newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
-        }
-        await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
-        io.to(debateId).emit('time-change-approved', { type, chat_deadline: newDeadline });
-        const remaining = new Date(newDeadline).getTime() - Date.now();
-        if (remaining > 0) {
+          // 스킵: 10초 카운트다운 후 즉시 판결
+          const newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          io.to(debateId).emit('time-change-approved', { type, chat_deadline: newDeadline });
           setTimeout(async () => {
             try {
               const { data: d } = await supabaseAdmin.from('debates').select('status, mode').eq('id', debateId).single();
@@ -342,7 +336,13 @@ io.on('connection', (socket) => {
                 console.log(`[Solo Skip] ${debateId} → 판결 트리거`);
               }
             } catch (err) { console.error('[Solo Skip] 에러:', err.message); }
-          }, remaining);
+          }, 10 * 1000);
+        } else {
+          // 시간 추가
+          const base = currentDeadline ? new Date(currentDeadline).getTime() : Date.now();
+          const newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          io.to(debateId).emit('time-change-approved', { type, chat_deadline: newDeadline });
         }
       }).catch(console.error);
       return;
@@ -371,39 +371,36 @@ io.on('connection', (socket) => {
       delete timeVotes[debateId];
 
       import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
-        let newDeadline;
         if (voteType === 'skip') {
-          newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-        } else {
-          const base = savedDeadline ? new Date(savedDeadline).getTime() : Date.now();
-          newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
-        }
-        await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
-        io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
-
-        // 새 deadline에 맞춰 서버 판결 타이머 재설정
-        const remaining = new Date(newDeadline).getTime() - Date.now();
-        if (remaining > 0) {
+          // 스킵: 10초 카운트다운 후 즉시 판결
+          const newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
           setTimeout(async () => {
             try {
               const { data: d } = await supabaseAdmin.from('debates').select('status, mode').eq('id', debateId).single();
               if (d?.mode === 'chat' && ['chatting', 'waiting', 'both_joined'].includes(d?.status)) {
-                // 메시지 유무 확인
                 const { count } = await supabaseAdmin.from('chat_messages').select('id', { count: 'exact', head: true }).eq('debate_id', debateId);
                 if (!count || count === 0) {
                   await supabaseAdmin.from('debates').delete().eq('id', debateId);
                   io.to(debateId).emit('chat-cancelled', { reason: '채팅 내용이 없어 논쟁이 취소되었습니다.' });
-                  console.log(`[Skip/Extend Timer] ${debateId} 메시지 없음 → 취소 삭제`);
+                  console.log(`[Vote Skip] ${debateId} 메시지 없음 → 취소 삭제`);
                 } else {
                   await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
                   io.to(debateId).emit('chat-ended', { debateId });
                   const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
-                  triggerJudgment(debateId).catch(err => console.error('[Skip/Extend Timer] 판결 실패:', err.message));
-                  console.log(`[Skip/Extend Timer] ${debateId} (status: ${d.status}) → 판결 트리거`);
+                  triggerJudgment(debateId).catch(err => console.error('[Vote Skip] 판결 실패:', err.message));
+                  console.log(`[Vote Skip] ${debateId} → 판결 트리거`);
                 }
               }
-            } catch (err) { console.error('[Skip/Extend Timer] 에러:', err.message); }
-          }, remaining);
+            } catch (err) { console.error('[Vote Skip] 에러:', err.message); }
+          }, 10 * 1000);
+        } else {
+          // 시간 추가
+          const base = savedDeadline ? new Date(savedDeadline).getTime() : Date.now();
+          const newDeadline = new Date(base + 5 * 60 * 1000).toISOString();
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
         }
       }).catch(console.error);
     }
