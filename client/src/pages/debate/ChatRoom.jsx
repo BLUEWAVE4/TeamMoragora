@@ -1385,7 +1385,7 @@ const handleVote = (agree) => {
                   onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'; }}
                 />
                 <button onClick={handleSend} disabled={isInputDisabled || !text.trim() || cooldown || sending}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 self-center ${
                     !isInputDisabled && text.trim() && !cooldown ? (mySide === 'A' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white/5 text-white/20'
                   }`}>
                   {sending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
