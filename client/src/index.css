@@ -1,6 +1,8 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* 팀원이 설정한 공통 색상 테마 */
   --color-primary: #1B2A4A;
