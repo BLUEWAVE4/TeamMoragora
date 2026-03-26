@@ -396,7 +396,7 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
 
         {loadingDebates ? (
           <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : debates.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
@@ -520,7 +520,7 @@ export default function RankingPage() {
       <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -556,7 +556,7 @@ export default function RankingPage() {
   <div className="px-4 pb-24 min-h-screen font-[-apple-system,sans-serif] tracking-tight antialiased">
     {hallLoading ? (
       <div className="flex justify-center items-center h-64">
-        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#007AFF] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
       </div>
     ) : (
       <div className="max-w-[440px] mx-auto pt-6 flex flex-col gap-3">
@@ -682,7 +682,7 @@ export default function RankingPage() {
             observer.observe(el);
             return () => observer.disconnect();
           }} className="flex justify-center py-6">
-            <div className="w-6 h-6 border-3 border-gray-200 border-t-[#007AFF] rounded-full animate-spin" />
+            <div className="w-6 h-6 border-3 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />
           </div>
         )}
       </div>
