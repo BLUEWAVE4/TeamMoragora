@@ -930,6 +930,16 @@ const handleVote = (agree) => {
               ))}
             </div>
 
+            {/* 시민 관전 안내 (입장 미선택 + 방장 아닌 경우) */}
+            {!mySide && !isCreator && (
+              <div className="w-full py-3 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/5 flex items-center justify-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span className="text-[#D4AF37]/70 text-[12px] font-bold">입장을 선택하지 않으면 시민(관전자)으로 참여됩니다</span>
+              </div>
+            )}
+
             {/* 준비완료 버튼 */}
             {mySide && (
               <button onClick={toggleReady}
