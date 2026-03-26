@@ -301,23 +301,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
             return updated;
           });
         }
-        setParticipants(prev => {
-          const mergeWithMe = (serverList, side) => {
-            const list = Array.isArray(serverList) ? serverList : [];
-            const hasMe = list.some(p => p.userId === user?.id);
-            if (!hasMe) {
-              const meInPrev = (Array.isArray(prev[side]) ? prev[side] : []).find(p => p.userId === user?.id);
-              if (meInPrev) {
-                const merged = [...list, meInPrev];
-                merged.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
-                return merged;
-              }
-            }
-            return list;
-          };
+        setParticipants(() => {
+          // 서버 데이터를 그대로 신뢰 (중복 방지)
           return {
-            A: mergeWithMe(slots.A, 'A'),
-            B: mergeWithMe(slots.B, 'B'),
+            A: Array.isArray(slots.A) ? slots.A : [],
+            B: Array.isArray(slots.B) ? slots.B : [],
             citizen: Array.isArray(slots.citizen) ? slots.citizen : [],
           };
         });
