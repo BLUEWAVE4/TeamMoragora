@@ -1376,7 +1376,7 @@ const handleVote = (agree) => {
   </div>
 ) : (
   <div className="flex items-end gap-2">
-    <div className={`w-1 rounded-full shrink-0 self-stretch ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
+    <div className={`w-1 rounded-full shrink-0 ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} style={{ height: 'calc(100% - 10px)', alignSelf: 'center' }} />
                 <textarea value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
                   disabled={isInputDisabled} rows={1}
                   placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장을 입력하세요...`}
@@ -1385,7 +1385,7 @@ const handleVote = (agree) => {
                   onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'; }}
                 />
                 <button onClick={handleSend} disabled={isInputDisabled || !text.trim() || cooldown || sending}
-                  className={`w-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 self-stretch ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-90 ${
                     !isInputDisabled && text.trim() && !cooldown ? (mySide === 'A' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white/5 text-white/20'
                   }`}>
                   {sending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
