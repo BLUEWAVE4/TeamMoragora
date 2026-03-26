@@ -164,7 +164,8 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
       <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
 
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
+        {room.purpose && <span className="text-[11px] font-bold text-[#1B2A4A]/40 dark:text-white/40 bg-[#1B2A4A]/5 dark:bg-white/10 px-2 py-1 rounded-full">{room.purpose}</span>}
+        {room.lens && room.lens !== '미선택' && <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.lens}</span>}
       </div>
 
       <div className="flex items-center gap-3">
@@ -371,10 +372,8 @@ export default function DebateLobbyPage() {
                 {hotRoom.topic}
               </h2>
               <div className="flex items-center gap-2">
-                {hotRoom.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.category}</span>}
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">
-                  {hotRoom.participantCount}명 참여 중
-                </span>
+                {hotRoom.purpose && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
+                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
               </div>
             </div>
 
