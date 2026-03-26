@@ -301,6 +301,7 @@ export default function DebateLobbyPage() {
 
   const filteredRooms = rooms
     .filter(r => (filter === '전체' || r.category === filter) && (!searchQuery || r.topic.toLowerCase().includes(searchQuery)))
+    .filter(r => !hotRoom || r.id !== hotRoom.id) // 인기 논쟁 중복 제거
     .sort((a, b) => {
       if (a.status === 'chatting' && b.status !== 'chatting') return -1;
       if (b.status === 'chatting' && a.status !== 'chatting') return 1;
@@ -343,30 +344,63 @@ export default function DebateLobbyPage() {
               </div>
             </div>
 
-            {/* A vs B */}
-            <div className="px-5 pb-5">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2.5 text-center">
-                  <p className="text-emerald-400 text-[9px] font-black uppercase tracking-wider mb-1">PRO</p>
-                  <p className="text-white/80 text-[12px] font-bold leading-snug line-clamp-1">{hotRoom.pro_side || 'A측'}</p>
-                </div>
-                <span className="text-white/20 text-[11px] font-black shrink-0">VS</span>
-                <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 text-center">
-                  <p className="text-red-400 text-[9px] font-black uppercase tracking-wider mb-1">CON</p>
-                  <p className="text-white/80 text-[12px] font-bold leading-snug line-clamp-1">{hotRoom.con_side || 'B측'}</p>
-                </div>
-              </div>
+            {/* A/B 슬롯 (기본 피드와 동일 디자인) */}
+            <div className="px-5 pb-4">
+              {(() => {
+                const live = liveParticipants[hotRoom.id];
+                const liveA = live?.A || [];
+                const liveB = live?.B || [];
+                const hasLive = liveA.length > 0 || liveB.length > 0;
+                const creatorSide = hotRoom.creator_side || 'A';
+                const creatorName = hotRoom.creator?.nickname || '방장';
+                const opponentName = hotRoom.opponent?.nickname || null;
+                const sideAName = creatorSide === 'A' ? creatorName : opponentName;
+                const sideBName = creatorSide === 'A' ? opponentName : creatorName;
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.03] border border-emerald-500/20">
+                      <div className="text-[9px] font-black text-emerald-400 text-center mb-0.5">A측</div>
+                      {[0, 1, 2].map(i => {
+                        const p = hasLive ? liveA[i] : (i === 0 ? { nickname: sideAName } : null);
+                        return (
+                          <div key={`a-${i}`} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${
+                            p?.nickname ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 border-dashed'
+                          }`}>
+                            {p?.nickname ? (
+                              <><span className="w-1 h-1 rounded-full bg-emerald-400" /><span className="text-white/70 font-bold truncate">{p.nickname}</span></>
+                            ) : (
+                              <span className="text-white/20 font-bold w-full text-center">빈 자리</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="text-white/15 text-[10px] font-black shrink-0">VS</span>
+                    <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.03] border border-red-500/20">
+                      <div className="text-[9px] font-black text-red-400 text-center mb-0.5">B측</div>
+                      {[0, 1, 2].map(i => {
+                        const p = hasLive ? liveB[i] : (i === 0 ? { nickname: sideBName } : null);
+                        return (
+                          <div key={`b-${i}`} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${
+                            p?.nickname ? 'border-red-500/30 bg-red-500/10' : 'border-white/10 border-dashed'
+                          }`}>
+                            {p?.nickname ? (
+                              <><span className="w-1 h-1 rounded-full bg-red-400" /><span className="text-white/70 font-bold truncate">{p.nickname}</span></>
+                            ) : (
+                              <span className="text-white/20 font-bold w-full text-center">빈 자리</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 하단 바 */}
-            <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10">
-                  <img src={hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-white/50 text-[11px] font-bold">{hotRoom.creator?.nickname || '방장'}</span>
-              </div>
-              <span className="text-[#D4AF37] text-[11px] font-black flex items-center gap-1">
+            <div className="bg-white/5 px-5 py-3 flex items-center justify-center">
+              <span className="text-[#D4AF37] text-[12px] font-black flex items-center gap-1">
                 {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
               </span>
