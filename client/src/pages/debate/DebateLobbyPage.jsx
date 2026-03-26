@@ -371,20 +371,36 @@ export default function DebateLobbyPage() {
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
             className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
           >
-            {/* 상단 아바타 구도 */}
-            <div className="flex items-center justify-center gap-4 pt-5 pb-3">
-              <div className="flex flex-col items-center gap-1">
-                <div className={`w-10 h-10 rounded-full overflow-hidden bg-white/10 ${avatarA ? 'border-2 border-emerald-500/40' : 'border-2 border-dashed border-emerald-500/30'}`}>
-                  {avatarA && <img src={liveA[0]?.avatarUrl || avatarA} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <span className="text-[10px] text-emerald-400 font-bold">{liveA[0]?.nickname || nameA || '대기중'}</span>
+            {/* 상단 아바타 구도 (3v3) */}
+            <div className="flex items-center justify-center gap-3 pt-5 pb-3 px-5">
+              <div className="flex-1 flex justify-end gap-1.5">
+                {[0, 1, 2].map(i => {
+                  const p = liveA[i];
+                  const fallback = i === 0 ? avatarA : null;
+                  return (
+                    <div key={`ha-${i}`} className="flex flex-col items-center gap-0.5">
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${p || fallback ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
+                        {(p?.avatarUrl || fallback) && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <span className="text-[8px] text-emerald-400/70 font-bold truncate max-w-[50px]">{p?.nickname || (i === 0 ? (nameA || '') : '')}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <span className="text-white/20 text-[11px] font-black">VS</span>
-              <div className="flex flex-col items-center gap-1">
-                <div className={`w-10 h-10 rounded-full overflow-hidden bg-white/10 ${avatarB ? 'border-2 border-red-500/40' : 'border-2 border-dashed border-red-500/30'}`}>
-                  {avatarB && <img src={liveB[0]?.avatarUrl || avatarB} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <span className="text-[10px] text-red-400 font-bold">{liveB[0]?.nickname || nameB || '대기중'}</span>
+              <span className="text-white/20 text-[11px] font-black shrink-0">VS</span>
+              <div className="flex-1 flex justify-start gap-1.5">
+                {[0, 1, 2].map(i => {
+                  const p = liveB[i];
+                  const fallback = i === 0 ? avatarB : null;
+                  return (
+                    <div key={`hb-${i}`} className="flex flex-col items-center gap-0.5">
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${p || fallback ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
+                        {(p?.avatarUrl || fallback) && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <span className="text-[8px] text-red-400/70 font-bold truncate max-w-[50px]">{p?.nickname || (i === 0 ? (nameB || '') : '')}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
