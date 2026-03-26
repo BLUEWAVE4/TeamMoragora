@@ -960,8 +960,8 @@ const handleVote = (agree) => {
                         <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
-                    {(!isMeCitizen && canClickCitizen) && (
-                      <span className="text-[10px] text-[#D4AF37]/50 font-bold">+ 선택</span>
+                    {!isMeCitizen && (
+                      <span className={`text-[10px] font-bold ${canClickCitizen ? 'text-[#D4AF37]/50' : 'text-[#D4AF37]/20'}`}>+ 선택</span>
                     )}
                   </button>
                 );
