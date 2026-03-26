@@ -952,7 +952,7 @@ const handleVote = (agree) => {
                         ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10'
                         : canClickCitizen
                           ? 'border-dashed border-[#D4AF37]/30 active:scale-[0.97] cursor-pointer'
-                          : 'border-dashed border-white/10 opacity-30 cursor-default'
+                          : 'border-dashed border-[#D4AF37]/30 cursor-default'
                     }`}
                   >
                     {citizenList.map(c => (
