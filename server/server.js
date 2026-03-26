@@ -456,9 +456,13 @@ io.on('connection', (socket) => {
   });
   // ===== 강퇴 투표 =====
   socket.on('request-kick', ({ debateId, userId, targetId, targetNickname }) => {
+    // 스킵 카운트다운 중에는 강퇴 불가
+    if (timeVotes[debateId]?.type === 'skip' || timeVoteTimers[debateId]) {
+      socket.emit('kick-cancelled', { reason: '시간 스킵 진행 중에는 강퇴 투표를 할 수 없습니다.' });
+      return;
+    }
     const requester = roomParticipants[debateId]?.[userId];
     if (!requester?.side) return;
-    // 대상이 참여자인지 확인
     const target = roomParticipants[debateId]?.[targetId];
     if (!target?.side) return;
 
