@@ -345,6 +345,18 @@ ${allContent.slice(0, 3000)}
       analyzed_content: allContent.slice(0, 2000),
     }).catch(() => {});
 
+    // 신고 대상에게 알림 (위반 감지 시)
+    if (aiResult.flagged && targetId) {
+      const { createNotification } = await import('../services/notification.service.js');
+      await createNotification({
+        userId: targetId,
+        type: 'reported',
+        title: '채팅 내용이 신고되었습니다',
+        message: aiResult.reason || '부적절한 표현이 감지되었습니다.',
+        link: `/debate/${debateId}/chat`,
+      }).catch(() => {});
+    }
+
     res.json({
       flagged: aiResult.flagged,
       severity: aiResult.severity,

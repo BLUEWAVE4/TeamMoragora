@@ -127,8 +127,23 @@ io.on('connection', (socket) => {
 
   // ===== 방 삭제 알림 =====
   socket.on('room-deleted', ({ debateId }) => {
+    // 참여자들에게 push 알림
+    const room = roomParticipants[debateId];
+    if (room) {
+      import('./src/services/notification.service.js').then(({ createNotification }) => {
+        Object.values(room).forEach(p => {
+          if (p.userId === socket.userId) return; // 방장 본인 제외
+          createNotification({
+            userId: p.userId,
+            type: 'room_deleted',
+            title: '논쟁이 삭제되었습니다',
+            message: '방장이 대기 중인 논쟁을 삭제했습니다.',
+            link: '/debate/lobby',
+          }).catch(() => {});
+        });
+      });
+    }
     socket.to(debateId).emit('room-deleted', { reason: '방장이 논쟁을 삭제하였습니다.' });
-    // 참여자 정리
     delete roomParticipants[debateId];
   });
 
@@ -178,9 +193,17 @@ io.on('connection', (socket) => {
         await supabaseAdmin.from('debates').update({ creator_side: side }).eq('id', debateId);
       }
 
-      // 비방장 side 선택 → opponent_id 업데이트
+      // 비방장 side 선택 → opponent_id 업데이트 + 방장 알림
       if ((side === 'A' || side === 'B') && !debate.opponent_id && userId !== debate.creator_id) {
         await supabaseAdmin.from('debates').update({ opponent_id: userId }).eq('id', debateId).is('opponent_id', null);
+        const { createNotification } = await import('./src/services/notification.service.js');
+        await createNotification({
+          userId: debate.creator_id,
+          type: 'opponent_joined',
+          title: '상대방이 논쟁에 참여했습니다!',
+          message: `"${debate.topic?.slice(0, 30)}" — ${nickname}님이 ${side}측으로 입장`,
+          link: `/debate/${debateId}/chat`,
+        }).catch(() => {});
       }
     }).catch(() => {});
   });
@@ -559,6 +582,16 @@ io.on('connection', (socket) => {
       }
       handlePostKick(debateId, targetId, targetSide);
       console.log(`[강퇴] ${targetNickname} 강퇴 완료`);
+      // 강퇴 알림
+      import('./src/services/notification.service.js').then(({ createNotification }) => {
+        createNotification({
+          userId: targetId,
+          type: 'kicked',
+          title: '논쟁에서 강퇴되었습니다',
+          message: `투표에 의해 논쟁에서 퇴장되었습니다.`,
+          link: `/debate/lobby`,
+        }).catch(() => {});
+      });
     }
   });
 
