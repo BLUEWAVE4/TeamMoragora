@@ -130,9 +130,8 @@ export default function HomePage() {
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#F3F1EC] gap-3">
-      <div className="w-8 h-8 border-3 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-      <span className="text-[13px] font-bold text-[#1B2A4A]/30">불러오는 중...</span>
+    <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
+      <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
