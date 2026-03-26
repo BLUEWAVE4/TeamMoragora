@@ -118,14 +118,19 @@ function ChatProgressBar({ chatDeadline, proSide, conSide }) {
 }
 
 // ===== 카드 =====
-function LobbyDebateCard({ room, onCardClick, isKicked }) {
+function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
   const creatorAvatarUrl = room.creator?.avatar_url || getAvatarUrl(room.creator_id, room.creator?.gender) || DEFAULT_AVATAR_ICON;
+
+  // 실시간 참여자가 있으면 소켓 데이터 사용, 없으면 DB 폴백
+  const liveA = liveSlots?.A || [];
+  const liveB = liveSlots?.B || [];
+  const hasLive = liveA.length > 0 || liveB.length > 0;
 
   const creatorName = room.creator?.nickname || '방장';
   const opponentName = room.opponent?.nickname || null;
-  const currentTotal = [creatorName, opponentName].filter(Boolean).length;
+  const currentTotal = hasLive ? (liveA.length + liveB.length) : [creatorName, opponentName].filter(Boolean).length;
 
-  // 방장의 실제 side (DB creator_side 컬럼, 기본 'A')
+  // DB 폴백용 side 배치
   const creatorSide = room.creator_side || 'A';
   const sideAName = creatorSide === 'A' ? creatorName : opponentName;
   const sideBName = creatorSide === 'A' ? opponentName : creatorName;
@@ -169,16 +174,18 @@ function LobbyDebateCard({ room, onCardClick, isKicked }) {
       <div className="flex items-center gap-3">
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 border border-emerald-50">
           <div className="text-[9px] font-black text-emerald-700/40 text-center mb-0.5">A측</div>
-          {[0, 1, 2].map(i => (
-            <ParticipantSlot key={`a-${i}`} name={i === 0 ? sideAName : null} color="emerald" isEmpty={i === 0 ? !sideAName : true} />
-          ))}
+          {[0, 1, 2].map(i => {
+            const p = hasLive ? liveA[i] : (i === 0 ? { nickname: sideAName } : null);
+            return <ParticipantSlot key={`a-${i}`} name={p?.nickname || null} color="emerald" isEmpty={!p?.nickname} />;
+          })}
         </div>
         <span className="text-[10px] font-black text-gray-200">VS</span>
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 border border-red-50">
           <div className="text-[9px] font-black text-red-600/40 text-center mb-0.5">B측</div>
-          {[0, 1, 2].map(i => (
-            <ParticipantSlot key={`b-${i}`} name={i === 0 ? sideBName : null} color="red" isEmpty={i === 0 ? !sideBName : true} />
-          ))}
+          {[0, 1, 2].map(i => {
+            const p = hasLive ? liveB[i] : (i === 0 ? { nickname: sideBName } : null);
+            return <ParticipantSlot key={`b-${i}`} name={p?.nickname || null} color="red" isEmpty={!p?.nickname} />;
+          })}
         </div>
       </div>
 
@@ -214,18 +221,22 @@ export default function DebateLobbyPage() {
   const [visibleCount, setVisibleCount] = useState(10);
   const observerRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [liveParticipants, setLiveParticipants] = useState({}); // { debateId: { A: [...], B: [...] } }
 
   const loadData = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const res = await getAllPublicDebates();
+      const [res, partRes] = await Promise.all([
+        getAllPublicDebates(),
+        fetch(`${import.meta.env.DEV ? 'http://localhost:5000' : 'https://teammoragora.onrender.com'}/api/rooms/participants`).then(r => r.json()).catch(() => ({})),
+      ]);
+      setLiveParticipants(partRes || {});
       const rawRooms = res?.data || res || [];
       const now = Date.now();
-      const STALE_MS = 30 * 60 * 1000; // 30분
+      const STALE_MS = 30 * 60 * 1000;
       const lobbyRooms = rawRooms.filter(r => {
         const status = String(r.status).toLowerCase();
         if (status === 'chatting') return true;
-        // waiting은 30분 이내 생성된 방만 표시
         if (status === 'waiting') return (now - new Date(r.created_at).getTime()) < STALE_MS;
         return false;
       });
@@ -380,7 +391,7 @@ export default function DebateLobbyPage() {
               const isLast = processedRooms.length === index + 1 && filteredRooms.length > visibleCount;
               return (
                 <motion.div key={room.id} ref={isLast ? lastElementRef : null} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <LobbyDebateCard room={room} onCardClick={handleCardClick} isKicked={kickedDebates.includes(room.id)} />
+                  <LobbyDebateCard room={room} onCardClick={handleCardClick} isKicked={kickedDebates.includes(room.id)} liveSlots={liveParticipants[room.id]} />
                 </motion.div>
               );
             })}

@@ -672,6 +672,23 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
 
+// 실시간 참여자 조회 (피드용)
+app.get('/api/rooms/participants', (_req, res) => {
+  const result = {};
+  for (const [debateId, room] of Object.entries(roomParticipants)) {
+    const slots = { A: [], B: [] };
+    Object.values(room).forEach(p => {
+      const { socketIds, ...safe } = p;
+      if (p.side === 'A') slots.A.push(safe);
+      if (p.side === 'B') slots.B.push(safe);
+    });
+    slots.A.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    slots.B.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    result[debateId] = slots;
+  }
+  res.json(result);
+});
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
