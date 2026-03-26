@@ -129,6 +129,7 @@ io.on('connection', (socket) => {
     if (!roomParticipants[debateId]?.[userId]) return;
     roomParticipants[debateId][userId]._isCitizen = true;
     roomParticipants[debateId][userId].side = null;
+    roomParticipants[debateId][userId]._citizenJoinedAt = Date.now();
     io.to(debateId).emit('presence-sync', buildSlots(debateId));
   });
 
@@ -660,6 +661,7 @@ function buildSlots(debateId) {
   });
   slots.A.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
   slots.B.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+  slots.citizen.sort((a, b) => (a._citizenJoinedAt || 0) - (b._citizenJoinedAt || 0));
   return slots;
 }
 
