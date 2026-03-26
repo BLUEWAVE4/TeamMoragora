@@ -123,7 +123,39 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   useEffect(() => {
     if (!debateId) return;
     getComments(debateId).then(setComments).catch(() => {});
-  }, [debateId]);
+
+    // 실시간 댓글 구독
+    const channel = supabase
+      .channel(`comments:${debateId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `debate_id=eq.${debateId}`,
+      }, (payload) => {
+        const newC = payload.new;
+        if (newC.user_id === user?.id) return; // 내가 쓴 건 이미 로컬 추가됨
+        // 프로필 정보 조회 후 추가
+        supabase.from('profiles').select('nickname, avatar_url, gender, tier').eq('id', newC.user_id).single()
+          .then(({ data: profile }) => {
+            setComments(prev => {
+              if (prev.some(c => c.id === newC.id)) return prev;
+              return [...prev, { ...newC, user: profile || { nickname: '익명' } }];
+            });
+          });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comments',
+        filter: `debate_id=eq.${debateId}`,
+      }, (payload) => {
+        setComments(prev => prev.filter(c => c.id !== payload.old.id));
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [debateId, user]);
 
   const handleSubmitComment = async () => {
     if (!commentInput.trim() || isSubmittingComment) return;
