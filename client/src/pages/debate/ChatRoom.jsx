@@ -876,7 +876,7 @@ const handleVote = (agree) => {
     </div>
   );
 
-  const isInputDisabled = !gameStarted || chatEnded || timeLeft === 0 || !mySide || !!exhaustedUsers[user?.id] || skipApproved;
+  const isInputDisabled = !gameStarted || chatEnded || timeLeft === 0 || !mySide || !!exhaustedUsers[user?.id];
   const remainingMsgs = MAX_MSGS - msgCount;
 
   return (

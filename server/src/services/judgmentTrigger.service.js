@@ -207,11 +207,16 @@ async function triggerChatJudgment(debate) {
     return;
   }
 
-  const { data: messages } = await supabaseAdmin
+  // skip_cutoff가 있으면 그 시점 이전 메시지만 판결에 사용
+  let msgQuery = supabaseAdmin
     .from('chat_messages')
     .select('*')
     .eq('debate_id', debateId)
     .order('created_at', { ascending: true });
+  if (debate.skip_cutoff) {
+    msgQuery = msgQuery.lte('created_at', debate.skip_cutoff);
+  }
+  const { data: messages } = await msgQuery;
 
   if (!messages || messages.length === 0) {
     console.warn(`[triggerChatJudgment] 채팅 메시지 없음 → 무승부 처리 (debate: ${debateId})`);

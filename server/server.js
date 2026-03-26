@@ -278,12 +278,6 @@ io.on('connection', (socket) => {
   socket.on('send-message', async (payload) => {
     const { debateId, userId, nickname, content, side } = payload;
     if (!debateId || !userId || !content?.trim() || !side) return;
-    // 스킵 진행 중 채팅 차단
-    if (skipInProgress[debateId]) {
-      socket.emit('filter-blocked', { reason: '스킵 처리 중에는 메시지를 보낼 수 없습니다.' });
-      return;
-    }
-
     // 1. 비속어 필터
     try {
       const { filterByDictionary } = await import('./src/services/contentFilter.service.js');
@@ -370,9 +364,10 @@ io.on('connection', (socket) => {
       delete timeVotes[debateId];
       import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
         if (type === 'skip') {
-          skipInProgress[debateId] = true;
+          const skipTime = new Date().toISOString();
+          skipInProgress[debateId] = skipTime;
           const newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline, skip_cutoff: skipTime }).eq('id', debateId);
           io.to(debateId).emit('time-change-approved', { type, chat_deadline: newDeadline });
           setTimeout(async () => {
             try {
@@ -435,10 +430,10 @@ io.on('connection', (socket) => {
 
       import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
         if (voteType === 'skip') {
-          // 스킵: 10초 카운트다운 후 즉시 판결
-          skipInProgress[debateId] = true;
+          const skipTime = new Date().toISOString();
+          skipInProgress[debateId] = skipTime;
           const newDeadline = new Date(Date.now() + 10 * 1000).toISOString();
-          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline }).eq('id', debateId);
+          await supabaseAdmin.from('debates').update({ chat_deadline: newDeadline, skip_cutoff: skipTime }).eq('id', debateId);
           io.to(debateId).emit('time-change-approved', { type: voteType, chat_deadline: newDeadline });
           setTimeout(async () => {
             try {
