@@ -289,7 +289,7 @@ export default function ArgumentPage() {
           <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
         </svg>
       </div>
-      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">상대방의 요청으로 삭제된 논쟁입니다.</h1>
+      <h1 className="text-[18px] font-black text-[#1B2A4A] mb-2">모든 참여자의 동의로 무효처리된 논쟁입니다.</h1>
       <p className="text-[13px] text-gray-400 mt-3">잠시 후 홈으로 이동됩니다.</p>
     </div>
   )
