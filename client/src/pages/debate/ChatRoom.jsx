@@ -6,6 +6,7 @@ import { socket } from '../../services/socket';
 import { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
+import MoragoraModal from '../../components/common/MoragoraModal';
 
 const MAX_CHARS = 200;
 const COOLDOWN_MS = 1000;
@@ -1639,45 +1640,27 @@ const handleVote = (agree) => {
       </AnimatePresence>
 
       {/* ━━━━━ 방장 이탈 확인 모달 ━━━━━ */}
-      {showLeaveModal && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center px-8">
-          <div className="w-full max-w-[320px] bg-[#1a2744] rounded-2xl border border-white/10 p-6 flex flex-col items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            </div>
-            <p className="text-white text-[15px] font-black text-center">페이지를 떠나시겠습니까?</p>
-            <p className="text-white/40 text-[12px] text-center leading-relaxed">이동 시 생성된 논쟁이 삭제됩니다.</p>
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={() => { setShowLeaveModal(false); pendingNavPath.current = null; }}
-                className="flex-1 py-3 rounded-xl bg-white/10 text-white/60 text-[13px] font-bold active:scale-95 transition-all"
-              >
-                아니오
-              </button>
-              <button
-                onClick={async () => {
-                  shouldBlockRef.current = false;
-                  try { await deleteDebate(debateId); } catch {}
-                  setShowLeaveModal(false);
-                  if (pendingNavPath.current === 'back') {
-                    navigate(-1);
-                  } else if (pendingNavPath.current) {
-                    navigate(pendingNavPath.current);
-                  } else {
-                    navigate('/');
-                  }
-                }}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white text-[13px] font-bold active:scale-95 transition-all"
-              >
-                예, 삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MoragoraModal
+        isOpen={showLeaveModal}
+        onClose={() => { setShowLeaveModal(false); pendingNavPath.current = null; }}
+        title="페이지를 떠나시겠습니까?"
+        description="이동 시 생성된 논쟁이 삭제됩니다."
+        type="danger"
+        confirmText="삭제"
+        cancelText="아니오"
+        onConfirm={async () => {
+          shouldBlockRef.current = false;
+          try { await deleteDebate(debateId); } catch {}
+          setShowLeaveModal(false);
+          if (pendingNavPath.current === 'back') {
+            navigate(-1);
+          } else if (pendingNavPath.current) {
+            navigate(pendingNavPath.current);
+          } else {
+            navigate('/');
+          }
+        }}
+      />
     </div>
   );
 }
