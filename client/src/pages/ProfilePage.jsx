@@ -603,7 +603,7 @@ const [showInfo, setShowInfo] = useState(false);
     <div className="px-1 space-y-4 mb-10">
       
       {/* 1. 포인트 & 티어 카드 */}
-      <div className="relative bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/10 overflow-hidden active:scale-[0.98] transition-transform">
+      <div className="relative bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/[0.06] overflow-hidden active:scale-[0.98] transition-transform">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-5">
             <div className="space-y-0.5">
@@ -651,7 +651,7 @@ const [showInfo, setShowInfo] = useState(false);
       </div>
 
       {/* 2. 승률 스코어보드 */}
-      <div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/10 active:scale-[0.98] transition-transform">
+      <div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/[0.06] active:scale-[0.98] transition-transform">
 
         <div className="flex justify-between items-center mb-8">
           <div className="space-y-1">
@@ -667,9 +667,9 @@ const [showInfo, setShowInfo] = useState(false);
             </div>
           </div>
 
-          <div className="bg-gray-50/80 dark:bg-white/[0.06] px-4 py-2.5 rounded-2xl border border-gray-100/50 dark:border-white/10 text-right">
+          <div className="bg-gray-50/80 dark:bg-white/[0.06] px-4 py-2.5 rounded-2xl border border-gray-100/50 dark:border-white/[0.06] text-right">
             <p className="text-[12px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest mt-1">Total</p>
-            <p className="text-[22px] font-black text-gray-900 dark:text-white leading-none">{totalGames}</p>
+            <p className="text-[22px] font-black text-gray-900 dark:text-[#D4AF37] leading-none">{totalGames}</p>
           </div>
         </div>
 
