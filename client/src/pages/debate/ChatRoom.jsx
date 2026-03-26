@@ -124,11 +124,13 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const aList = Array.isArray(participants.A) ? participants.A : [];
   const bList = Array.isArray(participants.B) ? participants.B : [];
   if (aList.length < 1 || bList.length < 1) return false;
-  // 내 ready는 서버 sync 대신 myReady state로 판단
-  return [...aList, ...bList].every(p =>
-    p.userId === user?.id ? myReady : p.ready
-  );
-}, [participants, myReady, user]);
+  // 방장은 항상 ready, 나머지는 myReady 또는 서버 ready로 판단
+  return [...aList, ...bList].every(p => {
+    if (p.userId === debate?.creator_id) return true; // 방장 자동 ready
+    if (p.userId === user?.id) return myReady;
+    return p.ready;
+  });
+}, [participants, myReady, user, debate]);
 
   // ===== 데이터 로드 =====
   useEffect(() => {
@@ -950,8 +952,8 @@ const handleVote = (agree) => {
               </button>
             )}
 
-            {/* 준비완료 버튼 */}
-            {mySide && (
+            {/* 준비완료 버튼 (방장 제외) */}
+            {mySide && !isCreator && (
               <button onClick={toggleReady}
                 className={`w-full py-3.5 rounded-2xl font-black text-[14px] transition-all active:scale-[0.97] border-2 ${
                   myReady ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300' : 'bg-white/5 border-white/10 text-white/50'
@@ -960,20 +962,21 @@ const handleVote = (agree) => {
               </button>
             )}
 
-            {/* 시작 버튼 (방장) */}
-            {isCreator ? (
+            {/* 방장: 게임 시작 버튼 (allReady 시 활성화) */}
+            {isCreator && (
               <button onClick={handleStart} disabled={!allReady()}
                 className={`w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-wider transition-all active:scale-[0.97] ${
                   allReady() ? 'bg-[#D4AF37] text-[#0a0f1a] shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-white/20 cursor-not-allowed'
                 }`}>
-                {allReady() ? '논쟁 시작' : '모든 참여자가 준비를 완료하여야 합니다.'}
+                {allReady() ? '⚔ 논쟁 시작' : '논쟁 시작'}
               </button>
-            ) : (
+            )}
+
+            {/* 비방장: 대기 안내 */}
+            {!isCreator && mySide && myReady && (
               <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center gap-3">
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                <span className="text-white/30 text-[13px] font-bold">
-                  {!mySide ? '입장을 선택하세요' : !myReady ? '준비완료를 눌러주세요' : '방장이 게임을 곧 시작합니다.'}
-                </span>
+                <span className="text-white/30 text-[13px] font-bold">방장이 게임을 곧 시작합니다.</span>
               </div>
             )}
           </div>
