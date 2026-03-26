@@ -23,14 +23,19 @@ export async function createDebate(req, res, next) {
 
     // 실시간 논쟁: 1인 1개 제한 — 진행 중인 chat 논쟁이 있으면 생성 불가
     if (debateMode === 'chat') {
+      // chatting 상태는 항상 차단, waiting은 30분 이내만 차단
       const { data: existing } = await supabaseAdmin
         .from('debates')
-        .select('id')
+        .select('id, status, created_at')
         .eq('mode', 'chat')
         .in('status', ['waiting', 'chatting'])
         .or(`creator_id.eq.${req.user.id},opponent_id.eq.${req.user.id}`)
-        .limit(1);
-      if (existing && existing.length > 0) {
+        .limit(10);
+      const now = Date.now();
+      const active = (existing || []).find(d =>
+        d.status === 'chatting' || (d.status === 'waiting' && (now - new Date(d.created_at).getTime()) < 30 * 60 * 1000)
+      );
+      if (active) {
         throw new ValidationError('이미 진행 중인 실시간 논쟁이 있습니다. 기존 논쟁을 종료한 후 생성해주세요.');
       }
     }
