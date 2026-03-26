@@ -50,9 +50,9 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
 // ===== 참여자 슬롯 =====
 function ParticipantSlot({ name, color, isEmpty }) {
   const colors = {
-    emerald: "bg-[#F9FBF9] text-emerald-600 border-emerald-100 shadow-sm",
-    red: "bg-[#FDF9F9] text-red-500 border-red-100 shadow-sm",
-    empty: "bg-gray-100/30 text-gray-300 border-dashed border-gray-100 opacity-40"
+    emerald: "bg-[#F9FBF9] dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/30 shadow-sm",
+    red: "bg-[#FDF9F9] dark:bg-red-500/10 text-red-500 border-red-100 dark:border-red-500/30 shadow-sm",
+    empty: "bg-gray-100/30 dark:bg-white/[0.03] text-gray-300 dark:text-white/20 border-dashed border-gray-100 dark:border-white/10 opacity-40"
   };
   return (
     <div className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${isEmpty ? colors.empty : colors[color]}`}>
@@ -94,7 +94,7 @@ function ChatProgressBar({ chatDeadline, proSide, conSide }) {
         </div>
 
         <div className="flex flex-col items-center gap-0.5 px-3 shrink-0">
-          <span className={`text-[20px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#1B2A4A]'}`}>
+          <span className={`text-[20px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#1B2A4A] dark:text-white/70'}`}>
             {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
           </span>
           <span className="text-[9px] text-gray-400 font-bold">남은 시간</span>
@@ -146,38 +146,38 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
     <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-2xl p-5 shadow-sm border transition-all mb-3 ${
       isKicked
         ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
-        : 'bg-white border-gray-100 cursor-pointer active:scale-[0.99]'
+        : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/10 cursor-pointer active:scale-[0.99]'
     }`}>
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50">
+      <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50 dark:border-white/10">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
             <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-[#1B2A4A] text-[14px]">{creatorName}</span>
+            <span className="font-black text-[#1B2A4A] dark:text-white text-[14px]">{creatorName}</span>
             <span className="text-[10px] text-gray-400 font-bold">{room.creator?.tier || '시민'}</span>
           </div>
         </div>
         <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
       </div>
 
-      <h3 className="text-[17px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
+      <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
 
       <div className="flex items-center gap-2 mb-4">
         <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 border border-emerald-50">
-          <div className="text-[9px] font-black text-emerald-700/40 text-center mb-0.5">A측</div>
+        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 dark:bg-white/[0.03] border border-emerald-50 dark:border-emerald-500/20">
+          <div className="text-[9px] font-black text-emerald-700/40 dark:text-emerald-400 text-center mb-0.5">A측</div>
           {[0, 1, 2].map(i => {
             const p = hasLive ? liveA[i] : (i === 0 ? { nickname: sideAName } : null);
             return <ParticipantSlot key={`a-${i}`} name={p?.nickname || null} color="emerald" isEmpty={!p?.nickname} />;
           })}
         </div>
-        <span className="text-[10px] font-black text-gray-200">VS</span>
-        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 border border-red-50">
-          <div className="text-[9px] font-black text-red-600/40 text-center mb-0.5">B측</div>
+        <span className="text-[10px] font-black text-gray-200 dark:text-white/15">VS</span>
+        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 dark:bg-white/[0.03] border border-red-50 dark:border-red-500/20">
+          <div className="text-[9px] font-black text-red-600/40 dark:text-red-400 text-center mb-0.5">B측</div>
           {[0, 1, 2].map(i => {
             const p = hasLive ? liveB[i] : (i === 0 ? { nickname: sideBName } : null);
             return <ParticipantSlot key={`b-${i}`} name={p?.nickname || null} color="red" isEmpty={!p?.nickname} />;
@@ -334,13 +334,13 @@ export default function DebateLobbyPage() {
   const processedRooms = filteredRooms.slice(0, visibleCount);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F3F1EC] flex items-center justify-center">
+    <div className="min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] flex items-center justify-center">
       <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
+    <div className="flex flex-col min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] pb-32 pt-4">
       {/* 인기 실시간 논쟁 (참여자 가장 많은 1개) */}
       {hotRoom && (
         <section className="px-5 mb-6">
@@ -464,19 +464,15 @@ export default function DebateLobbyPage() {
       {/* 빈 상태 */}
       {rooms.length === 0 && !loading && (
         <section className="px-5 mb-6">
-          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
-            <div className="text-4xl mb-3">&#9878;</div>
-            <h3 className="text-[16px] font-black text-[#1B2A4A] mb-1">진행 중인 실시간 논쟁이 없습니다</h3>
-            <p className="text-[13px] text-gray-400">새 논쟁을 만들어보세요!</p>
+          <div className="dark:bg-white/[0.04] dark:border-white/10 bg-white rounded-2xl p-10 text-center border border-gray-100">
+            <h3 className="text-[16px] font-black dark:text-white/60 text-[#1B2A4A] mb-1">진행 중인 실시간 논쟁이 없습니다</h3>
+            <p className="text-[13px] dark:text-white/30 text-gray-400">새 논쟁을 만들어보세요!</p>
           </div>
         </section>
       )}
 
       {/* 리스트 */}
       <main className="flex flex-col px-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[16px] font-black text-[#1B2A4A]">실시간 논쟁 ({filteredRooms.length})</h2>
-        </div>
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
         <section className="mt-4 flex flex-col">
           <AnimatePresence mode="popLayout">
