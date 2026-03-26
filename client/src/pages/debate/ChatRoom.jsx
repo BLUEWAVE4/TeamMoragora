@@ -102,6 +102,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [kickSkipCountdown, setKickSkipCountdown] = useState(null); // { side, seconds }
   const endTriggered = useRef(false);
   const [skipApproved, setSkipApproved] = useState(false);
+  const [kickConfirm, setKickConfirm] = useState(null); // { userId, nickname }
 
   // ===== 대기실 채팅 =====
   const [lobbyMessages, setLobbyMessages] = useState([]);
@@ -1477,8 +1478,15 @@ const handleVote = (agree) => {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
-                    socket.emit('request-kick', { debateId, userId: user.id, targetId: actionTarget.userId, targetNickname: actionTarget.nickname });
-                    setActionTarget(null);
+                    const totalP = (participants.A?.length || 0) + (participants.B?.length || 0);
+                    if (totalP <= 2) {
+                      // 1:1 → 확인 모달
+                      setKickConfirm({ userId: actionTarget.userId, nickname: actionTarget.nickname });
+                      setActionTarget(null);
+                    } else {
+                      socket.emit('request-kick', { debateId, userId: user.id, targetId: actionTarget.userId, targetNickname: actionTarget.nickname });
+                      setActionTarget(null);
+                    }
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 active:scale-[0.98] transition-all"
                 >
@@ -1486,7 +1494,7 @@ const handleVote = (agree) => {
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
                     <line x1="17" y1="11" x2="22" y2="11"/>
                   </svg>
-                  <span className="text-red-400 text-[13px] font-black">강퇴 투표</span>
+                  <span className="text-red-400 text-[13px] font-black">강퇴</span>
                 </button>
                 <button
                   disabled={!!reportedUsers[actionTarget.userId]}
@@ -1673,6 +1681,19 @@ const handleVote = (agree) => {
           } else {
             navigate('/');
           }
+        }}
+      />
+      <MoragoraModal
+        isOpen={!!kickConfirm}
+        onClose={() => setKickConfirm(null)}
+        title={`${kickConfirm?.nickname}님을 강퇴하시겠습니까?`}
+        description="1:1 논쟁에서 강퇴 시 논쟁이 무효 처리됩니다."
+        type="danger"
+        confirmText="강퇴"
+        cancelText="취소"
+        onConfirm={() => {
+          socket.emit('request-kick', { debateId, userId: user.id, targetId: kickConfirm.userId, targetNickname: kickConfirm.nickname });
+          setKickConfirm(null);
         }}
       />
     </div>
