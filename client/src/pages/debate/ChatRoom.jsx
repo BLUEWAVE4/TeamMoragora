@@ -972,13 +972,6 @@ const handleVote = (agree) => {
               </button>
             )}
 
-            {/* 비방장: 대기 안내 */}
-            {!isCreator && mySide && myReady && (
-              <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center gap-3">
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                <span className="text-white/30 text-[13px] font-bold">방장이 게임을 곧 시작합니다.</span>
-              </div>
-            )}
           </div>
 
           {/* ━━━━━ 카운트다운 오버레이 ━━━━━ */}
