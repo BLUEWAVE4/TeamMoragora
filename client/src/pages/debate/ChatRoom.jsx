@@ -938,43 +938,36 @@ const handleVote = (agree) => {
               {(() => {
                 const citizenList = Array.isArray(participants.citizen) ? participants.citizen : [];
                 const isMeCitizen = !mySide && citizenList.some(c => c.userId === user?.id);
-                return (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {/* 시민 아바타들 */}
+                return isMeCitizen ? (
+                  <button
+                    onClick={() => socket.emit('leave-citizen', { debateId, userId: user?.id })}
+                    className="w-full h-10 rounded-xl border-2 border-[#D4AF37]/40 bg-[#D4AF37]/10 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+                  >
                     {citizenList.map(c => (
-                      <div key={c.userId} className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#D4AF37]/40 bg-white/10">
+                      <div key={c.userId} className="w-6 h-6 rounded-full overflow-hidden border border-[#D4AF37]/40 bg-white/10">
                         <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
-                    {/* 시민 참여/전환 버튼 */}
-                    {!isMeCitizen ? (
-                      <button
-                        disabled={myReady}
-                        onClick={() => {
-                          if (myReady) return;
-                          if (mySide) selectSide(mySide); // side 해제
-                          socket.emit('join-citizen', { debateId, userId: user?.id });
-                        }}
-                        className={`h-8 px-3 rounded-full border-2 border-dashed flex items-center gap-1.5 transition-all ${
-                          myReady ? 'border-white/10 opacity-30 cursor-not-allowed' : 'border-[#D4AF37]/30 active:scale-95'
-                        }`}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <span className="text-[10px] text-[#D4AF37]/60 font-bold">+ 관전</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          socket.emit('leave-citizen', { debateId, userId: user?.id });
-                        }}
-                        className="h-8 px-3 rounded-full border-2 border-[#D4AF37]/40 bg-[#D4AF37]/10 flex items-center gap-1.5 active:scale-95 transition-all"
-                      >
-                        <span className="text-[10px] text-[#D4AF37] font-bold">관전 중</span>
-                      </button>
-                    )}
-                  </div>
+                  </button>
+                ) : (
+                  <button
+                    disabled={myReady}
+                    onClick={() => {
+                      if (myReady) return;
+                      if (mySide) selectSide(mySide);
+                      socket.emit('join-citizen', { debateId, userId: user?.id });
+                    }}
+                    className={`w-full h-10 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 transition-all ${
+                      myReady ? 'border-white/10 opacity-30 cursor-not-allowed' : 'border-[#D4AF37]/30 active:scale-[0.97]'
+                    }`}
+                  >
+                    {citizenList.length > 0 && citizenList.map(c => (
+                      <div key={c.userId} className="w-6 h-6 rounded-full overflow-hidden border border-[#D4AF37]/40 bg-white/10">
+                        <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    <span className="text-[10px] text-[#D4AF37]/60 font-bold">+ 관전</span>
+                  </button>
                 );
               })()}
             </div>
