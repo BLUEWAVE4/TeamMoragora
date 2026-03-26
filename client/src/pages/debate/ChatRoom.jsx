@@ -101,12 +101,6 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [kickSkipCountdown, setKickSkipCountdown] = useState(null); // { side, seconds }
   const endTriggered = useRef(false);
 
-  // ===== 방장 이탈 차단 =====
-  const shouldBlock = isCreator && !gameStarted && !loading && !chatEnded && debate?.status === 'waiting';
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    return shouldBlock && currentLocation.pathname !== nextLocation.pathname;
-  });
-
   // ===== 대기실 채팅 =====
   const [lobbyMessages, setLobbyMessages] = useState([]);
   const [lobbyInput, setLobbyInput] = useState('');
@@ -120,6 +114,12 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const isWarningTime = timeLeft != null && timeLeft > 0 && timeLeft <= 60;
 
   const isCreator = debate ? debate.creator_id === user?.id : false;
+
+  // ===== 방장 이탈 차단 =====
+  const shouldBlock = isCreator && !gameStarted && !loading && !chatEnded && debate?.status === 'waiting';
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    return shouldBlock && currentLocation.pathname !== nextLocation.pathname;
+  });
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     setToast({ message, type });

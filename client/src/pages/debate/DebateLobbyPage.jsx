@@ -164,10 +164,6 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
       <h3 className="text-[17px] font-black text-[#1B2A4A] mb-3 leading-snug break-keep">{room.topic}</h3>
 
       <div className="flex items-center gap-2 mb-4">
-        <span className={`flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full ${sc.bg} ${sc.text}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} animate-pulse`} />
-          {sc.label} {currentTotal}/6
-        </span>
         <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.category}</span>
       </div>
 
