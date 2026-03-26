@@ -275,14 +275,19 @@ export default function DebateLobbyPage() {
   useEffect(() => { setVisibleCount(10); }, [filter, searchQuery]);
 
   // 인기 실시간 논쟁: 참여자(관전자 포함) 가장 많은 chatting 방 1개
+  // 인기 실시간 논쟁: chatting 우선, 없으면 waiting 중 참여자 가장 많은 1개
   const hotRoom = rooms
-    .filter(r => r.status === 'chatting')
     .map(r => {
       const live = liveParticipants[r.id];
-      const liveCount = live ? (live.A?.length || 0) + (live.B?.length || 0) : 0;
+      const liveCount = live ? (live.A?.length || 0) + (live.B?.length || 0) + (live.citizen?.length || 0) : 0;
       return { ...r, participantCount: liveCount };
     })
-    .sort((a, b) => b.participantCount - a.participantCount)[0] || null;
+    .sort((a, b) => {
+      // chatting 우선
+      if (a.status === 'chatting' && b.status !== 'chatting') return -1;
+      if (b.status === 'chatting' && a.status !== 'chatting') return 1;
+      return b.participantCount - a.participantCount;
+    })[0] || null;
 
   const kickedDebates = JSON.parse(localStorage.getItem('kickedDebates') || '[]');
 
@@ -363,7 +368,7 @@ export default function DebateLobbyPage() {
                 <span className="text-white/50 text-[11px] font-bold">{hotRoom.creator?.nickname || '방장'}</span>
               </div>
               <span className="text-[#D4AF37] text-[11px] font-black flex items-center gap-1">
-                관전하기
+                {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
               </span>
             </div>
