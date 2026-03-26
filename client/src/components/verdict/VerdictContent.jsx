@@ -134,7 +134,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         filter: `debate_id=eq.${debateId}`,
       }, (payload) => {
         const newC = payload.new;
-        if (newC.user_id === user?.id) return; // 내가 쓴 건 이미 로컬 추가됨
+        if (newC.user_id === user?.id) return;
         // 프로필 정보 조회 후 추가
         supabase.from('profiles').select('nickname, avatar_url, gender, tier').eq('id', newC.user_id).single()
           .then(({ data: profile }) => {
@@ -155,7 +155,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [debateId, user]);
+  }, [debateId, user?.id]);
 
   const handleSubmitComment = async () => {
     if (!commentInput.trim() || isSubmittingComment) return;
