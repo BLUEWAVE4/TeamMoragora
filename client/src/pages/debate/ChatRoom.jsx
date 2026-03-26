@@ -284,6 +284,10 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   useEffect(() => {
     if (!debateId || !user || !myNickname || loading) return;
     socket.emit('join-presence', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: mySideRef.current, ready: false });
+    // side가 없으면 자동으로 시민 등록
+    if (!mySideRef.current) {
+      socket.emit('join-citizen', { debateId, userId: user.id });
+    }
     socket.on('presence-sync', (slots) => {
       if (slots && typeof slots === 'object') {
         // 참여자 아바타 맵 업데이트
@@ -587,17 +591,28 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   const newSide = mySide === side ? null : side;
   setMySide(newSide);
 
+  // A/B 선택 시 시민 해제, side 해제 시 시민 자동 등록
+  if (newSide) {
+    socket.emit('leave-citizen', { debateId, userId: user.id });
+  } else {
+    socket.emit('join-citizen', { debateId, userId: user.id });
+  }
+
   // 로컬 participants에 즉시 반영 (소켓 응답 전 UI 선반영)
   setParticipants(prev => {
     const prevA = Array.isArray(prev.A) ? prev.A : [];
     const prevB = Array.isArray(prev.B) ? prev.B : [];
-    // 기존 사이드에서 나 제거
+    const prevCitizen = Array.isArray(prev.citizen) ? prev.citizen : [];
     const cleanA = prevA.filter(p => p.userId !== user.id);
     const cleanB = prevB.filter(p => p.userId !== user.id);
-    if (newSide === null) return { A: cleanA, B: cleanB };
+    const cleanCitizen = prevCitizen.filter(p => p.userId !== user.id);
+    if (newSide === null) {
+      const meCitizen = { userId: user.id, avatarUrl: myAvatarUrl, _isCitizen: true, _citizenJoinedAt: Date.now() };
+      return { A: cleanA, B: cleanB, citizen: [...cleanCitizen, meCitizen] };
+    }
     const me = { userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false, joinedAt: Date.now() };
-    if (newSide === 'A') return { A: [...cleanA, me], B: cleanB };
-    return { A: cleanA, B: [...cleanB, me] };
+    if (newSide === 'A') return { A: [...cleanA, me], B: cleanB, citizen: cleanCitizen };
+    return { A: cleanA, B: [...cleanB, me], citizen: cleanCitizen };
   });
 
   socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false });
@@ -938,36 +953,19 @@ const handleVote = (agree) => {
               {(() => {
                 const citizenList = Array.isArray(participants.citizen) ? participants.citizen : [];
                 const isMeCitizen = !mySide && citizenList.some(c => c.userId === user?.id);
-                return isMeCitizen ? (
-                  <button
-                    onClick={() => socket.emit('leave-citizen', { debateId, userId: user?.id })}
-                    className="w-full h-10 rounded-xl border-2 border-[#D4AF37]/40 bg-[#D4AF37]/10 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
-                  >
+                return (
+                  <div className={`w-full h-10 rounded-xl border-2 flex items-center justify-center gap-2 ${
+                    isMeCitizen ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10' : 'border-dashed border-[#D4AF37]/30'
+                  }`}>
                     {citizenList.map(c => (
                       <div key={c.userId} className="w-6 h-6 rounded-full overflow-hidden border border-[#D4AF37]/40 bg-white/10">
                         <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
-                  </button>
-                ) : (
-                  <button
-                    disabled={myReady}
-                    onClick={() => {
-                      if (myReady) return;
-                      if (mySide) selectSide(mySide);
-                      socket.emit('join-citizen', { debateId, userId: user?.id });
-                    }}
-                    className={`w-full h-10 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 transition-all ${
-                      myReady ? 'border-white/10 opacity-30 cursor-not-allowed' : 'border-[#D4AF37]/30 active:scale-[0.97]'
-                    }`}
-                  >
-                    {citizenList.length > 0 && citizenList.map(c => (
-                      <div key={c.userId} className="w-6 h-6 rounded-full overflow-hidden border border-[#D4AF37]/40 bg-white/10">
-                        <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                    <span className="text-[10px] text-[#D4AF37]/60 font-bold">+ 관전</span>
-                  </button>
+                    {citizenList.length === 0 && (
+                      <span className="text-[10px] text-[#D4AF37]/40 font-bold">입장 미선택 시 자동 배정</span>
+                    )}
+                  </div>
                 );
               })()}
             </div>
