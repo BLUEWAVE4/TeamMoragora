@@ -398,8 +398,37 @@ export default function DebateLobbyPage() {
               })()}
             </div>
 
+            {/* 참여자 아바타 나열 (생성자 제외) */}
+            {(() => {
+              const live = liveParticipants[hotRoom.id];
+              const others = [...(live?.A || []), ...(live?.B || []), ...(live?.citizen || [])]
+                .filter(p => p.userId !== hotRoom.creator_id);
+              return others.length > 0 ? (
+                <div className="px-5 pb-3 flex items-center">
+                  <div className="flex -space-x-2">
+                    {others.slice(0, 8).map((p, i) => (
+                      <div key={p.userId || i} className="w-7 h-7 rounded-full overflow-hidden border-2 border-[#0f1829] bg-white/10" style={{ zIndex: 8 - i }}>
+                        <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {others.length > 8 && (
+                      <div className="w-7 h-7 rounded-full bg-white/10 border-2 border-[#0f1829] flex items-center justify-center">
+                        <span className="text-[8px] text-white/50 font-black">+{others.length - 8}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             {/* 하단 바 */}
-            <div className="bg-white/5 px-5 py-3 flex items-center justify-center">
+            <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10">
+                  <img src={hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-white/50 text-[11px] font-bold">{hotRoom.creator?.nickname || '방장'}</span>
+              </div>
               <span className="text-[#D4AF37] text-[12px] font-black flex items-center gap-1">
                 {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
