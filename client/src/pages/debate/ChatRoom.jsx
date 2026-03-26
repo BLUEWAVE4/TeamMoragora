@@ -101,6 +101,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [kickSkipCountdown, setKickSkipCountdown] = useState(null); // { side, seconds }
   const endTriggered = useRef(false);
+  const [skipApproved, setSkipApproved] = useState(false);
 
   // ===== 대기실 채팅 =====
   const [lobbyMessages, setLobbyMessages] = useState([]);
@@ -428,6 +429,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
 
     socket.on('time-change-approved', ({ type, chat_deadline }) => {
   setTimeChangeRequest(null);
+  if (type === 'skip') setSkipApproved(true);
   if (chat_deadline) setChatDeadline(chat_deadline);
   const saved = sessionStorage.getItem(`chat_session_${debateId}`);
     if (saved) {
@@ -874,7 +876,7 @@ const handleVote = (agree) => {
     </div>
   );
 
-  const isInputDisabled = !gameStarted || chatEnded || timeLeft === 0 || !mySide || !!exhaustedUsers[user?.id];
+  const isInputDisabled = !gameStarted || chatEnded || timeLeft === 0 || !mySide || !!exhaustedUsers[user?.id] || skipApproved;
   const remainingMsgs = MAX_MSGS - msgCount;
 
   return (
