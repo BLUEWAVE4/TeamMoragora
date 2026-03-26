@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../store/AuthContext';
+import { useTheme } from '../store/ThemeContext';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { getVerdict } from '../services/api';
@@ -309,6 +310,7 @@ function VerdictModal({ verdict, onClose }) {
 // ─── ProfilePage ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user, isAdmin } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
@@ -870,7 +872,7 @@ const [showInfo, setShowInfo] = useState(false);
       </BottomSheet>
 
       {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
-      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#F5F0E8" zIndex={100}>
+      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor={isDark ? '#1a2332' : '#F5F0E8'} zIndex={100}>
         {(() => {
           const completedDebates = myJudgments.filter(d => {
             const v = Array.isArray(d.verdicts) ? d.verdicts[0] : d.verdicts;
@@ -906,16 +908,22 @@ const [showInfo, setShowInfo] = useState(false);
           const LABEL_DESC = { '논리 구조': '전제→근거→결론 연결이 탄탄합니다.', '근거 품질': '구체적 데이터와 사례를 잘 활용합니다.', '설득력': '상대를 설득하는 능력이 뛰어납니다.', '일관성': '처음부터 끝까지 논지가 일관됩니다.', '표현력': '명확하고 적절한 표현을 사용합니다.' };
           const WEAK_DESC = { '논리 구조': '논리적 연결을 더 보강해보세요.', '근거 품질': '구체적 근거와 데이터를 더 활용해보세요.', '설득력': '반론 대응을 더 준비해보세요.', '일관성': '논지의 일관성을 유지해보세요.', '표현력': '더 명확하고 간결한 표현을 시도해보세요.' };
           const hasData = completedDebates.length > 0;
+          const cardBg = isDark ? 'rgba(255,255,255,0.05)' : '#fff';
+          const cardBorder = isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6';
+          const textPrimary = isDark ? '#e0ddd5' : '#1B2A4A';
+          const textSecondary = isDark ? 'rgba(224,221,213,0.5)' : 'rgba(27,42,74,0.4)';
+          const textMuted = isDark ? 'rgba(224,221,213,0.3)' : 'rgba(27,42,74,0.2)';
+          const barBg = isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6';
           return (
             <div className="px-6 overflow-y-auto flex-1 pb-16">
               <div className="flex justify-between items-end mb-6">
-                <h3 className="text-[22px] font-sans font-black text-[#1B2A4A]">나의 논리 프로필</h3>
-                <span className="text-[12px] text-[#1B2A4A]/30 font-bold">{completedDebates.length}건 분석</span>
+                <h3 className="text-[22px] font-sans font-black" style={{ color: textPrimary }}>나의 논리 프로필</h3>
+                <span className="text-[12px] font-bold" style={{ color: textSecondary }}>{completedDebates.length}건 분석</span>
               </div>
               {!hasData ? (
                 <div className="text-center py-16">
-                  <p className="text-[15px] text-[#1B2A4A]/30 font-bold">완료된 논쟁이 없습니다</p>
-                  <p className="text-[12px] text-[#1B2A4A]/20 mt-2">논쟁을 진행하면 분석 데이터가 쌓입니다</p>
+                  <p className="text-[15px] font-bold" style={{ color: textSecondary }}>완료된 논쟁이 없습니다</p>
+                  <p className="text-[12px] mt-2" style={{ color: textMuted }}>논쟁을 진행하면 분석 데이터가 쌓입니다</p>
                 </div>
               ) : (
                 <>
@@ -923,34 +931,34 @@ const [showInfo, setShowInfo] = useState(false);
                     <p className="text-[11px] text-white/40 font-bold uppercase tracking-wider mb-1">종합 논리력</p>
                     <p className="text-[36px] font-black text-[#D4AF37]">{totalAvg}<span className="text-[16px] text-white/40">/20</span></p>
                   </div>
-                  <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+                  <div className="rounded-2xl p-5 mb-4 shadow-sm" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                     <ProfileRadarChart data={radarData} />
                   </div>
-                  <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
-                    <p className="text-[11px] font-bold text-[#1B2A4A]/40 uppercase tracking-wider mb-4">항목별 점수</p>
+                  <div className="rounded-2xl p-5 mb-4 shadow-sm" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: textSecondary }}>항목별 점수</p>
                     <div className="space-y-3">
                       {radarData.map(d => (
                         <div key={d.label}>
                           <div className="flex justify-between mb-1">
-                            <span className="text-[12px] font-bold text-[#1B2A4A]/70">{d.label}</span>
-                            <span className="text-[12px] font-black text-[#1B2A4A]">{d.val}<span className="text-[#1B2A4A]/30">/{d.max}</span></span>
+                            <span className="text-[12px] font-bold" style={{ color: isDark ? 'rgba(224,221,213,0.7)' : 'rgba(27,42,74,0.7)' }}>{d.label}</span>
+                            <span className="text-[12px] font-black" style={{ color: textPrimary }}>{d.val}<span style={{ color: textSecondary }}>/{d.max}</span></span>
                           </div>
-                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: barBg }}>
                             <motion.div initial={{ width: 0 }} animate={{ width: `${(d.val / d.max) * 100}%` }} transition={{ duration: 1, ease: 'easeOut' }} className="h-full rounded-full" style={{ backgroundColor: d.val >= 15 ? '#059669' : d.val >= 10 ? '#D4AF37' : '#E63946' }} />
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100">
+                  <div className="rounded-2xl p-5 mb-6 shadow-sm" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                     <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-3">강점</p>
                     <div className="space-y-2 mb-5">
                       {strengths.map(s => (
                         <div key={s.label} className="flex items-start gap-2.5">
-                          <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: isDark ? 'rgba(5,150,105,0.15)' : '#ecfdf5' }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                           </div>
-                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{s.label}:</strong> {LABEL_DESC[s.label]}</span>
+                          <span className="text-[13px]" style={{ color: isDark ? 'rgba(224,221,213,0.7)' : 'rgba(27,42,74,0.7)' }}><strong style={{ color: textPrimary }}>{s.label}:</strong> {LABEL_DESC[s.label]}</span>
                         </div>
                       ))}
                     </div>
@@ -958,17 +966,17 @@ const [showInfo, setShowInfo] = useState(false);
                     <div className="space-y-2">
                       {weaknesses.map(w => (
                         <div key={w.label} className="flex items-start gap-2.5">
-                          <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: isDark ? 'rgba(230,57,70,0.15)' : '#fef2f2' }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#E63946"/></svg>
                           </div>
-                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{w.label}:</strong> {WEAK_DESC[w.label]}</span>
+                          <span className="text-[13px]" style={{ color: isDark ? 'rgba(224,221,213,0.7)' : 'rgba(27,42,74,0.7)' }}><strong style={{ color: textPrimary }}>{w.label}:</strong> {WEAK_DESC[w.label]}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 </>
               )}
-              <button onClick={() => setIsSheetOpen(false)} className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] font-sans font-bold text-[16px] rounded-2xl active:scale-[0.97] transition-all shadow-lg tracking-wider">분석 완료</button>
+              <button onClick={() => setIsSheetOpen(false)} className="w-full py-4 font-sans font-bold text-[16px] rounded-2xl active:scale-[0.97] transition-all shadow-lg tracking-wider" style={{ background: isDark ? '#D4AF37' : '#1B2A4A', color: isDark ? '#1a2332' : '#D4AF37' }}>분석 완료</button>
             </div>
           );
         })()}
