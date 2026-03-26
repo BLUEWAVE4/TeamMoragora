@@ -57,16 +57,25 @@ io.on('connection', (socket) => {
     if (!roomParticipants[debateId]) roomParticipants[debateId] = {};
     const isNewJoin = !roomParticipants[debateId][userId];
     if (roomParticipants[debateId][userId]) {
-      // 기존 참여자 — 소켓 추가 (다중 탭/브라우저 대응)
-      if (!roomParticipants[debateId][userId].socketIds) {
-        roomParticipants[debateId][userId].socketIds = new Set([roomParticipants[debateId][userId].socketId]);
-        delete roomParticipants[debateId][userId].socketId;
+      // 기존 참여자 — 이전 소켓 강제 종료 (중복 접속 차단)
+      const prev = roomParticipants[debateId][userId];
+      if (prev.socketIds) {
+        for (const oldSid of prev.socketIds) {
+          if (oldSid !== socket.id) {
+            const oldSocket = io.sockets.sockets.get(oldSid);
+            if (oldSocket) {
+              oldSocket.emit('duplicate-login', { reason: '다른 브라우저에서 접속하여 현재 세션이 종료됩니다.' });
+              oldSocket.leave(debateId);
+              oldSocket.disconnect(true);
+            }
+          }
+        }
       }
-      roomParticipants[debateId][userId].socketIds.add(socket.id);
-      roomParticipants[debateId][userId].nickname = nickname;
-      if (avatarUrl) roomParticipants[debateId][userId].avatarUrl = avatarUrl;
+      prev.socketIds = new Set([socket.id]);
+      prev.nickname = nickname;
+      if (avatarUrl) prev.avatarUrl = avatarUrl;
     } else {
-      roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]) };
+      roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now() };
     }
     const slots = buildSlots(debateId);
     io.to(debateId).emit('presence-sync', slots);
@@ -76,11 +85,28 @@ io.on('connection', (socket) => {
     if (roomParticipants[debateId][userId]?.side) {
       socket.to(debateId).emit('opponent-returned', { userId });
     }
-    // 새 참여자 입장 시스템 메시지
+    // 새 참여자 입장 시스템 메시지 (게임 시작 전에만)
     if (isNewJoin) {
-      const sideLabel = side === 'A' ? 'A측 입장' : side === 'B' ? 'B측 입장' : '시민';
-      io.to(debateId).emit('participant-joined', { nickname, side: side || null, message: `${nickname}님이 ${sideLabel}으로 참여하였습니다.` });
+      import('./src/config/supabase.js').then(async ({ supabaseAdmin }) => {
+        const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
+        if (debate?.status === 'waiting' || debate?.status === 'both_joined') {
+          const sideLabel = side === 'A' ? 'A측 입장' : side === 'B' ? 'B측 입장' : '시민';
+          io.to(debateId).emit('participant-joined', { nickname, side: side || null, message: `${nickname}님이 ${sideLabel}으로 참여하였습니다.` });
+        }
+      }).catch(() => {});
     }
+  });
+
+  // ===== 시민투표 집계 브로드캐스트 =====
+  socket.on('citizen-vote-update', ({ debateId, tally }) => {
+    if (!debateId) return;
+    socket.to(debateId).emit('citizen-vote-tally', tally);
+  });
+
+  // ===== 대기실 채팅 (휘발성, DB 저장 안 함) =====
+  socket.on('lobby-chat', ({ debateId, ...msg }) => {
+    if (!debateId) return;
+    socket.to(debateId).emit('lobby-chat', msg);
   });
 
   // ===== Presence: 사이드 선택 =====
@@ -128,7 +154,8 @@ io.on('connection', (socket) => {
 
   // ===== 타이핑 인디케이터 =====
   socket.on('typing', ({ debateId, userId, typing, side }) => {
-    socket.to(debateId).emit('opponent-typing', { typing, side });
+    const nickname = roomParticipants[debateId]?.[userId]?.nickname || '익명';
+    socket.to(debateId).emit('opponent-typing', { typing, side, nickname });
   });
 
   // ===== 카운트다운 브로드캐스트 =====
@@ -413,8 +440,9 @@ io.on('connection', (socket) => {
     if (agree) {
       vote.votes[userId] = true;
     } else {
+      const cancelledName = vote.targetNickname;
       delete kickVotes[debateId];
-      io.to(debateId).emit('kick-cancelled', { reason: '강퇴 투표가 부결되었습니다.' });
+      io.to(debateId).emit('kick-cancelled', { reason: `${cancelledName}님에 대한 강퇴 투표가 부결되었습니다.` });
       return;
     }
 
@@ -555,6 +583,9 @@ function buildSlots(debateId) {
     if (p.side === 'A') slots.A.push(safeP);
     if (p.side === 'B') slots.B.push(safeP);
   });
+  // 입장 순서대로 정렬
+  slots.A.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+  slots.B.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
   return slots;
 }
 

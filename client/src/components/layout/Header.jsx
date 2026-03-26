@@ -159,7 +159,8 @@ export default function Header() {
 
   const pathname = location.pathname;
   const config = SEARCH_CONFIG[pathname] || SEARCH_CONFIG['/'];
-  const shouldHide = ['/debate/create', '/moragora/', '/argument'].some(p => pathname.startsWith(p));
+  const shouldHide = ['/debate/create', '/moragora/', '/argument'].some(p => pathname.startsWith(p))
+    || /\/debate\/[^/]+\/chat$/.test(pathname);
 
   useEffect(() => {
     setIsSearchOpen(false);

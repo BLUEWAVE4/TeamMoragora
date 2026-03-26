@@ -27,7 +27,7 @@ function ModeSelector({ onStart }) {
     {
       key: "chat",
       label: "실시간 논쟁",
-      desc: "기다림 없는 실시간 채팅 형식으로 상대와 뜨겁게 설전합니다.",
+      desc: "실시간으로 진행되는 논쟁을 통해 상대와 뜨겁게 설전합니다.",
       img: "/random2.webp"
     }
   ];

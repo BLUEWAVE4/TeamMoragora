@@ -88,6 +88,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
 
   const [opponentTypingSide, setOpponentTypingSide] = useState(null);
   const [opponentTyping, setOpponentTyping] = useState(false);
+  const [opponentTypingNickname, setOpponentTypingNickname] = useState('');
   const typingTimeout = useRef(null);
 
   const [chatEnded, setChatEnded] = useState(false);
@@ -97,6 +98,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [kickSkipCountdown, setKickSkipCountdown] = useState(null); // { side, seconds }
   const endTriggered = useRef(false);
+
+  // ===== 대기실 채팅 =====
+  const [lobbyMessages, setLobbyMessages] = useState([]);
+  const [lobbyInput, setLobbyInput] = useState('');
+  const lobbyChatEndRef = useRef(null);
 
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatDeadline, setChatDeadline] = useState(null);
@@ -251,11 +257,14 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         setParticipants(prev => {
           const mergeWithMe = (serverList, side) => {
             const list = Array.isArray(serverList) ? serverList : [];
-            // 서버 리스트에 내가 없으면 로컬 prev에서 나를 찾아서 유지
             const hasMe = list.some(p => p.userId === user?.id);
             if (!hasMe) {
               const meInPrev = (Array.isArray(prev[side]) ? prev[side] : []).find(p => p.userId === user?.id);
-              if (meInPrev) return [...list, meInPrev];
+              if (meInPrev) {
+                const merged = [...list, meInPrev];
+                merged.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+                return merged;
+              }
             }
             return list;
           };
@@ -266,11 +275,19 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         });
       }
     });
-    socket.on('opponent-typing', ({ typing, side }) => {
+    socket.on('opponent-typing', ({ typing, side, nickname }) => {
     setOpponentTyping(typing);
     if (side) setOpponentTypingSide(side);
+    if (nickname) setOpponentTypingNickname(nickname);
     if (typing) { clearTimeout(window._typingTimeout); window._typingTimeout = setTimeout(() => setOpponentTyping(false), 3000); }
   });
+    socket.on('citizen-vote-tally', (tally) => {
+      if (tally) setVoteTally({ A: tally.A, B: tally.B, total: tally.total });
+    });
+    socket.on('duplicate-login', ({ reason }) => {
+      alert(reason);
+      navigate('/debate/lobby');
+    });
     socket.on('countdown-start', () => {
       setCountdown(3);
     });
@@ -279,8 +296,8 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       setGameStarted(true);
       if (chat_deadline) setChatDeadline(chat_deadline);
       sessionStorage.setItem(`chat_session_${debateId}`, JSON.stringify({ side: mySide || null, deadline: chat_deadline }));
-      // 안내 메시지
-      setMessages(prev => [...prev, {
+      // 대기실 참여 알림 제거 후 안내 메시지만 표시
+      setMessages([{
         id: `sys-help-${Date.now()}`,
         type: 'system',
         content: '/help 를 입력하면 다양한 명령어를 확인할 수 있습니다.',
@@ -432,6 +449,14 @@ socket.on('kick-cancelled', ({ reason }) => {
 // 참여자 입장 시스템 메시지
 socket.on('participant-joined', ({ message }) => {
   setMessages(prev => [...prev, { id: `sys-join-${Date.now()}`, type: 'system', content: message, created_at: new Date().toISOString() }]);
+  // 대기실 채팅에도 입장 알림
+  setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now() }]);
+});
+// 대기실 채팅 메시지 수신
+socket.on('lobby-chat', (msg) => {
+  if (msg.userId !== user?.id) {
+    setLobbyMessages(prev => [...prev, msg]);
+  }
 });
 // 강퇴된 유저 재참여 차단
 socket.on('kicked-blocked', ({ reason }) => {
@@ -463,6 +488,9 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('participant-joined');
       socket.off('kicked-blocked');
       socket.off('kick-skip-countdown');
+      socket.off('lobby-chat');
+      socket.off('citizen-vote-tally');
+      socket.off('duplicate-login');
       socket.off('chat-auto-ended');
       socket.off('chat-ended');
       socket.off('chat-cancelled');
@@ -511,6 +539,28 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: mySide, ready: newReady });
 }, [mySide, myReady, gameStarted, debateId, user, myNickname]);
 
+  // ===== 대기실 채팅 전송 =====
+  const sendLobbyChat = useCallback(() => {
+    const t = lobbyInput.trim();
+    if (!t) return;
+    const msg = {
+      id: `lobby-${user?.id}-${Date.now()}`,
+      type: 'chat',
+      userId: user?.id,
+      nickname: myNickname,
+      avatarUrl: myAvatarUrl,
+      text: t,
+      timestamp: Date.now(),
+    };
+    socket.emit('lobby-chat', { debateId, ...msg });
+    setLobbyMessages(prev => [...prev, msg]);
+    setLobbyInput('');
+  }, [lobbyInput, user, myNickname, myAvatarUrl, debateId]);
+
+  useEffect(() => {
+    lobbyChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [lobbyMessages]);
+
   // ===== 게임 시작 카운트다운 =====
   const [countdown, setCountdown] = useState(null); // 3, 2, 1, 0(GO)
 
@@ -537,16 +587,18 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   }, [countdown, isCreator, debateId]);
 
   // ===== 시민 투표 (관전자 전용) =====
-  const isCitizen = gameStarted && !mySide && user && debate && debate.creator_id !== user.id && debate.opponent_id !== user.id;
+  // loading 중에는 side가 아직 복원 안 됐으므로 시민으로 판별하지 않음
+  const isCitizen = gameStarted && !loading && !mySide && user && debate && debate.creator_id !== user.id && debate.opponent_id !== user.id;
 
+  // 시민투표 집계 — 게임 시작 후 모든 유저가 확인 가능
   useEffect(() => {
-    if (!isCitizen || !debateId) return;
+    if (!gameStarted || !debateId) return;
     getCitizenVoteTally(debateId).then(res => {
       const d = res.data || res;
       setVoteTally({ A: d.A, B: d.B, total: d.total });
       if (d.myVote) setCitizenVote(d.myVote);
     }).catch(() => {});
-  }, [isCitizen, debateId]);
+  }, [gameStarted, debateId]);
 
   const handleCitizenVote = async (side) => {
     if (citizenVoteLoading) return;
@@ -554,10 +606,12 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     try {
       await castCitizenVote(debateId, side);
       setCitizenVote(side);
-      // 집계 갱신
+      // 집계 갱신 + 전체 브로드캐스트
       const res = await getCitizenVoteTally(debateId);
       const d = res.data || res;
-      setVoteTally({ A: d.A, B: d.B, total: d.total });
+      const tally = { A: d.A, B: d.B, total: d.total };
+      setVoteTally(tally);
+      socket.emit('citizen-vote-update', { debateId, tally });
     } catch (e) { console.error(e); }
     finally { setCitizenVoteLoading(false); }
   };
@@ -694,11 +748,11 @@ const handleVote = (agree) => {
   const remainingMsgs = MAX_MSGS - msgCount;
 
   return (
-    <div className="flex overflow-hidden flex-col bg-[#0f1829]" style={{ height: 'calc(100dvh - 56px - var(--tab-h, 60px))', paddingBottom: keyboardHeight }}>
+    <div className="flex overflow-hidden flex-col bg-[#0f1829]" style={{ height: 'calc(100dvh - var(--tab-h, 60px))', paddingBottom: keyboardHeight }}>
 
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
       {!loading && !gameStarted && (
-        <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: 'rgba(15,24,41,0.98)' }}>
+        <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: '#0f1829' }}>
           {/* 상단 토스트 알림 (대기실) */}
           <AnimatePresence>
             {toast && (
@@ -752,18 +806,20 @@ const handleVote = (agree) => {
                       : 'bg-transparent';
 
                     return (
-                      <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${borderColor} ${bgColor} ${!p ? 'border-dashed' : ''}`}>
+                      <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all overflow-visible ${borderColor} ${bgColor} ${!p ? 'border-dashed' : ''}`}>
                         {p ? (
                           <>
-                            <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-white/10 flex items-center justify-center">
-                              <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                            <div className="relative w-6 h-6 shrink-0">
+                              <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
+                                <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              {p.userId === debate?.creator_id && (
+                                <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-50 text-[7px] text-[#D4AF37] bg-[#1a2744] px-1 py-0.5 rounded-full font-black leading-none border border-[#D4AF37]/40 whitespace-nowrap">방장</span>
+                              )}
                             </div>
                             <span className={`text-[11px] font-bold truncate flex-1 ${isMe ? (isA ? 'text-emerald-300' : 'text-red-300') : 'text-white/70'}`}>
                               {p.nickname}
                             </span>
-                            {p.userId === debate?.creator_id && (
-                              <span className="text-[8px] text-[#D4AF37] bg-[#D4AF37]/15 px-1.5 py-0.5 rounded-full font-black shrink-0">방장</span>
-                            )}
                             {p.ready
                               ? <span className={`text-[9px] font-black shrink-0 ${isA ? 'text-emerald-400' : 'text-red-400'}`}>준비완료</span>
                               : isMe && <span className="text-[9px] text-white/30 shrink-0">대기중</span>
@@ -900,6 +956,30 @@ const handleVote = (agree) => {
           </div>
         </div>
       </div>
+
+      {/* ━━━━━ 시민투표 게이지바 ━━━━━ */}
+      {gameStarted && (
+        <div className="shrink-0 px-4 py-2 bg-[#0f1829]/80 border-b border-white/5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[9px] font-bold text-emerald-400">A측 {voteTally.A}표</span>
+            <span className="text-[9px] font-bold text-white/30">시민투표 {voteTally.total}표</span>
+            <span className="text-[9px] font-bold text-red-400">B측 {voteTally.B}표</span>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden flex">
+            {voteTally.total > 0 ? (
+              <>
+                <div className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full"
+                  style={{ width: `${(voteTally.A / voteTally.total) * 100}%` }} />
+                <div className="h-full bg-red-500 transition-all duration-500 rounded-r-full"
+                  style={{ width: `${(voteTally.B / voteTally.total) * 100}%` }} />
+              </>
+            ) : (
+              <div className="h-full w-full bg-white/5" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ━━━━━ 상단 토스트 알림 ━━━━━ */}
       <AnimatePresence>
         {toast && (
@@ -985,13 +1065,16 @@ const handleVote = (agree) => {
             return (
               <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
                 className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                <button
+                <div
+                  role="button"
+                  tabIndex={isMe || !mySide ? -1 : 0}
                   onClick={(e) => { e.stopPropagation(); if (!isMe && mySide) setActionTarget({ userId: msg.user_id, nickname, side: msg.side }); }}
-                  className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-white/10 cursor-pointer active:scale-90 transition-all"
-                  disabled={isMe || !mySide}
+                  className={`w-8 h-8 rounded-full overflow-hidden shrink-0 bg-white/10 transition-all select-none ${
+                    isMe || !mySide ? 'cursor-default' : 'cursor-pointer active:scale-90'
+                  }`}
                 >
-                  <img src={avatar} alt="" className="w-full h-full object-cover" />
-                </button>
+                  <img src={avatar} alt="" className="w-full h-full object-cover pointer-events-none select-none" draggable={false} />
+                </div>
                 <div className={`flex flex-col gap-1 max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
                   <div className={`flex items-center gap-1.5 ${isMe ? 'flex-row-reverse' : ''}`}>
                     <span className={`text-[10px] font-bold px-1 ${isA ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -1023,9 +1106,14 @@ const handleVote = (agree) => {
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
               className="flex items-end gap-2 flex-row mt-3">
               <div className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
-              <div className={`px-4 py-3 rounded-2xl border ${opponentTypingSide === 'A' ? 'bg-emerald-500/10 border-emerald-500/20 rounded-bl-sm' : 'bg-red-500/10 border-red-500/20 rounded-bl-sm'}`}>
-                <div className="flex gap-1 items-center h-4">
-                  {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
+              <div className="flex flex-col gap-1 items-start">
+                <span className={`text-[10px] font-bold px-1 ${opponentTypingSide === 'A' ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {opponentTypingNickname || '상대방'}
+                </span>
+                <div className={`px-4 py-3 rounded-2xl border ${opponentTypingSide === 'A' ? 'bg-emerald-500/10 border-emerald-500/20 rounded-bl-sm' : 'bg-red-500/10 border-red-500/20 rounded-bl-sm'}`}>
+                  <div className="flex gap-1 items-center h-4">
+                    {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1291,6 +1379,22 @@ const handleVote = (agree) => {
                   <p className={`text-[15px] font-black ${reportResult.flagged ? 'text-red-400' : 'text-emerald-400'}`}>
                     {reportResult.flagged ? '부적절한 내용 감지' : '문제 없음'}
                   </p>
+                  {reportResult.severity && reportResult.severity !== 'none' && (
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                      reportResult.severity === 'high' ? 'bg-red-500/20 text-red-400' :
+                      reportResult.severity === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                      'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      위험도: {reportResult.severity === 'high' ? '높음' : reportResult.severity === 'medium' ? '중간' : '낮음'}
+                    </span>
+                  )}
+                  {reportResult.categories?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {reportResult.categories.map((cat, i) => (
+                        <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-white/50">{cat}</span>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-white/40 text-[12px] text-center leading-relaxed">{reportResult.reason}</p>
                   <button onClick={() => setReportResult(null)}
                     className="mt-2 w-full py-2.5 rounded-xl bg-white/10 text-white/50 text-[12px] font-bold active:scale-95 transition-all">

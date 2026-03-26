@@ -251,18 +251,18 @@ export async function endChat(req, res, next) {
   }
 }
 
-// ===== 유저 신고 (콘텐츠 필터 분석) =====
+// ===== 유저 신고 (AI 분석) =====
 export async function reportUser(req, res, next) {
   try {
     const { debateId } = req.params;
-    const { reporterId, targetId, messages: clientMessages } = req.body;
+    const { reporterId, targetId } = req.body;
 
     if (!targetId) throw new ValidationError('신고 대상이 지정되지 않았습니다.');
 
     // DB에서 해당 유저의 실제 채팅 메시지 조회 (클라이언트 데이터 신뢰 방지)
     const { data: chatMessages } = await supabaseAdmin
       .from('chat_messages')
-      .select('content')
+      .select('content, created_at')
       .eq('debate_id', debateId)
       .eq('user_id', targetId)
       .order('created_at', { ascending: true });
@@ -273,10 +273,9 @@ export async function reportUser(req, res, next) {
 
     const allContent = chatMessages.map(m => m.content).join('\n');
 
-    // 비속어 사전 필터 분석
+    // 1단계: 비속어 사전 필터 (빠른 차단)
     const filterResult = filterByDictionary(allContent);
     if (filterResult.blocked) {
-      // 신고 기록 저장
       await supabaseAdmin.from('reports').insert({
         debate_id: debateId,
         reporter_id: reporterId || null,
@@ -284,34 +283,74 @@ export async function reportUser(req, res, next) {
         reason: filterResult.reason,
         flagged: true,
         analyzed_content: allContent.slice(0, 2000),
-      }).catch(() => {}); // reports 테이블 없으면 무시
-
+      }).catch(() => {});
       return res.json({ flagged: true, reason: `부적절한 표현이 감지되었습니다: ${filterResult.reason}` });
     }
 
-    // 추가 패턴 분석 (인신공격, 혐오 표현 등)
-    const harmfulPatterns = [
-      { pattern: /죽|자살|살인/gi, label: '위험한 표현' },
-      { pattern: /(바보|멍청|등신|병신|지체|장애)/gi, label: '인신공격' },
-      { pattern: /(성별|인종|종교|외국인|이주민).*(차별|혐오|꺼져|나가)/gi, label: '혐오 표현' },
-    ];
+    // 2단계: AI 분석 (Gemini Flash — 빠르고 저렴)
+    const { gemini } = await import('../config/ai.js');
+    const prompt = `당신은 온라인 논쟁 플랫폼의 채팅 감시 AI입니다.
+아래는 신고된 유저의 채팅 로그입니다. 다음 기준으로 분석하세요:
 
-    for (const { pattern, label } of harmfulPatterns) {
-      if (pattern.test(allContent)) {
-        await supabaseAdmin.from('reports').insert({
-          debate_id: debateId,
-          reporter_id: reporterId || null,
-          target_id: targetId,
-          reason: label,
-          flagged: true,
-          analyzed_content: allContent.slice(0, 2000),
-        }).catch(() => {});
+## 판단 기준
+1. **비속어/욕설**: 직접적 욕설, 우회 욕설, 비하 표현
+2. **인신공격**: 상대방 인격/외모/능력에 대한 모욕
+3. **혐오 표현**: 성별/인종/종교/장애 등에 대한 차별 발언
+4. **위협/폭력**: 신체적 위해 암시, 자해/자살 언급
+5. **성적 표현**: 부적절한 성적 발언
+6. **도배/트롤링**: 논쟁과 무관한 반복적 방해 행위
 
-        return res.json({ flagged: true, reason: `${label}이(가) 감지되었습니다. 관리자가 검토할 예정입니다.` });
+## 채팅 로그
+${allContent.slice(0, 3000)}
+
+## 응답 형식 (JSON만 출력)
+{
+  "flagged": true/false,
+  "severity": "none" | "low" | "medium" | "high",
+  "categories": ["해당 카테고리"],
+  "reason": "한국어로 구체적 사유 1-2문장"
+}`;
+
+    let aiResult;
+    try {
+      const result = await gemini.generateContent(prompt);
+      const text = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
+      aiResult = JSON.parse(text);
+    } catch (aiErr) {
+      console.error('[신고 AI 분석 실패]', aiErr.message);
+      // AI 실패 시 기본 패턴 분석 폴백
+      const harmfulPatterns = [
+        { pattern: /죽|자살|살인/gi, label: '위험한 표현' },
+        { pattern: /(바보|멍청|등신|병신|지체|장애)/gi, label: '인신공격' },
+        { pattern: /(성별|인종|종교|외국인|이주민).*(차별|혐오|꺼져|나가)/gi, label: '혐오 표현' },
+      ];
+      for (const { pattern, label } of harmfulPatterns) {
+        if (pattern.test(allContent)) {
+          aiResult = { flagged: true, severity: 'medium', categories: [label], reason: `${label}이(가) 감지되었습니다.` };
+          break;
+        }
+      }
+      if (!aiResult) {
+        aiResult = { flagged: false, severity: 'none', categories: [], reason: 'AI 분석을 수행할 수 없어 패턴 분석을 진행했습니다. 부적절한 내용이 감지되지 않았습니다.' };
       }
     }
 
-    res.json({ flagged: false, reason: '분석 결과 부적절한 내용이 감지되지 않았습니다. 오탐이라면 관리자에게 추가 검토를 요청합니다.' });
+    // 신고 기록 저장
+    await supabaseAdmin.from('reports').insert({
+      debate_id: debateId,
+      reporter_id: reporterId || null,
+      target_id: targetId,
+      reason: aiResult.reason,
+      flagged: aiResult.flagged,
+      analyzed_content: allContent.slice(0, 2000),
+    }).catch(() => {});
+
+    res.json({
+      flagged: aiResult.flagged,
+      severity: aiResult.severity,
+      categories: aiResult.categories,
+      reason: aiResult.reason,
+    });
   } catch (err) {
     next(err);
   }
