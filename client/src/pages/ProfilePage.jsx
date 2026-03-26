@@ -29,36 +29,77 @@ const CountUp = ({ end }) => {
   return <span>{count.toLocaleString()}</span>;
 };
 
-// ─── RadarChart ─────────────────────────────────────────────────────────────
-const RadarChart = ({ data }) => {
-  const size = 300; const center = size / 2; const radius = size * 0.3;
-  const angleStep = (Math.PI * 2) / data.length;
-  const points = data.map((d, i) => {
-    const r = radius * (d.val / 100);
-    const x = center + r * Math.cos(i * angleStep - Math.PI / 2);
-    const y = center + r * Math.sin(i * angleStep - Math.PI / 2);
-    return `${x},${y}`;
-  }).join(' ');
+// ─── RadarChart (chart.js) ──────────────────────────────────────────────────
+import { Radar } from 'react-chartjs-2';
+import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler);
+
+const ProfileRadarChart = ({ data }) => {
+  const bandPlugin = {
+    id: 'profileRadarBands',
+    beforeDraw(chart) {
+      const { ctx } = chart;
+      const rScale = chart.scales.r;
+      const cx = rScale.xCenter;
+      const cy = rScale.yCenter;
+      const bands = [
+        { from: 0, to: 5, color: 'rgba(27, 42, 74, 0.06)' },
+        { from: 5, to: 10, color: 'rgba(212, 175, 55, 0.04)' },
+        { from: 10, to: 15, color: 'rgba(27, 42, 74, 0.06)' },
+        { from: 15, to: 20, color: 'rgba(212, 175, 55, 0.04)' },
+      ];
+      bands.reverse().forEach(({ from, to, color }) => {
+        const outerR = rScale.getDistanceFromCenterForValue(to);
+        const innerR = rScale.getDistanceFromCenterForValue(from);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      });
+    },
+  };
+
+  const chartData = {
+    labels: data.map(d => [d.label, `(${d.val}/${d.max})`]),
+    datasets: [{
+      label: '내 평균',
+      data: data.map(d => d.val),
+      backgroundColor: 'rgba(212, 175, 55, 0.18)',
+      borderColor: '#D4AF37',
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHitRadius: 12,
+      pointHoverRadius: 0,
+      fill: true,
+    }],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 20,
+        ticks: { stepSize: 5, display: true, backdropColor: 'transparent', color: 'rgba(27, 42, 74, 0.25)', font: { size: 9 } },
+        grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
+        angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
+        pointLabels: { font: { size: 12, weight: '600', family: 'Pretendard Variable, sans-serif' }, color: '#1B2A4A', padding: 14 },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1B2A4A', titleFont: { size: 11, weight: 'bold' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 8, callbacks: { label: (ctx) => ` ${ctx.raw}점 / 20점` } },
+    },
+  };
   return (
-    <div className="flex justify-center items-center py-4">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {[0.5, 1].map((m) => (
-          <polygon key={m} points={data.map((_, i) => {
-            const x = center + radius * m * Math.cos(i * angleStep - Math.PI / 2);
-            const y = center + radius * m * Math.sin(i * angleStep - Math.PI / 2);
-            return `${x},${y}`;
-          }).join(' ')} fill="none" stroke="#E5E5EA" strokeWidth="1" />
-        ))}
-        <motion.polygon
-          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-          points={points} fill="rgba(0, 122, 255, 0.15)" stroke="#007AFF" strokeWidth="2.5"
-        />
-        {data.map((d, i) => {
-          const x = center + (radius + 45) * Math.cos(i * angleStep - Math.PI / 2);
-          const y = center + (radius + 25) * Math.sin(i * angleStep - Math.PI / 2);
-          return <text key={i} x={x} y={y} textAnchor="middle" fontSize="16" fontWeight="700" fill="#8E8E93">{d.label}</text>;
-        })}
-      </svg>
+    <div className="flex justify-center py-2 px-4">
+      <div className="w-full max-w-[280px]">
+        <Radar data={chartData} options={options} plugins={[bandPlugin]} />
+      </div>
     </div>
   );
 };
@@ -320,7 +361,7 @@ const [showInfo, setShowInfo] = useState(false);
         // 프로필 + 논쟁 목록 병렬 조회
         const [pRes, { data: debates, error }] = await Promise.all([
           api.get('/auth/me'),
-          supabase.from('debates').select(`*, verdicts (*)`).or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`).order('created_at', { ascending: false }),
+          supabase.from('debates').select(`*, verdicts (*, ai_judgments (*))`).or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`).order('created_at', { ascending: false }),
         ]);
         const profile = pRes.data || pRes;
         setProfileData(profile);
@@ -829,36 +870,108 @@ const [showInfo, setShowInfo] = useState(false);
       </BottomSheet>
 
       {/* ─── 논리 분석 바텀시트 ──────────────────────────────────── */}
-      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#ffffff" zIndex={100}>
-        <div className="px-6 overflow-y-auto flex-1 pb-16">
-          <div className="flex justify-between items-end mb-8">
-            <h3 className="text-[26px] font-black text-black mb-6">논리 분석</h3>
-            <span className="text-[16px] text-gray-400 font-bold mb-1">2026.03.13</span>
-          </div>
-          <div className="bg-[#F9F9F9] rounded-[32px] mb-8 border border-gray-50 overflow-hidden shadow-inner">
-            <RadarChart data={[
-              { label: '논거 구성', val: 92 },
-              { label: '논리 일관', val: 88 },
-              { label: '인용 근거', val: 85 },
-              { label: '반박력', val: 78 },
-              { label: '감정 제어', val: 71 },
-            ]} />
-          </div>
-          <div className="bg-[#F2F2F7] rounded-[32px] p-8 mb-10">
-            <h4 className="text-[16px] font-black text-gray-400 uppercase mb-5 tracking-widest">강점 리포트</h4>
-            <ul className="text-[17px] font-bold text-black/80 space-y-5">
-              <li className="flex items-start gap-4">
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
-                <span><span className="text-black font-black">논거 구성력:</span> 주장의 구조화가 매우 탄탄합니다.</span>
-              </li>
-              <li className="flex items-start gap-4">
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"><ArrowRight size={14} className="text-[#007AFF]" /></div>
-                <span><span className="text-black font-black">논리 일관성:</span> 논쟁 전반에 걸쳐 일관된 입장을 유지합니다.</span>
-              </li>
-            </ul>
-          </div>
-          <button onClick={() => setIsSheetOpen(false)} className="w-full py-5 bg-black text-white font-black rounded-3xl text-[18px] active:scale-95 transition-all shadow-lg">분석 완료</button>
-        </div>
+      <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} maxHeight="92vh" bgColor="#F5F0E8" zIndex={100}>
+        {(() => {
+          const completedDebates = myJudgments.filter(d => {
+            const v = Array.isArray(d.verdicts) ? d.verdicts[0] : d.verdicts;
+            return v && v.ai_judgments;
+          });
+          const myScores = { logic: [], evidence: [], persuasion: [], consistency: [], expression: [] };
+          completedDebates.forEach(d => {
+            const mySide = d.creator_id === user?.id ? 'a' : 'b';
+            const verdict = Array.isArray(d.verdicts) ? d.verdicts[0] : d.verdicts;
+            const judgments = verdict?.ai_judgments || [];
+            judgments.forEach(j => {
+              const detail = mySide === 'a' ? j.score_detail_a : j.score_detail_b;
+              if (detail) {
+                Object.keys(myScores).forEach(k => {
+                  if (detail[k] != null) myScores[k].push(detail[k]);
+                });
+              }
+            });
+          });
+          const avg = (arr) => arr.length > 0 ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : 0;
+          const scores = { logic: avg(myScores.logic), evidence: avg(myScores.evidence), persuasion: avg(myScores.persuasion), consistency: avg(myScores.consistency), expression: avg(myScores.expression) };
+          const totalAvg = Math.round(Object.values(scores).reduce((s, v) => s + v, 0) / 5);
+          const radarData = [
+            { label: '논리 구조', val: scores.logic, max: 20 },
+            { label: '근거 품질', val: scores.evidence, max: 20 },
+            { label: '설득력', val: scores.persuasion, max: 20 },
+            { label: '일관성', val: scores.consistency, max: 20 },
+            { label: '표현력', val: scores.expression, max: 20 },
+          ];
+          const sorted = [...radarData].sort((a, b) => b.val - a.val);
+          const strengths = sorted.slice(0, 2);
+          const weaknesses = sorted.slice(-1);
+          const LABEL_DESC = { '논리 구조': '전제→근거→결론 연결이 탄탄합니다.', '근거 품질': '구체적 데이터와 사례를 잘 활용합니다.', '설득력': '상대를 설득하는 능력이 뛰어납니다.', '일관성': '처음부터 끝까지 논지가 일관됩니다.', '표현력': '명확하고 적절한 표현을 사용합니다.' };
+          const WEAK_DESC = { '논리 구조': '논리적 연결을 더 보강해보세요.', '근거 품질': '구체적 근거와 데이터를 더 활용해보세요.', '설득력': '반론 대응을 더 준비해보세요.', '일관성': '논지의 일관성을 유지해보세요.', '표현력': '더 명확하고 간결한 표현을 시도해보세요.' };
+          const hasData = completedDebates.length > 0;
+          return (
+            <div className="px-6 overflow-y-auto flex-1 pb-16">
+              <div className="flex justify-between items-end mb-6">
+                <h3 className="text-[22px] font-sans font-black text-[#1B2A4A]">나의 논리 프로필</h3>
+                <span className="text-[12px] text-[#1B2A4A]/30 font-bold">{completedDebates.length}건 분석</span>
+              </div>
+              {!hasData ? (
+                <div className="text-center py-16">
+                  <p className="text-[15px] text-[#1B2A4A]/30 font-bold">완료된 논쟁이 없습니다</p>
+                  <p className="text-[12px] text-[#1B2A4A]/20 mt-2">논쟁을 진행하면 분석 데이터가 쌓입니다</p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] rounded-2xl p-5 mb-4 text-center">
+                    <p className="text-[11px] text-white/40 font-bold uppercase tracking-wider mb-1">종합 논리력</p>
+                    <p className="text-[36px] font-black text-[#D4AF37]">{totalAvg}<span className="text-[16px] text-white/40">/20</span></p>
+                  </div>
+                  <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+                    <ProfileRadarChart data={radarData} />
+                  </div>
+                  <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+                    <p className="text-[11px] font-bold text-[#1B2A4A]/40 uppercase tracking-wider mb-4">항목별 점수</p>
+                    <div className="space-y-3">
+                      {radarData.map(d => (
+                        <div key={d.label}>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-[12px] font-bold text-[#1B2A4A]/70">{d.label}</span>
+                            <span className="text-[12px] font-black text-[#1B2A4A]">{d.val}<span className="text-[#1B2A4A]/30">/{d.max}</span></span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(d.val / d.max) * 100}%` }} transition={{ duration: 1, ease: 'easeOut' }} className="h-full rounded-full" style={{ backgroundColor: d.val >= 15 ? '#059669' : d.val >= 10 ? '#D4AF37' : '#E63946' }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100">
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-3">강점</p>
+                    <div className="space-y-2 mb-5">
+                      {strengths.map(s => (
+                        <div key={s.label} className="flex items-start gap-2.5">
+                          <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          </div>
+                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{s.label}:</strong> {LABEL_DESC[s.label]}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[11px] font-bold text-[#E63946] uppercase tracking-wider mb-3">개선점</p>
+                    <div className="space-y-2">
+                      {weaknesses.map(w => (
+                        <div key={w.label} className="flex items-start gap-2.5">
+                          <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E63946" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#E63946"/></svg>
+                          </div>
+                          <span className="text-[13px] text-[#1B2A4A]/70"><strong className="text-[#1B2A4A]">{w.label}:</strong> {WEAK_DESC[w.label]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              <button onClick={() => setIsSheetOpen(false)} className="w-full py-4 bg-[#1B2A4A] text-[#D4AF37] font-sans font-bold text-[16px] rounded-2xl active:scale-[0.97] transition-all shadow-lg tracking-wider">분석 완료</button>
+            </div>
+          );
+        })()}
       </BottomSheet>
 
       {/* ─── 아바타 커스터마이징 바텀시트 ──────────────────────────── */}
