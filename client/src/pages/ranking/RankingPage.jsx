@@ -519,7 +519,7 @@ export default function RankingPage() {
     <div className="min-h-screen bg-[#F3F1EC] font-sans">
       <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
+          <div className="min-h-screen flex items-center justify-center">
             <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
@@ -555,7 +555,7 @@ export default function RankingPage() {
 {activeTab === 'debate' && (
   <div className="px-4 pb-24 min-h-screen font-[-apple-system,sans-serif] tracking-tight antialiased">
     {hallLoading ? (
-      <div className="flex justify-center items-center h-64">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
       </div>
     ) : (
