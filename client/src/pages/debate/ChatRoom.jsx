@@ -579,12 +579,9 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => clearInterval(iv);
   }, [!!kickRequest]);
 
-  // ===== 사이드 선택 (3명 제한, 빠른 연속 클릭 방지) =====
-  const sideSelectCooldown = useRef(false);
+  // ===== 사이드 선택 (3명 제한) =====
   const selectSide = useCallback((side) => {
-  if (gameStarted || myReady || sideSelectCooldown.current) return;
-  sideSelectCooldown.current = true;
-  setTimeout(() => { sideSelectCooldown.current = false; }, 500);
+  if (gameStarted || myReady) return;
   const sideList = Array.isArray(participants[side]) ? participants[side] : [];
   if (sideList.length >= MAX_PER_SIDE && !sideList.some(p => p.userId === user.id)) return;
   const newSide = mySide === side ? null : side;
