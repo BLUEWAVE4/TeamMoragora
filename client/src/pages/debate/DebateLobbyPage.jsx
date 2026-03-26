@@ -238,13 +238,14 @@ export default function DebateLobbyPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [kickedAlert, setKickedAlert] = useState(null);
 
-  // 강퇴 알림 표시
+  const [roomAlert, setRoomAlert] = useState(null);
+
+  // 강퇴/삭제/중복접속 알림 표시
   useEffect(() => {
-    const msg = sessionStorage.getItem('kickedAlert');
-    if (msg) {
-      setKickedAlert(msg);
-      sessionStorage.removeItem('kickedAlert');
-    }
+    const kicked = sessionStorage.getItem('kickedAlert');
+    if (kicked) { setKickedAlert(kicked); sessionStorage.removeItem('kickedAlert'); }
+    const room = sessionStorage.getItem('roomAlert');
+    if (room) { setRoomAlert(room); sessionStorage.removeItem('roomAlert'); }
   }, []);
 
   const [visibleCount, setVisibleCount] = useState(10);
@@ -518,6 +519,13 @@ export default function DebateLobbyPage() {
         type="error"
         title="강퇴 안내"
         description={kickedAlert || ''}
+      />
+      <MoragoraModal
+        isOpen={!!roomAlert}
+        onClose={() => setRoomAlert(null)}
+        type="info"
+        title="안내"
+        description={roomAlert || ''}
       />
     </div>
   );

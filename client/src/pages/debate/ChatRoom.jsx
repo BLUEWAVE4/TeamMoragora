@@ -381,11 +381,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       if (tally) setVoteTally({ A: tally.A, B: tally.B, total: tally.total });
     });
     socket.on('room-deleted', ({ reason }) => {
-      alert(reason || '방장이 논쟁을 삭제하였습니다.');
+      sessionStorage.setItem('roomAlert', reason || '방장이 논쟁을 삭제하였습니다.');
       navigate('/debate/lobby');
     });
     socket.on('duplicate-login', ({ reason }) => {
-      alert(reason);
+      sessionStorage.setItem('roomAlert', reason || '다른 브라우저에서 접속하여 현재 세션이 종료됩니다.');
       navigate('/debate/lobby');
     });
     socket.on('countdown-start', () => {
