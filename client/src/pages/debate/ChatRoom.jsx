@@ -587,30 +587,19 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   const newSide = mySide === side ? null : side;
   setMySide(newSide);
 
-  // A/B 선택 시 시민 해제, side 해제 시 시민 자동 등록
-  if (newSide) {
-    socket.emit('leave-citizen', { debateId, userId: user.id });
-  } else {
-    socket.emit('join-citizen', { debateId, userId: user.id });
-  }
-
-  // 로컬 participants에 즉시 반영 (소켓 응답 전 UI 선반영)
+  // 로컬 즉시 반영 (옵티미스틱)
   setParticipants(prev => {
-    const prevA = Array.isArray(prev.A) ? prev.A : [];
-    const prevB = Array.isArray(prev.B) ? prev.B : [];
-    const prevCitizen = Array.isArray(prev.citizen) ? prev.citizen : [];
-    const cleanA = prevA.filter(p => p.userId !== user.id);
-    const cleanB = prevB.filter(p => p.userId !== user.id);
-    const cleanCitizen = prevCitizen.filter(p => p.userId !== user.id);
-    if (newSide === null) {
-      const meCitizen = { userId: user.id, avatarUrl: myAvatarUrl, _isCitizen: true, _citizenJoinedAt: Date.now() };
-      return { A: cleanA, B: cleanB, citizen: [...cleanCitizen, meCitizen] };
+    const cleanA = (prev.A || []).filter(p => p.userId !== user.id);
+    const cleanB = (prev.B || []).filter(p => p.userId !== user.id);
+    const cleanC = (prev.citizen || []).filter(p => p.userId !== user.id);
+    if (!newSide) {
+      return { A: cleanA, B: cleanB, citizen: [...cleanC, { userId: user.id, avatarUrl: myAvatarUrl, _isCitizen: true, _citizenJoinedAt: Date.now() }] };
     }
     const me = { userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false, joinedAt: Date.now() };
-    if (newSide === 'A') return { A: [...cleanA, me], B: cleanB, citizen: cleanCitizen };
-    return { A: cleanA, B: [...cleanB, me], citizen: cleanCitizen };
+    return { A: newSide === 'A' ? [...cleanA, me] : cleanA, B: newSide === 'B' ? [...cleanB, me] : cleanB, citizen: cleanC };
   });
 
+  // 소켓 1회만 emit (서버에서 시민 처리 포함)
   socket.emit('select-side', { debateId, userId: user.id, nickname: myNickname, avatarUrl: myAvatarUrl, side: newSide, ready: false });
 }, [mySide, participants, user, myNickname, myAvatarUrl, gameStarted, myReady, debateId]);
 

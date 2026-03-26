@@ -143,15 +143,21 @@ io.on('connection', (socket) => {
   socket.on('select-side', ({ debateId, userId, nickname, avatarUrl, side, ready }) => {
     if (!roomParticipants[debateId]?.[userId]) return;
 
-    // 즉시 동기 업데이트 (presence-sync 지연 방지)
+    // 즉시 동기 업데이트
     const prev = roomParticipants[debateId][userId];
     const sideChanged = prev.side !== side;
     prev.side = side;
     prev.nickname = nickname;
     if (avatarUrl) prev.avatarUrl = avatarUrl;
     prev.ready = ready || false;
-    // 사이드 변경 시 joinedAt 갱신 (입장 선택 순서 정렬용)
     if (sideChanged && side) prev.joinedAt = Date.now();
+    // side가 있으면 시민 해제, null이면 시민 등록
+    if (side) {
+      prev._isCitizen = false;
+    } else {
+      prev._isCitizen = true;
+      prev._citizenJoinedAt = prev._citizenJoinedAt || Date.now();
+    }
     io.to(debateId).emit('presence-sync', buildSlots(debateId));
 
     // DB 비동기 업데이트 (로비 피드 실시간 반영)
