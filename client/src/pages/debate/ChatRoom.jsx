@@ -543,6 +543,7 @@ socket.on('kick-approved', ({ targetId, targetNickname }) => {
     }
     setMessages(prev => [...prev, { id: `sys-kicked-${Date.now()}`, type: 'system', content: '강퇴 투표로 퇴장되었습니다.', created_at: new Date().toISOString() }]);
     setChatEnded(true);
+    sessionStorage.setItem('kickedAlert', '강퇴 투표로 논쟁에서 퇴장되었습니다.');
     setTimeout(() => navigate('/debate/lobby'), 2000);
   } else {
     setMessages(prev => [...prev, { id: `sys-kicked-${Date.now()}`, type: 'system', content: `${targetNickname}님이 강퇴되었습니다.`, created_at: new Date().toISOString() }]);

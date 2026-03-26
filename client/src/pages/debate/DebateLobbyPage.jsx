@@ -236,6 +236,16 @@ export default function DebateLobbyPage() {
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [kickedAlert, setKickedAlert] = useState(null);
+
+  // 강퇴 알림 표시
+  useEffect(() => {
+    const msg = sessionStorage.getItem('kickedAlert');
+    if (msg) {
+      setKickedAlert(msg);
+      sessionStorage.removeItem('kickedAlert');
+    }
+  }, []);
 
   const [visibleCount, setVisibleCount] = useState(10);
   const observerRef = useRef(null);
@@ -501,6 +511,13 @@ export default function DebateLobbyPage() {
         title="로그인이 필요합니다"
         description="논쟁에 참여하시려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?"
         onConfirm={() => { setLoginModalOpen(false); navigate('/login'); }}
+      />
+      <MoragoraModal
+        isOpen={!!kickedAlert}
+        onClose={() => setKickedAlert(null)}
+        type="error"
+        title="강퇴 안내"
+        description={kickedAlert || ''}
       />
     </div>
   );
