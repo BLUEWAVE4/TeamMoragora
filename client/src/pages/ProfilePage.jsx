@@ -35,7 +35,7 @@ import { Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler);
 
-const ProfileRadarChart = ({ data }) => {
+const ProfileRadarChart = ({ data, isDark }) => {
   const bandPlugin = {
     id: 'profileRadarBands',
     beforeDraw(chart) {
@@ -85,10 +85,10 @@ const ProfileRadarChart = ({ data }) => {
       r: {
         beginAtZero: true,
         max: 20,
-        ticks: { stepSize: 5, display: true, backdropColor: 'transparent', color: 'rgba(27, 42, 74, 0.25)', font: { size: 9 } },
-        grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
-        angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
-        pointLabels: { font: { size: 12, weight: '600', family: 'Pretendard Variable, sans-serif' }, color: '#1B2A4A', padding: 14 },
+        ticks: { stepSize: 5, display: true, backdropColor: 'transparent', color: isDark ? 'rgba(224,221,213,0.25)' : 'rgba(27, 42, 74, 0.25)', font: { size: 9 } },
+        grid: { color: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(27, 42, 74, 0.06)', circular: true },
+        angleLines: { color: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(27, 42, 74, 0.06)' },
+        pointLabels: { font: { size: 12, weight: '600', family: 'Pretendard Variable, sans-serif' }, color: isDark ? '#e0ddd5' : '#1B2A4A', padding: 14 },
       },
     },
     plugins: {
@@ -932,7 +932,7 @@ const [showInfo, setShowInfo] = useState(false);
                     <p className="text-[36px] font-black text-[#D4AF37]">{totalAvg}<span className="text-[16px] text-white/40">/20</span></p>
                   </div>
                   <div className="rounded-2xl p-5 mb-4 shadow-sm" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-                    <ProfileRadarChart data={radarData} />
+                    <ProfileRadarChart data={radarData} isDark={isDark} />
                   </div>
                   <div className="rounded-2xl p-5 mb-4 shadow-sm" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                     <p className="text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: textSecondary }}>항목별 점수</p>
