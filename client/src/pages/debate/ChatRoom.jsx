@@ -960,11 +960,8 @@ const handleVote = (agree) => {
                         <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
-                    {citizenList.length === 0 && (
-                      <span className="text-[10px] text-[#D4AF37]/40 font-bold">입장 미선택 시 자동 배정</span>
-                    )}
-                    {!isMeCitizen && canClickCitizen && citizenList.length > 0 && (
-                      <span className="text-[10px] text-[#D4AF37]/50 font-bold">+ 관전</span>
+                    {(!isMeCitizen && canClickCitizen) && (
+                      <span className="text-[10px] text-[#D4AF37]/50 font-bold">+ 선택</span>
                     )}
                   </button>
                 );
