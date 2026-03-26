@@ -968,7 +968,7 @@ const handleVote = (agree) => {
                 className={`w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-wider transition-all active:scale-[0.97] ${
                   allReady() ? 'bg-[#D4AF37] text-[#0a0f1a] shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-white/20 cursor-not-allowed'
                 }`}>
-                {allReady() ? '⚔ 논쟁 시작' : '논쟁 시작'}
+                논쟁 시작
               </button>
             )}
 
