@@ -555,15 +555,6 @@ const [showInfo, setShowInfo] = useState(false);
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => setIsTierSheetOpen(true)}
-                className="mt-2 text-[13px] font-black px-3 py-1 rounded-full text-white flex items-center gap-1.5 active:scale-95 transition-transform min-w-[60px] justify-center"
-                style={{ backgroundColor: profileData ? tier.color : '#D1D5DB' }}
-              >
-                {profileData ? (
-                  <><tier.icon size={14} /> {tier.name}<ChevronRight size={14} strokeWidth={3} /></>
-                ) : '\u00A0'}
-              </button>
             </div>
           </div>
         </div>
