@@ -143,32 +143,33 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
   return (
-    <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-2xl p-5 shadow-sm border transition-all mb-3 ${
+    <div onClick={() => !isKicked && onCardClick(room)} className={`rounded-xl pb-5 mb-1 transition-all ${
       isKicked
-        ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
-        : 'bg-white dark:bg-white/[0.04] border-gray-100 dark:border-white/10 cursor-pointer active:scale-[0.99]'
+        ? 'bg-gray-100 dark:bg-gray-800 opacity-60 cursor-not-allowed'
+        : 'bg-white/70 dark:bg-white/[0.04] cursor-pointer active:scale-[0.99]'
     }`}>
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-50 dark:border-white/10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200/50">
-            <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-[#1B2A4A] dark:text-white text-[14px]">{creatorName}</span>
-            <span className="text-[10px] text-gray-400 font-bold">{room.creator?.tier || '시민'}</span>
-          </div>
+      {/* 프로필 헤더 */}
+      <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 shrink-0">
+          <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate">{creatorName}</span>
+          <span className="text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 bg-[#FFF5EB] dark:bg-[#2a2210] text-[#FF9500] dark:text-[#f59e0b80]">{room.creator?.tier || '시민'}</span>
         </div>
         <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
       </div>
 
-      <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
+      <div className="px-4">
+        <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
 
-      <div className="flex items-center gap-2 mb-4">
-        {room.purpose && <span className="text-[11px] font-bold text-[#1B2A4A]/40 dark:text-white/40 bg-[#1B2A4A]/5 dark:bg-white/10 px-2 py-1 rounded-full">{room.purpose}</span>}
-        {room.lens && room.lens !== '미선택' && <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.lens}</span>}
+        <div className="flex items-center gap-2 mb-4">
+          {room.purpose && <span className="text-[11px] font-bold text-[#1B2A4A]/40 dark:text-white/40 bg-[#1B2A4A]/5 dark:bg-white/10 px-2 py-1 rounded-full">{room.purpose}</span>}
+          {room.lens && room.lens !== '미선택' && <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.lens}</span>}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-4">
         <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 dark:bg-white/[0.03] border border-emerald-50 dark:border-emerald-500/20">
           <div className="text-[9px] font-black text-emerald-700/40 dark:text-emerald-400 text-center mb-0.5">A측</div>
           {[0, 1, 2].map(i => {
