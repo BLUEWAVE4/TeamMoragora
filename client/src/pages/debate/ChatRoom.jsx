@@ -301,13 +301,24 @@ const [opponentLeft, setOpponentLeft] = useState(false);
             return updated;
           });
         }
-        setParticipants(() => {
-          // 서버 데이터를 그대로 신뢰 (중복 방지)
-          return {
-            A: Array.isArray(slots.A) ? slots.A : [],
-            B: Array.isArray(slots.B) ? slots.B : [],
-            citizen: Array.isArray(slots.citizen) ? slots.citizen : [],
-          };
+        setParticipants(prev => {
+          const serverA = Array.isArray(slots.A) ? slots.A : [];
+          const serverB = Array.isArray(slots.B) ? slots.B : [];
+          const serverC = Array.isArray(slots.citizen) ? slots.citizen : [];
+          // 서버에 내가 있으면 서버 데이터 신뢰, 없으면 로컬 optimistic 유지
+          const meInServer = [...serverA, ...serverB, ...serverC].some(p => p.userId === user?.id);
+          if (meInServer) {
+            return { A: serverA, B: serverB, citizen: serverC };
+          }
+          // 서버에 내가 아직 없으면 로컬 상태의 나를 유지
+          const myInPrev = [...(prev.A || []), ...(prev.B || []), ...(prev.citizen || [])].find(p => p.userId === user?.id);
+          if (!myInPrev) return { A: serverA, B: serverB, citizen: serverC };
+          const removeMe = list => list.filter(p => p.userId !== user?.id);
+          const result = { A: removeMe(serverA), B: removeMe(serverB), citizen: removeMe(serverC) };
+          if (myInPrev.side === 'A') result.A.push(myInPrev);
+          else if (myInPrev.side === 'B') result.B.push(myInPrev);
+          else result.citizen.push(myInPrev);
+          return result;
         });
       }
     });
