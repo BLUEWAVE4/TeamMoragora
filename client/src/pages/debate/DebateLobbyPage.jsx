@@ -328,8 +328,7 @@ export default function DebateLobbyPage() {
             <div className="px-5 pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[11px] text-[#D4AF37] font-black uppercase tracking-widest">HOT 실시간 논쟁</span>
+                  <span className="text-[11px] text-[#D4AF37] font-black uppercase tracking-widest">인기 실시간 논쟁</span>
                 </div>
                 <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status="chatting" />
               </div>
