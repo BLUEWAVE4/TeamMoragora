@@ -175,7 +175,11 @@ setAiResults(prev => ({ ...prev, [topic]: newResult }));
     }
   };
 
+const [isSubmitting, setIsSubmitting] = useState(false);
+
 const handleSubmit = async () => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
   try {
     const data = {
       topic,
@@ -220,6 +224,8 @@ const handleSubmit = async () => {
       console.error(err);
       const msg = err?.response?.data?.error || err?.message || '잠시 후 다시 시도해주세요.';
       showModal('논쟁 생성에 실패했습니다', msg, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

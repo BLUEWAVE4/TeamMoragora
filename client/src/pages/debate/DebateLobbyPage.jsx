@@ -272,19 +272,15 @@ export default function DebateLobbyPage() {
 
   useEffect(() => { setVisibleCount(10); }, [filter, searchQuery]);
 
-  // 슬라이더 자동 회전
-  const featuredRooms = rooms.filter(r => r.status === 'chatting').slice(0, 5);
-  useEffect(() => {
-    if (featuredRooms.length <= 1) return;
-    const timer = setInterval(() => setCurrentIndex(prev => (prev + 1) % featuredRooms.length), 5000);
-    return () => clearInterval(timer);
-  }, [featuredRooms.length]);
-
-  const handleDragEnd = (_, info) => {
-    if (featuredRooms.length <= 1) return;
-    if (info.offset.x < -50) setCurrentIndex(prev => (prev + 1) % featuredRooms.length);
-    else if (info.offset.x > 50) setCurrentIndex(prev => (prev - 1 + featuredRooms.length) % featuredRooms.length);
-  };
+  // 인기 실시간 논쟁: 참여자(관전자 포함) 가장 많은 chatting 방 1개
+  const hotRoom = rooms
+    .filter(r => r.status === 'chatting')
+    .map(r => {
+      const live = liveParticipants[r.id];
+      const liveCount = live ? (live.A?.length || 0) + (live.B?.length || 0) : 0;
+      return { ...r, participantCount: liveCount };
+    })
+    .sort((a, b) => b.participantCount - a.participantCount)[0] || null;
 
   const kickedDebates = JSON.parse(localStorage.getItem('kickedDebates') || '[]');
 
@@ -314,56 +310,61 @@ export default function DebateLobbyPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
-      {/* 진행 중인 논쟁 슬라이더 */}
-      {featuredRooms.length > 0 && (
+      {/* 인기 실시간 논쟁 (참여자 가장 많은 1개) */}
+      {hotRoom && (
         <section className="px-5 mb-6">
-          <div className="bg-[#1B2A4A] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden h-[200px]">
-            <AnimatePresence initial={false} mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, x: 80 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -80 }}
-                transition={{ x: { type: "tween", ease: "easeOut", duration: 0.3 }, opacity: { duration: 0.2 } }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0}
-                onDragEnd={handleDragEnd}
-                onClick={() => !kickedDebates.includes(featuredRooms[currentIndex]?.id) && handleCardClick(featuredRooms[currentIndex])}
-                className="h-full flex flex-col justify-between cursor-pointer active:cursor-grabbing touch-none"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] text-[#D4AF37] font-extrabold tracking-widest">LIVE 토론 중</span>
-                    <LiveTimer
-                      createdAt={featuredRooms[currentIndex].created_at}
-                      chatDeadline={featuredRooms[currentIndex].chat_deadline}
-                      status="chatting"
-                    />
-                  </div>
-                  <h2 className="text-[20px] font-black leading-tight break-keep">"{featuredRooms[currentIndex].topic}"</h2>
+          <div
+            onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
+            className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
+          >
+            {/* 상단 배너 */}
+            <div className="px-5 pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[11px] text-[#D4AF37] font-black uppercase tracking-widest">HOT 실시간 논쟁</span>
                 </div>
-                <div className="flex justify-between items-end border-t border-white/10 pt-3 pointer-events-none">
-                  <span className="text-[11px] opacity-50 font-bold">{featuredRooms[currentIndex].category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-white/60 font-bold">
-                      {featuredRooms[currentIndex].creator?.nickname || '?'}
-                    </span>
-                    <span className="text-white/30 text-[10px]">vs</span>
-                    <span className="text-[11px] text-white/60 font-bold">
-                      {featuredRooms[currentIndex].opponent?.nickname || '대기 중'}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-            {featuredRooms.length > 1 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-                {featuredRooms.map((_, i) => (
-                  <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? 'w-5 bg-[#D4AF37]' : 'w-1.5 bg-white/20'}`} />
-                ))}
+                <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status="chatting" />
               </div>
-            )}
+              <h2 className="text-white text-[19px] font-black leading-snug break-keep mb-2">
+                {hotRoom.topic}
+              </h2>
+              <div className="flex items-center gap-2">
+                {hotRoom.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.category}</span>}
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">
+                  {hotRoom.participantCount}명 참여 중
+                </span>
+              </div>
+            </div>
+
+            {/* A vs B */}
+            <div className="px-5 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2.5 text-center">
+                  <p className="text-emerald-400 text-[9px] font-black uppercase tracking-wider mb-1">PRO</p>
+                  <p className="text-white/80 text-[12px] font-bold leading-snug line-clamp-1">{hotRoom.pro_side || 'A측'}</p>
+                </div>
+                <span className="text-white/20 text-[11px] font-black shrink-0">VS</span>
+                <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 text-center">
+                  <p className="text-red-400 text-[9px] font-black uppercase tracking-wider mb-1">CON</p>
+                  <p className="text-white/80 text-[12px] font-bold leading-snug line-clamp-1">{hotRoom.con_side || 'B측'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 하단 바 */}
+            <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10">
+                  <img src={hotRoom.creator?.avatar_url || getAvatarUrl(hotRoom.creator_id, hotRoom.creator?.gender) || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-white/50 text-[11px] font-bold">{hotRoom.creator?.nickname || '방장'}</span>
+              </div>
+              <span className="text-[#D4AF37] text-[11px] font-black flex items-center gap-1">
+                관전하기
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+              </span>
+            </div>
           </div>
         </section>
       )}
