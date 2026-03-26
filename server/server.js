@@ -124,6 +124,20 @@ io.on('connection', (socket) => {
     socket.to(debateId).emit('lobby-chat', msg);
   });
 
+  // ===== 시민(관전자) 등록 =====
+  socket.on('join-citizen', ({ debateId, userId }) => {
+    if (!roomParticipants[debateId]?.[userId]) return;
+    roomParticipants[debateId][userId]._isCitizen = true;
+    roomParticipants[debateId][userId].side = null;
+    io.to(debateId).emit('presence-sync', buildSlots(debateId));
+  });
+
+  socket.on('leave-citizen', ({ debateId, userId }) => {
+    if (!roomParticipants[debateId]?.[userId]) return;
+    roomParticipants[debateId][userId]._isCitizen = false;
+    io.to(debateId).emit('presence-sync', buildSlots(debateId));
+  });
+
   // ===== Presence: 사이드 선택 =====
   socket.on('select-side', ({ debateId, userId, nickname, avatarUrl, side, ready }) => {
     if (!roomParticipants[debateId]?.[userId]) return;
@@ -636,15 +650,14 @@ function handlePostKick(debateId, targetId, targetSide) {
 }
 
 function buildSlots(debateId) {
-  const slots = { A: [], B: [] };
+  const slots = { A: [], B: [], citizen: [] };
   if (!roomParticipants[debateId]) return slots;
   Object.values(roomParticipants[debateId]).forEach(p => {
-    // socketIds(Set)는 내부 전용 — 클라이언트에 전송하지 않음
     const { socketIds, ...safeP } = p;
     if (p.side === 'A') slots.A.push(safeP);
-    if (p.side === 'B') slots.B.push(safeP);
+    else if (p.side === 'B') slots.B.push(safeP);
+    else if (p._isCitizen) slots.citizen.push(safeP);
   });
-  // 입장 순서대로 정렬
   slots.A.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
   slots.B.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
   return slots;

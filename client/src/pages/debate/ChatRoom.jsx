@@ -52,7 +52,7 @@ export default function ChatRoom() {
 
   const [gameStarted, setGameStarted] = useState(false);
   // participants: { A: [{userId, nickname, ready},...], B: [...] }
-  const [participants, setParticipants] = useState({ A: [], B: [] });
+  const [participants, setParticipants] = useState({ A: [], B: [], citizen: [] });
   const [myReady, setMyReady] = useState(false);
 
   const [debate, setDebate] = useState(null);
@@ -287,7 +287,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     socket.on('presence-sync', (slots) => {
       if (slots && typeof slots === 'object') {
         // 참여자 아바타 맵 업데이트
-        const allParticipants = [...(slots.A || []), ...(slots.B || [])];
+        const allParticipants = [...(slots.A || []), ...(slots.B || []), ...(slots.citizen || [])];
         if (allParticipants.length > 0) {
           setAvatarMap(prev => {
             const updated = { ...prev };
@@ -314,6 +314,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
           return {
             A: mergeWithMe(slots.A, 'A'),
             B: mergeWithMe(slots.B, 'B'),
+            citizen: Array.isArray(slots.citizen) ? slots.citizen : [],
           };
         });
       }
@@ -932,28 +933,52 @@ const handleVote = (agree) => {
               ))}
             </div>
 
-            {/* 시민 관전 안내/버튼 */}
-            {(
-              <button
-                disabled={myReady}
-                onClick={() => {
-                  if (myReady || !mySide) return;
-                  selectSide(mySide); // toggle off
-                }}
-                className={`w-full py-3 rounded-2xl border flex items-center justify-center gap-2 transition-all ${
-                  myReady
-                    ? 'border-white/10 bg-white/5 cursor-not-allowed opacity-40'
-                    : 'border-[#D4AF37]/20 bg-[#D4AF37]/5 active:scale-[0.97]'
-                }`}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={myReady ? '#666' : '#D4AF37'} strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-                <span className={`text-[12px] font-bold ${myReady ? 'text-white/30' : 'text-[#D4AF37]/70'}`}>
-                  {mySide ? '시민(관전자)으로 전환' : '입장을 선택하지 않으면 시민(관전자)으로 참여됩니다'}
-                </span>
-              </button>
-            )}
+            {/* 시민(관전자) 슬롯 */}
+            <div className="w-full flex flex-col gap-2">
+              <p className="text-[11px] font-black uppercase tracking-widest text-center text-[#D4AF37]">시민</p>
+              {(() => {
+                const citizenList = Array.isArray(participants.citizen) ? participants.citizen : [];
+                const isMeCitizen = !mySide && citizenList.some(c => c.userId === user?.id);
+                return (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {/* 시민 아바타들 */}
+                    {citizenList.map(c => (
+                      <div key={c.userId} className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#D4AF37]/40 bg-white/10">
+                        <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {/* 시민 참여/전환 버튼 */}
+                    {!isMeCitizen ? (
+                      <button
+                        disabled={myReady}
+                        onClick={() => {
+                          if (myReady) return;
+                          if (mySide) selectSide(mySide); // side 해제
+                          socket.emit('join-citizen', { debateId, userId: user?.id });
+                        }}
+                        className={`h-8 px-3 rounded-full border-2 border-dashed flex items-center gap-1.5 transition-all ${
+                          myReady ? 'border-white/10 opacity-30 cursor-not-allowed' : 'border-[#D4AF37]/30 active:scale-95'
+                        }`}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span className="text-[10px] text-[#D4AF37]/60 font-bold">+ 관전</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          socket.emit('leave-citizen', { debateId, userId: user?.id });
+                        }}
+                        className="h-8 px-3 rounded-full border-2 border-[#D4AF37]/40 bg-[#D4AF37]/10 flex items-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <span className="text-[10px] text-[#D4AF37] font-bold">관전 중</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
 
             {/* 준비완료 버튼 (방장 제외) */}
             {mySide && !isCreator && (
