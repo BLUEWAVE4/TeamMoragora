@@ -682,26 +682,17 @@ function handlePostKick(debateId, targetId, targetSide) {
   const totalParticipants = slots.A.length + slots.B.length;
   const targetSideMembers = targetSide === 'A' ? slots.A : slots.B;
 
-  // 1:1 강퇴 → 즉시 무효 처리 (혼자 남음)
+  // 1:1 강퇴 → 채팅 유무 상관없이 즉시 무효 처리 (삭제)
   if (totalParticipants <= 1 && targetSideMembers.length === 0) {
     (async () => {
       try {
         const { supabaseAdmin } = await import('./src/config/supabase.js');
-        const { data: debate } = await supabaseAdmin.from('debates').select('status, mode').eq('id', debateId).single();
-        if (debate?.mode === 'chat' && ['chatting', 'waiting', 'both_joined'].includes(debate?.status)) {
-          const { count } = await supabaseAdmin.from('chat_messages').select('id', { count: 'exact', head: true }).eq('debate_id', debateId);
-          if (!count || count === 0) {
-            await supabaseAdmin.from('debates').delete().eq('id', debateId);
-            io.to(debateId).emit('chat-cancelled', { reason: '강퇴로 인해 논쟁이 무효 처리되었습니다.' });
-            console.log(`[KickVoid] ${debateId} → 무효 삭제`);
-          } else {
-            await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
-            io.to(debateId).emit('chat-ended', { debateId });
-            const { triggerJudgment } = await import('./src/services/judgmentTrigger.service.js');
-            triggerJudgment(debateId).catch(err => console.error('[KickVoid] 판결 실패:', err.message));
-            console.log(`[KickVoid] ${debateId} → 판결 트리거`);
-          }
-        }
+        // 관련 데이터 정리 후 삭제
+        await supabaseAdmin.from('chat_messages').delete().eq('debate_id', debateId).then(() => {});
+        await supabaseAdmin.from('debates').delete().eq('id', debateId);
+        io.to(debateId).emit('chat-cancelled', { reason: '강퇴로 인해 논쟁이 무효 처리되었습니다.' });
+        delete roomParticipants[debateId];
+        console.log(`[KickVoid] ${debateId} → 무효 삭제 (1:1 강퇴)`);
       } catch (err) { console.error('[KickVoid] 에러:', err.message); }
     })();
     return;
