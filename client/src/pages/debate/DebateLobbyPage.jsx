@@ -370,7 +370,7 @@ export default function DebateLobbyPage() {
         <section className="px-5 mb-6">
           <div
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
-            className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
+            className="bg-white dark:bg-gradient-to-br dark:from-[#1B2A4A] dark:to-[#0f1829] rounded-2xl overflow-hidden shadow-sm dark:shadow-xl border border-gray-100 dark:border-transparent cursor-pointer active:scale-[0.99] transition-all"
           >
             {/* 상단 아바타 구도 (3v3) — 먼저 들어온 사람이 VS 가까이 */}
             <div className="flex items-start justify-center gap-3 pt-5 pb-3 px-5">
@@ -382,7 +382,7 @@ export default function DebateLobbyPage() {
                   if (!hasAvatar && hotRoom.status === 'chatting') return null;
                   return (
                     <div key={`ha-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
-                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-gray-100 dark:bg-white/10 ${hasAvatar ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
                         {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
                       </div>
                       <span className="text-[8px] text-emerald-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameA || '') : '')}</span>
@@ -390,7 +390,7 @@ export default function DebateLobbyPage() {
                   );
                 })}
               </div>
-              <span className="text-white/20 text-[11px] font-black shrink-0 pt-3">VS</span>
+              <span className="text-gray-300 dark:text-white/20 text-[11px] font-black shrink-0 pt-3">VS</span>
               <div className="flex-1 flex justify-start gap-1.5">
                 {[0, 1, 2].map(i => {
                   const p = liveB[i];
@@ -399,7 +399,7 @@ export default function DebateLobbyPage() {
                   if (!hasAvatar && hotRoom.status === 'chatting') return null;
                   return (
                     <div key={`hb-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
-                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-gray-100 dark:bg-white/10 ${hasAvatar ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
                         {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
                       </div>
                       <span className="text-[8px] text-red-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameB || '') : '')}</span>
@@ -411,7 +411,7 @@ export default function DebateLobbyPage() {
 
             {/* 논제 */}
             <div className="px-5 pb-3 text-center">
-              <h2 className="text-white text-[17px] font-black leading-snug break-keep mb-2">
+              <h2 className="text-[#1B2A4A] dark:text-white text-[17px] font-black leading-snug break-keep mb-2">
                 "{hotRoom.topic}"
               </h2>
             </div>
@@ -420,14 +420,14 @@ export default function DebateLobbyPage() {
             <div className="px-5 pb-4 flex items-center">
               <span className="flex-1 text-[11px] text-emerald-400 font-bold truncate">{hotRoom.pro_side || 'A측'}</span>
               <div className="flex items-center gap-1.5 shrink-0 mx-2">
-                {hotRoom.purpose && <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
-                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
+                {hotRoom.purpose && <span className="text-[9px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 font-bold">{hotRoom.purpose}</span>}
+                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
               </div>
               <span className="flex-1 text-[11px] text-red-400 font-bold truncate text-right">{hotRoom.con_side || 'B측'}</span>
             </div>
 
             {/* 하단 바: 입장하기 왼쪽, 시간 오른쪽 */}
-            <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
+            <div className="bg-gray-50 dark:bg-white/5 px-5 py-3 flex items-center justify-between">
               <span className="text-[#D4AF37] text-[12px] font-black flex items-center gap-1">
                 {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
