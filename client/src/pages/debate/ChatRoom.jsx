@@ -953,10 +953,23 @@ const handleVote = (agree) => {
               {(() => {
                 const citizenList = Array.isArray(participants.citizen) ? participants.citizen : [];
                 const isMeCitizen = !mySide && citizenList.some(c => c.userId === user?.id);
+                const canClickCitizen = mySide && !myReady && !isMeCitizen;
                 return (
-                  <div className={`w-full h-10 rounded-xl border-2 flex items-center justify-center gap-2 ${
-                    isMeCitizen ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10' : 'border-dashed border-[#D4AF37]/30'
-                  }`}>
+                  <button
+                    disabled={!canClickCitizen && !isMeCitizen}
+                    onClick={() => {
+                      if (canClickCitizen) {
+                        selectSide(mySide); // side 해제 → 자동 시민 등록
+                      }
+                    }}
+                    className={`w-full h-10 rounded-xl border-2 flex items-center justify-center gap-2 transition-all ${
+                      isMeCitizen
+                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10'
+                        : canClickCitizen
+                          ? 'border-dashed border-[#D4AF37]/30 active:scale-[0.97] cursor-pointer'
+                          : 'border-dashed border-white/10 opacity-30 cursor-default'
+                    }`}
+                  >
                     {citizenList.map(c => (
                       <div key={c.userId} className="w-6 h-6 rounded-full overflow-hidden border border-[#D4AF37]/40 bg-white/10">
                         <img src={c.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
@@ -965,7 +978,10 @@ const handleVote = (agree) => {
                     {citizenList.length === 0 && (
                       <span className="text-[10px] text-[#D4AF37]/40 font-bold">입장 미선택 시 자동 배정</span>
                     )}
-                  </div>
+                    {!isMeCitizen && canClickCitizen && citizenList.length > 0 && (
+                      <span className="text-[10px] text-[#D4AF37]/50 font-bold">+ 관전</span>
+                    )}
+                  </button>
                 );
               })()}
             </div>
