@@ -48,17 +48,22 @@ io.on('connection', (socket) => {
 
   // ===== Presence: 참여자 입장 (다중 소켓 지원) =====
   socket.on('join-presence', ({ debateId, userId, nickname, avatarUrl, side, isReconnect }) => {
-    // 다른 채팅룸에 이미 참여 중인지 확인 (관전자 제외, side가 있는 참여자만 차단)
+    // 다른 채팅룸에 이미 참여 중인지 확인 (chatting 상태 + side 참여자만 차단)
     for (const [otherDebateId, room] of Object.entries(roomParticipants)) {
       if (otherDebateId === debateId) continue;
       const existing = room[userId];
-      if (existing?.side) {
+      if (existing?.side && existing?._gameStarted) {
         socket.emit('already-in-room', {
           reason: '이미 다른 실시간 논쟁에 참여 중입니다. 기존 논쟁을 먼저 종료해주세요.',
           activeDebateId: otherDebateId,
         });
         socket.leave(debateId);
         return;
+      }
+      // waiting 상태에서 다른 방 입장 시 기존 방에서 자동 퇴장
+      if (existing?.side && !existing?._gameStarted) {
+        delete room[userId];
+        io.to(otherDebateId).emit('presence-sync', buildSlots(otherDebateId));
       }
     }
     // 소켓이 room에 반드시 join (join-room보다 늦게 도착할 수 있으므로 보장)
@@ -90,7 +95,7 @@ io.on('connection', (socket) => {
       prev.nickname = nickname;
       if (avatarUrl) prev.avatarUrl = avatarUrl;
     } else {
-      roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now() };
+      roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now(), _gameStarted: !!isReconnect && !!side };
     }
     const slots = buildSlots(debateId);
     io.to(debateId).emit('presence-sync', slots);
@@ -185,6 +190,10 @@ io.on('connection', (socket) => {
       const { supabaseAdmin } = await import('./src/config/supabase.js');
       await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
       console.log(`[start-game] ${debateId} → chatting (deadline: ${chat_deadline})`);
+      // 참여자에 게임 시작 플래그 설정
+      if (roomParticipants[debateId]) {
+        Object.values(roomParticipants[debateId]).forEach(p => { p._gameStarted = true; });
+      }
     } catch (err) {
       console.error(`[start-game] DB 업데이트 실패:`, err.message);
     }
