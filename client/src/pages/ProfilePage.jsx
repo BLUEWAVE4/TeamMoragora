@@ -332,8 +332,12 @@ const [showInfo, setShowInfo] = useState(false);
           setShowProfileSetup(true);
         }
         if (error) throw error;
-        // 판결 결과가 있는 논쟁만 표시
-        const completedDebates = (debates || []).filter(d => d.verdicts && d.verdicts.length > 0);
+        // 판결 결과가 있는 논쟁만 표시 (verdicts가 배열 또는 단일 객체)
+        const completedDebates = (debates || []).filter(d => {
+          if (!d.verdicts) return false;
+          if (Array.isArray(d.verdicts)) return d.verdicts.length > 0;
+          return true; // 단일 객체
+        });
         setMyJudgments(completedDebates);
       } catch (error) {
         console.error('fetchAllData error:', error);
