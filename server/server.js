@@ -374,8 +374,8 @@ io.on('connection', (socket) => {
 
   socket.on('request-time-change', ({ debateId, userId, type, currentDeadline }) => {
     const slots = buildSlots(debateId);
-    // 실제 참여자(side 선택한 사람)만 카운트 — 최소 2명 (양측 다 동의해야 승인)
-    const total = Math.max(2, [...slots.A, ...slots.B].length);
+    // 실제 참여자(side 선택한 사람) 카운트 — 최소 1명
+    const total = Math.max(1, [...slots.A, ...slots.B].length);
     const requester = roomParticipants[debateId]?.[userId];
     if (!requester?.side) return;
     const votes = { [userId]: true };
