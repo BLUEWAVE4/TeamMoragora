@@ -237,7 +237,13 @@ export default function DebateLobbyPage() {
       const lobbyRooms = rawRooms.filter(r => {
         const status = String(r.status).toLowerCase();
         if (status === 'chatting') return true;
-        if (status === 'waiting') return (now - new Date(r.created_at).getTime()) < STALE_MS;
+        if (status === 'waiting') {
+          if ((now - new Date(r.created_at).getTime()) < STALE_MS) return true;
+          // 30분 초과해도 참여자가 있으면 유지
+          const live = partRes?.[r.id];
+          const hasParticipants = live && ((live.A?.length || 0) + (live.B?.length || 0) + (live.citizen?.length || 0)) > 0;
+          return hasParticipants;
+        }
         return false;
       });
       setRooms(lobbyRooms);
