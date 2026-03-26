@@ -856,7 +856,7 @@ const handleVote = (agree) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="flex flex-col items-center gap-5 px-5 py-10 min-h-full justify-center">
+          <div className="flex flex-col items-center gap-5 px-5 pt-6 pb-10">
 
             {/* 논제 + 태그 */}
             <div className="w-full bg-white/[0.04] border border-white/8 rounded-2xl px-5 py-4 text-center">
