@@ -6,27 +6,32 @@
 
 | 파일 | 핵심 기능 |
 |------|----------|
+| **논쟁 생성 위자드** | |
 | `client/src/pages/debate/DebateCreatePage.jsx` | 3단계 논쟁 생성 위자드 (주제→목적&기준→카테고리&시간) |
 | `client/src/components/debate/Step1Topic.jsx` | 주제 입력 + AI 찬반 자동 생성 + 타이프라이터 플레이스홀더 |
 | `client/src/components/debate/Step2PurposeLens.jsx` | 목적(승부/합의/분석) + 기준(도덕/법률/실용 등) 선택 |
 | `client/src/components/debate/Step3CategoryTime.jsx` | 카테고리 + 시민투표 기간 + 생성 확인 모달 |
+| **실시간 채팅 논쟁** | |
 | `client/src/pages/debate/ChatRoom.jsx` | 실시간 3v3 채팅 논쟁 (소켓 기반, 대기실+채팅+투표+강퇴) |
 | `client/src/pages/debate/ChatLobby.jsx` | 채팅 대기실 (참여자 준비, 사이드 선택) |
 | `client/src/pages/debate/ChatLobbyList.jsx` | 실시간 논쟁 방 목록 |
-| `client/src/components/common/Button.jsx` | 공통 버튼 컴포넌트 (아고라 테마) |
-| `client/src/components/common/Card.jsx` | 공통 카드 컴포넌트 |
-| `client/src/components/common/Input.jsx` | 공통 입력 컴포넌트 |
-| `client/src/components/common/Modal.jsx` | 공통 모달 컴포넌트 |
-| `client/src/components/common/StepWizard.jsx` | 위자드 스텝 인디케이터 |
-| `client/src/components/ui/ModeSelector.jsx` | 모드 선택 UI (일반/연습/실시간) |
-| `client/src/components/home/CategoryFilter.jsx` | 홈피드 카테고리 필터 |
-| `client/src/components/layout/TabBar.jsx` | 하단 탭바 네비게이션 |
-| `client/src/components/layout/Header.jsx` | 상단 헤더 (검색, 알림, 다크모드) |
-| `client/src/components/layout/Layout.jsx` | 전체 레이아웃 (Header + Outlet + TabBar) |
+| **논쟁 진행 페이지** | |
 | `client/src/pages/debate/ArgumentPage.jsx` | 주장/반박 작성 페이지 |
 | `client/src/pages/debate/InvitePage.jsx` | 초대 링크 페이지 |
 | `client/src/pages/debate/JudgingPage.jsx` | AI 판결 진행/결과 페이지 |
 | `client/src/pages/moragora/MoragoraDetailPage.jsx` | 판결 상세 페이지 |
+| **공통 UI 컴포넌트** | |
+| `client/src/components/common/Button.jsx` | 공통 버튼 (아고라 테마) |
+| `client/src/components/common/Card.jsx` | 공통 카드 |
+| `client/src/components/common/Input.jsx` | 공통 입력 |
+| `client/src/components/common/Modal.jsx` | 공통 모달 |
+| `client/src/components/common/StepWizard.jsx` | 위자드 스텝 인디케이터 |
+| **레이아웃/네비게이션** | |
+| `client/src/components/layout/Header.jsx` | 상단 헤더 (검색, 알림, 다크모드) |
+| `client/src/components/layout/TabBar.jsx` | 하단 탭바 네비게이션 |
+| `client/src/components/layout/Layout.jsx` | 전체 레이아웃 (Header + Outlet + TabBar) |
+| `client/src/components/home/CategoryFilter.jsx` | 홈피드 카테고리 필터 |
+| `client/src/components/ui/ModeSelector.jsx` | 모드 선택 UI (일반/연습/실시간) |
 | `client/src/hooks/useVoteCountdown.js` | 투표 카운트다운 훅 |
 
 ---
@@ -63,31 +68,37 @@
 | `server/src/controllers/vote.controller.js` | 투표 컨트롤러 수정 |
 | `server/src/controllers/judgment.controller.js` | 판결 컨트롤러 수정 |
 | `server/src/services/verdict.service.js` | 판결 확정 + 시민투표 반영 수정 |
-| `server/src/services/ai/*.js` | AI 서비스 응답 형식 수정 (GPT, Gemini, Claude, Grok) |
-| `server/src/config/ai.js` | AI 모델 설정 수정 |
-| `server/src/db/schema.sql` | 스키마 수정 |
-| `server/src/db/seed.sql` | 시드 데이터 작성 |
 
 ---
 
 ## 프론트C — 김준민 (kimjunmin01)
 
-### 담당 영역: 프로필/랭킹 UI + 알림 시스템 + 판결 뷰어
+### 담당 영역: 프로필/랭킹 + 홈피드 + 알림 시스템 + 판결 뷰어 + 투표/좋아요/조회수
 
 | 파일 | 핵심 기능 |
 |------|----------|
-| `client/src/pages/ProfilePage.jsx` | 프로필 iOS 스타일 UI, 승률 카드, 경험치 바 |
-| `client/src/pages/ranking/RankingPage.jsx` | 랭킹 페이지 (포디엄, 리더보드, 명예의전당) |
+| **프로필/랭킹** | |
+| `client/src/pages/ProfilePage.jsx` | 프로필 iOS 스타일 UI, 승률 카드(무승부 반영), 경험치 바, 서버 연동 |
+| `client/src/pages/ranking/RankingPage.jsx` | 랭킹 페이지 (포디엄, 리더보드, 명예의전당, 바텀시트) |
 | `client/src/pages/TierModal.jsx` | 등급 시스템 모달 (시민→대법관 5단계) |
 | `client/src/pages/LogicChartModal.jsx` | 논리 분석 레이더 차트 모달 |
+| **홈피드/카드** | |
+| `client/src/pages/HomePage.jsx` | 홈피드 무한스크롤 최적화 + 로딩 UI |
+| `client/src/components/home/DebateCard.jsx` | 피드 카드 (좋아요/댓글/조회수 표시, 카테고리 뱃지, 투표 기능) |
+| `client/src/components/home/TodayDebate.jsx` | 오늘의 논쟁 UI |
+| **판결 뷰어** | |
 | `client/src/components/verdict/VerdictContent.jsx` | 판결 상세 UI 개선 + 채팅 로그 통합 |
 | `client/src/components/verdict/ChatLogViewer.jsx` | 채팅 로그 뷰어 (실시간 논쟁 대화 기록 표시) |
-| `client/src/components/layout/Header.jsx` | 알림 센터 UI (상단 슬라이드 드롭다운) |
-| `client/src/components/layout/TabBar.jsx` | 탭바 알림 뱃지 |
-| `client/src/components/home/DebateCard.jsx` | 피드 카드 카테고리 뱃지 위치 수정 |
-| `client/src/pages/moragora/MoragoraDetailPage.jsx` | 판결 상세 페이지 공유 기능 |
-| `client/src/store/AuthContext.jsx` | 인증 컨텍스트 (프로필 연동) |
+| `client/src/pages/moragora/MoragoraDetailPage.jsx` | 판결 상세 페이지 공유 기능 (카카오) |
+| **알림 시스템** | |
+| `client/src/components/layout/Header.jsx` | 알림 센터 UI (상단 슬라이드 드롭다운, 삭제 기능 버그 수정) |
+| `client/src/components/layout/TabBar.jsx` | 탭바 인스타그램 스타일 디자인 + 알림 뱃지 |
 | `client/src/services/api.js` | API 서비스 (알림 관련 엔드포인트 추가) |
+| **인증/데이터 연동** | |
+| `client/src/store/AuthContext.jsx` | 인증 컨텍스트 (프로필 데이터 연동) |
+| `client/src/pages/auth/LoginPage.jsx` | 인앱 브라우저 로그인 대응 |
+| `client/src/pages/auth/NicknamePage.jsx` | 닉네임 서버 연동 테스트 |
+| **서버 연동 (알림/프로필/조회수)** | |
 | `server/src/controllers/notification.controller.js` | 알림 CRUD 컨트롤러 |
 | `server/src/controllers/profile.controller.js` | 프로필 컨트롤러 (랭킹 조회) |
 | `server/src/routes/notification.routes.js` | 알림 라우트 |
@@ -163,3 +174,4 @@
 | `client/src/services/socket.js` | Socket.io 클라이언트 |
 | `client/src/services/supabase.js` | Supabase 클라이언트 |
 | `client/src/pages/admin/AdminDashboardPage.jsx` | 어드민 대시보드 |
+
