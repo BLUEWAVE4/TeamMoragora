@@ -371,33 +371,35 @@ export default function DebateLobbyPage() {
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
             className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
           >
-            {/* 상단 아바타 구도 (3v3) */}
-            <div className="flex items-center justify-center gap-3 pt-5 pb-3 px-5">
+            {/* 상단 아바타 구도 (3v3) — 먼저 들어온 사람이 VS 가까이 */}
+            <div className="flex items-start justify-center gap-3 pt-5 pb-3 px-5">
               <div className="flex-1 flex justify-end gap-1.5">
-                {[0, 1, 2].map(i => {
+                {[2, 1, 0].map(i => {
                   const p = liveA[i];
                   const fallback = i === 0 ? avatarA : null;
+                  const hasAvatar = p?.avatarUrl || fallback;
                   return (
-                    <div key={`ha-${i}`} className="flex flex-col items-center gap-0.5">
-                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${p || fallback ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
-                        {(p?.avatarUrl || fallback) && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                    <div key={`ha-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
+                        {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
                       </div>
-                      <span className="text-[8px] text-emerald-400/70 font-bold truncate max-w-[50px]">{p?.nickname || (i === 0 ? (nameA || '') : '')}</span>
+                      <span className="text-[8px] text-emerald-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameA || '') : '')}</span>
                     </div>
                   );
                 })}
               </div>
-              <span className="text-white/20 text-[11px] font-black shrink-0">VS</span>
+              <span className="text-white/20 text-[11px] font-black shrink-0 pt-3">VS</span>
               <div className="flex-1 flex justify-start gap-1.5">
                 {[0, 1, 2].map(i => {
                   const p = liveB[i];
                   const fallback = i === 0 ? avatarB : null;
+                  const hasAvatar = p?.avatarUrl || fallback;
                   return (
-                    <div key={`hb-${i}`} className="flex flex-col items-center gap-0.5">
-                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${p || fallback ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
-                        {(p?.avatarUrl || fallback) && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                    <div key={`hb-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
+                      <div className={`w-9 h-9 rounded-full overflow-hidden bg-white/10 ${hasAvatar ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
+                        {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
                       </div>
-                      <span className="text-[8px] text-red-400/70 font-bold truncate max-w-[50px]">{p?.nickname || (i === 0 ? (nameB || '') : '')}</span>
+                      <span className="text-[8px] text-red-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameB || '') : '')}</span>
                     </div>
                   );
                 })}
