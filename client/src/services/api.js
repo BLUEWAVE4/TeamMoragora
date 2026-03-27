@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const api = axios.create({
   baseURL: import.meta.env.DEV
@@ -16,8 +17,15 @@ export function setAuthToken(token) {
 }
 
 api.interceptors.request.use(async (config) => {
-  if (_cachedToken) {
-    config.headers.Authorization = `Bearer ${_cachedToken}`;
+  // 캐시 hit → 즉시 사용, 캐시 miss → getSession fallback (초기 로드 시)
+  let token = _cachedToken;
+  if (!token) {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || null;
+    if (token) _cachedToken = token;
+  }
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
