@@ -1,5 +1,6 @@
 // ===== 환경변수 중앙 관리 =====
 // 앱 시작 시 필수 환경변수 검증 + 타입 변환
+import 'dotenv/config';
 
 function required(key) {
   const val = process.env[key];
