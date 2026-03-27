@@ -4,7 +4,7 @@ import useThemeStore from '../../store/useThemeStore';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import api, { getVerdict } from '../../services/api';
-import { resolveAvatar, getAvatarUrl, buildAvatarUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../../utils/avatar';
+import { resolveAvatar, getAvatarUrl, buildAvatarUrl, buildAvatarExternalUrl, DEFAULT_AVATAR_ICON, MALE_STYLES, FEMALE_STYLES, SKIN_COLORS, HAIR_COLORS, CLOTHING_OPTIONS, CLOTHES_COLORS, ACCESSORIES_OPTIONS, ACCESSORIES_COLORS, EYES_OPTIONS, EYEBROWS_OPTIONS, MOUTH_OPTIONS, FACIAL_HAIR_OPTIONS, FACIAL_HAIR_COLORS } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
@@ -969,101 +969,101 @@ const [showInfo, setShowInfo] = useState(false);
       </BottomSheet>
 
       {/* ─── 아바타 커스터마이징 바텀시트 ──────────────────────────── */}
-      <BottomSheet isOpen={showAvatarEdit} onClose={() => { setShowAvatarEdit(false); resetAvatarOptions(); }} maxHeight="80vh" bgColor="#ffffff" zIndex={300}>
-        <div className="px-5 pb-2 border-b border-gray-100 shrink-0">
-          <h3 className="text-[16px] font-black text-[#1B2A4A] pb-2">아바타 꾸미기</h3>
+      <BottomSheet isOpen={showAvatarEdit} onClose={() => { setShowAvatarEdit(false); resetAvatarOptions(); }} maxHeight="80vh" bgColor={isDark ? '#1a2332' : '#ffffff'} zIndex={300}>
+        <div className={`px-5 pb-2 border-b shrink-0 ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
+          <h3 className={`text-[16px] font-black pb-2 ${isDark ? 'text-white' : 'text-[#1B2A4A]'}`}>아바타 꾸미기</h3>
         </div>
         <div className="flex justify-center py-4 shrink-0">
-          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-md">
+          <div className={`w-24 h-24 rounded-full overflow-hidden shadow-md ${isDark ? 'bg-white/10' : 'bg-gray-100'}`}>
             <img src={buildAvatarUrl(user.id, profileData?.gender, avatarOptions)} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-5">
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">헤어스타일</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>헤어스타일</p>
             <div className="flex gap-2 flex-wrap">
               {(profileData?.gender === 'male' ? MALE_STYLES : FEMALE_STYLES).map(s => (
                 <button key={s} onClick={() => setAvatarOptions(prev => ({ ...prev, top: s }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.top === s ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { top: s })} alt="" className="w-full h-full" />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">피부색</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>피부색</p>
             <div className="flex gap-2">
               {SKIN_COLORS.map(c => (
                 <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, skinColor: c }))}
-                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.skinColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.skinColor === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/15' : 'border-gray-200'}`}
                   style={{ backgroundColor: `#${c}` }} />
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">머리색</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>머리색</p>
             <div className="flex gap-2 flex-wrap">
               {HAIR_COLORS.map(c => (
                 <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, hairColor: c }))}
-                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.hairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  className={`w-9 h-9 rounded-full border-2 transition-all ${avatarOptions.hairColor === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/15' : 'border-gray-200'}`}
                   style={{ backgroundColor: `#${c}` }} />
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>의상</p>
             <div className="flex gap-2 flex-wrap">
               {CLOTHING_OPTIONS.map(c => (
                 <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothing: c }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.clothing === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { clothing: c })} alt="" className="w-full h-full" />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>액세서리</p>
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: '' }))}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.accessories ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.accessories ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : isDark ? 'border-white/10 text-white/40' : 'border-gray-100 text-gray-400'}`}>
                 없음
               </button>
               {ACCESSORIES_OPTIONS.map(a => (
                 <button key={a} onClick={() => setAvatarOptions(prev => ({ ...prev, accessories: a }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.accessories === a ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { accessories: a })} alt="" className="w-full h-full" />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>눈</p>
             <div className="flex gap-2 flex-wrap">
               {EYES_OPTIONS.map(e => (
                 <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyes: e }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyes === e ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { eyes: e })} alt="" className="w-full h-full" />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">눈썹</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>눈썹</p>
             <div className="flex gap-2 flex-wrap">
               {EYEBROWS_OPTIONS.map(e => (
                 <button key={e} onClick={() => setAvatarOptions(prev => ({ ...prev, eyebrows: e }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.eyebrows === e ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { eyebrows: e })} alt="" className="w-full h-full" />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">입</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>입</p>
             <div className="flex gap-2 flex-wrap">
               {MOUTH_OPTIONS.map(m => (
                 <button key={m} onClick={() => setAvatarOptions(prev => ({ ...prev, mouth: m }))}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.mouth === m ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                   <img src={buildAvatarUrl(user.id, profileData?.gender, { mouth: m })} alt="" className="w-full h-full" />
                 </button>
               ))}
@@ -1071,26 +1071,26 @@ const [showInfo, setShowInfo] = useState(false);
           </div>
           {profileData?.gender === 'male' && (
             <div>
-              <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">수염</p>
+              <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>수염</p>
               <div className="flex gap-2 flex-wrap">
                 <button onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: '' }))}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-100 text-gray-400'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${!avatarOptions.facialHair ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : isDark ? 'border-white/10 text-white/40' : 'border-gray-100 text-gray-400'}`}>
                   없음
                 </button>
                 {FACIAL_HAIR_OPTIONS.map(f => (
                   <button key={f} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHair: f }))}
-                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : 'border-gray-100'}`}>
+                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${avatarOptions.facialHair === f ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/10' : 'border-gray-100'}`}>
                     <img src={buildAvatarUrl(user.id, profileData?.gender, { facialHair: f })} alt="" className="w-full h-full" />
                   </button>
                 ))}
               </div>
               {avatarOptions.facialHair && (
                 <div className="mt-2">
-                  <p className="text-[11px] text-[#1B2A4A]/30 mb-1">수염 색상</p>
+                  <p className={`text-[11px] mb-1 ${isDark ? 'text-white/30' : 'text-[#1B2A4A]/30'}`}>수염 색상</p>
                   <div className="flex gap-2">
                     {FACIAL_HAIR_COLORS.map(c => (
                       <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, facialHairColor: c }))}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${avatarOptions.facialHairColor === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/15' : 'border-gray-200'}`}
                         style={{ backgroundColor: `#${c}` }} />
                     ))}
                   </div>
@@ -1099,22 +1099,22 @@ const [showInfo, setShowInfo] = useState(false);
             </div>
           )}
           <div>
-            <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">의상 색상</p>
+            <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>의상 색상</p>
             <div className="flex gap-2 flex-wrap">
               {CLOTHES_COLORS.map(c => (
                 <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, clothesColor: c }))}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.clothesColor === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/15' : 'border-gray-200'}`}
                   style={{ backgroundColor: `#${c}` }} />
               ))}
             </div>
           </div>
           {avatarOptions.accessories && (
             <div>
-              <p className="text-[12px] font-bold text-[#1B2A4A]/50 mb-2">액세서리 색상</p>
+              <p className={`text-[12px] font-bold mb-2 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>액세서리 색상</p>
               <div className="flex gap-2">
                 {ACCESSORIES_COLORS.map(c => (
                   <button key={c} onClick={() => setAvatarOptions(prev => ({ ...prev, accessoriesColor: c }))}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : 'border-gray-200'}`}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${avatarOptions.accessoriesColor === c ? 'border-[#D4AF37] scale-110' : isDark ? 'border-white/15' : 'border-gray-200'}`}
                     style={{ backgroundColor: `#${c}` }} />
                 ))}
               </div>
@@ -1122,12 +1122,12 @@ const [showInfo, setShowInfo] = useState(false);
           )}
           <button
             onClick={async () => {
-              const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);
+              const url = buildAvatarExternalUrl(user.id, profileData?.gender, avatarOptions);
               await api.patch('/profiles/me', { avatar_url: url });
               setShowAvatarEdit(false);
               window.location.reload();
             }}
-            className="w-full py-3 rounded-xl font-bold text-[14px] bg-[#1B2A4A] text-[#D4AF37] active:scale-[0.97] transition-all"
+            className={`w-full py-3 rounded-xl font-bold text-[14px] active:scale-[0.97] transition-all ${isDark ? 'bg-[#D4AF37] text-[#1a2332]' : 'bg-[#1B2A4A] text-[#D4AF37]'}`}
           >
             아바타 저장
           </button>

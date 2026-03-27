@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
-import { getComments, toggleCommentLike, deleteComment, getMyProfile } from '../../services/api';
+import { getComments, createComment, toggleCommentLike, deleteComment, getProfileById } from '../../services/api';
+import useProfileStore from '../../store/useProfileStore';
 import { resolveAvatar } from '../../utils/avatar';
+import { supabase } from '../../services/supabase';
 
 function formatCommentTime(iso) {
   if (!iso) return '';
@@ -18,33 +20,43 @@ function formatCommentTime(iso) {
 
 function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUsers }) {
   const { user } = useAuth();
+  const myAvatarUrl = useProfileStore(s => s.avatar_url);
+  const myGender = useProfileStore(s => s.gender);
   const isDark = useThemeStore(s => s.isDark);
   const [comments, setComments] = useState([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [likingSet, setLikingSet] = useState(new Set());
   const [deleteTarget, setDeleteTarget] = useState(null);
   const inputRef = useRef(null);
+  const listRef = useRef(null);
   const longPressTimer = useRef(null);
 
-  // 유저 아바타
-  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
-  const [myGender, setMyGender] = useState(null);
+  // 바텀시트 열릴 때 body 스크롤 잠금
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    getMyProfile().then((data) => {
-      if (cancelled) return;
-      if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
-      if (data?.gender) setMyGender(data.gender);
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [user]);
+    if (!isOpen) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
 
-  // 댓글 fetch
+  // 댓글 fetch + Supabase Realtime 구독
   useEffect(() => {
     if (!isOpen || !debateId) return;
-    const fetch = async () => {
+    setIsLoadingComments(true);
+    const fetchData = async () => {
       try {
         const data = await getComments(debateId);
         const mapped = (data || []).map(c => ({
@@ -56,10 +68,63 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
         setComments(mapped);
         onCountChange?.(mapped.length);
       } catch (e) { console.error('댓글 fetch 실패:', e); }
+      finally { setIsLoadingComments(false); }
     };
-    fetch();
+    fetchData();
     setTimeout(() => inputRef.current?.focus(), 300);
+
+    // 실시간 댓글 구독
+    const channel = supabase
+      .channel(`bottomsheet-comments:${debateId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `debate_id=eq.${debateId}`,
+      }, (payload) => {
+        const newC = payload.new;
+        if (newC.user_id === user?.id) return;
+        getProfileById(newC.user_id).then((profile) => {
+          setComments(prev => {
+            if (prev.some(c => c.id === newC.id)) return prev;
+            const added = [...prev, { ...newC, profiles: profile || { nickname: '익명' }, _liked: false, _likeCount: 0 }];
+            onCountChange?.(added.length);
+            return added;
+          });
+        }).catch(() => {
+          setComments(prev => {
+            if (prev.some(c => c.id === newC.id)) return prev;
+            const added = [...prev, { ...newC, profiles: { nickname: '익명' }, _liked: false, _likeCount: 0 }];
+            onCountChange?.(added.length);
+            return added;
+          });
+        });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comments',
+        filter: `debate_id=eq.${debateId}`,
+      }, (payload) => {
+        setComments(prev => {
+          const filtered = prev.filter(c => c.id !== payload.old.id);
+          onCountChange?.(filtered.length);
+          return filtered;
+        });
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [isOpen, debateId]);
+
+  // 댓글 갱신 시 스크롤 최하단 이동
+  useEffect(() => {
+    if (comments.length > 0 && listRef.current) {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+      });
+    }
+  }, [comments.length]);
 
   const handleToggleLike = async (commentId) => {
     if (!user || likingSet.has(commentId)) return;
@@ -83,6 +148,7 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
       setComments(prev => [...prev, { ...data, profiles: data.user, _liked: false, _likeCount: 0 }]);
       setCommentText('');
       onCountChange?.(comments.length + 1);
+      requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }));
     } catch (e) { console.error('댓글 작성 실패:', e); }
     finally { setIsSending(false); }
   };
@@ -121,7 +187,8 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[200]"
+            onTouchMove={(e) => e.preventDefault()}
+            className="fixed inset-0 bg-black/40 z-[200] touch-none"
           />
           <div className="fixed inset-0 z-[201] flex items-end justify-center pointer-events-none">
             <motion.div
@@ -141,8 +208,12 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
               </div>
 
               {/* 댓글 목록 */}
-              <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-                {comments.length === 0 ? (
+              <div ref={listRef} className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+                {isLoadingComments ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className={`w-6 h-6 border-2 border-t-transparent rounded-full animate-spin ${isDark ? 'border-white/30' : 'border-[#1B2A4A]/20'}`} style={{ borderTopColor: 'transparent' }} />
+                  </div>
+                ) : comments.length === 0 ? (
                   <div className="text-center py-8">
                     <p className={`text-[13px] ${textMuted}`}>아직 의견이 없습니다</p>
                     <p className={`text-[11px] mt-1 ${textSubtle}`}>이 논쟁에 대한 의견을 남겨보세요</p>

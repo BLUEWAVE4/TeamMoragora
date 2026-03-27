@@ -4,6 +4,7 @@ import { getVerdict, getDebate } from "../../services/api";
 import { useAuth } from "../../store/AuthContext";
 import VerdictContent from "../../components/verdict/VerdictContent";
 import api from "../../services/api";
+import useThemeStore from "../../store/useThemeStore";
 
 export default function MoragoraDetailPage() {
   const { debateId } = useParams();
@@ -16,6 +17,7 @@ export default function MoragoraDetailPage() {
   const [rating, setRating] = useState(0);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const { user } = useAuth();
+  const isDark = useThemeStore(s => s.isDark);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,7 +126,7 @@ export default function MoragoraDetailPage() {
           <div className="space-y-2 mt-5">
             {/* 별점 평가 — 생성자/참여자만 */}
             {user && debate && (user.id === debate.creator_id || user.id === debate.opponent_id) && (
-              <div className="mb-4 bg-[#1B2A4A]/5 border border-[#D4AF37]/20 rounded-2xl p-5">
+              <div className={`mb-4 border border-[#D4AF37]/20 rounded-2xl p-5 ${isDark ? 'bg-white/5' : 'bg-[#1B2A4A]/5'}`}>
                 {ratingSubmitted ? (
                   <div className="text-center">
                     <p className="text-[14px] font-bold text-[#D4AF37]">평가해주셔서 감사합니다!</p>
@@ -147,7 +149,7 @@ export default function MoragoraDetailPage() {
                   </div>
                 ) : (
                   <div className="text-center">
-                    <p className="text-[12px] text-[#1B2A4A]/50 font-bold mb-3">이 판결에 만족하셨나요?</p>
+                    <p className={`text-[12px] font-bold mb-3 ${isDark ? 'text-white/50' : 'text-[#1B2A4A]/50'}`}>이 판결에 만족하셨나요?</p>
                     <div className="flex justify-center mb-3">
                       {[1,2,3,4,5].map(s => (
                         <div key={s} className="relative w-9 h-9 flex-shrink-0">
@@ -159,9 +161,9 @@ export default function MoragoraDetailPage() {
                             ) : rating >= s-0.5 ? (
                               <><defs><clipPath id={`dl${s}`}><rect x="0" y="0" width="12" height="24"/></clipPath><clipPath id={`dr${s}`}><rect x="12" y="0" width="12" height="24"/></clipPath></defs>
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2" clipPath={`url(#dl${s})`}/>
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke="#1B2A4A" strokeWidth="2" opacity="0.15" clipPath={`url(#dr${s})`}/></>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke={isDark ? '#ffffff' : '#1B2A4A'} strokeWidth="2" opacity={isDark ? '0.3' : '0.15'} clipPath={`url(#dr${s})`}/></>
                             ) : (
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#1B2A4A" strokeWidth="2" opacity="0.15"/>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke={isDark ? '#ffffff' : '#1B2A4A'} strokeWidth="2" opacity={isDark ? '0.3' : '0.15'}/>
                             )}
                           </svg>
                         </div>

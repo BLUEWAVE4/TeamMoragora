@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import api, { setAuthToken } from '../services/api';
+import useProfileStore from './useProfileStore';
 
 const AuthContext = createContext(null);
 
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthToken(session?.access_token || null);
       setUser(session?.user ?? null);
-      if (session?.user) fetchRole();
+      if (session?.user) { fetchRole(); useProfileStore.getState().fetchProfile(); }
       setLoading(false);
     });
 
@@ -36,8 +37,8 @@ export function AuthProvider({ children }) {
       (event, session) => {
         setAuthToken(session?.access_token || null);
         setUser(session?.user ?? null);
-        if (session?.user) fetchRole();
-        else setIsAdmin(false);
+        if (session?.user) { fetchRole(); useProfileStore.getState().fetchProfile(); }
+        else { setIsAdmin(false); useProfileStore.getState().reset(); }
 
         // OAuth 로그인 완료 후 저장된 리다이렉트 경로로 이동
         if (event === 'SIGNED_IN' && session?.user) {

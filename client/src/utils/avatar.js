@@ -1,4 +1,6 @@
-// 아바타 커스터마이징 옵션 + URL 생성
+// 아바타 커스터마이징 옵션 + 로컬 SVG 생성 (네트워크 요청 0)
+import { createAvatar } from '@dicebear/core';
+import { avataaars } from '@dicebear/collection';
 
 export const MALE_STYLES = [
   'shortFlat', 'shortWaved', 'shortCurly', 'dreads01', 'theCaesar', 'shortRound',
@@ -22,45 +24,100 @@ export const MOUTH_OPTIONS = ['default', 'smile', 'twinkle', 'tongue', 'serious'
 export const FACIAL_HAIR_OPTIONS = ['beardLight', 'beardMajestic', 'beardMedium', 'moustacheFancy', 'moustacheMagnum'];
 export const FACIAL_HAIR_COLORS = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370'];
 
-export function getAvatarUrl(userId, gender, customOptions) {
-  if (!gender || !userId) return null;
+// ===== 로컬 SVG 생성 (캐시) =====
+const avatarCache = new Map();
 
+function generateLocal(opts) {
+  const key = JSON.stringify(opts);
+  if (avatarCache.has(key)) return avatarCache.get(key);
+  const avatar = createAvatar(avataaars, opts);
+  const uri = avatar.toDataUri();
+  avatarCache.set(key, uri);
+  return uri;
+}
+
+// dicebear URL 파싱 → 로컬 옵션 변환
+function parseDicebearUrl(url) {
+  try {
+    if (!url.includes('dicebear.com')) return null;
+    const u = new URL(url);
+    const p = u.searchParams;
+    const opts = {};
+    if (p.get('seed')) opts.seed = p.get('seed');
+    if (p.get('top')) opts.top = [p.get('top')];
+    if (p.get('topProbability')) opts.topProbability = parseInt(p.get('topProbability'));
+    if (p.get('skinColor')) opts.skinColor = [p.get('skinColor')];
+    if (p.get('hairColor')) opts.hairColor = [p.get('hairColor')];
+    if (p.get('clothing')) opts.clothing = [p.get('clothing')];
+    if (p.get('clothesColor')) opts.clothesColor = [p.get('clothesColor')];
+    if (p.get('accessories')) opts.accessories = [p.get('accessories')];
+    if (p.get('accessoriesColor')) opts.accessoriesColor = [p.get('accessoriesColor')];
+    if (p.get('accessoriesProbability')) opts.accessoriesProbability = parseInt(p.get('accessoriesProbability'));
+    if (p.get('facialHair')) opts.facialHair = [p.get('facialHair')];
+    if (p.get('facialHairColor')) opts.facialHairColor = [p.get('facialHairColor')];
+    if (p.get('facialHairProbability')) opts.facialHairProbability = parseInt(p.get('facialHairProbability'));
+    if (p.get('eyes')) opts.eyes = [p.get('eyes')];
+    if (p.get('eyebrows')) opts.eyebrows = [p.get('eyebrows')];
+    if (p.get('mouth')) opts.mouth = [p.get('mouth')];
+    return opts;
+  } catch { return null; }
+}
+
+// userId+gender+옵션 → dicebear 라이브러리 옵션
+function buildLocalOptions(userId, gender, customOptions = {}) {
   const isMale = gender === 'male';
   const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
   const hash = userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const topStyle = customOptions?.top || styles[hash % styles.length];
 
-  const params = new URLSearchParams({
-    seed: userId,
-    top: topStyle,
-    facialHairProbability: isMale ? '30' : '0',
-    accessoriesProbability: customOptions?.accessories ? '100' : '20',
-  });
+  const opts = { seed: userId };
+  opts.top = [customOptions.top || styles[hash % styles.length]];
+  if (customOptions.noHair) opts.topProbability = 0;
+  opts.facialHairProbability = isMale ? 30 : 0;
+  opts.accessoriesProbability = customOptions.accessories ? 100 : 20;
 
-  if (customOptions?.skinColor) params.set('skinColor', customOptions.skinColor);
-  if (customOptions?.hairColor) params.set('hairColor', customOptions.hairColor);
-  if (customOptions?.clothing) params.set('clothing', customOptions.clothing);
-  if (customOptions?.clothesColor) params.set('clothesColor', customOptions.clothesColor);
-  if (customOptions?.accessories) params.set('accessories', customOptions.accessories);
-  if (customOptions?.accessoriesColor) params.set('accessoriesColor', customOptions.accessoriesColor);
-  if (customOptions?.eyes) params.set('eyes', customOptions.eyes);
-  if (customOptions?.eyebrows) params.set('eyebrows', customOptions.eyebrows);
-  if (customOptions?.mouth) params.set('mouth', customOptions.mouth);
-  if (customOptions?.facialHair) {
-    params.set('facialHair', customOptions.facialHair);
-    params.set('facialHairProbability', '100');
-    if (customOptions.facialHairColor) params.set('facialHairColor', customOptions.facialHairColor);
+  if (customOptions.skinColor) opts.skinColor = [customOptions.skinColor];
+  if (customOptions.hairColor) opts.hairColor = [customOptions.hairColor];
+  if (customOptions.clothing) opts.clothing = [customOptions.clothing];
+  if (customOptions.clothesColor) opts.clothesColor = [customOptions.clothesColor];
+  if (customOptions.accessories) {
+    opts.accessories = [customOptions.accessories];
+    opts.accessoriesProbability = 100;
+    if (customOptions.accessoriesColor) opts.accessoriesColor = [customOptions.accessoriesColor];
+  }
+  if (customOptions.eyes) opts.eyes = [customOptions.eyes];
+  if (customOptions.eyebrows) opts.eyebrows = [customOptions.eyebrows];
+  if (customOptions.mouth) opts.mouth = [customOptions.mouth];
+  if (customOptions.facialHair && isMale) {
+    opts.facialHair = [customOptions.facialHair];
+    opts.facialHairProbability = 100;
+    if (customOptions.facialHairColor) opts.facialHairColor = [customOptions.facialHairColor];
+  } else if (!isMale) {
+    opts.facialHairProbability = 0;
   }
 
-  return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
+  return opts;
 }
 
+// ===== 공개 API =====
+
+// 자동 생성 아바타 (data URI, 즉시 렌더)
+export function getAvatarUrl(userId, gender, customOptions) {
+  if (!gender || !userId) return null;
+  return generateLocal(buildLocalOptions(userId, gender, customOptions));
+}
+
+// 아바타 편집 프리뷰 (data URI, 즉시 렌더)
 export function buildAvatarUrl(userId, gender, options = {}) {
+  if (!userId) return null;
+  return generateLocal(buildLocalOptions(userId, gender, options));
+}
+
+// DB 저장용 외부 URL (ProfilePage 저장 시에만 사용)
+export function buildAvatarExternalUrl(userId, gender, options = {}) {
   if (!userId) return null;
   const isMale = gender === 'male';
   const params = new URLSearchParams({ seed: userId });
 
-  // 성별 기본값: 남성은 남성 헤어, 여성은 여성 헤어
   if (!options.top) {
     const styles = isMale ? MALE_STYLES : FEMALE_STYLES;
     const hash = userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -96,7 +153,14 @@ export function buildAvatarUrl(userId, gender, options = {}) {
 
 export const DEFAULT_AVATAR_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#E8E8ED"/><circle cx="50" cy="38" r="16" fill="#C7C7CC"/><ellipse cx="50" cy="75" rx="26" ry="18" fill="#C7C7CC"/></svg>`)}`;
 
-// 아바타 URL 해석 래퍼 — avatar_url 우선, 없으면 생성, 최종 기본 아이콘
+// 아바타 URL 해석 래퍼 — 모든 dicebear URL을 로컬 생성으로 변환
 export function resolveAvatar(avatarUrl, userId, gender) {
-  return avatarUrl || getAvatarUrl(userId, gender) || DEFAULT_AVATAR_ICON;
+  if (avatarUrl) {
+    // dicebear 외부 URL → 파싱 → 로컬 생성 (네트워크 0)
+    const parsed = parseDicebearUrl(avatarUrl);
+    if (parsed) return generateLocal(parsed);
+    // 기타 외부 URL (커스텀 업로드 등) → 그대로
+    return avatarUrl;
+  }
+  return getAvatarUrl(userId, gender) || DEFAULT_AVATAR_ICON;
 }

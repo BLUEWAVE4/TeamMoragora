@@ -75,6 +75,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [showScoreChart, setShowScoreChart] = useState(false);
   const [argSide, setArgSide] = useState(null);
   const [showVoteInfo, setShowVoteInfo] = useState(false);
+  const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
   const { modalState, showModal, closeModal } = useModalState();
 
   const [comments, setComments] = useState([]);
@@ -85,6 +86,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const debateId = verdictData?.debate_id || verdictData?.debateId;
   const verdictTabRef = useRef(null);
+  const commentListRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     scrollToJudge(judgeKey) {
@@ -162,6 +164,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       }
       setComments(prev => [...prev, newComment]);
       setCommentInput('');
+      requestAnimationFrame(() => commentListRef.current?.scrollTo({ top: commentListRef.current.scrollHeight, behavior: 'smooth' }));
     } catch (err) {
       showModal('댓글 작성 실패', err.message || '댓글 작성에 실패했습니다.');
     } finally {
@@ -775,18 +778,48 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                   : pct >= 55 ? { text: '낮음', color: '#F59E0B' }
                   : { text: '매우 낮음', color: '#8E8E93' };
                 return (
-                  <div className="mt-3 px-1 flex items-center gap-1.5">
-                    <span className="text-[11px] text-primary/40">확신도</span>
-                    <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}({pct}%)</span>
-                    <span className="relative group">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/25 cursor-pointer">
-                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                      </svg>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-3 py-2 bg-[#1B2A4A] text-white text-[10px] leading-relaxed rounded-lg w-48 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none shadow-lg">
-                        AI가 이 판결에 얼마나 확신하는지를 나타냅니다. 양측 점수 차이가 클수록 높아지며, 동점에 가까울수록 낮아집니다.
-                      </span>
-                    </span>
-                  </div>
+                  <>
+                    <div className="mt-3 px-1 flex items-center gap-1.5">
+                      <span className="text-[11px] text-primary/40">확신도</span>
+                      <span className="text-[11px] font-bold" style={{ color: level.color }}>{level.text}({pct}%)</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfidenceInfo(v => !v)}
+                        className="flex items-center"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/25">
+                          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                        </svg>
+                      </button>
+                    </div>
+                    {showConfidenceInfo && (
+                      <div className="mt-2 mx-1 p-3 bg-[#1B2A4A] rounded-xl text-white text-[10px] leading-relaxed shadow-lg">
+                        <p className="font-bold text-[11px] mb-2 text-gold">확신도 기준표</p>
+                        <div className="space-y-1.5">
+                          <div className="flex gap-2">
+                            <span className="shrink-0 font-mono font-bold text-[#059669]">90~100%</span>
+                            <span><span className="font-bold">압도적 차이</span> — 한쪽이 구체적 근거 다수 vs 상대측 근거 전무</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="shrink-0 font-mono font-bold text-[#10B981]">80~89%</span>
+                            <span><span className="font-bold">명확한 차이</span> — 양측 근거 있으나 한쪽 논리 구조가 확실히 우수</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="shrink-0 font-mono font-bold text-[#D4AF37]">70~79%</span>
+                            <span><span className="font-bold">분명한 차이</span> — 양측 유사 수준이나 핵심 논점에서 한쪽이 우위</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="shrink-0 font-mono font-bold text-[#F59E0B]">55~69%</span>
+                            <span><span className="font-bold">근소한 차이</span> — 양측 모두 우수하나 미세한 차이로 판정</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="shrink-0 font-mono font-bold text-[#8E8E93]">50~54%</span>
+                            <span><span className="font-bold">사실상 동점</span> — draw 판정 시에만 해당</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
             </div>
@@ -956,7 +989,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
 
             <div className="border-t border-gold/10" />
             <div className="p-5">
-              <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
+              <div ref={commentListRef} className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
                 {comments.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-[13px] text-primary/30 font-sans">아직 의견이 없습니다</p>
@@ -1031,7 +1064,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && handleSubmitComment()}
-                    onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)}
+                    onFocus={() => setTimeout(() => commentListRef.current?.scrollTo({ top: commentListRef.current.scrollHeight, behavior: 'smooth' }), 300)}
                     placeholder="의견을 입력하세요..."
                     maxLength={500}
                     className="flex-1 min-w-0 h-9 bg-primary/5 rounded-full px-4 text-[12px] text-primary placeholder:text-primary/25 focus:outline-none focus:ring-2 focus:ring-gold/20"

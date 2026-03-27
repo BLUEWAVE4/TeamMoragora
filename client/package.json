@@ -9,12 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.2",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.6",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
     "framer-motion": "^12.35.0",
+    "lightningcss": "^1.31.1",
     "lucide-react": "^0.577.0",
+    "postcss-preset-env": "^11.2.0",
     "react": "^19.2.4",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.4",

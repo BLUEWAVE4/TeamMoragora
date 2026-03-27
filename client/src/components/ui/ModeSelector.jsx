@@ -196,12 +196,14 @@ function ModeSelector({ onStart }) {
 
       </div>
 
-      <Button
-        className="mt-20 w-full max-w-[260px]"
-        onClick={handleGameStart}
-      >
-        게임 시작
-      </Button>
+      <div className="fixed bottom-20 left-0 right-0 flex justify-center px-4 z-30">
+        <Button
+          className="w-full max-w-[260px]"
+          onClick={handleGameStart}
+        >
+          게임 시작
+        </Button>
+      </div>
 
       {/* <Modal
         isOpen={showRandomModal}
