@@ -21,6 +21,17 @@ export async function createDebate(req, res, next) {
     const inviteCode = nanoid(8);
     const debateMode = ['duo', 'solo', 'chat'].includes(mode) ? mode : 'duo';
 
+    // 중복 생성 방지 — 동일 유저 + 동일 주제 + 5분 이내
+    const { data: duplicate } = await supabaseAdmin
+      .from('debates')
+      .select('id, invite_code, status, mode, created_at')
+      .eq('creator_id', req.user.id)
+      .eq('topic', topic.trim())
+      .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (duplicate) return res.status(201).json(duplicate);
+
     // 실시간 논쟁: 1인 1개 제한 — 진행 중인 chat 논쟁이 있으면 생성 불가
     if (debateMode === 'chat') {
       // chatting 상태는 항상 차단, waiting은 30분 이내만 차단

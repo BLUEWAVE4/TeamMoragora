@@ -113,12 +113,32 @@
 
 ---
 
+### 11. 확신도 기준표 토글 UI (3/27)
+- **VerdictContent**: 확신도 info 아이콘을 토글 버튼으로 변경, 클릭 시 5단계 기준표 패널 표시/숨김
+- 각 구간별 색상이 확신도 표시 색상과 일치 (90~100% 녹색, 80~89% 연녹, 70~79% 금색, 55~69% 주황, 50~54% 회색)
+- `showConfidenceInfo` state 추가
+
+### 12. 홈피드 바텀시트 버그 수정 + 실시간 댓글 (3/27)
+- **CommentBottomSheet 스크롤 잠금**: 바텀시트 열릴 때 `body` position fixed → 닫힐 때 원래 스크롤 위치 복원
+- **backdrop 터치 차단**: `touch-none` + `onTouchMove preventDefault`
+- **댓글 갱신 시 자동 스크롤**: `comments.length` 변경 감지 → 최하단 smooth 스크롤
+- **Supabase Realtime 댓글 구독**: `bottomsheet-comments:{debateId}` 채널로 INSERT/DELETE 실시간 반영
+  - VerdictContent에 이미 있던 검증된 패턴 동일 적용
+  - 타인 댓글 도착 시 프로필 조회 후 목록 추가 + 카운트 갱신
+  - 바텀시트 닫힐 때 `removeChannel`로 구독 해제
+
+---
+
 ## 현재 상태
 
 - **브랜치**: develop (master 동기화 완료)
 - **DB**: 추가 마이그레이션 없음 (citizen_score_a/b는 기존 컬럼, 투표 시 즉시 갱신으로 변경)
 
 ## 미해결 / 후속 작업
+
+### 검토된 but 미구현
+- **AI 팩트체크**: 외부 검색 API(Serper/Tavily) 연동 시 건당 +15원(+6%), 월 ~45만원 추가. 프롬프트 120행에서 외부 지식 활용 금지 규칙 완화 필요
+- **확신도(confidence) 가중 적용**: 현재 저장만 하고 최종 점수 계산에 미반영, `calculateCompositeVerdict`에서 가중 평균 적용 가능
 
 ### 알려진 제한
 - 서버 타이머 메모리 기반 — `cleanupDebateRoom()`으로 정리하지만 근본은 DB 기반 스케줄러 필요
@@ -130,6 +150,8 @@
 
 - AI 비용: 판결당 ~185원 (GPT 80 + Claude 100 + Gemini 5), solo는 GPT-4o-mini로 ~5원
 - 실시간 채팅: Socket.io 기반 (Supabase Realtime에서 전환됨)
+- 실시간 댓글: Supabase Realtime (VerdictContent + CommentBottomSheet)
 - 실시간 논쟁 인원: 사이드당 최대 3명
 - Zustand store: useThemeStore, useNotifStore, useSocketStore, useProfileStore (AuthContext는 React Context 유지)
 - avatar.js 구조: `getAvatarUrl`/`buildAvatarUrl` → data URI (표시용), `buildAvatarExternalUrl` → 외부 URL (DB 저장용), `resolveAvatar` → dicebear URL 파싱 후 로컬 재생성
+- Supabase Realtime 채널 목록: `comments:{debateId}` (VerdictContent), `bottomsheet-comments:{debateId}` (CommentBottomSheet), `lobby_list` (ChatLobbyList), `lobby_realtime` (DebateLobbyPage), `lobby:{debateId}` (ChatLobby Presence)

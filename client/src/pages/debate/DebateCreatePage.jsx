@@ -236,7 +236,7 @@ const handleSubmit = async () => {
   };
 
   return (
-    <div className="min-h-screen flex justify-center px-4 pt-6 pb-28 bg-[#FAFAF5]">
+    <div className="flex justify-center px-4 pt-6 pb-28 bg-[#FAFAF5]">
       <div className="w-full max-w-md mt-16">
 
         <h2 className="text-2xl font-bold mb-[16px] text-center">논쟁 생성하기</h2>
