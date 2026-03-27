@@ -56,18 +56,14 @@ function DebateCard({ feed }) {
   const optionAText = debateData?.pro_side || feed?.pro_side || "";
   const optionBText = debateData?.con_side || feed?.con_side || "";
 
-  const storageKey = `my_vote_${feed?.debate_id || debateData?.id}_${user?.id}`;
-  const [myVote, setMyVote] = useState(() => localStorage.getItem(storageKey) || null);
+  const [myVote, setMyVote] = useState(null);
 
-  // サーバーで投票状態を検証 (localStorage と同期)
+  // 서버에서 투표 상태 조회
   useEffect(() => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId || !user) return;
     getMyVote(debateId).then(res => {
-      const serverVote = res?.voted_side || null;
-      setMyVote(serverVote);
-      if (serverVote) localStorage.setItem(storageKey, serverVote);
-      else localStorage.removeItem(storageKey);
+      setMyVote(res?.voted_side || null);
     }).catch(() => {});
   }, [feed?.debate_id, debateData?.id, user]);
   const [voteCounts, setVoteCounts] = useState({
@@ -137,8 +133,6 @@ function DebateCard({ feed }) {
     const prevCounts = { ...voteCounts };
     const nextVote = isCanceling ? null : side;
     setMyVote(nextVote);
-    if (nextVote) localStorage.setItem(storageKey, nextVote);
-    else localStorage.removeItem(storageKey);
     setVoteCounts(prev => {
       const next = { ...prev };
       if (isCanceling) next[side === 'A' ? 'agree' : 'disagree'] = Math.max(0, next[side === 'A' ? 'agree' : 'disagree'] - 1);

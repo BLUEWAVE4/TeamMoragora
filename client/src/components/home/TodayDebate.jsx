@@ -17,16 +17,13 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
   const debateId = item?.debate_id;
   const isVotingStatus = item?.debate?.status === 'voting';
   const isCompleted = item?.debate?.status === 'completed';
-  const storageKey = `my_vote_${debateId}_${user?.id}`;
-  const [myVote, setMyVote] = useState(() => localStorage.getItem(storageKey) || null);
+  const [myVote, setMyVote] = useState(null);
 
+  // 서버에서 투표 상태 조회
   useEffect(() => {
     if (!debateId || !user) return;
     getMyVote(debateId).then(res => {
-      const serverVote = res?.voted_side || null;
-      setMyVote(serverVote);
-      if (serverVote) localStorage.setItem(storageKey, serverVote);
-      else localStorage.removeItem(storageKey);
+      setMyVote(res?.voted_side || null);
     }).catch(() => {});
   }, [debateId, user]);
   const [voteCounts, setVoteCounts] = useState({ A: item?.citizen_score_a ?? 0, B: item?.citizen_score_b ?? 0 });
@@ -76,7 +73,6 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
 
     const nextVote = isCanceling ? null : side;
     setMyVote(nextVote);
-    nextVote ? localStorage.setItem(storageKey, nextVote) : localStorage.removeItem(storageKey);
 
     setVoteCounts(prev => {
       const next = { ...prev };
@@ -92,7 +88,6 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
       else { await castVote(debateId, side); }
     } catch (err) {
       setMyVote(prevVote);
-      prevVote ? localStorage.setItem(storageKey, prevVote) : localStorage.removeItem(storageKey);
       setVoteCounts(prevCounts);
       showModal('투표 처리에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally {
