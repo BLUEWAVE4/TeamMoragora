@@ -16,19 +16,21 @@ function ModeSelector({ onStart }) {
       key: "practice",
       label: "연습 모드",
       desc: "AI와 논쟁 연습을 진행하며 자신의 논리를 시험해볼 수 있습니다.",
-      img: "/practice.webp"
+      img: "/practice2.webp"
+      // img: "/practice.webp"
     },
     {
       key: "battle",
       label: "1 vs 1",
       desc: "상대와 직접 논쟁을 진행하며 논리와 설득력으로 승부합니다.",
       img: "/fight2.webp"
+      // img: "/fight.webp"
     },
     {
       key: "chat",
       label: "실시간 논쟁",
       desc: "실시간으로 진행되는 논쟁을 통해 상대와 뜨겁게 설전합니다.",
-      img: "/random2.webp"
+      img: "/3vs3.webp"
     }
   ];
 
