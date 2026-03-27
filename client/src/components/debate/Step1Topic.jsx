@@ -51,7 +51,7 @@ const PLACEHOLDER_TOPICS = [
 // 타이핑→대기→삭제→다음 주제 반복
 function useTypewriter(texts, { typeSpeed = 60, deleteSpeed = 30, pauseMs = 1500, active = true }) {
   const [display, setDisplay] = useState("");
-  const idxRef = useRef(0);
+  const idxRef = useRef(Math.floor(Math.random() * texts.length));
 
   useEffect(() => {
     if (!active) return;
