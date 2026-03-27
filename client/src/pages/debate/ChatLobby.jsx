@@ -37,6 +37,11 @@ export default function ChatLobby() {
         ]);
         setDebate(debateData);
         setMyProfile(profile);
+        // 이미 시작된 논쟁이면 채팅방으로 바로 이동
+        if (['chatting', 'both_joined'].includes(debateData.status)) {
+          navigate(`/debate/${debateId}/chat`, { replace: true });
+          return;
+        }
       } catch (e) {
         console.error(e);
       } finally {

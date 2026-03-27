@@ -51,11 +51,11 @@ function ModeSelector({ onStart }) {
     }
 
     if (diff === -1) {
-      return "-translate-x-[55%] scale-90 opacity-70";
+      return "-translate-x-[85%] scale-90 opacity-70";
     }
 
     if (diff === 1) {
-      return "translate-x-[55%] scale-90 opacity-70";
+      return "translate-x-[85%] scale-90 opacity-70";
     }
 
     return "opacity-0 pointer-events-none";
