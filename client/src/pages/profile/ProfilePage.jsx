@@ -287,7 +287,7 @@ function VerdictModal({ verdict, onClose }) {
         <motion.div
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-          className="w-full max-w-[440px] max-h-[92vh] bg-[#FAFAF5] rounded-t-2xl overflow-hidden flex flex-col shadow-2xl pointer-events-auto"
+          className="w-full max-w-[440px] max-h-[92vh] bg-[#F3F1EC] rounded-t-2xl overflow-hidden flex flex-col shadow-2xl pointer-events-auto"
         >
           <div className="bg-gradient-to-b from-[#1B2A4A] to-[#2D4470] px-5 pt-5 pb-7 text-center relative shrink-0 z-10">
             <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-3" />
@@ -491,13 +491,13 @@ const [showInfo, setShowInfo] = useState(false);
   });
 
   if (!user) return (
-    <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F2F2F7] text-[16px]">
+    <div className="h-screen flex items-center justify-center text-gray-400 font-medium bg-[#F3F1EC] text-[16px]">
       로그인이 필요합니다.
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-40 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#F3F1EC] pb-40 font-sans overflow-x-hidden">
       <div className="max-w-md mx-auto px-5 pt-8">
 
         {/* Avatar + Nickname */}
