@@ -12,6 +12,7 @@ import MoragoraModal from '../../components/common/MoragoraModal';
 import useTypingIndicator from '../../hooks/chat/useTypingIndicator';
 import useLobbyChat from '../../hooks/chat/useLobbyChat';
 import useCitizenVoting from '../../hooks/chat/useCitizenVoting';
+import useCountdown, { formatTime, formatMsgTime } from '../../hooks/useCountdown';
 
 const MAX_CHARS = 200;
 const COOLDOWN_MS = 1000;
@@ -20,36 +21,6 @@ const MAX_MSGS = 20;
 const DEFAULT_DURATION_MS = 15 * 60 * 1000; // 15분 고정
 const EXTEND_MS = 5 * 60 * 1000;            // 5분 추가
 const MAX_PER_SIDE = 3;                      // 사이드당 최대 3명
-
-function useCountdown(deadline) {
-  const [timeLeft, setTimeLeft] = useState(null);
-  useEffect(() => {
-    if (!deadline) return;
-    const end = new Date(deadline).getTime();
-    const update = () => {
-      const diff = end - Date.now();
-      if (diff <= 0) { setTimeLeft(0); return; }
-      setTimeLeft(Math.ceil(diff / 1000));
-    };
-    update();
-    const t = setInterval(update, 500);
-    return () => clearInterval(t);
-  }, [deadline]);
-  return timeLeft;
-}
-
-function formatTime(secs) {
-  if (secs == null) return '--:--';
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-function formatMsgTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
 
 export default function ChatRoom() {
   const { debateId } = useParams();
@@ -239,7 +210,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     if (!debateId) return;
     const fetchMessages = async () => {
       const { data } = await supabase
-        .from('chat_messages').select('*').eq('debate_id', debateId).order('created_at', { ascending: true });
+        .from('chat_messages').select('id, debate_id, user_id, nickname, content, side, created_at').eq('debate_id', debateId).order('created_at', { ascending: true });
       if (data) {
         setMessages(data);
         const mine = data.filter(m => m.user_id === user?.id).length;

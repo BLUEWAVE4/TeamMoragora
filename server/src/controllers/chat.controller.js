@@ -2,7 +2,7 @@ import { supabaseAdmin } from '../config/supabase.js';
 import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../errors/index.js';
 import { filterByDictionary } from '../services/contentFilter.service.js';
 import { triggerJudgment } from '../services/judgmentTrigger.service.js';
-import { CHAT_MAX_LENGTH, CHAT_MAX_MESSAGES, CHAT_COOLDOWN, CHAT_TIME_LIMIT } from '../config/constants.js';
+import { CHAT_MAX_LENGTH, CHAT_MAX_MESSAGES, CHAT_COOLDOWN, CHAT_TIME_LIMIT, CHAT_DURATION_MS } from '../config/constants.js';
 
 // ===== 메시지 전송 =====
 export async function sendMessage(req, res, next) {
@@ -36,7 +36,6 @@ export async function sendMessage(req, res, next) {
     }
     if (debate.status !== 'chatting') {
       const now = new Date();
-      const CHAT_DURATION_MS = 15 * 60 * 1000;
       await supabaseAdmin.from('debates').update({
         status: 'chatting',
         chat_started_at: now.toISOString(),
@@ -112,7 +111,7 @@ export async function sendMessage(req, res, next) {
         content: trimmed,
         side,
       })
-      .select('*')
+      .select('id, debate_id, user_id, nickname, content, side, created_at')
       .single();
 
     if (insertErr) throw insertErr;

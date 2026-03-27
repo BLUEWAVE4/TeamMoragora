@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { filterByDictionary, filterByAI } from '../services/contentFilter.service.js';
-import { CATEGORY_ALL_STAGES } from '../config/constants.js';
+import { CATEGORY_ALL_STAGES, CONTENT_LIST_LIMIT } from '../config/constants.js';
 
 // 필터 로그를 DB에 저장하는 헬퍼
 async function saveFilterLog({ userId, debateId, contentType, stage, blocked, reason, result }) {
@@ -49,10 +49,10 @@ export async function getFilterLogs(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('content_filter_logs')
-      .select('*')
+      .select('id, content_type, filter_stage, result, reason, created_at')
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(CONTENT_LIST_LIMIT);
 
     if (error) throw error;
     res.json(data);

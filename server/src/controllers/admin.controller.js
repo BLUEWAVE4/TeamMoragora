@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { ADMIN_FETCH_LIMIT, ANALYTICS_FETCH_LIMIT } from '../config/constants.js';
 
 // ===== 페이지네이션 헬퍼 (Supabase max_rows 1000 제한 우회) =====
 const ALLOWED_FILTER_METHODS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'is'];
@@ -6,7 +7,7 @@ const ALLOWED_FILTER_METHODS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'is
 async function fetchAll(table, select, filters = []) {
   let all = [];
   let offset = 0;
-  const batch = 1000;
+  const batch = ADMIN_FETCH_LIMIT;
   while (true) {
     let q = supabaseAdmin.from(table).select(select);
     filters.forEach(f => {
@@ -43,15 +44,15 @@ export async function getDashboardStats(req, res, next) {
       { data: ratings },
       { data: feedbacks },
     ] = await Promise.all([
-      supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('verdicts').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('votes').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('comments').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', todayStart).lte('created_at', todayEnd),
-      supabaseAdmin.from('content_filter_logs').select('filter_stage, result').limit(1000),
-      supabaseAdmin.from('verdict_ratings').select('score').limit(1000),
-      supabaseAdmin.from('feedbacks').select('rating').limit(1000),
+      supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('verdicts').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('votes').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('comments').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', todayStart).lte('created_at', todayEnd),
+      supabaseAdmin.from('content_filter_logs').select('filter_stage, result').limit(ADMIN_FETCH_LIMIT),
+      supabaseAdmin.from('verdict_ratings').select('score').limit(ADMIN_FETCH_LIMIT),
+      supabaseAdmin.from('feedbacks').select('rating').limit(ADMIN_FETCH_LIMIT),
     ]);
 
     // DAU: 오늘 page_views의 고유 로그인 유저
@@ -91,10 +92,10 @@ export async function getDashboardStats(req, res, next) {
       { count: dailyCount },
       { count: chatCount },
     ] = await Promise.all([
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('mode', 'duo'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('mode', 'solo'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('mode', 'daily'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('mode', 'chat'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('mode', 'duo'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('mode', 'solo'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('mode', 'daily'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('mode', 'chat'),
     ]);
 
     // 논쟁 상태별 분포
@@ -104,14 +105,14 @@ export async function getDashboardStats(req, res, next) {
       { count: votingCount },
       { count: completedCount },
     ] = await Promise.all([
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('status', 'waiting'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('status', 'arguing'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('status', 'voting'),
-      supabaseAdmin.from('debates').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('status', 'arguing'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('status', 'voting'),
+      supabaseAdmin.from('debates').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
     ]);
 
     // 유저 티어 분포
-    const { data: tierData } = await supabaseAdmin.from('profiles').select('tier').limit(1000);
+    const { data: tierData } = await supabaseAdmin.from('profiles').select('tier').limit(ADMIN_FETCH_LIMIT);
     const tierDist = {};
     (tierData || []).forEach(p => { tierDist[p.tier] = (tierDist[p.tier] || 0) + 1; });
 
@@ -145,7 +146,7 @@ export async function getAIStats(req, res, next) {
       .from('ai_judgments')
       .select('ai_model, winner_side, score_a, score_b, confidence, status, created_at')
       .order('created_at', { ascending: false })
-      .limit(50000);
+      .limit(ANALYTICS_FETCH_LIMIT);
 
     const models = {};
     (judgments || []).forEach(j => {
@@ -187,7 +188,7 @@ export async function getDailyTrends(req, res, next) {
       const start = `${day}T00:00:00+09:00`;
       const end = `${day}T23:59:59+09:00`;
       const [{ count: vCount }, pvData] = await Promise.all([
-        supabaseAdmin.from('verdicts').select('*', { count: 'exact', head: true }).gte('created_at', start).lte('created_at', end),
+        supabaseAdmin.from('verdicts').select('id', { count: 'exact', head: true }).gte('created_at', start).lte('created_at', end),
         fetchAll('page_views', 'user_id', [
           { method: 'gte', col: 'created_at', val: start },
           { method: 'lte', col: 'created_at', val: end },
@@ -247,8 +248,8 @@ export async function getAnalytics(req, res, next) {
       { count: totalPageViews },
       { count: totalEvents },
     ] = await Promise.all([
-      supabaseAdmin.from('page_views').select('*', { count: 'exact', head: true }),
-      supabaseAdmin.from('analytics_events').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('page_views').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('analytics_events').select('id', { count: 'exact', head: true }),
     ]);
 
     // 고유 세션: 페이지별 집계를 위해 RPC 또는 페이지네이션으로 전체 가져오기

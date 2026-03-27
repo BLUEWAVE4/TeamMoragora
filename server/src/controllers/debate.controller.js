@@ -273,7 +273,7 @@ export async function joinByInvite(req, res, next) {
     // 먼저 invite_code로 논쟁 조회 (상태 무관)
     const { data: existing, error: existErr } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('id, creator_id, opponent_id, topic, description, pro_side, con_side, category, purpose, lens, mode, status, invite_code, vote_duration, view_count, created_at')
       .eq('invite_code', inviteCode)
       .single();
 

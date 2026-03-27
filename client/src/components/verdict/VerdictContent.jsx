@@ -2,7 +2,7 @@
  * VerdictContent.jsx — 판결 상세 공통 컴포넌트
  * JudgingPage(인라인), ProfilePage(모달), MoragoraDetailPage(페이지)에서 공유
  */
-import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
+import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
 import { GoLaw } from "react-icons/go";
 import { HiUserGroup } from "react-icons/hi";
 import { Radar } from "react-chartjs-2";
@@ -14,7 +14,7 @@ import useModalState from "../../hooks/useModalState";
 import { timeAgo } from "../../utils/dateFormatter";
 import MoragoraModal from '../common/MoragoraModal';
 import ChatLogViewer from './ChatLogViewer';
-import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally } from "../../services/api";
+import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally, getMyProfile, getProfileById } from "../../services/api";
 import { socket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
 
@@ -104,12 +104,11 @@ function VerdictContentInner({ verdictData, topic }, ref) {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('nickname, gender, avatar_url').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data?.nickname) setMyProfileNickname(data.nickname);
-        if (data?.gender) setMyGender(data.gender);
-        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
-      });
+    getMyProfile().then((data) => {
+      if (data?.nickname) setMyProfileNickname(data.nickname);
+      if (data?.gender) setMyGender(data.gender);
+      if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+    }).catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -128,13 +127,17 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         const newC = payload.new;
         if (newC.user_id === user?.id) return;
         // 프로필 정보 조회 후 추가
-        supabase.from('profiles').select('nickname, avatar_url, gender, tier').eq('id', newC.user_id).single()
-          .then(({ data: profile }) => {
-            setComments(prev => {
-              if (prev.some(c => c.id === newC.id)) return prev;
-              return [...prev, { ...newC, user: profile || { nickname: '익명' } }];
-            });
+        getProfileById(newC.user_id).then((profile) => {
+          setComments(prev => {
+            if (prev.some(c => c.id === newC.id)) return prev;
+            return [...prev, { ...newC, user: profile || { nickname: '익명' } }];
           });
+        }).catch(() => {
+          setComments(prev => {
+            if (prev.some(c => c.id === newC.id)) return prev;
+            return [...prev, { ...newC, user: { nickname: '익명' } }];
+          });
+        });
       })
       .on('postgres_changes', {
         event: 'DELETE',
@@ -271,22 +274,24 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const isBattle = !isConsensus && !isAnalysis && !isChat;
 
   const rawJudgments = verdictData.ai_judgments || [];
-  const JUDGE_ORDER = ['gpt', 'gemini', 'claude'];
-  const judges = rawJudgments.map((j) => {
-    const jKey = resolveJudgeKey(j.ai_model);
-    const info = AI_JUDGES[jKey] || AI_JUDGES.gpt;
-    return {
-      ...info,
-      winner_side: j.winner_side,
-      score_a: j.score_a || 0,
-      score_b: j.score_b || 0,
-      score_detail_a: j.score_detail_a || {},
-      score_detail_b: j.score_detail_b || {},
-      verdict_text: j.verdict_text || '',
-      verdict_sections: j.verdict_sections || [],
-      confidence: j.confidence || 0.5,
-    };
-  }).sort((a, b) => JUDGE_ORDER.indexOf(a.key) - JUDGE_ORDER.indexOf(b.key));
+  const judges = useMemo(() => {
+    const JUDGE_ORDER = ['gpt', 'gemini', 'claude'];
+    return rawJudgments.map((j) => {
+      const jKey = resolveJudgeKey(j.ai_model);
+      const info = AI_JUDGES[jKey] || AI_JUDGES.gpt;
+      return {
+        ...info,
+        winner_side: j.winner_side,
+        score_a: j.score_a || 0,
+        score_b: j.score_b || 0,
+        score_detail_a: j.score_detail_a || {},
+        score_detail_b: j.score_detail_b || {},
+        verdict_text: j.verdict_text || '',
+        verdict_sections: j.verdict_sections || [],
+        confidence: j.confidence || 0.5,
+      };
+    }).sort((a, b) => JUDGE_ORDER.indexOf(a.key) - JUDGE_ORDER.indexOf(b.key));
+  }, [rawJudgments]);
 
   const winnerSide = verdictData.winner_side || debateData.winner_side || 'draw';
   const activeArgSide = argSide || (winnerSide === 'B' ? 'B' : 'A');
@@ -327,7 +332,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const displayNameA = isSameNickname ? `${nicknameA}(찬성)` : (nicknameA || proSide);
   const displayNameB = isSameNickname ? `${nicknameB}(반대)` : (nicknameB || conSide);
 
-  const replaceOldNicknames = (text) => {
+  const replaceOldNicknames = useCallback((text) => {
     if (!text) return text;
     let result = text;
     if (oldNicknameA && nicknameA && oldNicknameA !== nicknameA) {
@@ -337,11 +342,9 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       result = result.replaceAll(oldNicknameB, nicknameB);
     }
     return result;
-  };
+  }, [oldNicknameA, oldNicknameB, nicknameA, nicknameB]);
 
-  const highlightNicknames = (text) => {
-    const replaced = replaceOldNicknames(text);
-    if (!replaced || (!nicknameA && !nicknameB)) return replaced;
+  const nicknamePattern = useMemo(() => {
     const names = [];
     if (isSameNickname) {
       names.push({ name: `${nicknameA}(찬성)`, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
@@ -351,15 +354,23 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       if (nicknameA) names.push({ name: nicknameA, cls: 'font-semibold underline decoration-emerald-500 decoration-2 underline-offset-2' });
       if (nicknameB) names.push({ name: nicknameB, cls: 'font-semibold underline decoration-red-500 decoration-2 underline-offset-2' });
     }
+    if (names.length === 0) return null;
     const sorted = [...names].sort((a, b) => b.name.length - a.name.length);
     const pattern = new RegExp(`(${sorted.map(n => n.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+    return { sorted, pattern };
+  }, [nicknameA, nicknameB, isSameNickname]);
+
+  const highlightNicknames = useCallback((text) => {
+    const replaced = replaceOldNicknames(text);
+    if (!replaced || !nicknamePattern) return replaced;
+    const { sorted, pattern } = nicknamePattern;
     const segments = replaced.split(pattern);
     return segments.map((seg, i) => {
       const match = sorted.find(n => n.name === seg);
       if (match) return <span key={i} className={match.cls}>{seg}</span>;
       return seg;
     });
-  };
+  }, [nicknamePattern, replaceOldNicknames]);
 
   return (
     <div className="space-y-4">

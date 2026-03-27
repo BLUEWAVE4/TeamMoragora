@@ -45,7 +45,7 @@ export async function getMyFeedbacks(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('feedbacks')
-      .select('*')
+      .select('id, satisfaction, ai_accuracy, ui_ease, fairness, recommend, best_feature, improvement, additional, created_at')
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false });
 

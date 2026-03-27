@@ -2,6 +2,7 @@ import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment, retrySingleJudgment } from '../services/ai/judgment.service.js';
 import { NotFoundError, ValidationError, ConflictError } from '../errors/index.js';
 import { env } from '../config/env.js';
+import { VERDICT_FETCH_LIMIT } from '../config/constants.js';
 
 export async function requestJudgment(req, res, next) {
   try {
@@ -10,7 +11,7 @@ export async function requestJudgment(req, res, next) {
     // Fetch debate + arguments
     const { data: debate } = await supabaseAdmin
       .from('debates')
-      .select('*')
+      .select('id, creator_id, opponent_id, topic, description, pro_side, con_side, category, purpose, lens, mode, status, invite_code, vote_duration')
       .eq('id', debateId)
       .single();
 
@@ -31,7 +32,7 @@ export async function requestJudgment(req, res, next) {
 
     const { data: args } = await supabaseAdmin
       .from('arguments')
-      .select('*')
+      .select('id, debate_id, user_id, side, round, content, created_at')
       .eq('debate_id', debateId);
 
     const sideA = args.find((a) => a.side === 'A');
@@ -353,7 +354,7 @@ export async function getHallOfFame(req, res, next) {
       .from('verdicts')
       .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
-      .limit(200);
+      .limit(VERDICT_FETCH_LIMIT);
 
     if (error) throw error;
 
@@ -432,8 +433,7 @@ export async function getVerdictFeed(req, res, next) {
 
     // 검색이 있으면 넉넉히 가져와서 JS 필터 (topic/nickname 복합 검색)
     if (search) {
-      const fetchLimit = 200;
-      const { data: rawData, error } = await query.range(0, fetchLimit);
+      const { data: rawData, error } = await query.range(0, VERDICT_FETCH_LIMIT);
       if (error) throw error;
 
       const q = search.toLowerCase();

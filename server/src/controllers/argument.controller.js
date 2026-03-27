@@ -4,7 +4,7 @@ import { filterByDictionary, filterByAI } from '../services/contentFilter.servic
 import { generateCounterArgument } from '../services/ai/solo.service.js';
 import { triggerJudgment } from '../services/judgmentTrigger.service.js';
 import { createNotification } from '../services/notification.service.js';
-import { CATEGORY_ALL_STAGES } from '../config/constants.js';
+import { CATEGORY_ALL_STAGES, ARGUMENT_ROUND2_MAX_LENGTH } from '../config/constants.js';
 import { NotFoundError, ValidationError, ConflictError, ForbiddenError } from '../errors/index.js';
 
 // 필터 로그 저장 헬퍼
@@ -33,8 +33,8 @@ export async function submitArgument(req, res, next) {
       throw new ValidationError('라운드는 1 또는 2만 가능합니다.');
     }
     // 2라운드 반박은 300자 제한
-    if (roundNum === 2 && content && content.length > 300) {
-      throw new ValidationError('반박은 300자 이내로 작성해주세요.');
+    if (roundNum === 2 && content && content.length > ARGUMENT_ROUND2_MAX_LENGTH) {
+      throw new ValidationError(`반박은 ${ARGUMENT_ROUND2_MAX_LENGTH}자 이내로 작성해주세요.`);
     }
 
     // === 콘텐츠 필터링 (Stage 1: 비속어 사전) ===
@@ -66,7 +66,7 @@ export async function submitArgument(req, res, next) {
     if (roundNum === 2) {
       const { count: r1Count } = await supabaseAdmin
         .from('arguments')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('debate_id', debateId)
         .eq('round', 1);
       if (r1Count < 2) throw new ValidationError('1라운드 양측 주장이 모두 제출되어야 2라운드를 시작할 수 있습니다.');
@@ -152,7 +152,7 @@ export async function submitArgument(req, res, next) {
     // 2라운드 양측 주장 모두 제출 완료 시 비동기로 AI 판결 트리거
     const { count } = await supabaseAdmin
       .from('arguments')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('debate_id', debateId);
 
     if (count >= 4) {

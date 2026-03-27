@@ -31,10 +31,23 @@ export const CONFIDENCE_MAX = 1.00;
 export const CONFIDENCE_DEFAULT = 0.65;
 
 // ===== 채팅 모드 =====
+export const CHAT_DURATION_MS = 15 * 60 * 1000; // 15분 (ms)
 export const CHAT_TIME_LIMIT = 300;       // 5분 (초)
 export const CHAT_MAX_MESSAGES = 30;      // 1인당 최대 메시지 수
 export const CHAT_MAX_LENGTH = 200;       // 메시지 최대 글자수
 export const CHAT_COOLDOWN = 1000;        // 전송 쿨다운 (ms)
+export const KICK_SKIP_COUNTDOWN_SEC = 10; // 강퇴 스킵 카운트다운 (초)
+
+// ===== 반박 =====
+export const ARGUMENT_ROUND2_MAX_LENGTH = 300; // 2라운드 반박 최대 글자수
+
+// ===== 페이지네이션 =====
+export const ADMIN_FETCH_LIMIT = 1000;
+export const ANALYTICS_FETCH_LIMIT = 50000;
+export const VERDICT_FETCH_LIMIT = 200;
+export const PROFILE_HISTORY_LIMIT = 50;
+export const NOTIFICATION_FETCH_LIMIT = 50;
+export const CONTENT_LIST_LIMIT = 20;
 
 // 카테고리 그룹 (콘텐츠 필터 단계 결정용)
 // Stage 1만: 가벼운 주제 (비속어 사전 필터만)
