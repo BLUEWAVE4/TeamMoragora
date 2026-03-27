@@ -767,6 +767,7 @@ const [showInfo, setShowInfo] = useState(false);
           ) : (
             <>
               <div className="bg-white rounded-t-2xl rounded-b-none shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+
                 {(() => {
                   const filteredJudgments = searchQuery
                     ? myJudgments.filter(d => (d.topic || '').toLowerCase().includes(searchQuery))
@@ -828,21 +829,22 @@ const [showInfo, setShowInfo] = useState(false);
                   </motion.button>
                 ) : null;
               })()}
-              <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
-                className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
-                로그아웃
-              </motion.button>
-              {isEditing && (
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowWithdrawModal(true)}
-                  className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-gray-400 flex items-center justify-center active:bg-gray-50 transition-colors">
-                  회원탈퇴
-                </motion.button>
-              )}
             </>
           )}
         </div>
 
-        <div className="flex justify-center gap-8 mb-12 text-center">
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
+          className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-red-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+          로그아웃
+        </motion.button>
+        {isEditing && (
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowWithdrawModal(true)}
+            className="w-full mt-3 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-[16px] font-bold text-gray-400 flex items-center justify-center active:bg-gray-50 transition-colors">
+            회원탈퇴
+          </motion.button>
+        )}
+
+        <div className="flex justify-center gap-8 mb-12 mt-6 text-center">
           <Link to="/terms" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">이용약관</Link>
           <Link to="/privacy" className="text-[16px] text-gray-400 font-medium underline underline-offset-4">개인정보처리방침</Link>
         </div>
