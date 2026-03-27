@@ -99,9 +99,23 @@
 
 ---
 
+### 10. 아바타 로컬 생성 + UX/다크모드 개선 (3/27 후반)
+- **dicebear 로컬 생성**: `@dicebear/core` + `@dicebear/collection` 도입 → 외부 API 호출 0, data URI 즉시 렌더 + 인메모리 캐시
+- **`useProfileStore` (Zustand)**: 프로필(avatar_url, gender) 전역 캐싱, selector 기반 리렌더 최소화
+- **CommentBottomSheet**: `createComment` import 누락 수정, 로딩스피너, 댓글 작성 시 자동 스크롤 하단, body 스크롤 잠금
+- **VerdictContent 시민투표**: 댓글 작성 후 내부 댓글 영역만 스크롤 (페이지 스크롤 버그 수정), `scrollIntoView` → `commentListRef.scrollTo`
+- **MoragoraDetailPage**: 별점 평가 UI 다크모드 대응 (stroke/컨테이너/텍스트)
+- **ProfilePage**: 아바타 꾸미기 바텀시트 다크모드 대응, DB 저장은 `buildAvatarExternalUrl`
+- **ModeSelector**: 게임시작 버튼 하단 고정 (`fixed bottom-20`)
+- **삼성 브라우저 호환**: `postcss-preset-env` 추가 (Tailwind v4 `color-mix()` 폴백), Pretendard 중복 `@import` 제거
+- **judgment.routes.js**: `aiLimiter` 비활성화 (rate limiting 임시 해제)
+- **CLAUDE.md**: 시니어 제안 규칙에 라이브러리 활용 검토 항목 추가
+
+---
+
 ## 현재 상태
 
-- **브랜치**: master
+- **브랜치**: develop (master 동기화 완료)
 - **DB**: 추가 마이그레이션 없음 (citizen_score_a/b는 기존 컬럼, 투표 시 즉시 갱신으로 변경)
 
 ## 미해결 / 후속 작업
@@ -117,4 +131,5 @@
 - AI 비용: 판결당 ~185원 (GPT 80 + Claude 100 + Gemini 5), solo는 GPT-4o-mini로 ~5원
 - 실시간 채팅: Socket.io 기반 (Supabase Realtime에서 전환됨)
 - 실시간 논쟁 인원: 사이드당 최대 3명
-- Zustand store: useThemeStore, useNotifStore, useSocketStore (AuthContext는 React Context 유지)
+- Zustand store: useThemeStore, useNotifStore, useSocketStore, useProfileStore (AuthContext는 React Context 유지)
+- avatar.js 구조: `getAvatarUrl`/`buildAvatarUrl` → data URI (표시용), `buildAvatarExternalUrl` → 외부 URL (DB 저장용), `resolveAvatar` → dicebear URL 파싱 후 로컬 재생성
