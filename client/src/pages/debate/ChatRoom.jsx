@@ -61,6 +61,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
 
   const msgEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
+  const chatInputRef = useRef(null);
   const [showNewMsgBtn, setShowNewMsgBtn] = useState(false);
   const isNearBottom = useRef(true);
 
@@ -813,6 +814,7 @@ const handleVote = (agree) => {
     socket.emit('send-message', { debateId, userId: user.id, nickname: myNickname, content: trimmed, side: mySide });
     setSending(false);
     safeTimeout(() => setCooldown(false), COOLDOWN_MS);
+    chatInputRef.current?.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname, timeChangeRequest]);
 
@@ -1398,7 +1400,7 @@ const handleVote = (agree) => {
 ) : (
   <div className="flex items-end gap-2">
     <div className={`w-1 h-8 rounded-full shrink-0 self-center ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
-                <textarea value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
+                <textarea ref={chatInputRef} value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
                   disabled={isInputDisabled} rows={1}
                   placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장을 입력하세요...`}
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20 transition-colors leading-relaxed disabled:opacity-40"

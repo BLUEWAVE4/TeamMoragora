@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import api from '../services/api';
+import api, { setAuthToken } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -23,16 +23,18 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session + 토큰 캐시 초기화
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthToken(session?.access_token || null);
       setUser(session?.user ?? null);
       if (session?.user) fetchRole();
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes — 토큰 캐시도 여기서 단일 관리
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        setAuthToken(session?.access_token || null);
         setUser(session?.user ?? null);
         if (session?.user) fetchRole();
         else setIsAdmin(false);
@@ -62,22 +64,16 @@ export function AuthProvider({ children }) {
   const signOut = () => supabase.auth.signOut();
 
   const updateProfile = async (data) => {
-    // 1. auth user_metadata 업데이트
-    const { error } = await supabase.auth.updateUser({
-      data: { nickname: data.nickname, gender: data.gender, age: data.age }
-    });
-    if (error) return { error };
-
-    // 2. profiles 테이블도 동기화
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) {
-      const profileUpdate = { nickname: data.nickname };
-      if (data.gender) profileUpdate.gender = data.gender;
-      if (data.age) profileUpdate.age = parseInt(data.age);
-      await supabase.from('profiles').update(profileUpdate).eq('id', currentUser.id);
+    try {
+      await api.patch('/profiles/me', {
+        nickname: data.nickname,
+        gender: data.gender,
+        age: data.age,
+      });
+      return { error: null };
+    } catch (err) {
+      return { error: err };
     }
-
-    return { error: null };
   }
 
   return (

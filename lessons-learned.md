@@ -50,6 +50,13 @@
 - **vote_deadline NULL**: 시간 미설정 논쟁은 vote_deadline이 NULL → 크론이 마감 처리 못함. 즉시 completed 처리 필요
 - **profiles.role 추가 시**: 기본값 'user' + 기존 유저 일괄 업데이트 SQL 필요. RLS 정책도 확인
 
+## 서버 상태 관리
+
+- **메모리 기반 타이머 유실**: 서버 재시작 시 setTimeout 모두 소멸. `chat_deadline` DB 컬럼 기반으로 서버 시작 시 복구 로직 필수
+- **kickedUsers 메모리 유실**: 메모리 전용 → 재시작 시 강퇴 해제. DB `kicked_users` 테이블 + 메모리 캐시 하이브리드로 해결
+- **onAuthStateChange 충돌**: 토큰을 sessionStorage에 캐시하면 로그아웃/토큰 리프레시 시 stale 토큰 사용. in-memory 변수 + onAuthStateChange 즉시 갱신으로 해결
+- **Supabase 직접 호출 원칙**: 클라이언트에서 `supabase.from()` 직접 호출 금지 (auth, Realtime channel 제외). RLS 우회/보안 위해 서버 API 경유
+
 ## 비용
 
 - **AI 판결 비용**: GPT-4o(80원) + Claude Sonnet(100원) + Gemini(5원) = 건당 ~185원

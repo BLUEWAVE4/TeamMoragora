@@ -250,6 +250,15 @@ CREATE TABLE chat_messages (
 );
 CREATE INDEX idx_chat_messages_debate ON chat_messages(debate_id, created_at);
 
+-- 17. kicked_users (강퇴 유저 영구 기록 — 서버 재시작 후에도 유지)
+CREATE TABLE kicked_users (
+  debate_id UUID NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  kicked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (debate_id, user_id)
+);
+CREATE INDEX idx_kicked_users_debate ON kicked_users(debate_id);
+
 -- [ALTER] debates 테이블 채팅 모드 확장 (이미 테이블이 존재하므로 ALTER로 적용)
 -- ALTER TABLE debates ADD COLUMN chat_started_at TIMESTAMPTZ;
 -- ALTER TABLE debates DROP CONSTRAINT debates_status_check;

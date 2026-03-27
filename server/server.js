@@ -79,7 +79,7 @@ app.set('io', io);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/debates', debateRoutes);
 app.use('/api/arguments', argumentRoutes);
-app.use('/api/judgments', aiLimiter, judgmentRoutes);
+app.use('/api/judgments', judgmentRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);

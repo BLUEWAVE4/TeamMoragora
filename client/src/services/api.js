@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { supabase } from './supabase';
 
 const api = axios.create({
   baseURL: import.meta.env.DEV
@@ -8,10 +7,17 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// ===== 토큰 in-memory 캐싱 (AuthContext에서 단일 관리) =====
+let _cachedToken = null;
+
+// AuthContext에서 호출 — onAuthStateChange 구독을 한 곳에서 관리
+export function setAuthToken(token) {
+  _cachedToken = token;
+}
+
 api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+  if (_cachedToken) {
+    config.headers.Authorization = `Bearer ${_cachedToken}`;
   }
   return config;
 });
@@ -71,6 +77,11 @@ export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}
 export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
 
 // ===== 프로필 (Profiles) =====
+export const getMyProfile = () => api.get('/profiles/me');
+export const updateMyProfile = (data) => api.patch('/profiles/me', data);
+export const getMyDebates = () => api.get('/profiles/me/debates');
+export const getMyAnalysis = () => api.get('/profiles/me/analysis');
+export const getProfileById = (userId) => api.get(`/profiles/${userId}`);
 
 // ===== 피드백 (Feedbacks) =====
 export const submitFeedback = (data) => api.post('/feedbacks', data);
@@ -89,5 +100,9 @@ export const getAdminStats = () => api.get('/admin/stats');
 export const getAdminAI = () => api.get('/admin/ai');
 export const getAdminTrends = () => api.get('/admin/trends');
 export const getAdminAnalytics = () => api.get('/admin/analytics');
+
+// ===== 애널리틱스 =====
+export const trackPageViewApi = (data) => api.post('/analytics/page-view', data).catch(() => {});
+export const trackEventApi = (data) => api.post('/analytics/event', data).catch(() => {});
 
 export default api;

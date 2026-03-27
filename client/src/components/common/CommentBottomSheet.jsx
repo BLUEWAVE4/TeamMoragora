@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
-import { getComments, toggleCommentLike, deleteComment } from '../../services/api';
-import { supabase } from '../../services/supabase';
+import { getComments, toggleCommentLike, deleteComment, getMyProfile } from '../../services/api';
 import { resolveAvatar } from '../../utils/avatar';
 
 function formatCommentTime(iso) {
@@ -34,12 +33,11 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    supabase.from('profiles').select('avatar_url, gender').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (cancelled) return;
-        if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
-        if (data?.gender) setMyGender(data.gender);
-      });
+    getMyProfile().then((data) => {
+      if (cancelled) return;
+      if (data?.avatar_url) setMyAvatarUrl(data.avatar_url);
+      if (data?.gender) setMyGender(data.gender);
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [user]);
 

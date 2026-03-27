@@ -10,11 +10,13 @@ export function throttle(fn, delay) {
   };
 }
 
-// 검색/타이핑 등 입력 이벤트용 debounce
+// 검색/타이핑 등 입력 이벤트용 debounce (.cancel 지원)
 export function debounce(fn, delay) {
   let timeout;
-  return (...args) => {
+  const debounced = (...args) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => fn(...args), delay);
   };
+  debounced.cancel = () => clearTimeout(timeout);
+  return debounced;
 }

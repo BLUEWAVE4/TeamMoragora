@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
+import { getAllPublicDebates } from '../../services/api';
 import { resolveAvatar } from '../../utils/avatar';
 import { motion } from 'framer-motion';
 
@@ -11,13 +12,7 @@ export default function ChatLobbyList() {
 
   const fetchLobbies = async () => {
     try {
-      const { data } = await supabase
-        .from('debates')
-        .select('*, profiles!debates_creator_id_fkey(nickname, avatar_url, gender)')
-        .eq('mode', 'chat')
-        .in('status', ['waiting', 'both_joined'])
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const data = await getAllPublicDebates();
       setLobbies(data || []);
     } catch (e) {
       console.error(e);

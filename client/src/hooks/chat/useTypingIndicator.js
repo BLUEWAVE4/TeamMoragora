@@ -21,8 +21,8 @@ export default function useTypingIndicator(debateId, user, mySide) {
       setOpponentTyping(typing);
       if (side) setOpponentTypingSide(side);
       if (nickname) setOpponentTypingNickname(nickname);
+      clearTimeout(opponentTypingTimeout.current);
       if (typing) {
-        clearTimeout(opponentTypingTimeout.current);
         opponentTypingTimeout.current = setTimeout(() => setOpponentTyping(false), 3000);
       }
     };
@@ -48,12 +48,13 @@ export default function useTypingIndicator(debateId, user, mySide) {
     }, 1500);
   }, [debateId, user, mySide, emitTyping]);
 
-  // 타이핑 즉시 종료
+  // 타이핑 즉시 종료 (pending debounce도 취소)
   const stopTyping = useCallback(() => {
     if (!debateId || !user?.id) return;
+    emitTyping.cancel();
     clearTimeout(typingTimeout.current);
-    socket.emit('typing', { debateId, userId: user.id, typing: false });
-  }, [debateId, user]);
+    socket.emit('typing', { debateId, userId: user.id, typing: false, side: mySide });
+  }, [debateId, user, mySide, emitTyping]);
 
   return {
     opponentTyping,

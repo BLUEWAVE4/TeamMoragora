@@ -24,9 +24,9 @@ export default function MoragoraModal({
   cancelText = '아니오',
   onConfirm,
 }) {
-  if (!isOpen) return null;
-
   const isDark = useThemeStore(s => s.isDark);
+
+  if (!isOpen) return null;
 
   const isSingleButton = type === 'error' || type === 'info';
   const defaultConfirmText = isSingleButton ? '확인'

@@ -377,28 +377,22 @@ const [showInfo, setShowInfo] = useState(false);
     const fetchAllData = async () => {
       try {
         if (!profileData) setLoading(true);
-        const [pRes, { data: debates, error }] = await Promise.all([
+        const [profile, debates] = await Promise.all([
           api.get('/auth/me'),
-          supabase.from('debates')
-            .select(`id, topic, category, status, mode, creator_id, opponent_id, created_at, pro_side, con_side, verdicts!inner(id, ai_score_a, ai_score_b, final_score_a, final_score_b, winner_side, created_at)`)
-            .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
-            .in('status', ['completed', 'voting'])
-            .order('created_at', { ascending: false })
-            .limit(50),
+          api.get('/profiles/me/debates'),
         ]);
-        const profile = pRes.data || pRes;
-        setProfileData(profile);
-        setNewNickname(profile.nickname || '');
-        if (!profile.gender || !profile.age || !profile.nickname) {
-          setSetupNickname(profile.nickname || '');
-          setSetupGender(profile.gender || '');
-          setSetupAge(profile.age ? String(profile.age) : '');
+        const profileObj = profile.data || profile;
+        setProfileData(profileObj);
+        setNewNickname(profileObj.nickname || '');
+        if (!profileObj.gender || !profileObj.age || !profileObj.nickname) {
+          setSetupNickname(profileObj.nickname || '');
+          setSetupGender(profileObj.gender || '');
+          setSetupAge(profileObj.age ? String(profileObj.age) : '');
           setShowProfileSetup(true);
         }
-        if (error) throw error;
         setMyJudgments(debates || []);
         // 캐시 저장
-        sessionStorage.setItem(cacheKey, JSON.stringify({ profile, debates: debates || [] }));
+        sessionStorage.setItem(cacheKey, JSON.stringify({ profile: profileObj, debates: debates || [] }));
       } catch (error) {
         console.error('fetchAllData error:', error);
       } finally {
@@ -715,11 +709,7 @@ const [showInfo, setShowInfo] = useState(false);
             if (analysisData) return;
             setAnalysisLoading(true);
             try {
-              const { data } = await supabase.from('debates')
-                .select(`id, creator_id, verdicts!inner(ai_judgments(score_detail_a, score_detail_b))`)
-                .or(`creator_id.eq.${user.id},opponent_id.eq.${user.id}`)
-                .in('status', ['completed', 'voting'])
-                .limit(50);
+              const data = await api.get('/profiles/me/analysis');
               setAnalysisData(data || []);
             } catch {} finally { setAnalysisLoading(false); }
           }}
@@ -1131,7 +1121,7 @@ const [showInfo, setShowInfo] = useState(false);
           <button
             onClick={async () => {
               const url = buildAvatarUrl(user.id, profileData?.gender, avatarOptions);
-              await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+              await api.patch('/profiles/me', { avatar_url: url });
               setShowAvatarEdit(false);
               window.location.reload();
             }}
@@ -1198,10 +1188,7 @@ const [showInfo, setShowInfo] = useState(false);
                 if (setupGender && !profileData?.gender) updates.gender = setupGender;
                 if (setupAge && !profileData?.age) updates.age = parseInt(setupAge);
                 if (Object.keys(updates).length > 0) {
-                  await supabase.from('profiles').update(updates).eq('id', user.id);
-                  if (updates.nickname) {
-                    await supabase.auth.updateUser({ data: { nickname: updates.nickname, gender: updates.gender, age: updates.age } });
-                  }
+                  await api.patch('/profiles/me', updates);
                 }
                 setShowProfileSetup(false);
                 window.location.reload();

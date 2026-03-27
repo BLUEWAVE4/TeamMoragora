@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
-import { supabase } from '../../services/supabase';
-import { getDebate } from '../../services/api';
+import { getDebate, getMyProfile } from '../../services/api';
 import { getAvatarUrl, DEFAULT_AVATAR_ICON } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,9 +31,9 @@ export default function ChatLobby() {
     if (!debateId || !user) return;
     const load = async () => {
       try {
-        const [debateData, { data: profile }] = await Promise.all([
+        const [debateData, profile] = await Promise.all([
           getDebate(debateId),
-          supabase.from('profiles').select('nickname, avatar_url, gender').eq('id', user.id).single(),
+          getMyProfile(),
         ]);
         setDebate(debateData);
         setMyProfile(profile);
