@@ -51,31 +51,32 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 
 
-// ===== Rate Limiting =====
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
-});
-const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: { error: '인증 요청이 너무 많습니다. 1분 후 다시 시도해주세요.' },
-});
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 5,
-  message: { error: 'AI 요청 제한에 도달했습니다. 1분 후 다시 시도해주세요.' },
-});
-app.use('/api', globalLimiter);
+// ===== Rate Limiting (개발 중 임시 비활성화) =====
+// const isDev = env.PORT === 5000 || process.env.NODE_ENV === 'development';
+// const globalLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: isDev ? 3000 : 300,
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+// });
+// const authLimiter = rateLimit({
+//   windowMs: 60 * 1000,
+//   max: 10,
+//   message: { error: '인증 요청이 너무 많습니다. 1분 후 다시 시도해주세요.' },
+// });
+// const aiLimiter = rateLimit({
+//   windowMs: 60 * 1000,
+//   max: 5,
+//   message: { error: 'AI 요청 제한에 도달했습니다. 1분 후 다시 시도해주세요.' },
+// });
+// app.use('/api', globalLimiter);
 
 // io를 controller에서 접근 가능하도록 app에 연결
 app.set('io', io);
 
 // Routes
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/debates', debateRoutes);
 app.use('/api/arguments', argumentRoutes);
 app.use('/api/judgments', judgmentRoutes);
@@ -84,7 +85,7 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 app.use('/og', ogRoutes);
-app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/notifications', notificationRoutes);

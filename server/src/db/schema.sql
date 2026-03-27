@@ -261,6 +261,7 @@ CREATE INDEX idx_kicked_users_debate ON kicked_users(debate_id);
 
 -- [ALTER] debates 테이블 채팅 모드 확장 (이미 테이블이 존재하므로 ALTER로 적용)
 -- ALTER TABLE debates ADD COLUMN chat_started_at TIMESTAMPTZ;
+-- ALTER TABLE debates ADD COLUMN skip_cutoff TIMESTAMPTZ;
 -- ALTER TABLE debates DROP CONSTRAINT debates_status_check;
 -- ALTER TABLE debates ADD CONSTRAINT debates_status_check CHECK (status IN ('waiting', 'both_joined', 'arguing', 'chatting', 'judging', 'voting', 'completed'));
 -- ALTER TABLE debates DROP CONSTRAINT debates_mode_check;
