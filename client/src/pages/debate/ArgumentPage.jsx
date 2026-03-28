@@ -53,7 +53,7 @@ function SocratesTalking({ speed = null }) {
   }, [speed]);
 
   return (
-    <div className="w-9 h-9 rounded-full bg-[#D4AF37] flex-shrink-0 overflow-hidden relative">
+    <div className="w-9 h-9 rounded-full bg-[#1B2A4A] flex-shrink-0 overflow-hidden relative">
       {mouths.map((src, i) => (
         <img
           key={i}
@@ -105,11 +105,13 @@ function TypeWriter({ text, speed = 30, className = '', erasing = false, onErase
       let i = text.length;
       setDisplayed(text);
       setDone(false);
+      const eraseSpeed = Math.max(speed / 2, 20);
       const timer = setInterval(() => {
-        i--;
+        // 3글자씩 빠르게 지우기 (자연스러운 삭제감)
+        i = Math.max(0, i - 3);
         setDisplayed(text.slice(0, i));
         if (i <= 0) { clearInterval(timer); setDone(true); onEraseComplete?.(); }
-      }, speed / 2);
+      }, eraseSpeed);
       return () => clearInterval(timer);
     }
     // 타이핑 모드
@@ -335,7 +337,7 @@ export default function ArgumentPage() {
   const { modalState, showModal, closeModal } = useModalState()
   const activeContent = r1Content || r2Content
   const activeRoundNum = r1Content ? 1 : 2
-  const { feedback, isLoading: feedbackLoading, remaining, requestFeedback } = useSocraticFeedback({
+  const { feedback, isLoading: feedbackLoading, requestFeedback, hasContentChanged } = useSocraticFeedback({
     topic: debate?.topic || '',
     round: activeRoundNum,
     side: user?.id === debate?.creator_id ? 'A' : 'B',
@@ -356,7 +358,7 @@ export default function ArgumentPage() {
 
   const handleIdleEraseComplete = () => {
     setSocIdleErase(false);
-    requestFeedback(activeContent);
+    requestFeedback(activeContent, otherR1?.content);
   }
 
   const handleLoadingEraseComplete = () => {
@@ -367,26 +369,34 @@ export default function ArgumentPage() {
   }
 
   const handleSocrates = () => {
-    if (feedbackLoading || socIdleErase || socLoadingErase) return;
+    if (feedbackLoading || socIdleErase || socLoadingErase || socDismissing || socDismissedErasing) return;
     if (!activeContent || activeContent.trim().length < 10) return;
 
-    // 내용 변동 없이 재클릭 → 지우기 애니메이션
-    if (feedback && remaining <= 0) return;
     if (feedback) {
       setSocDismissing(true);
       return;
     }
 
-    if (remaining <= 0) return;
-    // 대기 상태에서 클릭 → "부르시겠습니까?" 지우기 먼저
     setSocIdleErase(true);
   }
 
+  const [socDismissedErasing, setSocDismissedErasing] = useState(false);
+
   const handleEraseComplete = () => {
     setSocDismissing(false);
-    setSocDismissed(true);
-    setTimeout(() => setSocDismissed(false), 4000);
+    if (hasContentChanged(activeContent)) {
+      requestFeedback(activeContent, otherR1?.content);
+    } else {
+      setSocDismissed(true);
+      setTimeout(() => setSocDismissedErasing(true), 4000);
+    }
   }
+
+  const handleDismissedEraseComplete = () => {
+    setSocDismissedErasing(false);
+    setSocDismissed(false);
+  }
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -617,12 +627,12 @@ export default function ArgumentPage() {
 
       {/* 소크라테스 말풍선 — 탭바 위 */}
       <AnimatePresence>
-        {activeRound > 0 && activeContent.trim().length >= 10 && remaining > 0 && (
+        {activeRound > 0 && activeContent.trim().length >= 10 && (
           <motion.div
             initial={{ y: 40, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 40, opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+            exit={{ y: [0, -20, 80], opacity: [1, 1, 0], scale: [1, 1.02, 0.9] }}
+            transition={{ exit: { duration: 0.6, ease: 'easeInOut' }, type: 'spring', damping: 22, stiffness: 280 }}
             className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
           >
             <button
@@ -632,22 +642,13 @@ export default function ArgumentPage() {
                 !feedbackLoading && !socDismissing ? 'active:scale-[0.95] cursor-pointer' : ''
               }`}
             >
-              {/* 아바타 + 세로 게이지 */}
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
                 <SocratesTalking speed={
                   feedbackLoading ? 'slow'
                   : socratesTalking ? 'fast'
                   : null
                 } />
-                <div className="flex flex-col-reverse gap-[2px]">
-                  {[0, 1, 2].map(i => (
-                    <div
-                      key={i}
-                      className="w-[4px] h-[6px] rounded-[1px]"
-                      style={{ backgroundColor: i < remaining ? '#D4AF37' : 'rgba(255,255,255,0.1)' }}
-                    />
-                  ))}
-                </div>
+                <span className="text-[8px] font-bold text-[#D4AF37]">소크라테스</span>
               </div>
 
               <div className="flex-1 min-w-0">
@@ -666,15 +667,24 @@ export default function ArgumentPage() {
                   <TypeWriter
                     key="erasing"
                     text={feedback.questions[0]}
-                    className="text-[13px] leading-[1.5] text-white/80 font-bold line-clamp-2"
+                    className="text-[13px] leading-[1.5] text-white/80 font-bold"
                     speed={30}
                     erasing
                     onEraseComplete={handleEraseComplete}
                   />
+                ) : socDismissedErasing ? (
+                  <TypeWriter
+                    key="dismissed-erase"
+                    text="주장을 더 작성한 뒤 다시 불러주게."
+                    className="text-[13px] font-bold text-white/50"
+                    speed={35}
+                    erasing
+                    onEraseComplete={handleDismissedEraseComplete}
+                  />
                 ) : socDismissed ? (
                   <TypeWriter text="주장을 더 작성한 뒤 다시 불러주게." className="text-[13px] font-bold text-white/50" speed={35} />
                 ) : feedback ? (
-                  <TypeWriter key={feedback.questions[0]} text={feedback.questions[0]} className="text-[13px] leading-[1.5] text-white/80 font-bold line-clamp-2" speed={30} />
+                  <TypeWriter key={feedback.questions[0]} text={feedback.questions[0]} className="text-[13px] leading-[1.5] text-white/80 font-bold" speed={30} />
                 ) : socIdleErase ? (
                   <TypeWriter
                     key="idle-erase"

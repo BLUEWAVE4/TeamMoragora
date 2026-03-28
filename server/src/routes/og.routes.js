@@ -19,7 +19,7 @@ router.get('/invite/:inviteCode', async (req, res) => {
     const description = `${nickname} 님께서 ${topic}(으)로 논쟁을 신청하셨습니다.`;
 
     const clientUrl = env.CLIENT_URL;
-    const ogImage = `${clientUrl}/og-image.png`;
+    const ogImage = `${clientUrl}/ogCard2.png`;
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(`<!DOCTYPE html>
