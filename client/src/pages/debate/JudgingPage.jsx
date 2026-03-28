@@ -195,7 +195,7 @@ const VoteStatusPanel = ({ deadline, totalMs, totalDays, voteCount }) => {
     </div>
   );
 };
-const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) => {
+const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying, hideScore }) => {
   const judge = AI_JUDGES[judgeKey];
   const isDone = status === 'done';
   const isFailed = status === 'failed';
@@ -230,12 +230,14 @@ const ModelCard = ({ judgeKey, status, score, onClick, onRetry, isRetrying }) =>
         <span className="text-sm font-sans font-bold text-white mt-2">{judge.name}</span>
         <p className="text-[10px] font-sans text-white/40 truncate w-full">{judge.desc}</p>
         <div className="mt-2">
-          {isDone && score ? (
+          {isDone && score && !hideScore ? (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-[12px] font-black font-sans tracking-wider">
               <span className={displayA >= displayB ? 'text-emerald-400' : 'text-emerald-400/40'}>{String(displayA).padStart(2, '0')}</span>
               <span className="text-white/30">:</span>
               <span className={displayB >= displayA ? 'text-red-400' : 'text-red-400/40'}>{String(displayB).padStart(2, '0')}</span>
             </span>
+          ) : isDone && hideScore ? (
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-[10px] font-bold text-gold/60">처리완료</span>
           ) : isRetrying || isActive ? (
             <span className="text-[10px] text-white/40 font-medium h-4 flex items-center">
               {analysisMsg}
@@ -443,9 +445,9 @@ export default function JudgingPage() {
             </p>
             {(proSide || conSide) && (
               <div className="flex items-center gap-2 text-xs font-sans font-bold mt-1">
-                <span className="text-emerald-400">{proSide || '찬성'}</span>
+                <span className="text-emerald-400">{proSide || 'A측'}</span>
                 <span className="text-white/30">vs</span>
-                <span className="text-red-300">{conSide || '반대'}</span>
+                <span className="text-red-300">{conSide || 'B측'}</span>
               </div>
             )}
           </div>
@@ -458,6 +460,7 @@ export default function JudgingPage() {
                 status={judgeStatus[key]}
                 score={judgeScores[key]}
                 isRetrying={retrying[key]}
+                hideScore={debateInfo?.purpose === '합의' || debateInfo?.purpose === 'consensus'}
                 onClick={() => verdictRef.current?.scrollToJudge(key)}
                 onRetry={async () => {
                   setRetrying(prev => ({ ...prev, [key]: true }));
@@ -478,15 +481,7 @@ export default function JudgingPage() {
               />
             ))}
           </div>
-          {/* ===== 투표 상태 패널 ===== */}
-          {!isAllDone && (
-            <VoteStatusPanel
-              deadline={voteDeadline}
-              totalMs={voteTotalMs}
-              totalDays={voteTotalDays}
-              voteCount={displayCount}
-            />
-          )}
+          {/* ===== 투표 상태 패널 (판결 완료 후에만 표시) ===== */}
           {/* ===== 양측 주장 미리보기 (chat 모드는 표시 안 함) ===== */}
           {!isAllDone && !isChat && debateArgs.length > 0 && (
             <div className="mt-8 shrink-0 space-y-2">
@@ -495,7 +490,7 @@ export default function JudgingPage() {
                   <div className="flex items-center gap-1.5 mb-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-[11px] font-bold text-emerald-400">
-                      찬성{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
+                      A측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
                     </span>
                   </div>
                   <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>
@@ -506,7 +501,7 @@ export default function JudgingPage() {
                   <div className="flex items-center gap-1.5 mb-2">
                     <span className="w-2 h-2 rounded-full bg-red-500" />
                     <span className="text-[11px] font-bold text-red-400">
-                      반대{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
+                      B측{arg.user?.nickname ? ` : ${arg.user.nickname}` : ''}
                     </span>
                   </div>
                   <p className="text-[12px] text-white/50 leading-[1.7] line-clamp-2">{arg.content}</p>

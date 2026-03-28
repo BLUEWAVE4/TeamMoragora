@@ -94,10 +94,8 @@ const PROFANITY_PATTERNS = [
   /wtf|stfu/i,
 ];
 
-// 초성 조합 패턴 (노이즈 제거 후 초성 검사)
-const CHOSUNG_PATTERNS = [
-  /ㅅㅂ/, /ㅄ/, /ㅆㅂ/,
-];
+// 초성 조합 패턴 — 오탐 과다로 비활성화 (소비, 계속발전 등이 ㅅㅂ로 매칭)
+const CHOSUNG_PATTERNS = [];
 
 // 오탐 방지 허용 목록
 const FALSE_POSITIVE_WORDS = [

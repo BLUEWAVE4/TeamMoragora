@@ -30,38 +30,76 @@ function getSocratesMouths() {
   return _socratesMouths;
 }
 
+// 눈 깜빡임용 아바타 (눈감음 + 눈뜸)
+let _socratesBlink = null;
+function getSocratesBlink() {
+  if (!_socratesBlink) {
+    _socratesBlink = [
+      createAvatar(avataaars, { ...SOCRATES_BASE, eyes: ['closed'], mouth: ['serious'] }).toDataUri(),
+      createAvatar(avataaars, { ...SOCRATES_BASE, eyes: ['default'], mouth: ['serious'] }).toDataUri(),
+    ];
+  }
+  return _socratesBlink;
+}
+
 // 불규칙 패턴: 0=닫힌, 1=보통, 2=벌림, 3=크게벌림
 const TALK_PATTERN = [0, 1, 2, 3, 2, 1, 0, 2, 3, 1, 0, 1, 3, 2, 0, 3];
+// 깜빡임 패턴: 0=눈감음, 1=눈뜸 (대부분 감고 있다가 가끔 깜빡)
+// 깜빡임: 눈뜸 2초 → 감음 0.15초 → 뜸 3초 → 감음 0.15초 ...
+const BLINK_TIMINGS = [150, 2000, 150, 3000, 150, 1500, 150, 2500];
 
-// speed: 'slow'=초당3, 'fast'=초당8
-function SocratesTalking({ speed = null }) {
+// speed: 'slow'=초당3, 'fast'=초당8, blink: 눈 깜빡임 모드
+function SocratesTalking({ speed = null, blink = false }) {
   const mouths = getSocratesMouths();
+  const blinkFrames = getSocratesBlink();
   const [frameIdx, setFrameIdx] = React.useState(0);
+  const [blinkIdx, setBlinkIdx] = React.useState(0);
 
+  // 입 애니메이션
   React.useEffect(() => {
     if (!speed) { setFrameIdx(0); return; }
-    const interval = speed === 'slow' ? 333 : 125; // 3fps or 8fps
+    const interval = speed === 'slow' ? 333 : 125;
     let i = 0;
     let timer;
     const next = () => {
       i = (i + 1) % TALK_PATTERN.length;
       setFrameIdx(TALK_PATTERN[i]);
-      timer = setTimeout(next, interval + (Math.random() * 40 - 20)); // ±20ms 불규칙
+      timer = setTimeout(next, interval + (Math.random() * 40 - 20));
     };
     timer = setTimeout(next, interval);
     return () => clearTimeout(timer);
   }, [speed]);
 
+  // 눈 깜빡임 애니메이션
+  React.useEffect(() => {
+    if (!blink) { setBlinkIdx(0); return; }
+    let i = 0;
+    let timer;
+    const next = () => {
+      i = (i + 1) % BLINK_TIMINGS.length;
+      setBlinkIdx(i % 2); // 0=감음, 1=뜸 교대
+      timer = setTimeout(next, BLINK_TIMINGS[i]);
+    };
+    timer = setTimeout(next, BLINK_TIMINGS[0]);
+    return () => clearTimeout(timer);
+  }, [blink]);
+
+  if (blink) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-[#1B2A4A] flex-shrink-0 overflow-hidden relative">
+        {blinkFrames.map((src, i) => (
+          <img key={i} src={src} alt="" className="absolute inset-0 w-full h-full"
+            style={{ zIndex: i === blinkIdx ? 1 : 0 }} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="w-9 h-9 rounded-full bg-[#1B2A4A] flex-shrink-0 overflow-hidden relative">
       {mouths.map((src, i) => (
-        <img
-          key={i}
-          src={src}
-          alt=""
-          className="absolute inset-0 w-full h-full"
-          style={{ zIndex: i === frameIdx ? 1 : 0 }}
-        />
+        <img key={i} src={src} alt="" className="absolute inset-0 w-full h-full"
+          style={{ zIndex: i === frameIdx ? 1 : 0 }} />
       ))}
     </div>
   );
@@ -643,11 +681,10 @@ export default function ArgumentPage() {
               }`}
             >
               <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                <SocratesTalking speed={
-                  feedbackLoading ? 'slow'
-                  : socratesTalking ? 'fast'
-                  : null
-                } />
+                <SocratesTalking
+                  speed={socratesTalking ? 'fast' : null}
+                  blink={feedbackLoading}
+                />
                 <span className="text-[8px] font-bold text-[#D4AF37]">소크라테스</span>
               </div>
               <div className="flex flex-col-reverse gap-[2px] flex-shrink-0">

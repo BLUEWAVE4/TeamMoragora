@@ -121,12 +121,12 @@ async function saveJudgmentImmediately(verdictId, judgment) {
 // ===== 3-model 병렬 판결 (결과 즉시 저장) =====
 
 export async function runParallelJudgment(debateContext, verdictId) {
-  const MODELS = ['GPT-4o', 'Gemini', 'Claude'];
+  const MODELS = ['GPT-o3', 'Gemini', 'Claude'];
   const judgments = [];
   const failedModels = [];
 
   const tasks = [
-    callWithRetry(() => judgeWithGPT(debateContext), 'GPT-4o'),
+    callWithRetry(() => judgeWithGPT(debateContext), 'GPT-o3'),
     callWithRetry(() => judgeWithGemini(debateContext), 'Gemini'),
     callWithRetry(() => judgeWithClaude(debateContext), 'Claude'),
   ];
@@ -144,7 +144,7 @@ export async function runParallelJudgment(debateContext, verdictId) {
         failedModels.push(MODELS[i]);
         // 실패 기록 저장
         if (verdictId) {
-          const modelMap = { 'GPT-4o': 'gpt-4o', 'Gemini': 'gemini-2.5-flash', 'Claude': 'claude-sonnet' };
+          const modelMap = { 'GPT-o3': 'o3', 'Gemini': 'gemini-2.5-flash', 'Claude': 'claude-sonnet' };
           try {
             await supabaseAdmin.from('ai_judgments').insert({
               verdict_id: verdictId,
@@ -193,7 +193,7 @@ export async function runParallelJudgment(debateContext, verdictId) {
 // ===== 단일 모델 재판결 =====
 
 const MODEL_FN_MAP = {
-  gpt: { fn: judgeWithGPT, name: 'GPT-4o', aiModel: 'gpt-4o' },
+  gpt: { fn: judgeWithGPT, name: 'GPT-o3', aiModel: 'o3' },
   gemini: { fn: judgeWithGemini, name: 'Gemini', aiModel: 'gemini-2.5-flash' },
   claude: { fn: judgeWithClaude, name: 'Claude', aiModel: 'claude-sonnet' },
 };

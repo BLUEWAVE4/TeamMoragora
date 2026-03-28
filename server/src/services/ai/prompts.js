@@ -6,8 +6,11 @@
 
 const PURPOSE_MAP = {
   battle: '승부 — 논리적 우열을 가려 승패를 판정합니다.',
+  '승부': '승부 — 논리적 우열을 가려 승패를 판정합니다.',
   consensus: '합의 — 양측의 공통 접점과 합리적 결론을 도출합니다.',
+  '합의': '합의 — 양측의 공통 접점과 합리적 결론을 도출합니다.',
   analysis: '분석 — 양측 논리를 객관적으로 정리하고 비교합니다.',
+  '분석': '분석 — 양측 논리를 객관적으로 정리하고 비교합니다.',
 };
 
 // 기준별 배점 조정 (5항목 합계 = 100)
@@ -256,11 +259,10 @@ const ANALYSIS_GUIDELINES = `
 6. score_a와 score_b는 동일하게 부여합니다 (분석이므로 균등).
 
 ## 분석 구조
-각 주장에 대해:
-1. 논증 구조 파악 (전제 → 근거 → 결론)
-2. 잘한 점 — 어떤 부분이 논리적으로 탄탄한지 구체적 인용
-3. 보완점 — 어떤 오류가 있는지 + **"이렇게 고치면 좋습니다"** 예시 문장 제공
-4. 성장 포인트 — 다음 논쟁에서 활용할 수 있는 논리 전략 1가지 추천
+5개 평가 항목(논리/근거/설득력/일관성/표현)에 대해 각각:
+1. A측과 B측이 해당 항목에서 어떤 강점/약점을 보였는지 구체적 피드백
+2. "이렇게 고치면 좋습니다"라는 개선 예시를 반드시 포함
+3. 논리학 개념 활용 (귀납/연역, 허수아비 논증, 성급한 일반화, 감정 호소 등)
 
 ## 응답 형식 (반드시 아래 JSON만 출력, JSON 외 텍스트 금지)
 {
@@ -271,20 +273,25 @@ const ANALYSIS_GUIDELINES = `
   "score_detail_b": { "logic": 10, "evidence": 10, "persuasion": 10, "consistency": 10, "expression": 10 },
   "verdict_text": "양측 주장의 논리 구조를 분석한 종합 코멘트를 4~6문장으로 작성. 각 주장의 핵심 강점과 성장 포인트를 요약합니다.",
   "verdict_sections": [
-    { "criterion": "side_a_strength", "text": "A측 주장의 잘한 점 — 구체적 문장 인용과 함께 어떤 논리 기법이 효과적이었는지 설명" },
-    { "criterion": "side_a_improve", "text": "A측 보완점 — 논리적 허점 지적 + '이렇게 고치면 좋습니다' 예시 문장 제공" },
-    { "criterion": "side_b_strength", "text": "B측 주장의 잘한 점 — 구체적 문장 인용과 함께 어떤 논리 기법이 효과적이었는지 설명" },
-    { "criterion": "side_b_improve", "text": "B측 보완점 — 논리적 허점 지적 + '이렇게 고치면 좋습니다' 예시 문장 제공" },
-    { "criterion": "growth_tip", "text": "양측 모두에게 — 다음 논쟁에서 활용할 수 있는 논리 전략과 구체적 팁" }
+    { "criterion": "logic", "text": "A측: ~한 논증 구조가 효과적. B측: ~한 부분에서 논리 비약. 개선: '~이므로 ~이다'처럼 전제→결론 연결을 명확히 하면 좋겠습니다." },
+    { "criterion": "evidence", "text": "A측: ~한 구체적 사례 제시가 좋았음. B측: 근거가 주관적 의견에 의존. 개선: '~에 따르면' 같은 출처 기반 근거를 추가하세요." },
+    { "criterion": "persuasion", "text": "A측: ~한 비유가 효과적. B측: 감정 호소에 치우침. 개선: 감정과 논리를 균형있게 섞어보세요." },
+    { "criterion": "consistency", "text": "A측: 주장과 반박이 일관됨. B측: 1라운드와 2라운드에서 ~한 모순. 개선: 핵심 논지를 먼저 정하고 일관되게 전개하세요." },
+    { "criterion": "expression", "text": "A측: 간결하고 명확함. B측: 문장이 길어 핵심 전달이 약함. 개선: 한 문장에 하나의 논점만 담아보세요." }
   ],
-  "confidence": 0.50
-}`;
+  "confidence": 0.85
+}
+
+confidence 기준 (분석 모드):
+- 0.85~1.00: 양측 모두 충실한 주장을 제출하여 분석이 풍부함
+- 0.70~0.84: 한쪽이 다소 부실하지만 분석 가능
+- 0.55~0.69: 양측 모두 주장이 빈약하여 분석이 제한적`;
 
 // ========== System Prompt 빌더 ==========
 
 export function buildSystemPrompt(judge, lens = 'general', purpose = 'battle') {
   const CHARACTER_MAP = {
-    'gpt-4o': JUDGE_G_CHARACTER,
+    'o3': JUDGE_G_CHARACTER,
     'gemini-2.5-flash': JUDGE_M_CHARACTER,
     'claude-sonnet': JUDGE_C_CHARACTER,
     'grok-3-mini': JUDGE_GROK_CHARACTER,
@@ -293,10 +300,10 @@ export function buildSystemPrompt(judge, lens = 'general', purpose = 'battle') {
   const character = CHARACTER_MAP[judge] || JUDGE_G_CHARACTER;
 
   // 합의/분석 모드는 별도 가이드라인 사용
-  if (purpose === 'consensus') {
+  if (purpose === 'consensus' || purpose === '합의') {
     return `${character}\n${CONSENSUS_GUIDELINES}`;
   }
-  if (purpose === 'analysis') {
+  if (purpose === 'analysis' || purpose === '분석') {
     return `${character}\n${ANALYSIS_GUIDELINES}`;
   }
 
@@ -363,7 +370,7 @@ ${rebuttalB || '(반박 미제출)'}
 // ========== 하위 호환: 기존 단일 프롬프트 (fallback) ==========
 
 export function buildJudgmentPrompt(debateContext) {
-  return `${buildSystemPrompt('gpt-4o')}\n\n${buildUserPrompt(debateContext)}`;
+  return `${buildSystemPrompt('o3')}\n\n${buildUserPrompt(debateContext)}`;
 }
 
 // ========== Solo 모드: AI 반대 주장 생성 ==========

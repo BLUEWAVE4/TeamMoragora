@@ -4,22 +4,21 @@ import { callAI } from './aiWrapper.js';
 import { AI_TEMPERATURE_JUDGE } from '../../config/constants.js';
 
 export async function judgeWithGPT(debateContext) {
-  const systemPrompt = buildSystemPrompt('gpt-4o', debateContext.lens, debateContext.purpose);
+  const systemPrompt = buildSystemPrompt('o3', debateContext.lens, debateContext.purpose);
   const userPrompt = buildUserPrompt(debateContext);
 
   const parsed = await callAI(
-    'GPT-4o',
+    'GPT-o3',
     () => openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'o3',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' },
-      temperature: AI_TEMPERATURE_JUDGE,
     }),
     (res) => res.choices[0].message.content,
   );
 
-  return { ai_model: 'gpt-4o', ...parsed };
+  return { ai_model: 'o3', ...parsed };
 }

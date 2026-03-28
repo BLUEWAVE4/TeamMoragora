@@ -33,6 +33,8 @@ export const AI_JUDGES = {
 // 서버 ai_model 값 → UI key 매핑
 export const MODEL_MAP = {
   'gpt-4o': 'gpt',
+  'gpt-4.1': 'gpt',
+  'o3': 'gpt',
   'gemini-2.5-flash': 'gemini',
   'gemini-2.0-flash': 'gemini',
   'gemini': 'gemini',

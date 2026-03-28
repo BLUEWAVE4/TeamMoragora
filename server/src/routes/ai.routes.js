@@ -118,6 +118,9 @@ JSON 형식:
 
 });
 
+// ===== 소크라테스 반론 캐시 (서버 메모리) =====
+const socraticCache = new Map();
+
 // ===== 산파술 피드백: 작성 중인 주장에 대한 소크라테스 질문 =====
 router.post('/socratic-feedback', async (req, res) => {
   const { topic, content, round, side, opponentArg } = req.body;
@@ -137,29 +140,35 @@ router.post('/socratic-feedback', async (req, res) => {
   try {
     const sideLabel = side === 'A' ? '찬성' : '반대';
 
-    // === 2단계: 4.1 반대측 5개 캐시 + mini 리믹스 ===
+    // === 2단계: o3 반대측 5개 캐시 + mini 리믹스 ===
     const topicContext = round === 1
       ? `논쟁: ${topic}\n사용자는 ${sideLabel}측이다.`
       : `논쟁: ${topic}\n상대(${side === 'A' ? '반대' : '찬성'}측) 주장: "${opponentArg || ''}"\n사용자는 ${sideLabel}측이다.`;
 
-    // Step 1: 4.1이 반대측 질문 5개 생성
-    const cached = await callAI(
-      'GPT-4.1 (S1:반론5개)',
-      () => openai.chat.completions.create({
-        model: 'gpt-4.1',
-        messages: [
-          { role: 'system', content: `소크라테스처럼 질문하라. 한국어, 자연스럽게.
+    // Step 1: o3 반대측 질문 5개 (서버 캐시)
+    const cacheKey = `${topic}:${side}:${round}`;
+    let cached = socraticCache.get(cacheKey);
+
+    if (!cached) {
+      cached = await callAI(
+        'GPT-o3 (S1:반론5개)',
+        () => openai.chat.completions.create({
+          model: 'o3',
+          messages: [
+            { role: 'system', content: `소크라테스처럼 질문하라. 한국어, 자연스럽게.
 사용자의 반대측 입장에서, 사용자가 가장 대답하기 어려운 핵심 반론 5개를 질문 형태로 만들어라.
 각 질문은 서로 다른 관점/각도에서 나와야 한다. 중복 금지.
 
 금지: "왜?", "정의는?", 추상적 질문
 JSON. { "questions": ["q1", "q2", "q3", "q4", "q5"] }` },
-          { role: 'user', content: topicContext },
-        ],
-        response_format: { type: 'json_object' }, temperature: 0.7,
-      }),
-      (r) => r.choices[0].message.content,
-    );
+            { role: 'user', content: topicContext },
+          ],
+          response_format: { type: 'json_object' },
+        }),
+        (r) => r.choices[0].message.content,
+      );
+      socraticCache.set(cacheKey, cached);
+    }
 
     // Step 2: mini가 사용자 작성 내용 기반 리믹스
     const remixed = await callAI(

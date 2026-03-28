@@ -705,6 +705,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
 
               {(currentJudge.verdict_text || currentJudge.verdict_sections?.length > 0) && (
                 <>
+                  {!isConsensus && (
                   <div className="flex gap-1 bg-primary/5 rounded-lg p-0.5 mb-3 border border-gold/10">
                     <button
                       onClick={() => setVerdictView('summary')}
@@ -719,6 +720,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       }`}
                     >상세 보기</button>
                   </div>
+                  )}
 
                   {verdictView === 'summary' ? (
                     <div className="text-[13px] leading-[1.8] text-primary/70 p-4 bg-primary/[0.03] rounded-xl border border-gold/10 space-y-2">
@@ -746,7 +748,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                               >
                                 {DETAIL_LABELS[sec.criterion] || sec.criterion}
                               </span>
-                              {currentJudge.score_detail_a?.[sec.criterion] != null && (
+                              {!isConsensus && !isAnalysis && currentJudge.score_detail_a?.[sec.criterion] != null && (
                                 <span className="text-[10px] font-bold">
                                   <span className="text-emerald-600">{currentJudge.score_detail_a[sec.criterion]}</span>
                                   <span className="text-primary/25 mx-0.5">:</span>
