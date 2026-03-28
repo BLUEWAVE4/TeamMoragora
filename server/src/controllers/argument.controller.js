@@ -206,11 +206,19 @@ export async function generateSoloArgument(req, res, next) {
     const latestA = aArgs.find(a => (a.round || 1) === nextRound);
     if (!latestA) throw new ValidationError('A측 주장이 먼저 필요합니다.');
 
-    // AI 반대 주장 생성 (이전 주장 컨텍스트 포함)
+    // 이전 라운드 맥락 구성 (R2 반박 시 사용)
+    const previousArgs = [
+      ...(aArgs || []).map(a => ({ round: a.round || 1, side: 'A', content: a.content })),
+      ...(bArgs || []).map(a => ({ round: a.round || 1, side: 'B', content: a.content })),
+    ].sort((a, b) => a.round - b.round);
+
+    // AI B측 생성: R1=독립 주장, R2=반박
     const aiResult = await generateCounterArgument({
       topic: debate.topic,
       category: debate.category,
       sideA_argument: latestA.content,
+      round: nextRound,
+      previousArgs: nextRound >= 2 ? previousArgs : [],
     });
 
     // B측으로 저장

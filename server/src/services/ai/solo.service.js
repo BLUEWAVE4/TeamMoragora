@@ -6,18 +6,19 @@ import { buildCounterArgumentPrompt } from './prompts.js';
 import { callAI } from './aiWrapper.js';
 import { AI_TEMPERATURE_SOLO, ARGUMENT_MIN_LENGTH } from '../../config/constants.js';
 
-export async function generateCounterArgument({ topic, category, sideA_argument }) {
-  const prompt = buildCounterArgumentPrompt({ topic, category, sideA_argument });
+export async function generateCounterArgument({ topic, category, sideA_argument, round = 1, previousArgs = [] }) {
+  const prompt = buildCounterArgumentPrompt({ topic, category, sideA_argument, round, previousArgs });
+
+  const systemMsg = round === 1
+    ? '당신은 논쟁에서 반대 측 입장을 전개하는 AI입니다. A측을 직접 반박하지 않고, B측만의 독립적인 주장을 작성합니다. 반드시 JSON 형식으로만 응답하세요.'
+    : '당신은 논쟁에서 반대 측 반박을 작성하는 AI입니다. A측 주장의 허점을 논리적으로 반박하고 B측 입장을 보강합니다. 반드시 JSON 형식으로만 응답하세요.';
 
   const parsed = await callAI(
     'GPT-4o-mini (Solo)',
     () => openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        {
-          role: 'system',
-          content: '당신은 논쟁에서 반대 측 주장을 생성하는 AI입니다. 논리적이고 설득력 있는 반대 주장을 작성합니다. 반드시 JSON 형식으로만 응답하세요.',
-        },
+        { role: 'system', content: systemMsg },
         { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },

@@ -3,16 +3,73 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getArguments, submitArgument, generateSoloArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { CircleCheck, CircleDot, Circle } from 'lucide-react'
+import { createAvatar } from '@dicebear/core'
+import { avataaars } from '@dicebear/collection'
+
+const SOCRATES_BASE = {
+  top: ['sides'],
+  hairColor: ['e8e1e1'],
+  skinColor: ['ffdbb4'],
+  facialHair: ['beardMajestic'],
+  facialHairColor: ['e8e1e1'],
+  facialHairProbability: 100,
+  eyes: ['closed'],
+  eyebrows: ['unibrowNatural'],
+  clothing: ['shirtVNeck'],
+  clothesColor: ['929598'],
+  accessoriesProbability: 0,
+};
+
+let _socratesMouths = null;
+function getSocratesMouths() {
+  if (!_socratesMouths) {
+    _socratesMouths = ['serious', 'default', 'twinkle', 'smile'].map(m =>
+      createAvatar(avataaars, { ...SOCRATES_BASE, mouth: [m] }).toDataUri()
+    );
+  }
+  return _socratesMouths;
+}
+
+// 불규칙 패턴: 0=닫힌, 1=보통, 2=벌림, 3=크게벌림
+const TALK_PATTERN = [0, 1, 2, 3, 2, 1, 0, 2, 3, 1, 0, 1, 3, 2, 0, 3];
+
+// speed: 'slow'=초당3, 'fast'=초당8
+function SocratesTalking({ speed = null }) {
+  const mouths = getSocratesMouths();
+  const [frameIdx, setFrameIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!speed) { setFrameIdx(0); return; }
+    const interval = speed === 'slow' ? 333 : 125; // 3fps or 8fps
+    let i = 0;
+    let timer;
+    const next = () => {
+      i = (i + 1) % TALK_PATTERN.length;
+      setFrameIdx(TALK_PATTERN[i]);
+      timer = setTimeout(next, interval + (Math.random() * 40 - 20)); // ±20ms 불규칙
+    };
+    timer = setTimeout(next, interval);
+    return () => clearTimeout(timer);
+  }, [speed]);
+
+  return (
+    <div className="w-9 h-9 rounded-full bg-[#D4AF37] flex-shrink-0 overflow-hidden relative">
+      {mouths.map((src, i) => (
+        <img
+          key={i}
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ zIndex: i === frameIdx ? 1 : 0 }}
+        />
+      ))}
+    </div>
+  );
+}
+import { AnimatePresence, motion } from 'framer-motion'
 import MoragoraModal from '../../components/common/MoragoraModal'
 import useModalState from '../../hooks/useModalState'
-
-const labelMap = {
-  battle: '승부', consensus: '합의', analysis: '분석',
-  logic: '논리', emotion: '감정', practical: '현실', ethics: '윤리', general: '일반',
-  society: '사회', technology: '기술', politics: '정치', philosophy: '철학',
-  daily: '일상', culture: '문화', sports: '스포츠', entertainment: '연예',
-}
-const toKor = (v) => labelMap[v] || v
+import useSocraticFeedback from '../../hooks/useSocraticFeedback'
 
 const MAX_CHAR_R1 = 2000
 const MAX_CHAR_R2 = 300
@@ -34,6 +91,44 @@ function JusticeBadge() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── 타이핑 애니메이션 (클로드 스타일) ──
+function TypeWriter({ text, speed = 30, className = '', erasing = false, onEraseComplete }) {
+  const [displayed, setDisplayed] = React.useState('');
+  const [done, setDone] = React.useState(false);
+
+  React.useEffect(() => {
+    if (erasing) {
+      // 지우기 모드: 현재 text를 한 글자씩 삭제
+      let i = text.length;
+      setDisplayed(text);
+      setDone(false);
+      const timer = setInterval(() => {
+        i--;
+        setDisplayed(text.slice(0, i));
+        if (i <= 0) { clearInterval(timer); setDone(true); onEraseComplete?.(); }
+      }, speed / 2);
+      return () => clearInterval(timer);
+    }
+    // 타이핑 모드
+    setDisplayed('');
+    setDone(false);
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) { clearInterval(timer); setDone(true); }
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed, erasing]);
+
+  return (
+    <span className={className}>
+      {displayed}
+      {!done && <span className="inline-block w-[2px] h-[14px] bg-current ml-[1px] align-middle animate-pulse" />}
+    </span>
   );
 }
 
@@ -238,6 +333,60 @@ export default function ArgumentPage() {
   const [r2Content, setR2Content] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { modalState, showModal, closeModal } = useModalState()
+  const activeContent = r1Content || r2Content
+  const activeRoundNum = r1Content ? 1 : 2
+  const { feedback, isLoading: feedbackLoading, remaining, requestFeedback } = useSocraticFeedback({
+    topic: debate?.topic || '',
+    round: activeRoundNum,
+    side: user?.id === debate?.creator_id ? 'A' : 'B',
+  })
+  const [socratesTalking, setSocratesTalking] = useState(false)
+  const [socDismissing, setSocDismissing] = useState(false)   // 재클릭 지우기 중
+  const [socDismissed, setSocDismissed] = useState(false)     // "더 작성하고 오세요"
+  const [socIdleErase, setSocIdleErase] = useState(false)       // 대기→로딩 전환 지우기 중
+  const [socLoadingErase, setSocLoadingErase] = useState(false) // 로딩→결과 전환 지우기 중
+
+  // 결과 도착 시 → 로딩 텍스트 지우기 시작
+  useEffect(() => {
+    if (!feedback) return;
+    setSocLoadingErase(true);
+    setSocDismissing(false);
+    setSocDismissed(false);
+  }, [feedback])
+
+  const handleIdleEraseComplete = () => {
+    setSocIdleErase(false);
+    requestFeedback(activeContent);
+  }
+
+  const handleLoadingEraseComplete = () => {
+    setSocLoadingErase(false);
+    setSocratesTalking(true);
+    const timer = setTimeout(() => setSocratesTalking(false), 5000);
+    return () => clearTimeout(timer);
+  }
+
+  const handleSocrates = () => {
+    if (feedbackLoading || socIdleErase || socLoadingErase) return;
+    if (!activeContent || activeContent.trim().length < 10) return;
+
+    // 내용 변동 없이 재클릭 → 지우기 애니메이션
+    if (feedback && remaining <= 0) return;
+    if (feedback) {
+      setSocDismissing(true);
+      return;
+    }
+
+    if (remaining <= 0) return;
+    // 대기 상태에서 클릭 → "부르시겠습니까?" 지우기 먼저
+    setSocIdleErase(true);
+  }
+
+  const handleEraseComplete = () => {
+    setSocDismissing(false);
+    setSocDismissed(true);
+    setTimeout(() => setSocDismissed(false), 4000);
+  }
 
   const fetchData = useCallback(async () => {
     try {
@@ -431,7 +580,8 @@ export default function ArgumentPage() {
             {!myR1 && (
               <RoundForm roundNum={1} isActive={activeRound === 1}
                 content={r1Content} setContent={setR1Content}
-                onSubmit={() => handleSubmit(1)} isSubmitting={isSubmitting} />
+                onSubmit={() => handleSubmit(1)} isSubmitting={isSubmitting}
+                />
             )}
           </div>
 
@@ -452,7 +602,8 @@ export default function ArgumentPage() {
             {!myR2 && (
               <RoundForm roundNum={2} isActive={activeRound === 2}
                 content={r2Content} setContent={setR2Content}
-                onSubmit={() => handleSubmit(2)} isSubmitting={isSubmitting} />
+                onSubmit={() => handleSubmit(2)} isSubmitting={isSubmitting}
+                />
             )}
           </div>
 
@@ -463,6 +614,87 @@ export default function ArgumentPage() {
 
 
       </div>
+
+      {/* 소크라테스 말풍선 — 탭바 위 */}
+      <AnimatePresence>
+        {activeRound > 0 && activeContent.trim().length >= 10 && remaining > 0 && (
+          <motion.div
+            initial={{ y: 40, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 40, opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+            className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
+          >
+            <button
+              onClick={handleSocrates}
+              disabled={feedbackLoading}
+              className={`w-full bg-[#1B2A4A]/80 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 border border-[#D4AF37]/15 transition-transform ${
+                !feedbackLoading && !socDismissing ? 'active:scale-[0.95] cursor-pointer' : ''
+              }`}
+            >
+              {/* 아바타 + 세로 게이지 */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <SocratesTalking speed={
+                  feedbackLoading ? 'slow'
+                  : socratesTalking ? 'fast'
+                  : null
+                } />
+                <div className="flex flex-col-reverse gap-[2px]">
+                  {[0, 1, 2].map(i => (
+                    <div
+                      key={i}
+                      className="w-[4px] h-[6px] rounded-[1px]"
+                      style={{ backgroundColor: i < remaining ? '#D4AF37' : 'rgba(255,255,255,0.1)' }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                {socLoadingErase ? (
+                  <TypeWriter
+                    key="loading-erase"
+                    text="소크라테스가 잠시 생각중입니다..."
+                    className="text-[13px] font-bold text-white/60"
+                    speed={40}
+                    erasing
+                    onEraseComplete={handleLoadingEraseComplete}
+                  />
+                ) : feedbackLoading ? (
+                  <TypeWriter text="소크라테스가 잠시 생각중입니다..." className="text-[13px] font-bold text-white/60" speed={40} />
+                ) : socDismissing && feedback ? (
+                  <TypeWriter
+                    key="erasing"
+                    text={feedback.questions[0]}
+                    className="text-[13px] leading-[1.5] text-white/80 font-bold line-clamp-2"
+                    speed={30}
+                    erasing
+                    onEraseComplete={handleEraseComplete}
+                  />
+                ) : socDismissed ? (
+                  <TypeWriter text="주장을 더 작성한 뒤 다시 불러주게." className="text-[13px] font-bold text-white/50" speed={35} />
+                ) : feedback ? (
+                  <TypeWriter key={feedback.questions[0]} text={feedback.questions[0]} className="text-[13px] leading-[1.5] text-white/80 font-bold line-clamp-2" speed={30} />
+                ) : socIdleErase ? (
+                  <TypeWriter
+                    key="idle-erase"
+                    text="소크라테스를 부르시겠습니까?"
+                    className="text-[13px] font-bold text-white/50"
+                    speed={40}
+                    erasing
+                    onEraseComplete={handleIdleEraseComplete}
+                  />
+                ) : (
+                  <>
+                    <TypeWriter text="소크라테스를 부르시겠습니까?" className="text-[13px] font-bold text-white/50" speed={40} />
+                    <p className="text-[10px] text-white/25 mt-0.5">AI가 주장의 논리적 허점을 질문으로 짚어줍니다</p>
+                  </>
+                )}
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <MoragoraModal
         isOpen={modalState.isOpen}

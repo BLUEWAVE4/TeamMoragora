@@ -368,15 +368,18 @@ export function buildJudgmentPrompt(debateContext) {
 
 // ========== Solo 모드: AI 반대 주장 생성 ==========
 
-export function buildCounterArgumentPrompt({ topic, category, sideA_argument }) {
-  return `당신은 논쟁의 반대 측 주장을 생성하는 역할입니다.
+export function buildCounterArgumentPrompt({ topic, category, sideA_argument, round = 1, previousArgs = [] }) {
+  if (round === 1) {
+    // R1: B측 독립 입장문 — A측을 직접 반박하지 않고 자기 논거 전개
+    return `당신은 논쟁에서 B측(반대) 입장의 주장을 작성하는 역할입니다.
 
 ## 지침
-- 주어진 주제에 대해, 아래 "A측 주장"의 **반대 입장**에서 설득력 있는 주장을 작성하세요.
+- 주어진 주제에 대해 A측과 **반대되는 입장**에서 독립적인 주장문을 작성하세요.
+- 이것은 반박이 아닙니다. B측의 **독자적인 논거와 근거**를 중심으로 입장을 전개하세요.
+- A측 주장을 직접 언급하거나 공격하지 마세요. B측만의 관점을 제시하세요.
 - 길이: 200~500자
-- A측과 동등한 수준의 논리적 구조와 구체성을 갖추세요.
+- 논리적 구조: 주장 → 근거 → 결론 흐름을 갖추세요.
 - 감정적 표현은 최소화하고, 논리와 근거 중심으로 작성하세요.
-- A측 주장의 약점을 파고드는 것이 좋습니다.
 - 반드시 JSON 형식으로 응답하세요.
 
 ## 주제
@@ -385,12 +388,46 @@ ${topic}
 ## 카테고리
 ${category || '일반'}
 
-## A측 주장
+## 참고: A측 주장 (직접 반박하지 말 것)
 ${sideA_argument}
 
 ## 출력 형식
 {
-  "content": "반대 측 주장 텍스트",
+  "content": "B측 주장 텍스트",
+  "charCount": 글자수
+}`;
+  }
+
+  // R2: A측 주장에 대한 논리적 반박
+  const contextLines = previousArgs.map(a =>
+    `[R${a.round} ${a.side}측] ${a.content}`
+  ).join('\n\n');
+
+  return `당신은 논쟁에서 B측(반대) 입장의 반박을 작성하는 역할입니다.
+
+## 지침
+- A측의 최신 주장/반박에 대해 **논리적 반박**을 작성하세요.
+- A측 주장의 약점, 논리적 허점, 근거 부족을 지적하세요.
+- 동시에 B측 입장을 보강하는 추가 논거를 제시하세요.
+- 길이: 200~500자
+- 감정적 표현은 최소화하고, 논리와 근거 중심으로 작성하세요.
+- 반드시 JSON 형식으로 응답하세요.
+
+## 주제
+${topic}
+
+## 카테고리
+${category || '일반'}
+
+## 이전 논쟁 맥락
+${contextLines}
+
+## A측 최신 반박
+${sideA_argument}
+
+## 출력 형식
+{
+  "content": "B측 반박 텍스트",
   "charCount": 글자수
 }`;
 }

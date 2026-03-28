@@ -11,6 +11,14 @@ import CommentBottomSheet from '../common/CommentBottomSheet';
 import useThemeStore from '../../store/useThemeStore';
 import useModalState from '../../hooks/useModalState';
 
+const TIER_COLORS = {
+  '시민': '#8E8E93',
+  '배심원': '#007AFF',
+  '변호사': '#AF52DE',
+  '판사': '#FF9500',
+  '대법관': '#FF3B30',
+};
+
 function useVoteCountdown(createdAt, voteDuration) {
   const [timeLeft, setTimeLeft] = useState(null);
   useEffect(() => {
@@ -193,20 +201,21 @@ function DebateCard({ feed }) {
 
         {/* 프로필 헤더 */}
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0">
+          <div
+            className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0 border-2"
+            style={{ borderColor: TIER_COLORS[debateData?.creator?.tier] || TIER_COLORS['시민'] }}
+          >
             <img
               src={resolveAvatar(debateData?.creator?.avatar_url, debateData?.creator_id, debateData?.creator?.gender)}
               alt=""
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 leading-tight">
             <span className="text-[13px] font-bold text-[#1B2A4A] truncate block">{creatorNickname}</span>
-            <span className={`text-[10px] font-bold ${isDark ? 'text-white/40' : 'text-gray-400'}`}>{debateData?.creator?.tier || '시민'}</span>
+            <span className={`text-[10px] font-bold ${isDark ? 'text-white/40' : 'text-[#1B2A4A]/40'}`}>{timeAgo(feed.created_at)}</span>
           </div>
-          <button onClick={handleDetailClick} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all flex-shrink-0">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-          </button>
+          <span className="text-[12px] px-2 py-1 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold flex-shrink-0">{categoryName}</span>
         </div>
 
         <div className="mx-4 border-b border-[#1B2A4A]/5" />
@@ -216,9 +225,8 @@ function DebateCard({ feed }) {
           <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
         </div>
 
-        {/* 카테고리 + 목적 + 기준 + 실시간 뱃지 */}
+        {/* 목적 + 기준 + 실시간 뱃지 */}
         <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold">{categoryName}</span>
           {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
           {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
           {debateData?.mode === 'chat' && (
@@ -228,33 +236,8 @@ function DebateCard({ feed }) {
           )}
         </div>
 
-        {/* 투표 진행 바 */}
-        {hasTimer && (
-          <div className="px-4 pb-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] font-bold text-[#1B2A4A]/30 uppercase tracking-wider">
-                {timerExpired ? '투표 마감' : '투표 진행 중'}
-              </span>
-            </div>
-            <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
-              {timerExpired ? (
-                <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
-              ) : (
-                <div
-                  className="h-full rounded-full transition-all duration-1000 ease-linear"
-                  style={{
-                    width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
-                    backgroundColor: barColor,
-                    boxShadow: `0 0 4px ${barColor}50`,
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        )}
-
         {/* 투표 섹션 */}
-        <div className="px-4 pb-4 pt-1">
+        <div className="pl-[26px] pr-4 pb-4 pt-1">
           <div className="flex flex-col gap-2">
             {isParticipant && isVotingStatus && (
               <p className="text-[10px] text-center text-[#1B2A4A]/25 font-bold">논쟁 당사자는 투표할 수 없습니다</p>
@@ -315,6 +298,30 @@ function DebateCard({ feed }) {
               </div>
             </button>
           </div>
+          {/* 투표 진행 바 */}
+          {hasTimer && (
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] font-bold text-[#1B2A4A]/30 uppercase tracking-wider">
+                  {timerExpired ? '투표 마감' : '투표 진행 중'}
+                </span>
+              </div>
+              <div className="w-full h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
+                {timerExpired ? (
+                  <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
+                ) : (
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-linear"
+                    style={{
+                      width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                      backgroundColor: barColor,
+                      boxShadow: `0 0 4px ${barColor}50`,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 하단 액션 바 */}
@@ -341,7 +348,9 @@ function DebateCard({ feed }) {
               </>);
             })()}
           </div>
-          <span className="text-[10px] text-[#1B2A4A]/40 font-bold">{timeAgo(feed.created_at)}</span>
+          <button onClick={handleDetailClick} className="text-[12px] font-bold text-[#1B2A4A]/40 active:scale-95 transition-all">
+            상세보기
+          </button>
         </div>
       </div>
 

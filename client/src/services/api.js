@@ -30,9 +30,50 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// 401 시 토큰 갱신 후 1회 재시도
+let _isRefreshing = false;
+let _refreshQueue = [];
+
 api.interceptors.response.use(
   (res) => res.data,
-  (err) => {
+  async (err) => {
+    const originalRequest = err.config;
+
+    if (err.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      // 이미 갱신 중이면 큐에 대기
+      if (_isRefreshing) {
+        return new Promise((resolve, reject) => {
+          _refreshQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      _isRefreshing = true;
+      try {
+        const { data: { session }, error } = await supabase.auth.refreshSession();
+        const newToken = session?.access_token || null;
+        setAuthToken(newToken);
+
+        // 대기 중인 요청들에 새 토큰 전달
+        _refreshQueue.forEach(({ resolve }) => resolve(newToken));
+        _refreshQueue = [];
+
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+      } catch {
+        _refreshQueue.forEach(({ reject }) => reject(err));
+        _refreshQueue = [];
+      } finally {
+        _isRefreshing = false;
+      }
+    }
+
     const message = err.response?.data?.error || err.message;
     return Promise.reject(new Error(message));
   }
@@ -40,6 +81,8 @@ api.interceptors.response.use(
 
 // 실시간 로비: waiting/chatting 상태의 chat 논쟁 전체 조회
 export const getAllPublicDebates = () => api.get('/debates', { params: { status: 'lobby' } });
+
+export const getSocraticFeedback = (data) => api.post('/ai/socratic-feedback', data);
 
 // ===== 논쟁 (Debates) =====
 export const createDebate = (data) => api.post('/debates', data);

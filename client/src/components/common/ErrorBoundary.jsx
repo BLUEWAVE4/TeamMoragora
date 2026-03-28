@@ -19,7 +19,6 @@ export default class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#F3F1EC] px-6 text-center">
-          <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-lg font-bold text-primary mb-2">문제가 발생했습니다</h2>
           <p className="text-sm text-primary/50 mb-6">
             페이지를 새로고침하거나 아래 버튼을 눌러주세요.
