@@ -337,7 +337,7 @@ export default function ArgumentPage() {
   const { modalState, showModal, closeModal } = useModalState()
   const activeContent = r1Content || r2Content
   const activeRoundNum = r1Content ? 1 : 2
-  const { feedback, isLoading: feedbackLoading, requestFeedback, hasContentChanged } = useSocraticFeedback({
+  const { feedback, isLoading: feedbackLoading, remaining, requestFeedback, hasContentChanged } = useSocraticFeedback({
     topic: debate?.topic || '',
     round: activeRoundNum,
     side: user?.id === debate?.creator_id ? 'A' : 'B',
@@ -627,7 +627,7 @@ export default function ArgumentPage() {
 
       {/* 소크라테스 말풍선 — 탭바 위 */}
       <AnimatePresence>
-        {activeRound > 0 && activeContent.trim().length >= 10 && (
+        {activeRound > 0 && activeContent.trim().length >= 10 && (remaining > 0 || feedback) && (
           <motion.div
             initial={{ y: 40, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -649,6 +649,15 @@ export default function ArgumentPage() {
                   : null
                 } />
                 <span className="text-[8px] font-bold text-[#D4AF37]">소크라테스</span>
+              </div>
+              <div className="flex flex-col-reverse gap-[2px] flex-shrink-0">
+                {[0, 1, 2, 3, 4].map(i => (
+                  <div
+                    key={i}
+                    className="w-[4px] h-[5px] rounded-[1px]"
+                    style={{ backgroundColor: i < remaining ? '#D4AF37' : 'rgba(255,255,255,0.1)' }}
+                  />
+                ))}
               </div>
 
               <div className="flex-1 min-w-0">

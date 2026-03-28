@@ -120,7 +120,7 @@ JSON 형식:
 
 // ===== 산파술 피드백: 작성 중인 주장에 대한 소크라테스 질문 =====
 router.post('/socratic-feedback', async (req, res) => {
-  const { topic, content, round, side, previousQuestions, opponentArg } = req.body;
+  const { topic, content, round, side, opponentArg } = req.body;
 
   if (!content || content.trim().length < 10) {
     return res.status(400).json({ error: '10자 이상 작성 후 피드백을 받을 수 있습니다.' });
@@ -137,83 +137,58 @@ router.post('/socratic-feedback', async (req, res) => {
   try {
     const sideLabel = side === 'A' ? '찬성' : '반대';
 
-    const parsed = await callAI(
-      'GPT-4.1-mini (Socratic)',
+    // === 2단계: 4.1 반대측 5개 캐시 + mini 리믹스 ===
+    const topicContext = round === 1
+      ? `논쟁: ${topic}\n사용자는 ${sideLabel}측이다.`
+      : `논쟁: ${topic}\n상대(${side === 'A' ? '반대' : '찬성'}측) 주장: "${opponentArg || ''}"\n사용자는 ${sideLabel}측이다.`;
+
+    // Step 1: 4.1이 반대측 질문 5개 생성
+    const cached = await callAI(
+      'GPT-4.1 (S1:반론5개)',
       () => openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4.1',
         messages: [
-          {
-            role: 'system',
-            content: `소크라테스 산파술로 질문 1개. 한국어 반말 존댓말 섞어서 자연스럽게. "자네" 남발 금지.
+          { role: 'system', content: `소크라테스처럼 질문하라. 한국어, 자연스럽게.
+사용자의 반대측 입장에서, 사용자가 가장 대답하기 어려운 핵심 반론 5개를 질문 형태로 만들어라.
+각 질문은 서로 다른 관점/각도에서 나와야 한다. 중복 금지.
 
-## 핵심
-사용자가 당연하게 깔고 있는 숨은 전제를 찾아서 뒤집어라.
-그 전제가 틀릴 수 있는 구체적 상황을 대입해서 모순을 보여줘라.
-추상적 일반화("모든 X도 그렇지 않겠는가?") 금지. 구체적 사례로 찔러라.
-
-## 패턴
-1. 사용자 주장에서 숨은 전제를 찾아라 (사용자가 말하지 않았지만 깔고 있는 가정)
-2. 그 전제가 무너지는 구체적 상황을 대입해서 질문하라
-
-## 예시 — 숨은 전제를 찾고 뒤집어라
-
-"기본소득은 의욕을 없앤다"
-숨은 전제: 돈이 유일한 노동 동기다
-○ "자식이 용돈받아도 공부 의욕이 사라지겠는가?"
-
-"AI 감정은 패턴 매칭이다"
-숨은 전제: 패턴 매칭은 진짜 감정이 아니다
-○ "사랑하는 사람의 감정도 뇌의 전기신호인데, 그건 진짜인가?"
-
-"헤어진 당일 만남은 자유다"
-숨은 전제: 관계가 끝나면 상대에 대한 책임도 끝난다
-○ "그럼 불륜도 자유니까 도덕적으로 문제없는가?"
-
-"안락사 판단이 온전한지 의문" (반박)
-숨은 전제: 고통받는 사람은 판단력이 흐리다
-○ "그럼 우울증 환자의 모든 결정도 무효라는 뜻인가?"
-
-금지: 되묻기, "왜?", "정의는?", 같은 방향, 추상적 일반화
-JSON. 질문 1개, 30자 이내로 짧고 날카롭게. 격려 10자 이내.`,
-          },
-          {
-            role: 'user',
-            content: round === 1
-? `논쟁: ${topic}
-
-[사용자 = ${sideLabel}측] 1라운드 주장을 쓰고 있다:
-"""${content.trim()}"""
-
-사용자(${sideLabel}측)의 주장을 더 강하게 만들 질문을 해라.
-사용자가 이미 쓴 내용을 되묻지 마라.
-${previousQuestions?.length ? `\n이전 질문(반복금지): ${previousQuestions.join(' / ')}` : ''}
-
-출력: { "encouragement": "격려10자", "questions": ["질문40자이내"] }`
-
-: `논쟁: ${topic}
-
-[상대(${side === 'A' ? '반대' : '찬성'}측) 1라운드 주장]:
-"""${opponentArg || ''}"""
-
-[사용자(${sideLabel}측) 2라운드 반박 작성 중]:
-"""${content.trim()}"""
-
-사용자는 상대를 반박하고 있다. 사용자의 반박을 더 예리하게 만들 질문을 해라.
-주의:
-- 사용자가 "상대가 틀렸다"고 쓰면 "틀리지 않겠는가?"는 금지 (같은 말)
-- 상대 주장의 숨은 전제를 뒤집거나, 상대 논거를 사용자 편으로 역이용하는 질문을 해라
-${previousQuestions?.length ? `\n이전 질문(반복금지): ${previousQuestions.join(' / ')}` : ''}
-
-출력: { "encouragement": "격려10자", "questions": ["질문40자이내"] }`,
-          },
+금지: "왜?", "정의는?", 추상적 질문
+JSON. { "questions": ["q1", "q2", "q3", "q4", "q5"] }` },
+          { role: 'user', content: topicContext },
         ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
+        response_format: { type: 'json_object' }, temperature: 0.7,
       }),
       (r) => r.choices[0].message.content,
     );
 
-    res.json(parsed);
+    // Step 2: mini가 사용자 작성 내용 기반 리믹스
+    const remixed = await callAI(
+      'GPT-4.1-mini (S2:리믹스)',
+      () => openai.chat.completions.create({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'system', content: `소크라테스처럼 질문 1개. 한국어, 자연스럽게.
+
+아래 [반대측 질문 후보]와 [사용자 작성 내용]을 읽고:
+1. 사용자가 아직 다루지 않은 관점의 질문을 후보에서 골라라
+2. 사용자의 작성 내용에 맞춰 질문을 다듬어라
+3. 사용자가 이미 답한 내용을 되묻지 마라
+
+JSON. { "encouragement": "격려10자", "questions": ["질문30자이내"] }` },
+          { role: 'user', content: `[반대측 질문 후보]\n${(cached.questions || []).map((q,i) => `${i+1}. ${q}`).join('\n')}\n\n[사용자 작성 내용]\n"${content.trim()}"` },
+        ],
+        response_format: { type: 'json_object' }, temperature: 0.7,
+      }),
+      (r) => r.choices[0].message.content,
+    );
+
+    // 캐시된 5개 + 리믹스된 1개 모두 반환
+    const shuffled = [...(cached.questions || [])].sort(() => Math.random() - 0.5);
+    res.json({
+      questions: shuffled,
+      remixed: remixed.questions?.[0] || shuffled[0],
+      encouragement: remixed.encouragement || '',
+    });
   } catch (err) {
     console.error('[AI] socratic-feedback 실패:', err.message);
     res.status(502).json({ error: 'AI 피드백 생성에 실패했습니다.' });
