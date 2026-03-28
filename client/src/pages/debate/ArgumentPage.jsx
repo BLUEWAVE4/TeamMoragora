@@ -3,111 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getArguments, submitArgument, generateSoloArgument } from '../../services/api'
 import { useAuth } from '../../store/AuthContext'
 import { CircleCheck, CircleDot, Circle } from 'lucide-react'
-import { createAvatar } from '@dicebear/core'
-import { avataaars } from '@dicebear/collection'
-
-const SOCRATES_BASE = {
-  top: ['sides'],
-  hairColor: ['e8e1e1'],
-  skinColor: ['ffdbb4'],
-  facialHair: ['beardMajestic'],
-  facialHairColor: ['e8e1e1'],
-  facialHairProbability: 100,
-  eyes: ['closed'],
-  eyebrows: ['unibrowNatural'],
-  clothing: ['shirtVNeck'],
-  clothesColor: ['929598'],
-  accessoriesProbability: 0,
-};
-
-let _socratesMouths = null;
-function getSocratesMouths() {
-  if (!_socratesMouths) {
-    _socratesMouths = ['serious', 'default', 'twinkle', 'smile'].map(m =>
-      createAvatar(avataaars, { ...SOCRATES_BASE, mouth: [m] }).toDataUri()
-    );
-  }
-  return _socratesMouths;
-}
-
-// 눈 깜빡임용 아바타 (눈감음 + 눈뜸)
-let _socratesBlink = null;
-function getSocratesBlink() {
-  if (!_socratesBlink) {
-    _socratesBlink = [
-      createAvatar(avataaars, { ...SOCRATES_BASE, eyes: ['closed'], mouth: ['serious'] }).toDataUri(),
-      createAvatar(avataaars, { ...SOCRATES_BASE, eyes: ['default'], mouth: ['serious'] }).toDataUri(),
-    ];
-  }
-  return _socratesBlink;
-}
-
-// 불규칙 패턴: 0=닫힌, 1=보통, 2=벌림, 3=크게벌림
-const TALK_PATTERN = [0, 1, 2, 3, 2, 1, 0, 2, 3, 1, 0, 1, 3, 2, 0, 3];
-// 깜빡임 패턴: 0=눈감음, 1=눈뜸 (대부분 감고 있다가 가끔 깜빡)
-// 깜빡임: 눈뜸 2초 → 감음 0.15초 → 뜸 3초 → 감음 0.15초 ...
-const BLINK_TIMINGS = [150, 2000, 150, 3000, 150, 1500, 150, 2500];
-
-// speed: 'slow'=초당3, 'fast'=초당8, blink: 눈 깜빡임 모드
-function SocratesTalking({ speed = null, blink = false }) {
-  const mouths = getSocratesMouths();
-  const blinkFrames = getSocratesBlink();
-  const [frameIdx, setFrameIdx] = React.useState(0);
-  const [blinkIdx, setBlinkIdx] = React.useState(0);
-
-  // 입 애니메이션
-  React.useEffect(() => {
-    if (!speed) { setFrameIdx(0); return; }
-    const interval = speed === 'slow' ? 333 : 125;
-    let i = 0;
-    let timer;
-    const next = () => {
-      i = (i + 1) % TALK_PATTERN.length;
-      setFrameIdx(TALK_PATTERN[i]);
-      timer = setTimeout(next, interval + (Math.random() * 40 - 20));
-    };
-    timer = setTimeout(next, interval);
-    return () => clearTimeout(timer);
-  }, [speed]);
-
-  // 눈 깜빡임 애니메이션
-  React.useEffect(() => {
-    if (!blink) { setBlinkIdx(0); return; }
-    let i = 0;
-    let timer;
-    const next = () => {
-      i = (i + 1) % BLINK_TIMINGS.length;
-      setBlinkIdx(i % 2); // 0=감음, 1=뜸 교대
-      timer = setTimeout(next, BLINK_TIMINGS[i]);
-    };
-    timer = setTimeout(next, BLINK_TIMINGS[0]);
-    return () => clearTimeout(timer);
-  }, [blink]);
-
-  if (blink) {
-    return (
-      <div className="w-9 h-9 rounded-full bg-[#1B2A4A] flex-shrink-0 overflow-hidden relative">
-        {blinkFrames.map((src, i) => (
-          <img key={i} src={src} alt="" className="absolute inset-0 w-full h-full"
-            style={{ zIndex: i === blinkIdx ? 1 : 0 }} />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-9 h-9 rounded-full bg-[#1B2A4A] flex-shrink-0 overflow-hidden relative">
-      {mouths.map((src, i) => (
-        <img key={i} src={src} alt="" className="absolute inset-0 w-full h-full"
-          style={{ zIndex: i === frameIdx ? 1 : 0 }} />
-      ))}
-    </div>
-  );
-}
-import { AnimatePresence, motion } from 'framer-motion'
 import MoragoraModal from '../../components/common/MoragoraModal'
 import useModalState from '../../hooks/useModalState'
-import useSocraticFeedback from '../../hooks/useSocraticFeedback'
+import SocratesWidget from '../../components/debate/SocratesWidget'
 
 const MAX_CHAR_R1 = 2000
 const MAX_CHAR_R2 = 300
@@ -129,46 +27,6 @@ function JusticeBadge() {
         </div>
       </div>
     </div>
-  );
-}
-
-// ── 타이핑 애니메이션 (클로드 스타일) ──
-function TypeWriter({ text, speed = 30, className = '', erasing = false, onEraseComplete }) {
-  const [displayed, setDisplayed] = React.useState('');
-  const [done, setDone] = React.useState(false);
-
-  React.useEffect(() => {
-    if (erasing) {
-      // 지우기 모드: 현재 text를 한 글자씩 삭제
-      let i = text.length;
-      setDisplayed(text);
-      setDone(false);
-      const eraseSpeed = Math.max(speed / 2, 20);
-      const timer = setInterval(() => {
-        // 3글자씩 빠르게 지우기 (자연스러운 삭제감)
-        i = Math.max(0, i - 3);
-        setDisplayed(text.slice(0, i));
-        if (i <= 0) { clearInterval(timer); setDone(true); onEraseComplete?.(); }
-      }, eraseSpeed);
-      return () => clearInterval(timer);
-    }
-    // 타이핑 모드
-    setDisplayed('');
-    setDone(false);
-    let i = 0;
-    const timer = setInterval(() => {
-      i++;
-      setDisplayed(text.slice(0, i));
-      if (i >= text.length) { clearInterval(timer); setDone(true); }
-    }, speed);
-    return () => clearInterval(timer);
-  }, [text, speed, erasing]);
-
-  return (
-    <span className={className}>
-      {displayed}
-      {!done && <span className="inline-block w-[2px] h-[14px] bg-current ml-[1px] align-middle animate-pulse" />}
-    </span>
   );
 }
 
@@ -304,8 +162,8 @@ function RoundForm({ roundNum, isActive, content, setContent, onSubmit, isSubmit
           className="w-full px-5 pt-4 pb-3 focus:outline-none resize-none text-[15px] leading-[1.75] text-[#1B2A4A] placeholder:text-[#1B2A4A]/20 bg-transparent"
           style={{ minHeight: roundNum === 1 ? '160px' : '100px' }}
           placeholder={roundNum === 1
-            ? '상대방을 설득할 수 있는 논리적 근거를 작성해주세요.'
-            : '상대방의 1라운드 주장에 대해 반박해주세요.'}
+            ? '주장 → 근거 → 사례 → 결론 순서로 작성해보세요.'
+            : '상대 약점 → 반박 근거 순서로 작성해보세요.'}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           maxLength={maxChar}
@@ -374,66 +232,6 @@ export default function ArgumentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { modalState, showModal, closeModal } = useModalState()
   const activeContent = r1Content || r2Content
-  const activeRoundNum = r1Content ? 1 : 2
-  const { feedback, isLoading: feedbackLoading, remaining, requestFeedback, hasContentChanged } = useSocraticFeedback({
-    topic: debate?.topic || '',
-    round: activeRoundNum,
-    side: user?.id === debate?.creator_id ? 'A' : 'B',
-  })
-  const [socratesTalking, setSocratesTalking] = useState(false)
-  const [socDismissing, setSocDismissing] = useState(false)   // 재클릭 지우기 중
-  const [socDismissed, setSocDismissed] = useState(false)     // "더 작성하고 오세요"
-  const [socIdleErase, setSocIdleErase] = useState(false)       // 대기→로딩 전환 지우기 중
-  const [socLoadingErase, setSocLoadingErase] = useState(false) // 로딩→결과 전환 지우기 중
-
-  // 결과 도착 시 → 로딩 텍스트 지우기 시작
-  useEffect(() => {
-    if (!feedback) return;
-    setSocLoadingErase(true);
-    setSocDismissing(false);
-    setSocDismissed(false);
-  }, [feedback])
-
-  const handleIdleEraseComplete = () => {
-    setSocIdleErase(false);
-    requestFeedback(activeContent, otherR1?.content);
-  }
-
-  const handleLoadingEraseComplete = () => {
-    setSocLoadingErase(false);
-    setSocratesTalking(true);
-    const timer = setTimeout(() => setSocratesTalking(false), 5000);
-    return () => clearTimeout(timer);
-  }
-
-  const handleSocrates = () => {
-    if (feedbackLoading || socIdleErase || socLoadingErase || socDismissing || socDismissedErasing) return;
-    if (!activeContent || activeContent.trim().length < 10) return;
-
-    if (feedback) {
-      setSocDismissing(true);
-      return;
-    }
-
-    setSocIdleErase(true);
-  }
-
-  const [socDismissedErasing, setSocDismissedErasing] = useState(false);
-
-  const handleEraseComplete = () => {
-    setSocDismissing(false);
-    if (hasContentChanged(activeContent)) {
-      requestFeedback(activeContent, otherR1?.content);
-    } else {
-      setSocDismissed(true);
-      setTimeout(() => setSocDismissedErasing(true), 4000);
-    }
-  }
-
-  const handleDismissedEraseComplete = () => {
-    setSocDismissedErasing(false);
-    setSocDismissed(false);
-  }
 
 
   const fetchData = useCallback(async () => {
@@ -664,93 +462,13 @@ export default function ArgumentPage() {
       </div>
 
       {/* 소크라테스 말풍선 — 탭바 위 */}
-      <AnimatePresence>
-        {activeRound > 0 && activeContent.trim().length >= 10 && (remaining > 0 || feedback) && (
-          <motion.div
-            initial={{ y: 40, opacity: 0, scale: 0.9 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: [0, -20, 80], opacity: [1, 1, 0], scale: [1, 1.02, 0.9] }}
-            transition={{ exit: { duration: 0.6, ease: 'easeInOut' }, type: 'spring', damping: 22, stiffness: 280 }}
-            className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
-          >
-            <button
-              onClick={handleSocrates}
-              disabled={feedbackLoading}
-              className={`w-full bg-[#1B2A4A]/80 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 border border-[#D4AF37]/15 transition-transform ${
-                !feedbackLoading && !socDismissing ? 'active:scale-[0.95] cursor-pointer' : ''
-              }`}
-            >
-              <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                <SocratesTalking
-                  speed={socratesTalking ? 'fast' : null}
-                  blink={feedbackLoading}
-                />
-                <span className="text-[8px] font-bold text-[#D4AF37]">소크라테스</span>
-              </div>
-              <div className="flex flex-col-reverse gap-[2px] flex-shrink-0">
-                {[0, 1, 2, 3, 4].map(i => (
-                  <div
-                    key={i}
-                    className="w-[4px] h-[5px] rounded-[1px]"
-                    style={{ backgroundColor: i < remaining ? '#D4AF37' : 'rgba(255,255,255,0.1)' }}
-                  />
-                ))}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                {socLoadingErase ? (
-                  <TypeWriter
-                    key="loading-erase"
-                    text="소크라테스가 잠시 생각중입니다..."
-                    className="text-[13px] font-bold text-white/60"
-                    speed={40}
-                    erasing
-                    onEraseComplete={handleLoadingEraseComplete}
-                  />
-                ) : feedbackLoading ? (
-                  <TypeWriter text="소크라테스가 잠시 생각중입니다..." className="text-[13px] font-bold text-white/60" speed={40} />
-                ) : socDismissing && feedback ? (
-                  <TypeWriter
-                    key="erasing"
-                    text={feedback.questions[0]}
-                    className="text-[13px] leading-[1.5] text-white/80 font-bold"
-                    speed={30}
-                    erasing
-                    onEraseComplete={handleEraseComplete}
-                  />
-                ) : socDismissedErasing ? (
-                  <TypeWriter
-                    key="dismissed-erase"
-                    text="주장을 더 작성한 뒤 다시 불러주게."
-                    className="text-[13px] font-bold text-white/50"
-                    speed={35}
-                    erasing
-                    onEraseComplete={handleDismissedEraseComplete}
-                  />
-                ) : socDismissed ? (
-                  <TypeWriter text="주장을 더 작성한 뒤 다시 불러주게." className="text-[13px] font-bold text-white/50" speed={35} />
-                ) : feedback ? (
-                  <TypeWriter key={feedback.questions[0]} text={feedback.questions[0]} className="text-[13px] leading-[1.5] text-white/80 font-bold" speed={30} />
-                ) : socIdleErase ? (
-                  <TypeWriter
-                    key="idle-erase"
-                    text="소크라테스를 부르시겠습니까?"
-                    className="text-[13px] font-bold text-white/50"
-                    speed={40}
-                    erasing
-                    onEraseComplete={handleIdleEraseComplete}
-                  />
-                ) : (
-                  <>
-                    <TypeWriter text="소크라테스를 부르시겠습니까?" className="text-[13px] font-bold text-white/50" speed={40} />
-                    <p className="text-[10px] text-white/25 mt-0.5">AI가 주장의 논리적 허점을 질문으로 짚어줍니다</p>
-                  </>
-                )}
-              </div>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SocratesWidget
+        topic={debate?.topic || ''}
+        round={activeRound}
+        side={user?.id === debate?.creator_id ? 'A' : 'B'}
+        activeContent={activeContent}
+        opponentArg={otherR1?.content}
+      />
 
       <MoragoraModal
         isOpen={modalState.isOpen}

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { openai } from '../config/ai.js';
 import { callAI } from '../services/ai/aiWrapper.js';
 import { AI_TEMPERATURE_SOLO } from '../config/constants.js';
+import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -118,12 +119,32 @@ JSON 형식:
 
 });
 
-// ===== 소크라테스 반론 캐시 (서버 메모리) =====
+// ===== 소크라테스 반론 캐시 (TTL 1시간) =====
+const CACHE_TTL = 60 * 60 * 1000; // 1시간
 const socraticCache = new Map();
+const socraticCallCounts = new Map();
+const SOCRATIC_MAX_CALLS = 5;
+
+function cacheSet(key, value) {
+  const existing = socraticCache.get(key);
+  if (existing?.timer) clearTimeout(existing.timer);
+  const timer = setTimeout(() => socraticCache.delete(key), CACHE_TTL);
+  socraticCache.set(key, { value, timer });
+}
+function cacheGet(key) {
+  return socraticCache.get(key)?.value;
+}
 
 // ===== 산파술 피드백: 작성 중인 주장에 대한 소크라테스 질문 =====
-router.post('/socratic-feedback', async (req, res) => {
+router.post('/socratic-feedback', requireAuth, async (req, res) => {
   const { topic, content, round, side, opponentArg } = req.body;
+
+  // 서버 횟수 제한
+  const countKey = `${req.user.id}:${topic}:${side}:${round}`;
+  const currentCount = socraticCallCounts.get(countKey) || 0;
+  if (currentCount >= SOCRATIC_MAX_CALLS) {
+    return res.status(429).json({ error: '소크라테스 호출 횟수를 초과했습니다.' });
+  }
 
   if (!content || content.trim().length < 10) {
     return res.status(400).json({ error: '10자 이상 작성 후 피드백을 받을 수 있습니다.' });
@@ -141,13 +162,14 @@ router.post('/socratic-feedback', async (req, res) => {
     const sideLabel = side === 'A' ? '찬성' : '반대';
 
     // === 2단계: o3 반대측 5개 캐시 + mini 리믹스 ===
+    const safe = (s) => (s || '').replace(/"/g, '\\"').replace(/\n/g, ' ');
     const topicContext = round === 1
-      ? `논쟁: ${topic}\n사용자는 ${sideLabel}측이다.`
-      : `논쟁: ${topic}\n상대(${side === 'A' ? '반대' : '찬성'}측) 주장: "${opponentArg || ''}"\n사용자는 ${sideLabel}측이다.`;
+      ? `논쟁: ${safe(topic)}\n사용자는 ${sideLabel}측이다.`
+      : `논쟁: ${safe(topic)}\n상대(${side === 'A' ? '반대' : '찬성'}측) 주장: "${safe(opponentArg)}"\n사용자는 ${sideLabel}측이다.`;
 
     // Step 1: o3 반대측 질문 5개 (서버 캐시)
     const cacheKey = `${topic}:${side}:${round}`;
-    let cached = socraticCache.get(cacheKey);
+    let cached = cacheGet(cacheKey);
 
     if (!cached) {
       cached = await callAI(
@@ -167,7 +189,7 @@ JSON. { "questions": ["q1", "q2", "q3", "q4", "q5"] }` },
         }),
         (r) => r.choices[0].message.content,
       );
-      socraticCache.set(cacheKey, cached);
+      cacheSet(cacheKey, cached);
     }
 
     // Step 2: mini가 사용자 작성 내용 기반 리믹스
@@ -184,7 +206,7 @@ JSON. { "questions": ["q1", "q2", "q3", "q4", "q5"] }` },
 3. 사용자가 이미 답한 내용을 되묻지 마라
 
 JSON. { "encouragement": "격려10자", "questions": ["질문30자이내"] }` },
-          { role: 'user', content: `[반대측 질문 후보]\n${(cached.questions || []).map((q,i) => `${i+1}. ${q}`).join('\n')}\n\n[사용자 작성 내용]\n"${content.trim()}"` },
+          { role: 'user', content: `[반대측 질문 후보]\n${(cached.questions || []).map((q,i) => `${i+1}. ${q}`).join('\n')}\n\n[사용자 작성 내용]\n"${safe(content.trim())}"` },
         ],
         response_format: { type: 'json_object' }, temperature: 0.7,
       }),
@@ -192,11 +214,25 @@ JSON. { "encouragement": "격려10자", "questions": ["질문30자이내"] }` },
     );
 
     // 캐시된 5개 + 리믹스된 1개 모두 반환
-    const shuffled = [...(cached.questions || [])].sort(() => Math.random() - 0.5);
+    // 응답 검증
+    const validQuestions = Array.isArray(cached.questions)
+      ? cached.questions.filter(q => typeof q === 'string' && q.length > 0)
+      : [];
+    if (validQuestions.length === 0) {
+      return res.status(502).json({ error: 'AI 질문 생성에 실패했습니다.' });
+    }
+
+    const remixedQ = typeof remixed.questions?.[0] === 'string' ? remixed.questions[0] : validQuestions[0];
+
+    // 호출 카운트 증가
+    socraticCallCounts.set(countKey, currentCount + 1);
+
+    const shuffled = [...validQuestions].sort(() => Math.random() - 0.5);
     res.json({
       questions: shuffled,
-      remixed: remixed.questions?.[0] || shuffled[0],
-      encouragement: remixed.encouragement || '',
+      remixed: remixedQ,
+      encouragement: typeof remixed.encouragement === 'string' ? remixed.encouragement.slice(0, 20) : '',
+      remaining: SOCRATIC_MAX_CALLS - (currentCount + 1),
     });
   } catch (err) {
     console.error('[AI] socratic-feedback 실패:', err.message);

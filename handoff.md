@@ -1,157 +1,128 @@
-# Handoff — 2026-03-27 (목)
+# Handoff — 2026-03-29 (토)
 
-## 이전 세션 요약 (3/26 이전)
+## 이전 세션 요약 (3/27 이전)
 - OG 동적 텍스트 + 카카오 공유, 티어 시스템, 초대링크 개선, 알림 시스템
 - AI 프롬프트 개선, 연습 모드(solo), 실시간 채팅 논쟁, 콘텐츠 필터
 - 회원탈퇴, 명예의 전당 + TabBar 재구성, UI/UX 개선 다수
-- 타이핑 인디케이터 버그, 진행중 논쟁 모달, 강퇴 시스템 강화
-- AI 판결 트리거 복구, 무메시지 무효처리 버그 수정
+- 성능 최적화, Zustand 마이그레이션, DRY, 에러 처리, 메모리 누수 수정
+- dicebear 아바타 로컬 생성, 다크모드, 삼성 브라우저 호환
 
 ---
 
-## 이번 세션 작업 요약 (3/27)
+## 3/28~29 세션 작업 요약
 
-### 1. 성능 최적화
-- **홈피드**: DB 쿼리 최적화 (inner join, mode/category 필터), N+1 제거 (카드당 5건→0건), stale-while-revalidate 캐싱
-- **프로필**: `select(*, verdicts(*, ai_judgments(*)))` 3중 조인 → 필요 컬럼만 + `!inner` + `limit(50)`, 논리 분석 lazy fetch
-- **랭킹**: stale-while-revalidate 캐싱
-- **throttle/debounce**: 스크롤 핸들러 4곳 throttle, 타이핑 socket emit debounce 300ms
-- **React.memo**: DebateCard, DebateBannerCard
-- **Lazy loading**: App.jsx 18개 페이지 `React.lazy()` + `Suspense`
-- **useCallback**: VerdictContent 4개 + ProfilePage 5개 핸들러
+### 1. 소크라테스 산파술 피드백 시스템 (신규 기능)
 
-### 2. Zustand 마이그레이션
-- `useThemeStore` — ThemeContext 대체 (10개 파일 적용), ThemeProvider 제거
-- `useNotifStore` — Header 알림 카운트 전역화
-- `useSocketStore` — 소켓 연결 상태 + ChatRoom 연결 끊김 배너
+#### 아키텍처
+- **2단계 하이브리드**: o3 반론 5개 캐시 + 4.1-mini 리믹스
+  - Step 1: GPT-o3 → 반대측 핵심 반론 5개 생성 (서버 메모리 캐시, TTL 1시간)
+  - Step 2: GPT-4.1-mini → 사용자 작성 내용 기반 리믹스 (개인화)
+  - 비용: 첫회 ~2.5원 (o3+mini) / 이후 ~0.5원 (mini만) / 5회 총 ~4.5원
 
-### 3. 코드 품질 (DRY)
-- `useModalState` 커스텀 훅 — 11곳 모달 보일러플레이트 제거
-- `dateFormatter.js` — `timeAgo`, `formatDate`, `formatCountdown`, `formatMsgTime` 통합 (6곳)
-- `resolveAvatar()` 래퍼 — 23곳 아바타 URL 해석 패턴 통합
-- `CommentBottomSheet` 공통 컴포넌트 — TodayDebate + DebateCard 인라인 바텀시트 ~300줄 제거
+#### 프롬프트 고도화
+- 100회+ 테스트 기반 하네시기법 최적화
+- 5개 설계안(A산파술/B반대심문/C역할전환/D비유/E극단) 병렬 테스트
+- 6개 모델(4o-mini/4.1-mini/4.1/o3/Sonnet4/Haiku) 비교 평가
+- 최종: 반대측 반론 방식 + o3 캐시 + mini 리믹스
 
-### 4. 에러 처리
-- `alert()`/`confirm()` 8건 → `MoragoraModal`로 교체 (ProfilePage, ChatRoom)
-- JudgingPage 빈 catch 블록 → `console.warn` 추가
-- 서버 errorHandler에 `status`, `code` 필드 추가 → 응답 형식 통일
-- `ErrorBoundary` 컴포넌트 추가 — 렌더 에러 시 복구 UI
+#### UI — SocratesWidget 컴포넌트
+- **상태 기계 패턴**: 9개 phase (idle → idleErasing → loading → loadingErasing → talking → showing → dismissing → dismissed → dismissedErasing)
+- dicebear 소크라테스 아바타 (대머리, 흰수염, 눈감음, 4단계 입 애니메이션)
+- 눈 깜빡임 애니메이션 (로딩 중)
+- 타이핑/지우기 애니메이션 (TypeWriter 컴포넌트)
+- 세로 게이지 (5회 제한 표시)
 
-### 5. 타입 안전성
-- `verdict.debates` 혼용 제거 → `verdict.debate`로 통일
-- `winner_side` fallback `'A'` → `'draw'`로 변경
-- `data.time` → `data.vote_duration` 필드명 수정 (JudgingPage)
+#### 보안/안정성
+- `requireAuth` 미들웨어 추가 (인증 필수)
+- 서버 5회 호출 제한 (`socraticCallCounts` Map, userId:topic:side:round 기반)
+- 서버 캐시 TTL 1시간 (`cacheGet`/`cacheSet` + setTimeout 자동 삭제)
+- 프롬프트 인젝션 방지 (`safe()` 함수로 `"`, `\n` 이스케이프)
+- API 응답 검증 (배열 타입/비어있음 체크, 502 반환)
+- 의미없는 입력 서버 사전 차단 (정규식)
+- 클라이언트 에러 피드백 (429 횟수 초과 감지)
+- 타이머 cleanup (`talkTimerRef` + unmount 정리)
 
-### 6. 메모리 누수 수정
-- **클라이언트 ChatRoom**: `safeTimeout` 헬퍼 (setTimeout 9곳 추적), `countdown-start` socket.off 추가, `opponentTypingTimeout` cleanup
-- **서버**: `cleanupDebateRoom()` 함수 — 논쟁 종료 시 6개 메모리 객체 + 3개 타이머 일괄 해제
-- **SRP 훅 추출**: `useTypingIndicator`, `useLobbyChat`, `useCitizenVoting` (ChatRoom에서 분리)
+#### 파일
+- `client/src/components/debate/SocratesWidget.jsx` (신규 — 아바타, 애니메이션, 상태 기계, UI 통합)
+- `client/src/hooks/useSocraticFeedback.js` (훅)
+- `client/src/pages/debate/ArgumentPage.jsx` (SocratesWidget 연결)
+- `server/src/routes/ai.routes.js` (엔드포인트, 캐시, 프롬프트)
 
-### 7. 보안/안정성
-- `reportUser` 엔드포인트 `requireAuth` 추가
-- `import().then()` 2곳 `.catch()` 추가
-- `process.on('unhandledRejection')` 핸들러
-- `comment.routes.js` 인라인 optionalAuth → 공용 미들웨어 import
+### 2. AI 모델 전환
+| 용도 | 기존 | 변경 |
+|------|------|------|
+| 판결 (OpenAI) | gpt-4o | **o3** |
+| 소크라테스 캐시 | - | **o3** |
+| 소크라테스 리믹스 | - | **gpt-4.1-mini** |
+| 주제 분석/입장 생성 | gpt-4o | **gpt-4.1-mini** |
+| Solo 반대 주장 | gpt-4o-mini | 변경 없음 |
 
-### 8. 데이터 플로우 수정
-- **투표 실시간 반영**: `vote-tally-update` 소켓 이벤트 — 투표 cast/cancel 시 서버에서 브로드캐스트, VerdictContent에서 수신
-- **citizen_score DB 즉시 갱신**: 투표마다 `verdicts.citizen_score_a/b` + `citizen_vote_count` 업데이트
-- **투표 서버 검증**: DebateCard + TodayDebate에서 `getMyVote()` 서버 검증 추가 (localStorage만 신뢰 방지)
-- **localStorage 키 통일**: `today_vote_` → `my_vote_`
-- **AuthContext redirect loop 수정**: `window.location.href` → `navigate(replace: true)`
-- **Supabase 직접 호출 제거**: TodayDebate(좋아요 5곳), DebateCard(pro_side fetch) → 서버 API 경유
-- `app.set('io', io)` — controller에서 소켓 접근 가능
+### 3. Solo 모드 프롬프트 개선
+- R1: B측 독립 입장문 (A측 직접 반박 금지)
+- R2: A측 주장에 대한 논리적 반박 + 이전 맥락 포함
 
-### 9. 폴더 정리 + Dead Code 삭제
-- 모달 → `components/modals/` (FeedbackModal, TierModal)
-- `AdminDashboardPage` → `pages/admin/`, `ProfilePage` → `pages/profile/`
-- Dead code 삭제: 컴포넌트 5개 (LogicChartModal, VerdictDetailModal, IndicatorDots, PurposeCard, Tab) + API export 8개
-- **총 +421줄 / -874줄 (순 453줄 감소)**
+### 4. 합의/분석 판결 수정
+- **합의 모드 버그**: purpose 한국어("합의") 인식 매핑 추가
+- **합의 UI**: AI 점수 숨김, 상세보기 비활성화, "처리완료" 표시
+- **분석 모드**: 5항목 루브릭별 A/B 피드백 + 개선 예시, confidence 0.50→0.85
+- **분석 UI**: 항목별 점수 숨김 (피드백 텍스트만)
 
----
+### 5. 홈피드 DebateCard UI
+- 등급 뱃지 → 아바타 테두리 색상, 시간 위치 이동, 상세보기 텍스트 버튼
+- 카테고리 우측 상단, 투표 진행 바 하단 이동, 투표 버튼 좌측 여백
 
-## 3~5라운드 코드리뷰 미진행 내용
-
-### 3라운드: 보안/안정성 (미진행)
-검토 필요 항목:
-- 서버 입력 검증: `category`, `purpose`, `lens`, `pro_side`/`con_side` 길이 미검증 (debate.controller.js)
-- `vote_duration` parseInt 시 max 미제한 → 999999일 가능
-- XSS: 사용자 닉네임이 HTML에 직접 렌더 (ChatRoom 시스템 메시지)
-- RLS 정책과 supabaseAdmin 사용 적절성 검토
-- `POST /debates/:id/view` rate limiting 미적용 (주석 처리된 상태)
-
-### 4라운드: 성능 (미진행)
-검토 필요 항목:
-- `select('*')` 서버 10곳+ 남음 (debate.controller, profile.controller, notification.controller 등)
-- VerdictContent 1,053줄 — 차트 데이터 `useMemo` 미적용
-- 번들 사이즈: `recharts`, `chart.js`, `framer-motion` 전역 로드
-- ChatRoom 1,695줄 — 나머지 4개 훅 추출 필요 (useGameLifecycle, useParticipants, useChatMessages, useChatVoting)
-
-### 5라운드: 유지보수성 (미진행)
-검토 필요 항목:
-- server.js 821줄 — 소켓 핸들러 30개를 `server/src/socket/` 디렉토리로 분리
-- VerdictContent 1,053줄 — 댓글CRUD, 투표, 차트를 훅으로 분리
-- ProfilePage 1,319줄 — 아바타 에디터, 판결 이력, 논리 분석을 컴포넌트로 분리
-- RankingPage 978줄 — Podium, PlayerProfileSheet, HallOfFame 컴포넌트 분리
-- `BottomSheet`, `CountUp` 중복 (ProfilePage + RankingPage) → 공통 컴포넌트 추출
-- 매직 넘버: `MAX_MSGS=20`, `COOLDOWN_MS=1000`, `MAX_PER_SIDE=3` 등 상수 파일 통합
-- Supabase 직접 호출 8곳 잔여 — 서버 API 이관 필요 (프로필 fetch, analytics, ProfilePage debates/profiles update)
+### 6. 버그 수정
+- InvitePage `getDebateRoute` 인자 버그 → `/debate/undefined` 방지
+- 401 토큰 갱신 interceptor (`refreshSession` + 1회 재시도 + 큐)
+- 콘텐츠 필터 초성 패턴(ㅅㅂ) 비활성화 (소비, 계속발전 등 오탐)
+- OG 이미지 경로 수정 (`og-image.png` → `ogCard2.png`)
+- ErrorBoundary 이모지 삭제
+- JudgingPage 찬성/반대 → A측/B측, 투표 타이머 숨김
+- ModeSelector translate 85% → 65% (모바일 가로 넘침)
+- TabBar nav overflow-hidden (아이콘 넘침 방지)
 
 ---
 
-### 10. 아바타 로컬 생성 + UX/다크모드 개선 (3/27 후반)
-- **dicebear 로컬 생성**: `@dicebear/core` + `@dicebear/collection` 도입 → 외부 API 호출 0, data URI 즉시 렌더 + 인메모리 캐시
-- **`useProfileStore` (Zustand)**: 프로필(avatar_url, gender) 전역 캐싱, selector 기반 리렌더 최소화
-- **CommentBottomSheet**: `createComment` import 누락 수정, 로딩스피너, 댓글 작성 시 자동 스크롤 하단, body 스크롤 잠금
-- **VerdictContent 시민투표**: 댓글 작성 후 내부 댓글 영역만 스크롤 (페이지 스크롤 버그 수정), `scrollIntoView` → `commentListRef.scrollTo`
-- **MoragoraDetailPage**: 별점 평가 UI 다크모드 대응 (stroke/컨테이너/텍스트)
-- **ProfilePage**: 아바타 꾸미기 바텀시트 다크모드 대응, DB 저장은 `buildAvatarExternalUrl`
-- **ModeSelector**: 게임시작 버튼 하단 고정 (`fixed bottom-20`)
-- **삼성 브라우저 호환**: `postcss-preset-env` 추가 (Tailwind v4 `color-mix()` 폴백), Pretendard 중복 `@import` 제거
-- **judgment.routes.js**: `aiLimiter` 비활성화 (rate limiting 임시 해제)
-- **CLAUDE.md**: 시니어 제안 규칙에 라이브러리 활용 검토 항목 추가
+## 현재 AI 모델/비용 정리
 
----
-
-### 11. 확신도 기준표 토글 UI (3/27)
-- **VerdictContent**: 확신도 info 아이콘을 토글 버튼으로 변경, 클릭 시 5단계 기준표 패널 표시/숨김
-- 각 구간별 색상이 확신도 표시 색상과 일치 (90~100% 녹색, 80~89% 연녹, 70~79% 금색, 55~69% 주황, 50~54% 회색)
-- `showConfidenceInfo` state 추가
-
-### 12. 홈피드 바텀시트 버그 수정 + 실시간 댓글 (3/27)
-- **CommentBottomSheet 스크롤 잠금**: 바텀시트 열릴 때 `body` position fixed → 닫힐 때 원래 스크롤 위치 복원
-- **backdrop 터치 차단**: `touch-none` + `onTouchMove preventDefault`
-- **댓글 갱신 시 자동 스크롤**: `comments.length` 변경 감지 → 최하단 smooth 스크롤
-- **Supabase Realtime 댓글 구독**: `bottomsheet-comments:{debateId}` 채널로 INSERT/DELETE 실시간 반영
-  - VerdictContent에 이미 있던 검증된 패턴 동일 적용
-  - 타인 댓글 도착 시 프로필 조회 후 목록 추가 + 카운트 갱신
-  - 바텀시트 닫힐 때 `removeChannel`로 구독 해제
-
----
+| 용도 | 모델 | 비용/회 |
+|------|------|---------|
+| 판결 (OpenAI) | o3 | ~18원 |
+| 판결 (Anthropic) | Claude Sonnet 4 | ~31원 |
+| 판결 (Google) | Gemini 2.5 Flash | ~1원 |
+| **판결 3모델 합계** | | **~50원** |
+| 소크라테스 캐시 | o3 | ~2원 (논쟁당 1회) |
+| 소크라테스 리믹스 | gpt-4.1-mini | ~0.5원 |
+| 소크라테스 5회 총 | | ~4.5원 |
+| Solo 반대 주장 | gpt-4o-mini | ~0.3원 |
+| 주제 분석 | gpt-4.1-mini | ~0.5원 |
 
 ## 현재 상태
-
-- **브랜치**: develop (master 동기화 완료)
-- **DB**: 추가 마이그레이션 없음 (citizen_score_a/b는 기존 컬럼, 투표 시 즉시 갱신으로 변경)
+- **브랜치**: develop
+- **리팩토링 완료**: P0 전부 + P1 전부 (상태 기계 + 컴포넌트 분리 + 응답 검증)
 
 ## 미해결 / 후속 작업
 
-### 검토된 but 미구현
-- **AI 팩트체크**: 외부 검색 API(Serper/Tavily) 연동 시 건당 +15원(+6%), 월 ~45만원 추가. 프롬프트 120행에서 외부 지식 활용 금지 규칙 완화 필요
-- **확신도(confidence) 가중 적용**: 현재 저장만 하고 최종 점수 계산에 미반영, `calculateCompositeVerdict`에서 가중 평균 적용 가능
+### 소크라테스 관련
+- 주장 페이지 진입 시 백그라운드 o3 호출 (사전 캐시) — 첫 클릭 대기 제거 가능
+- `socraticCallCounts` 서버 재시작 시 리셋 — 영구 저장 필요 시 DB 이관
 
-### 알려진 제한
-- 서버 타이머 메모리 기반 — `cleanupDebateRoom()`으로 정리하지만 근본은 DB 기반 스케줄러 필요
-- `kickedUsers` 메모리 기반 — 서버 재시작 시 초기화 (영구 차단 필요 시 DB 저장)
-- Supabase 직접 호출 8곳 잔여 — 프로필 아바타, analytics, ProfilePage
-- 세션 토큰 캐싱 제거됨 — onAuthStateChange 충돌로 원복, 매 요청마다 getSession() 호출
+### 판결 관련
+- 합의 모드 판결문에 승부 톤 섞일 수 있음 — 프롬프트 추가 보완 가능
+- 분석 모드 상세보기 UI 확인 (5항목별 피드백 렌더링)
+- o3 모델 타임아웃 위험 (30초+) — 폴백 모델 고려
+
+### 콘텐츠 필터
+- 초성 패턴 비활성화 후 직접 "ㅅㅂ" 입력은 정규식으로 여전히 차단됨
+- 댓글 콘텐츠 필터 미적용 (Stage 1 dictionaryFilter 추가 필요)
+
+### 기존 미해결
+- 서버 타이머/kickedUsers 메모리 기반 — DB 기반 스케줄러 필요
+- Supabase 직접 호출 8곳 잔여
+- server.js 대형 파일 분리, VerdictContent/ProfilePage/RankingPage 분리
 
 ## 참고사항
-
-- AI 비용: 판결당 ~185원 (GPT 80 + Claude 100 + Gemini 5), solo는 GPT-4o-mini로 ~5원
-- 실시간 채팅: Socket.io 기반 (Supabase Realtime에서 전환됨)
-- 실시간 댓글: Supabase Realtime (VerdictContent + CommentBottomSheet)
-- 실시간 논쟁 인원: 사이드당 최대 3명
-- Zustand store: useThemeStore, useNotifStore, useSocketStore, useProfileStore (AuthContext는 React Context 유지)
-- avatar.js 구조: `getAvatarUrl`/`buildAvatarUrl` → data URI (표시용), `buildAvatarExternalUrl` → 외부 URL (DB 저장용), `resolveAvatar` → dicebear URL 파싱 후 로컬 재생성
-- Supabase Realtime 채널 목록: `comments:{debateId}` (VerdictContent), `bottomsheet-comments:{debateId}` (CommentBottomSheet), `lobby_list` (ChatLobbyList), `lobby_realtime` (DebateLobbyPage), `lobby:{debateId}` (ChatLobby Presence)
+- 소크라테스 위젯: `client/src/components/debate/SocratesWidget.jsx` (상태 기계 PHASES 9개)
+- 서버 캐시: `socraticCache` (TTL 1시간), `socraticCallCounts` (5회 제한)
+- dicebear 소크라테스: 대머리(sides), 흰수염(beardMajestic), 눈감음(closed), 네이비 배경
+- Zustand store: useThemeStore, useNotifStore, useSocketStore, useProfileStore

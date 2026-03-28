@@ -38,8 +38,11 @@ export default function useSocraticFeedback({ topic, round, side }) {
           setShowIndex(prev => Math.min(prev + 1, questionsRef.current.length));
         }
       }
-    } catch {
-      // 실패 시 무시
+    } catch (err) {
+      console.error('[Socratic] 피드백 실패:', err?.message);
+      if (err?.message?.includes('429') || err?.message?.includes('횟수')) {
+        setFeedback({ encouragement: '', questions: ['호출 횟수를 초과했습니다.'] });
+      }
     } finally {
       isLoadingRef.current = false;
       setIsLoading(false);
