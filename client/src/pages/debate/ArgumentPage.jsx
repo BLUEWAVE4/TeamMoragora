@@ -466,6 +466,8 @@ export default function ArgumentPage() {
         topic={debate?.topic || ''}
         round={activeRound}
         side={user?.id === debate?.creator_id ? 'A' : 'B'}
+        proSide={debate?.pro_side}
+        conSide={debate?.con_side}
         activeContent={activeContent}
         opponentArg={otherR1?.content}
       />

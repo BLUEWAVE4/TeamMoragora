@@ -119,31 +119,18 @@ JSON 형식:
 
 });
 
-// ===== 소크라테스 반론 캐시 (TTL 1시간) =====
-const CACHE_TTL = 60 * 60 * 1000; // 1시간
-const socraticCache = new Map();
-const socraticCallCounts = new Map();
+// ===== 소크라테스 피드백 (서버 호출 제한) =====
+const socraticCallCounts = new Map(); // key: userId:topic → count
 const SOCRATIC_MAX_CALLS = 5;
 
-function cacheSet(key, value) {
-  const existing = socraticCache.get(key);
-  if (existing?.timer) clearTimeout(existing.timer);
-  const timer = setTimeout(() => socraticCache.delete(key), CACHE_TTL);
-  socraticCache.set(key, { value, timer });
-}
-function cacheGet(key) {
-  return socraticCache.get(key)?.value;
-}
-
-// ===== 산파술 피드백: 작성 중인 주장에 대한 소크라테스 질문 =====
 router.post('/socratic-feedback', requireAuth, async (req, res) => {
-  const { topic, content, round, side, opponentArg } = req.body;
+  const { topic, content, round, side, opponentArg, proSide, conSide, prevQuestions } = req.body;
 
   // 서버 횟수 제한
-  const countKey = `${req.user.id}:${topic}:${side}:${round}`;
+  const countKey = `${req.user.id}:${topic}`;
   const currentCount = socraticCallCounts.get(countKey) || 0;
   if (currentCount >= SOCRATIC_MAX_CALLS) {
-    return res.status(429).json({ error: '소크라테스 호출 횟수를 초과했습니다.' });
+    return res.status(429).json({ error: '소크라테스 조언 횟수를 초과했습니다.' });
   }
 
   if (!content || content.trim().length < 10) {
@@ -155,88 +142,90 @@ router.post('/socratic-feedback', requireAuth, async (req, res) => {
   const hasKorean = /[가-힣]{5,}/.test(cleaned);
   const isGarbage = /^(.)\1{4,}$/.test(cleaned) || !hasKorean;
   if (isGarbage) {
-    return res.json({ encouragement: '', questions: ['자네, 주장을 먼저 작성해주게.'] });
+    return res.json({ question: '자네, 주장을 먼저 작성해주게.' });
   }
 
   try {
-    const sideLabel = side === 'A' ? '찬성' : '반대';
-
-    // === 2단계: o3 반대측 5개 캐시 + mini 리믹스 ===
     const safe = (s) => (s || '').replace(/"/g, '\\"').replace(/\n/g, ' ');
-    const topicContext = round === 1
-      ? `논쟁: ${safe(topic)}\n사용자는 ${sideLabel}측이다.`
-      : `논쟁: ${safe(topic)}\n상대(${side === 'A' ? '반대' : '찬성'}측) 주장: "${safe(opponentArg)}"\n사용자는 ${sideLabel}측이다.`;
+    const userSideText = side === 'A' ? safe(proSide) : safe(conSide);
 
-    // Step 1: o3 반대측 질문 5개 (서버 캐시)
-    const cacheKey = `${topic}:${side}:${round}`;
-    let cached = cacheGet(cacheKey);
-
-    if (!cached) {
-      cached = await callAI(
-        'GPT-o3 (S1:반론5개)',
-        () => openai.chat.completions.create({
-          model: 'o3',
-          messages: [
-            { role: 'system', content: `소크라테스처럼 질문하라. 한국어, 자연스럽게.
-사용자의 반대측 입장에서, 사용자가 가장 대답하기 어려운 핵심 반론 5개를 질문 형태로 만들어라.
-각 질문은 서로 다른 관점/각도에서 나와야 한다. 중복 금지.
-
-금지: "왜?", "정의는?", 추상적 질문
-JSON. { "questions": ["q1", "q2", "q3", "q4", "q5"] }` },
-            { role: 'user', content: topicContext },
-          ],
-          response_format: { type: 'json_object' },
-        }),
-        (r) => r.choices[0].message.content,
-      );
-      cacheSet(cacheKey, cached);
-    }
-
-    // Step 2: mini가 사용자 작성 내용 기반 리믹스
-    const remixed = await callAI(
-      'GPT-4.1-mini (S2:리믹스)',
+    const result = await callAI(
+      'o4-mini (소크라테스)',
       () => openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'o4-mini',
         messages: [
-          { role: 'system', content: `소크라테스처럼 질문 1개. 한국어, 자연스럽게.
+          { role: 'developer', content: `너는 논쟁 코치 소크라테스다. 사용자가 "${userSideText}" 입장으로 주장을 작성 중이다.
+사용자가 작성한 내용을 읽고, 그 내용에서 부족한 부분을 짚어 보강 조언 1개를 해라.
 
-아래 [반대측 질문 후보]와 [사용자 작성 내용]을 읽고:
-1. 사용자가 아직 다루지 않은 관점의 질문을 후보에서 골라라
-2. 사용자의 작성 내용에 맞춰 질문을 다듬어라
-3. 사용자가 이미 답한 내용을 되묻지 마라
-
-JSON. { "encouragement": "격려10자", "questions": ["질문30자이내"] }` },
-          { role: 'user', content: `[반대측 질문 후보]\n${(cached.questions || []).map((q,i) => `${i+1}. ${q}`).join('\n')}\n\n[사용자 작성 내용]\n"${safe(content.trim())}"` },
+우선순위: 근거나 사례가 없으면 "구체적 근거/사례를 먼저 써보게" 방향으로 유도. 근거가 있으면 논리 보강 힌트 조언
+말투: ~해보는 건 어떻겠는가, ~을 덧붙여보게, 친근하고 짧게.
+제약: 40자 이내. 조언 1개만. json으로 응답.
+{ "question": "조언" }` },
+          { role: 'user', content: `논쟁: ${safe(topic)}${round > 1 && opponentArg ? `\n상대 주장: "${safe(opponentArg)}"` : ''}\n\n사용자 작성 내용: "${safe(content.trim())}"${
+            Array.isArray(prevQuestions) && prevQuestions.length > 0
+              ? `\n\n이전 질문(같은 관점 반복 금지):\n${prevQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+              : ''
+          }` },
         ],
-        response_format: { type: 'json_object' }, temperature: 0.7,
+        response_format: { type: 'json_object' },
       }),
       (r) => r.choices[0].message.content,
     );
 
-    // 캐시된 5개 + 리믹스된 1개 모두 반환
     // 응답 검증
-    const validQuestions = Array.isArray(cached.questions)
-      ? cached.questions.filter(q => typeof q === 'string' && q.length > 0)
-      : [];
-    if (validQuestions.length === 0) {
+    const question = typeof result.question === 'string' ? result.question : null;
+    if (!question) {
       return res.status(502).json({ error: 'AI 질문 생성에 실패했습니다.' });
     }
 
-    const remixedQ = typeof remixed.questions?.[0] === 'string' ? remixed.questions[0] : validQuestions[0];
-
-    // 호출 카운트 증가
     socraticCallCounts.set(countKey, currentCount + 1);
-
-    const shuffled = [...validQuestions].sort(() => Math.random() - 0.5);
-    res.json({
-      questions: shuffled,
-      remixed: remixedQ,
-      encouragement: typeof remixed.encouragement === 'string' ? remixed.encouragement.slice(0, 20) : '',
-      remaining: SOCRATIC_MAX_CALLS - (currentCount + 1),
-    });
+    res.json({ question, remaining: SOCRATIC_MAX_CALLS - (currentCount + 1) });
   } catch (err) {
     console.error('[AI] socratic-feedback 실패:', err.message);
     res.status(502).json({ error: 'AI 피드백 생성에 실패했습니다.' });
+  }
+});
+
+// ===== 실시간 루브릭 점수 (gpt-4.1-mini) =====
+router.post('/rubric-score', requireAuth, async (req, res) => {
+  const { topic, content, side, proSide, conSide } = req.body;
+
+  if (!content || content.trim().length < 10) {
+    return res.status(400).json({ error: '내용이 부족합니다.' });
+  }
+
+  try {
+    const safe = (s) => (s || '').replace(/"/g, '\\"').replace(/\n/g, ' ');
+    const userSideText = side === 'A' ? safe(proSide) : safe(conSide);
+
+    const result = await callAI(
+      'GPT-4.1-mini (루브릭)',
+      () => openai.chat.completions.create({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'system', content: `논쟁 주장을 5개 항목으로 채점하라. 각 항목 0~20점. json으로 응답.
+항목: logic(논리성), evidence(근거), persuasion(설득력), rebuttal(반박대비), structure(구성력)
+{ "logic": 점수, "evidence": 점수, "persuasion": 점수, "rebuttal": 점수, "structure": 점수 }` },
+          { role: 'user', content: `논쟁: ${safe(topic)}\n사용자 입장: "${userSideText}"\n\n주장 내용: "${safe(content.trim())}"` },
+        ],
+        response_format: { type: 'json_object' }, temperature: 0.3,
+      }),
+      (r) => r.choices[0].message.content,
+    );
+
+    const scores = {
+      logic: Math.min(20, Math.max(0, Number(result.logic) || 0)),
+      evidence: Math.min(20, Math.max(0, Number(result.evidence) || 0)),
+      persuasion: Math.min(20, Math.max(0, Number(result.persuasion) || 0)),
+      rebuttal: Math.min(20, Math.max(0, Number(result.rebuttal) || 0)),
+      structure: Math.min(20, Math.max(0, Number(result.structure) || 0)),
+    };
+    scores.total = scores.logic + scores.evidence + scores.persuasion + scores.rebuttal + scores.structure;
+
+    res.json(scores);
+  } catch (err) {
+    console.error('[AI] rubric-score 실패:', err.message);
+    res.status(502).json({ error: 'AI 채점에 실패했습니다.' });
   }
 });
 

@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
 import { socket } from '../../services/socket';
-import { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate } from '../../services/api';
+import { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate, getSocraticFeedback, getRubricScore } from '../../services/api';
 import { resolveAvatar } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import MoragoraModal from '../../components/common/MoragoraModal';
@@ -57,6 +57,8 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [kickVoteCountdown, setKickVoteCountdown] = useState(null); // 10초 카운트다운
   const [reportLoading, setReportLoading] = useState(false);
   const [reportResult, setReportResult] = useState(null); // { safe, reason }
+  const [rubricScores, setRubricScores] = useState({ logic: 0, evidence: 0, persuasion: 0, rebuttal: 0, structure: 0, total: 0 });
+  const [rubricDisplay, setRubricDisplay] = useState({ logic: 0, evidence: 0, persuasion: 0, rebuttal: 0, structure: 0, total: 0 });
   const [reportedUsers, setReportedUsers] = useState({}); // { [userId]: true }
 
   const msgEndRef = useRef(null);
@@ -529,7 +531,7 @@ socket.on('kick-cancelled', ({ reason }) => {
 socket.on('participant-joined', ({ message, side }) => {
   const toastType = side === 'A' ? 'side-a' : side === 'B' ? 'side-b' : 'info';
   showToast(message, toastType);
-  setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now() }]);
+  setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now(), side }]);
 });
 // lobby-chat → useLobbyChat 훅에서 처리
 // 강퇴된 유저 재참여 차단
@@ -696,7 +698,101 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
   // loading 중에는 side가 아직 복원 안 됐으므로 시민으로 판별하지 않음
   const isCitizen = gameStarted && !loading && !mySide && user && debate && debate.creator_id !== user.id && debate.opponent_id !== user.id;
 
-  // 시민투표 → useCitizenVoting 훅에서 처리
+  // 시민투표 현황 3분마다 시스템 메시지로 안내
+  useEffect(() => {
+    if (!gameStarted) return;
+    const interval = setInterval(() => {
+      setMessages(prev => [...prev, {
+        id: `sys-vote-${Date.now()}`,
+        type: 'system',
+        content: voteTally.total > 0
+          ? `현재 ${voteTally.total}명의 시민투표가 진행되었습니다.`
+          : '아직 시민투표가 없습니다. 시민 참여를 기다리는 중입니다.',
+        created_at: new Date().toISOString(),
+      }]);
+    }, 3 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [gameStarted, voteTally.total]);
+
+  // 소크라테스 피드백 — 3분마다 내 발언 수집 → 조언 채팅 추가
+  const socraticTimerRef = useRef(null);
+  useEffect(() => {
+    if (!gameStarted || !mySide || !debate?.topic) return;
+    clearInterval(socraticTimerRef.current);
+    socraticTimerRef.current = setInterval(async () => {
+      // 내 메시지만 수집
+      const myMessages = messages.filter(m => m.user_id === user?.id && m.content);
+      if (myMessages.length === 0) return;
+      const combined = myMessages.map(m => m.content).join(' ');
+      if (combined.trim().length < 10) return;
+      try {
+        const result = await getSocraticFeedback({
+          topic: debate.topic,
+          content: combined,
+          round: 1,
+          side: mySide,
+          proSide: debate.pro_side,
+          conSide: debate.con_side,
+        });
+        if (result?.question) {
+          setMessages(prev => [...prev, {
+            id: `socrates-${Date.now()}`,
+            type: 'socrates',
+            content: result.question,
+            created_at: new Date().toISOString(),
+          }]);
+        }
+      } catch {}
+    }, 3 * 60 * 1000);
+    return () => clearInterval(socraticTimerRef.current);
+  }, [gameStarted, mySide, debate?.topic, messages.length]);
+
+  // 루브릭 점수 — 1분마다 내 발언 수집 → 채점
+  const rubricTimerRef = useRef(null);
+  const rubricMsgCountRef = useRef(0);
+  useEffect(() => {
+    if (!gameStarted || !mySide || !debate?.topic) return;
+    clearInterval(rubricTimerRef.current);
+    rubricTimerRef.current = setInterval(async () => {
+      const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
+      if (myMsgs.length === 0 || myMsgs.length === rubricMsgCountRef.current) return;
+      rubricMsgCountRef.current = myMsgs.length;
+      const combined = myMsgs.map(m => m.content).join(' ');
+      if (combined.trim().length < 10) return;
+      try {
+        const scores = await getRubricScore({
+          topic: debate.topic, content: combined, side: mySide,
+          proSide: debate.pro_side, conSide: debate.con_side,
+        });
+        if (scores && typeof scores.total === 'number') setRubricScores(scores);
+      } catch {}
+    }, 60 * 1000);
+    return () => clearInterval(rubricTimerRef.current);
+  }, [gameStarted, mySide, debate?.topic, messages.length]);
+
+  // 카운트업 애니메이션
+  useEffect(() => {
+    const keys = ['logic', 'evidence', 'persuasion', 'rebuttal', 'structure', 'total'];
+    const targets = { ...rubricScores };
+    const current = { ...rubricDisplay };
+    const needsAnim = keys.some(k => current[k] !== targets[k]);
+    if (!needsAnim) return;
+    const duration = 800;
+    const startTime = Date.now();
+    const startValues = { ...current };
+    let rafId;
+    const frame = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const next = {};
+      keys.forEach(k => { next[k] = Math.round(startValues[k] + (targets[k] - startValues[k]) * eased); });
+      setRubricDisplay(next);
+      if (progress < 1) rafId = requestAnimationFrame(frame);
+    };
+    rafId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafId);
+  }, [rubricScores]);
 
 const handleSkipTime = () => {
   if (timeChangeRequest) return;
@@ -1085,11 +1181,7 @@ const handleVote = (agree) => {
         {/* A/B + 타이머 (3등분 레이아웃 — 타이머 항상 정중앙) */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center mt-3">
           <div className="flex flex-col items-start gap-0.5 min-w-0">
-            <span className={`text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold ${mySide === 'A' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-              <span className="text-[11px] font-bold text-emerald-400 leading-tight break-keep line-clamp-2">{debate?.pro_side || 'A측'}</span>
-            </div>
+            <span className="text-[11px] font-bold text-emerald-400 leading-tight break-keep line-clamp-2">{debate?.pro_side || 'A측'}</span>
           </div>
 
           <div className="flex flex-col items-center gap-1 px-3">
@@ -1100,37 +1192,12 @@ const handleVote = (agree) => {
           </div>
 
           <div className="flex flex-col items-end gap-0.5 min-w-0">
-            <span className={`text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold ${mySide === 'B' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>나</span>
-            <div className="flex items-center gap-1.5 flex-row-reverse">
-              <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-              <span className="text-[11px] font-bold text-red-400 leading-tight break-keep text-right line-clamp-2">{debate?.con_side || 'B측'}</span>
-            </div>
+            <span className="text-[11px] font-bold text-red-400 leading-tight break-keep text-right line-clamp-2">{debate?.con_side || 'B측'}</span>
           </div>
         </div>
       </div>
 
-      {/* ━━━━━ 시민투표 게이지바 ━━━━━ */}
-      {gameStarted && (
-        <div className="shrink-0 px-4 py-2 bg-[#0f1829]/80 border-b border-white/5">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] font-bold text-emerald-400">A측 {voteTally.A}표</span>
-            <span className="text-[9px] font-bold text-white/30">시민투표 {voteTally.total}표</span>
-            <span className="text-[9px] font-bold text-red-400">B측 {voteTally.B}표</span>
-          </div>
-          <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden flex">
-            {voteTally.total > 0 ? (
-              <>
-                <div className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full"
-                  style={{ width: `${(voteTally.A / voteTally.total) * 100}%` }} />
-                <div className="h-full bg-red-500 transition-all duration-500 rounded-r-full"
-                  style={{ width: `${(voteTally.B / voteTally.total) * 100}%` }} />
-              </>
-            ) : (
-              <div className="h-full w-full bg-white/5" />
-            )}
-          </div>
-        </div>
-      )}
+      {/* 시민투표 게이지바 제거 — 3분마다 시스템 메시지로 안내 */}
 
       {/* ━━━━━ 상단 토스트 알림 ━━━━━ */}
       <AnimatePresence>
@@ -1196,11 +1263,26 @@ const handleVote = (agree) => {
         <div className="space-y-3">
         <AnimatePresence initial={false}>
           {messages.map((msg) => {
+            // 소크라테스 피드백 메시지
+            if (msg.type === 'socrates') {
+              return (
+                <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 max-w-[85%]">
+                    <span className="text-[9px] font-bold text-[#D4AF37] block mb-1">소크라테스 조언</span>
+                    <span className="text-[12px] text-white/50 leading-[1.5]">{msg.content}</span>
+                  </div>
+                </motion.div>
+              );
+            }
+
             // 3. 시스템 메시지 (발언권 소진)
             if (msg.type === 'system') {
+              const sysColor = msg.side === 'A' ? 'text-emerald-400/60 bg-emerald-400/10'
+                : msg.side === 'B' ? 'text-red-400/60 bg-red-400/10'
+                : 'text-amber-400/50 bg-amber-400/10';
               return (
                 <motion.div key={msg.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center">
-                  <span className="text-[10px] text-amber-400/50 bg-amber-400/10 px-3 py-1 rounded-full">{msg.content}</span>
+                  <span className={`text-[10px] ${sysColor} px-3 py-1 rounded-full`}>{msg.content}</span>
                 </motion.div>
               );
             }
@@ -1341,12 +1423,28 @@ const handleVote = (agree) => {
                 </motion.p>
               )}
             </AnimatePresence>
+
+            {/* 루브릭 점수 바 */}
             {mySide && (
-              <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-[10px] text-white/20">
-                  남은 발언권{' '}
-                  <span className={`font-bold ${remainingMsgs <= 5 ? 'text-amber-400' : 'text-white/40'}`}>{remainingMsgs}개</span>
-                </span>
+              <div className="flex items-center gap-2 mb-2 px-1 cursor-pointer active:scale-[0.98] transition-transform" onClick={async () => {
+                const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
+                if (myMsgs.length === 0) return;
+                const combined = myMsgs.map(m => m.content).join(' ');
+                if (combined.trim().length < 10) return;
+                try {
+                  const scores = await getRubricScore({ topic: debate?.topic, content: combined, side: mySide, proSide: debate?.pro_side, conSide: debate?.con_side });
+                  if (scores && typeof scores.total === 'number') setRubricScores(scores);
+                } catch {}
+              }}>
+                <span className="text-[9px] font-black text-[#D4AF37] bg-[#D4AF37]/15 px-1.5 py-0.5 rounded shrink-0">Premium</span>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-[9px] text-white/30">논리<span className="text-white/50 font-bold ml-0.5">{rubricDisplay.logic}</span></span>
+                  <span className="text-[9px] text-white/30">근거<span className="text-white/50 font-bold ml-0.5">{rubricDisplay.evidence}</span></span>
+                  <span className="text-[9px] text-white/30">설득<span className="text-white/50 font-bold ml-0.5">{rubricDisplay.persuasion}</span></span>
+                  <span className="text-[9px] text-white/30">반박<span className="text-white/50 font-bold ml-0.5">{rubricDisplay.rebuttal}</span></span>
+                  <span className="text-[9px] text-white/30">구성<span className="text-white/50 font-bold ml-0.5">{rubricDisplay.structure}</span></span>
+                </div>
+                <span className="text-[11px] font-black text-[#D4AF37] tabular-nums shrink-0">{rubricDisplay.total}<span className="text-[9px] text-white/20">/100</span></span>
               </div>
             )}
 
@@ -1402,7 +1500,7 @@ const handleVote = (agree) => {
     <div className={`w-1 h-8 rounded-full shrink-0 self-center ${mySide === 'A' ? 'bg-emerald-500' : mySide === 'B' ? 'bg-red-500' : 'bg-white/20'}`} />
                 <textarea ref={chatInputRef} value={text} onChange={handleTextChange} onKeyDown={handleKeyDown}
                   disabled={isInputDisabled} rows={1}
-                  placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장을 입력하세요...`}
+                  placeholder={chatEnded || timeLeft === 0 ? '논쟁이 종료되었습니다' : !mySide ? '입장을 선택해주세요' : `${mySide === 'A' ? 'A측' : 'B측'} 주장 입력 (${remainingMsgs}/20)`}
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20 transition-colors leading-relaxed disabled:opacity-40"
                   style={{ minHeight: '42px', maxHeight: '100px' }}
                   onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'; }}

@@ -177,3 +177,150 @@ server/src/
 
 - 세션 중 겪은 실수/장애/예상 못한 문제는 `lessons-learned.md`에 패턴으로 기록한다
 - 새 세션 시작 시 `handoff.md` + `lessons-learned.md`를 읽고 동일 실수를 사전 방지한다
+
+## 개발 자동화 에이전트 시스템
+
+사용자가 에이전트 파이프라인을 요청하면, 3-agent 순차 파이프라인(Planner → Generator → Evaluator)으로 태스크를 처리한다.
+
+### 시스템 구조
+
+```
+CLAUDE.md (이 파일)        ← 오케스트레이터: 전체 흐름 관리
+agents/
+├── planner.md             ← Planner: 태스크 분석 → 구현 계획 수립
+├── generator.md           ← Generator: 계획 기반 코드 생성
+├── evaluator.md           ← Evaluator: 계획/코드 품질 평가
+└── evaluation_criteria.md ← 공용 채점 기준 (5항목×20점=100점)
+output/                    ← 태스크별 산출물 저장
+START.md                   ← 실행 방법 안내
+```
+
+### 파이프라인 트리거
+
+아래 요청 시 에이전트 파이프라인을 실행한다:
+- `"에이전트 파이프라인으로 진행해줘"`
+- `"[feature] / [bugfix] / [refactor] + 태스크 설명"`
+- `"파이프라인 시작"`
+
+개별 에이전트만 실행할 수도 있다:
+- `"계획만 세워줘"` → Planner만 실행
+- `"코드 생성해줘"` → Generator만 실행
+- `"평가해줘"` → Evaluator만 실행
+
+### Phase 정의
+
+#### Phase 0: 태스크 초기화
+1. 태스크 접수 (사용자 입력 파싱)
+2. 태스크 타입 결정: `feature` / `bugfix` / `refactor`
+3. 태스크 ID 생성: `{type}-{YYYY-MM-DD}-{seq}` (예: `feature-2026-03-29-01`)
+4. `output/{task-id}/` 디렉토리 생성
+5. `handoff.md` + `lessons-learned.md` 읽기 → 현재 컨텍스트 파악
+6. 사용자에게 태스크 요약 + 파이프라인 시작 알림
+
+#### Phase 1: 계획 수립 (Planner)
+
+**Step 1-A: Planner 실행**
+- `agents/planner.md` 프롬프트를 읽고 에이전트로 실행
+- 필수 컨텍스트 전달: 태스크 설명, 태스크 타입, 관련 파일 목록
+- 산출물: `output/{task-id}/plan.md`
+
+**Step 1-B: 계획 평가 (Evaluator → Plan)**
+- `agents/evaluator.md`의 **계획 평가 모드** 실행
+- `evaluation_criteria.md`의 **계획 평가 기준** 참조
+- 산출물: `output/{task-id}/eval-plan-v1.md`
+
+**Step 1-C: 판정 루프**
+```
+WHILE 총점 < 85 AND 반복횟수 <= 3:
+  1. 평가 리포트의 "필수 개선사항" 추출
+  2. Planner에게 "피드백 수용 모드"로 재작업 요청
+  3. plan.md 업데이트
+  4. Evaluator 재평가 → eval-plan-v{N}.md
+  5. 사용자에게 현재 점수 보고
+
+총점 >= 85: PASS → Phase 2
+3회 초과: 사용자에게 판단 위임
+```
+
+#### Phase 2: 코드 생성 (Generator)
+
+**Step 2-A: Generator 실행**
+- `agents/generator.md` 프롬프트를 읽고 에이전트로 실행
+- 필수 컨텍스트 전달: `plan.md`, CLAUDE.md 규칙, 관련 기존 소스 파일
+- 산출물: `output/{task-id}/code-result.md` + 실제 코드 변경 (develop 브랜치)
+
+**Step 2-B: 중간 확인 (선택적)**
+- 사용자에게 생성된 파일 목록 제시
+- 코드 생성 후 Phase 3으로 자동 진행
+
+#### Phase 3: 코드 평가 (Evaluator)
+
+**Step 3-A: Evaluator 코드 평가**
+- `agents/evaluator.md`의 **코드 평가 모드** 실행
+- `evaluation_criteria.md`의 **코드 평가 기준** 참조
+- `plan.md` 대비 구현 일치도 확인
+- 산출물: `output/{task-id}/eval-code-v1.md`
+
+**Step 3-B: 판정 루프**
+```
+WHILE 총점 < 85 AND 반복횟수 <= 3:
+  1. 평가 리포트의 "필수 개선사항" 추출
+  2. Generator에게 "피드백 수용 모드"로 재작업 요청
+  3. code-result.md 업데이트 + 코드 수정
+  4. Evaluator 재평가 → eval-code-v{N}.md
+  5. 사용자에게 현재 점수 보고
+
+총점 >= 85: PASS → Phase 4
+3회 초과: 사용자에게 판단 위임
+```
+
+#### Phase 4: 최종 정리
+
+1. **스코어카드 출력**:
+```
+┌───────────────┬────────┬──────────┬──────┐
+│ 단계          │ 최종점수│ 반복 횟수 │ 판정  │
+├───────────────┼────────┼──────────┼──────┤
+│ 계획 (Plan)   │  /100  │  v{N}    │ PASS │
+│ 코드 (Code)   │  /100  │  v{N}    │ PASS │
+└───────────────┴────────┴──────────┴──────┘
+```
+2. 작업 완료 보고서 출력 (CLAUDE.md 수정 파일 테이블 형식)
+3. `handoff.md` 업데이트 제안
+4. `lessons-learned.md` 추가 항목 제안 (해당 시)
+5. 전체 산출물 목록 (`output/{task-id}/` 내 파일들)
+
+### 품질 게이트
+
+- **기준**: 5항목 × 20점 = 100점 만점, **85점 이상 PASS**
+- **최대 재시도**: Phase당 3회
+- **사용자 오버라이드**: `"현재 점수로 진행해"` → 즉시 PASS 처리
+- **채점 기준**: `agents/evaluation_criteria.md` 참조
+
+### 에이전트 호출 시 프롬프트 구성
+
+| 모드 | 구성 |
+|------|------|
+| **일반 실행** | 에이전트 .md 프롬프트 + 프로젝트 컨텍스트 + 태스크 요구사항 |
+| **평가 실행** | evaluator.md + evaluation_criteria.md + 평가 대상 산출물 |
+| **재작업 실행** | 에이전트 .md (피드백 수용 모드) + 이전 평가 리포트 + 현재 산출물 + 필수 개선사항 |
+
+### 산출물 디렉토리 구조
+
+```
+output/
+└── {task-id}/
+    ├── plan.md               ← Planner 산출물
+    ├── code-result.md        ← Generator 산출물
+    ├── eval-plan-v1.md       ← 계획 평가 v1
+    ├── eval-plan-v2.md       ← 계획 평가 v2 (재시도 시)
+    ├── eval-code-v1.md       ← 코드 평가 v1
+    ├── eval-code-v2.md       ← 코드 평가 v2 (재시도 시)
+    └── scorecard.md          ← 최종 스코어카드
+```
+
+### Git 워크플로우 통합
+
+- 모든 코드 생성은 `develop` 브랜치에서만 수행 (기존 브랜치 규칙 준수)
+- Generator가 생성한 작업 완료 보고서는 기존 CLAUDE.md 형식을 따른다
+- 커밋은 사용자가 명시적으로 요청한 경우에만 수행한다

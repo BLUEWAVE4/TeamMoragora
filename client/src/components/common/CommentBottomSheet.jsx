@@ -149,7 +149,10 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
       setCommentText('');
       onCountChange?.(comments.length + 1);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }));
-    } catch (e) { console.error('댓글 작성 실패:', e); }
+    } catch (e) {
+      const msg = e?.response?.data?.error || '댓글 작성에 실패했습니다.';
+      alert(msg);
+    }
     finally { setIsSending(false); }
   };
 
@@ -249,15 +252,6 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
                           >
                             <p className={`text-[12px] leading-[1.6] break-words text-left ${textContent}`}>{c.content}</p>
                           </div>
-                          <button
-                            onClick={() => handleToggleLike(c.id)}
-                            className="w-11 h-11 flex items-center justify-center gap-0.5 shrink-0"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill={c._liked ? '#E63946' : 'none'} stroke={c._liked ? '#E63946' : 'currentColor'} strokeWidth="2" className={c._liked ? '' : textMuted}>
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                            {(c._likeCount || 0) > 0 && <span className={`text-[9px] ${textMuted}`}>{c._likeCount}</span>}
-                          </button>
                         </div>
                       </div>
                     </div>

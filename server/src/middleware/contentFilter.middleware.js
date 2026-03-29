@@ -87,3 +87,36 @@ export async function contentFilterMiddleware(req, res, next) {
 
   next();
 }
+
+// ===== 댓글 전용 콘텐츠 필터 (Stage 1~2만 적용) =====
+export async function commentFilterMiddleware(req, res, next) {
+  const { content } = req.body;
+  if (!content) return next();
+
+  const userId = req.user?.id || null;
+  const debateId = req.params.debateId || null;
+
+  // Stage 1: 비속어 사전 필터
+  const dictResult = filterByDictionary(content);
+  if (dictResult.blocked) {
+    saveFilterLog({ userId, debateId, contentType: 'comment', stage: 1, reason: dictResult.reason, result: 'block', content });
+    return res.status(400).json({
+      error: '부적절한 표현이 포함되어 있습니다.',
+      stage: 1,
+      reason: dictResult.reason,
+    });
+  }
+
+  // Stage 2: AI 콘텐츠 필터 (혐오/선동/불법/개인정보)
+  const aiResult = await filterByAI(content);
+  if (aiResult.action === 'block') {
+    saveFilterLog({ userId, debateId, contentType: 'comment', stage: 2, reason: aiResult.reason, result: 'block', content });
+    return res.status(400).json({
+      error: '유해한 콘텐츠가 감지되었습니다.',
+      stage: 2,
+      reason: aiResult.reason,
+    });
+  }
+
+  next();
+}

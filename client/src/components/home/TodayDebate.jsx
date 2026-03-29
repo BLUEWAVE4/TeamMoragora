@@ -48,14 +48,14 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
     const tick = () => {
       const diff = deadline.getTime() - Date.now();
       if (diff <= 0) {
-        setTimeLeft('00:00:00');
+        setTimeLeft('00:00');
         setVoteExpired(true);
         return;
       }
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${pad(h)}:${pad(m)}:${pad(s)}`);
+      setTimeLeft(`${pad(h)}:${pad(m)}`);
       setVoteExpired(false);
     };
     tick();

@@ -83,6 +83,7 @@ api.interceptors.response.use(
 export const getAllPublicDebates = () => api.get('/debates', { params: { status: 'lobby' } });
 
 export const getSocraticFeedback = (data) => api.post('/ai/socratic-feedback', data);
+export const getRubricScore = (data) => api.post('/ai/rubric-score', data);
 
 // ===== 논쟁 (Debates) =====
 export const createDebate = (data) => api.post('/debates', data);
