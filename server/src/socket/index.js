@@ -280,6 +280,29 @@ export function initializeSocket(io) {
       io.to(debateId).emit('countdown-start');
     });
 
+    // ===== 한 쪽 전원 이탈 시 반대쪽 투표 결과 =====
+    socket.on('side-empty-decision', async ({ debateId, decision }) => {
+      // decision: 'judge' (판결 진행) or 'wait' (대기)
+      if (decision === 'judge') {
+        try {
+          const { count } = await supabaseAdmin.from('chat_messages').select('id', { count: 'exact', head: true }).eq('debate_id', debateId);
+          if (!count || count === 0) {
+            await supabaseAdmin.from('debates').delete().eq('id', debateId);
+            io.to(debateId).emit('chat-cancelled', { reason: '채팅 내용이 없어 논쟁이 취소되었습니다.' });
+            cleanupDebateRoom(debateId);
+          } else {
+            await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId);
+            io.to(debateId).emit('chat-ended', { debateId });
+            cleanupDebateRoom(debateId);
+            const { triggerJudgment } = await import('../services/judgmentTrigger.service.js');
+            triggerJudgment(debateId).catch(err => console.error('[side-empty] 판결 실패:', err.message));
+          }
+        } catch (err) { console.error('[side-empty] 에러:', err.message); }
+      } else {
+        io.to(debateId).emit('side-empty-wait', { message: '상대측 복귀를 대기합니다.' });
+      }
+    });
+
     // ===== 게임 시작 =====
     socket.on('start-game', async ({ debateId }) => {
       const now = new Date();
@@ -648,6 +671,17 @@ export function initializeSocket(io) {
             p._disconnectedAt = Date.now();
             console.log(`[이탈] ${leftNickname}(${userId}) 연결 끊김 — 5분 유예 시작`);
             io.to(debateId).emit('opponent-left', { userId, nickname: leftNickname });
+
+            // 한 쪽 전원 이탈 감지 → 반대쪽에 투표 요청
+            const slots = buildSlots(debateId);
+            const activeA = slots.A.filter(p => !roomParticipants[debateId]?.[p.userId]?._disconnectedAt);
+            const activeB = slots.B.filter(p => !roomParticipants[debateId]?.[p.userId]?._disconnectedAt);
+            if ((activeA.length === 0 || activeB.length === 0) && (activeA.length > 0 || activeB.length > 0)) {
+              const emptySide = activeA.length === 0 ? 'A' : 'B';
+              const remainingSide = emptySide === 'A' ? 'B' : 'A';
+              io.to(debateId).emit('side-empty-vote', { emptySide, remainingSide, message: `${emptySide}측 전원 이탈 — 판결 진행 또는 대기를 투표해주세요.` });
+              console.log(`[이탈] ${emptySide}측 전원 이탈 — 반대쪽 투표 요청`);
+            }
 
             const capturedDebateId = debateId;
             const capturedUserId = userId;

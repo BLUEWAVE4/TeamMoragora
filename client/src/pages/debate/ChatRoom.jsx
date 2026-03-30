@@ -57,6 +57,7 @@ const [opponentLeft, setOpponentLeft] = useState(false);
   const [kickVoteCountdown, setKickVoteCountdown] = useState(null); // 10초 카운트다운
   const [reportLoading, setReportLoading] = useState(false);
   const [reportResult, setReportResult] = useState(null); // { safe, reason }
+  const [sideEmptyVote, setSideEmptyVote] = useState(null); // { emptySide, remainingSide, message }
   const [rubricScores, setRubricScores] = useState({ logic: 0, evidence: 0, persuasion: 0, rebuttal: 0, structure: 0, total: 0 });
   const [rubricDisplay, setRubricDisplay] = useState({ logic: 0, evidence: 0, persuasion: 0, rebuttal: 0, structure: 0, total: 0 });
   const [reportedUsers, setReportedUsers] = useState({}); // { [userId]: true }
@@ -568,6 +569,16 @@ socket.on('kicked-blocked', ({ reason }) => {
   setMessages(prev => [...prev, { id: `sys-blocked-${Date.now()}`, type: 'system', content: reason, created_at: new Date().toISOString() }]);
   safeTimeout(() => navigate('/debate/lobby'), 2000);
 });
+// 한 쪽 전원 이탈 → 반대쪽 투표 요청
+socket.on('side-empty-vote', ({ emptySide, remainingSide, message }) => {
+  setSideEmptyVote({ emptySide, remainingSide, message });
+  setMessages(prev => [...prev, { id: `sys-empty-${Date.now()}`, type: 'system', content: message, created_at: new Date().toISOString() }]);
+});
+socket.on('side-empty-wait', ({ message }) => {
+  setSideEmptyVote(null);
+  setMessages(prev => [...prev, { id: `sys-wait-${Date.now()}`, type: 'system', content: message, created_at: new Date().toISOString() }]);
+});
+
 // 강퇴 후 빈 사이드 스킵 카운트다운
 socket.on('kick-skip-countdown', ({ side, seconds }) => {
   setKickSkipCountdown({ side, seconds });
@@ -592,6 +603,8 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       socket.off('participant-joined');
       socket.off('kicked-blocked');
       socket.off('kick-skip-countdown');
+      socket.off('side-empty-vote');
+      socket.off('side-empty-wait');
       // lobby-chat → useLobbyChat 훅에서 cleanup
       socket.off('already-in-room');
       socket.off('room-deleted');
@@ -1425,6 +1438,34 @@ const handleVote = (agree) => {
               ) : (
                 <span className="text-[10px] text-emerald-400/60 font-bold">동의하셨습니다.</span>
               )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ━━━━━ 한 쪽 전원 이탈 투표 ━━━━━ */}
+      <AnimatePresence>
+        {sideEmptyVote && mySide === sideEmptyVote.remainingSide && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            className="shrink-0 bg-amber-500/10 border-t border-amber-500/30 px-4 py-4"
+          >
+            <p className="text-amber-400 text-[13px] font-bold text-center mb-3">
+              {sideEmptyVote.emptySide}측 전원이 이탈했습니다
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { socket.emit('side-empty-decision', { debateId, decision: 'judge' }); setSideEmptyVote(null); }}
+                className="flex-1 py-2.5 rounded-xl bg-[#D4AF37] text-[#1B2A4A] text-[13px] font-black active:scale-95 transition-all"
+              >
+                판결 진행
+              </button>
+              <button
+                onClick={() => { socket.emit('side-empty-decision', { debateId, decision: 'wait' }); setSideEmptyVote(null); }}
+                className="flex-1 py-2.5 rounded-xl bg-white/10 text-white/60 text-[13px] font-bold active:scale-95 transition-all"
+              >
+                복귀 대기
+              </button>
             </div>
           </motion.div>
         )}
