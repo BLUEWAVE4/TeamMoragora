@@ -15,6 +15,7 @@ import FeedbackModal from '../../components/modals/FeedbackModal';
 import TierModal from '../../components/modals/TierModal';
 import MoragoraModal from '../../components/common/MoragoraModal';
 import { resetOnboarding } from '../../components/common/OnboardingModal';
+import QuoteLoader from '../../components/common/QuoteLoader';
 import { formatDate } from '../../utils/dateFormatter';
 import useModalState from '../../hooks/useModalState';
 
@@ -497,8 +498,10 @@ const [showInfo, setShowInfo] = useState(false);
     </div>
   );
 
+  if (!profileData) return <QuoteLoader />;
+
   return (
-    <div className="min-h-screen bg-[#F3F1EC] pb-40 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] pb-40 font-sans overflow-x-hidden">
       <div className="max-w-md mx-auto px-5 pt-8">
 
         {/* Avatar + Nickname */}
@@ -535,7 +538,7 @@ const [showInfo, setShowInfo] = useState(false);
                 ? buildAvatarUrl(user.id, profileData?.gender, avatarOptions)
                 : (resolveAvatar(profileData?.avatar_url, user.id, profileData?.gender))}
               alt="avatar"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover bg-[#F3F1EC] dark:bg-[#1B2A4A]"
             />
             {isEditing && profileData?.gender && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
