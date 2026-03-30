@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moragora 테이블 명세서</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #6366F1; --accent-light: #818CF8; --accent-bg: #EEF2FF;
+  --text: #1E293B; --text-light: #64748B; --border: #E2E8F0; --bg-gray: #F8FAFC;
+}
+body { font-family: 'Noto Sans KR', -apple-system, sans-serif; color: var(--text); line-height: 1.7; font-size: 10pt; background: #fff; }
+@media print {
+  @page { size: A4; margin: 18mm 15mm 22mm 15mm; }
+  @page :first { margin: 0; }
+  body { font-size: 9pt; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .page { box-shadow: none !important; margin: 0 !important; padding: 15px 20px !important; }
+  .cover-page { page-break-after: always; }
+  .page-break { page-break-before: always; }
+  .avoid-break { page-break-inside: avoid; }
+  h2, h3 { page-break-after: avoid; }
+  table { page-break-inside: avoid; }
+}
+@media screen {
+  body { max-width: 210mm; margin: 0 auto; padding: 20px; background: #E2E8F0; }
+  .page { background: #fff; padding: 30px 35px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); border-radius: 4px; }
+}
+.cover-page { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 297mm; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; position: relative; overflow: hidden; }
+.cover-page::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.06) 0%, transparent 50%); }
+.cover-badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 30px; padding: 8px 24px; font-size: 11pt; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 40px; position: relative; }
+.cover-title { font-size: 36pt; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; position: relative; }
+.cover-subtitle { font-size: 14pt; font-weight: 300; opacity: 0.9; margin-bottom: 60px; position: relative; }
+.cover-meta { position: relative; font-size: 10.5pt; font-weight: 300; opacity: 0.8; line-height: 2.2; }
+.cover-meta strong { font-weight: 500; opacity: 1; }
+.cover-divider { width: 80px; height: 2px; background: rgba(255,255,255,0.4); margin: 30px auto; position: relative; }
+
+h2 { font-size: 15pt; font-weight: 700; color: var(--text); margin: 32px 0 16px 0; padding-bottom: 8px; border-bottom: 3px solid var(--accent); }
+h3 { font-size: 12pt; font-weight: 700; color: var(--accent); margin: 20px 0 10px 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px 0; font-size: 9pt; }
+th { background: var(--accent); color: #fff; font-weight: 700; text-align: center; padding: 10px 12px; font-size: 9pt; }
+th:first-child { border-radius: 6px 0 0 0; } th:last-child { border-radius: 0 6px 0 0; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: center; }
+tr:nth-child(even) { background: var(--bg-gray); }
+td.left { text-align: left; }
+
+.col-name { font-weight: 700; font-family: 'Consolas', 'Courier New', monospace; }
+.col-type { font-family: 'Consolas', 'Courier New', monospace; color: var(--text-light); }
+
+/* 테이블 정의서 카드 */
+.tbl-card { border: 2px solid var(--border); border-radius: 12px; overflow: hidden; margin: 20px 0 28px 0; }
+.tbl-card-header { background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+.tbl-card-header h3 { color: #fff; margin: 0; font-size: 12pt; }
+.tbl-card-header .tbl-num { background: rgba(255,255,255,0.2); padding: 3px 14px; border-radius: 15px; font-size: 8.5pt; font-weight: 700; }
+.tbl-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid var(--border); }
+.tbl-meta-item { padding: 8px 16px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 9pt; display: flex; gap: 8px; }
+.tbl-meta-item:nth-child(even) { border-right: none; }
+.tbl-meta-label { font-weight: 700; color: var(--accent); min-width: 72px; }
+.tbl-card-body { padding: 0; }
+.tbl-card-body table { margin: 0; }
+.tbl-card-body th { background: #374151; border-radius: 0; font-size: 8pt; padding: 8px 6px; }
+.tbl-card-body td { font-size: 8pt; padding: 7px 6px; }
+
+.chk { color: var(--accent); font-weight: 900; }
+
+/* SQL 코드 블록 */
+.sql-block { background: #1E293B; color: #E2E8F0; border-radius: 0 0 10px 10px; padding: 16px 20px; font-family: 'Consolas', 'Courier New', monospace; font-size: 7.5pt; line-height: 1.6; overflow-x: auto; white-space: pre; border-top: 2px solid #374151; }
+.sk { color: #818CF8; font-weight: 700; }
+.st { color: #38BDF8; }
+.ss { color: #34D399; }
+.sd { color: #FBBF24; }
+.sc { color: #FB923C; }
+.sn { color: #F472B6; font-weight: 700; }
+.cm { color: #64748B; font-style: italic; }
+
+.doc-footer { text-align: center; padding: 20px 0 10px 0; border-top: 2px solid var(--border); margin-top: 40px; font-size: 8pt; color: var(--text-light); }
+</style>
+</head>
+<body>
+
+<!-- ============================== 표지 ============================== -->
+<div class="cover-page page">
+  <div class="cover-badge">Database Specification</div>
+  <h1 class="cover-title">테이블 명세서</h1>
+  <p class="cover-subtitle">Moragora — AI 논쟁 판결 플랫폼</p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <strong>과제명</strong> : Moragora (AI 논쟁 판결 플랫폼)<br>
+    <strong>작성일</strong> : 2026. 03. 25.<br>
+    <strong>버전</strong> : v2.1 (arguments.round 추가, debates.status CHECK 추가)<br>
+    <strong>데이터베이스</strong> : Supabase (PostgreSQL)
+  </div>
+</div>
+
+<!-- ============================== I. 테이블 목록 ============================== -->
+<div class="page page-break">
+  <h2>I. 테이블 목록</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%;">No</th>
+        <th style="width:24%;">테이블명</th>
+        <th style="width:24%;">테이블_ID</th>
+        <th style="width:46%;">비고</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>사용자 프로필</td><td class="col-name">profiles</td><td class="left">Supabase Auth 연동, 승/패/무 전적, 성별/나이/누적점수 관리</td></tr>
+      <tr><td>2</td><td>논쟁 방</td><td class="col-name">debates</td><td class="left">3단계 위자드 설정, 초대 코드, 상태 머신, 채팅/조회수 관리</td></tr>
+      <tr><td>3</td><td>주장</td><td class="col-name">arguments</td><td class="left">A/B 양측 입론 (50~2,000자)</td></tr>
+      <tr><td>4</td><td>판결</td><td class="col-name">verdicts</td><td class="left">AI 종합 + 시민 복합 점수 (AI 각 25% + 시민 25%)</td></tr>
+      <tr><td>5</td><td>AI 개별 판결</td><td class="col-name">ai_judgments</td><td class="left">GPT-4.1, Gemini 2.5 Flash, Claude Sonnet 3사 개별</td></tr>
+      <tr><td>6</td><td>시민 투표</td><td class="col-name">votes</td><td class="left">1인 1투표, 투표 기간(vote_deadline) 내 참여, 30명 이상 시 시민 점수 반영</td></tr>
+      <tr><td>7</td><td>콘텐츠 방어 로그</td><td class="col-name">content_filter_logs</td><td class="left">3단계 필터링 (비속어/AI/게이트키핑) 기록</td></tr>
+      <tr><td>8</td><td>XP 이력</td><td class="col-name">xp_logs</td><td class="left">경험치 획득/차감 이력 (리그 시스템)</td></tr>
+      <tr><td>9</td><td>댓글</td><td class="col-name">comments</td><td class="left">판결 결과에 대한 사용자 댓글</td></tr>
+      <tr><td>10</td><td>댓글 좋아요</td><td class="col-name">comment_likes</td><td class="left">댓글 좋아요 (1인 1좋아요, UNIQUE 제약)</td></tr>
+      <tr><td>11</td><td>사용자 피드백</td><td class="col-name">feedbacks</td><td class="left">서비스 만족도 피드백 (5항목 0.5~5점 + 텍스트)</td></tr>
+      <tr><td>12</td><td>실시간 채팅 메시지</td><td class="col-name">chat_messages</td><td class="left">논쟁 참여자 실시간 채팅 메시지 저장 (Socket.IO 연동)</td></tr>
+      <tr><td>13</td><td>알림</td><td class="col-name">notifications</td><td class="left">사용자 알림 (채팅시작/판결완료/투표리마인더)</td></tr>
+      <tr><td>14</td><td>논쟁 좋아요</td><td class="col-name">debate_likes</td><td class="left">논쟁 좋아요 (1인 1좋아요, UNIQUE 제약)</td></tr>
+      <tr><td>15</td><td>판결 별점</td><td class="col-name">verdict_ratings</td><td class="left">판결 별점 (0.5~5.0, 1인 1별점)</td></tr>
+      <tr><td>16</td><td>페이지 조회</td><td class="col-name">page_views</td><td class="left">페이지 조회 이력 (트래픽 분석)</td></tr>
+      <tr><td>17</td><td>커스텀 이벤트</td><td class="col-name">analytics_events</td><td class="left">서비스 이벤트 추적 (JSONB 메타데이터)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================== II. 테이블 정의서 ============================== -->
+<div class="page page-break">
+  <h2>II. 테이블 정의서</h2>
+
+  <!-- ===== 1. profiles ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>profiles (사용자 프로필)</h3>
+      <span class="tbl-num">Table 1 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 사용자 프로필</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> profiles</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> Supabase Auth(auth.users)와 1:1 연동되는 공개 프로필. 닉네임, 프로필 이미지, 승/패/무 전적, 성별/나이/누적점수 관리</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>사용자ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td class="left">auth.users(id) 참조</td></tr>
+          <tr><td>닉네임</td><td class="col-name">nickname</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">사용자 표시 이름</td></tr>
+          <tr><td>프로필이미지</td><td class="col-name">avatar_url</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">프로필 이미지 URL</td></tr>
+          <tr><td>성별</td><td class="col-name">gender</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">사용자 성별 (선택 입력)</td></tr>
+          <tr><td>나이</td><td class="col-name">age</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">사용자 나이 (선택 입력)</td></tr>
+          <tr><td>승리수</td><td class="col-name">wins</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0</td></tr>
+          <tr><td>패배수</td><td class="col-name">losses</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0</td></tr>
+          <tr><td>무승부수</td><td class="col-name">draws</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0</td></tr>
+          <tr><td>누적점수</td><td class="col-name">total_score</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0, 논쟁별 최종 점수 누적 합산</td></tr>
+          <tr><td>경험치</td><td class="col-name">xp</td><td class="col-type">INTEGER</td><td>4</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0, 리그 시스템 경험치 총합</td></tr>
+          <tr><td>티어</td><td class="col-name">tier</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">DEFAULT '시민' (시민/배심원/변호사/판사/대법관)</td></tr>
+          <tr><td>가입시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">profiles</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sc">REFERENCES</span> auth.users(id) <span class="sc">ON DELETE CASCADE</span>,
+  nickname    <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  avatar_url  <span class="st">TEXT</span>,
+  gender      <span class="st">VARCHAR</span>,
+  age         <span class="st">INTEGER</span>,
+  wins        <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  losses      <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  draws       <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  total_score <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  xp          <span class="st">INTEGER</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 0</span>,
+  tier        <span class="st">TEXT</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT '시민'</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 2. debates ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>debates (논쟁 방)</h3>
+      <span class="tbl-num">Table 2 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 논쟁 방</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> debates</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 3단계 위자드(목적/렌즈/주제) 설정, 초대 코드, 상태 머신(waiting→completed), 채팅/조회수 관리</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>논쟁ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>주제</td><td class="col-name">topic</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">논쟁 주제</td></tr>
+          <tr><td>부가설명</td><td class="col-name">description</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">논쟁 부가 설명 (선택)</td></tr>
+          <tr><td>찬성입장</td><td class="col-name">pro_side</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">A측(찬성) 입장 제목 — AI 자동 생성 또는 직접 입력</td></tr>
+          <tr><td>반대입장</td><td class="col-name">con_side</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">B측(반대) 입장 제목 — AI 자동 생성 또는 직접 입력</td></tr>
+          <tr><td>투표제한시간</td><td class="col-name">vote_duration</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">시민 투표 제한시간 (분 단위, 3/5/10). NULL이면 기본 24시간</td></tr>
+          <tr><td>논쟁모드</td><td class="col-name">mode</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">DEFAULT 'duo', CHECK (duo/solo/chat/daily)</td></tr>
+          <tr><td>카테고리</td><td class="col-name">category</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">일상/연애/직장/교육/사회/정치/기술/철학/문화/기타</td></tr>
+          <tr><td>판결목적</td><td class="col-name">purpose</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 'compete' (compete/consensus/analyze)</td></tr>
+          <tr><td>분석렌즈</td><td class="col-name">lens</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 'general' (logic/emotion/practical/ethics/general/custom)</td></tr>
+          <tr><td>생성자</td><td class="col-name">creator_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>상대방</td><td class="col-name">opponent_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조, NULL 가능</td></tr>
+          <tr><td>초대코드</td><td class="col-name">invite_code</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td class="chk">Y</td><td></td><td class="left">초대 링크용 고유 코드</td></tr>
+          <tr><td>상태</td><td class="col-name">status</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">DEFAULT 'waiting', CHECK (waiting/both_joined/arguing/chatting/judging/voting/completed)</td></tr>
+          <tr><td>채팅마감</td><td class="col-name">chat_deadline</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">실시간 채팅 마감 시각</td></tr>
+          <tr><td>채팅시작</td><td class="col-name">chat_started_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">실시간 채팅 시작 시각</td></tr>
+          <tr><td>조회수</td><td class="col-name">view_count</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0, 논쟁 페이지 조회 수</td></tr>
+          <tr><td>투표마감</td><td class="col-name">vote_deadline</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">AI 판결 후 시민 투표 마감 시각 (vote_duration 기반, NULL이면 24시간)</td></tr>
+          <tr><td>생성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">debates</span> (
+  id              <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  topic           <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  description     <span class="st">TEXT</span>,
+  pro_side        <span class="st">TEXT</span>,                              <span class="cm">-- A측(찬성) 입장 제목</span>
+  con_side        <span class="st">TEXT</span>,                              <span class="cm">-- B측(반대) 입장 제목</span>
+  vote_duration   <span class="st">INTEGER</span>,                          <span class="cm">-- 시민 투표 제한시간 (분)</span>
+  mode            <span class="st">TEXT</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 'duo'</span> <span class="sc">CHECK</span> (mode <span class="sc">IN</span> ('duo', 'solo', 'chat', 'daily')),
+  category        <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  purpose         <span class="st">TEXT</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 'compete'</span>,
+  lens            <span class="st">TEXT</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 'general'</span>,
+  creator_id      <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  opponent_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  invite_code     <span class="st">TEXT</span> <span class="sc">UNIQUE</span>,
+  status          <span class="st">TEXT</span> <span class="sd">DEFAULT 'waiting'</span> <span class="sc">CHECK</span> (status <span class="sc">IN</span> ('waiting', 'both_joined', 'arguing', 'chatting', 'judging', 'voting', 'completed')),
+  chat_deadline   <span class="st">TIMESTAMPTZ</span>,                      <span class="cm">-- 실시간 채팅 마감 시각</span>
+  chat_started_at <span class="st">TIMESTAMPTZ</span>,                      <span class="cm">-- 실시간 채팅 시작 시각</span>
+  view_count      <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,               <span class="cm">-- 논쟁 페이지 조회 수</span>
+  vote_deadline   <span class="st">TIMESTAMPTZ</span>,
+  created_at      <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 3. arguments ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>arguments (주장)</h3>
+      <span class="tbl-num">Table 3 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 주장</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> arguments</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 논쟁 참여자의 A/B 양측 입론 (50~2,000자). 콘텐츠 필터링 대상</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>주장ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">debates(id) ON DELETE CASCADE</td></tr>
+          <tr><td>작성자</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>진영</td><td class="col-name">side</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">'A' 또는 'B'</td></tr>
+          <tr><td>주장내용</td><td class="col-name">content</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">50~2,000자 제한</td></tr>
+          <tr><td>라운드</td><td class="col-name">round</td><td class="col-type">INTEGER</td><td>4</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 1, 주장 라운드 (1=본론, 2=반박)</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">arguments</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id   <span class="st">UUID</span> <span class="sc">REFERENCES</span> debates(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  side        <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  content     <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  round       <span class="st">INTEGER</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 1</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+
+  <!-- ===== 4. verdicts ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>verdicts (판결)</h3>
+      <span class="tbl-num">Table 4 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 판결</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> verdicts</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> AI 종합 + 시민 복합 점수 (AI 각 25% + 시민 25%). 논쟁당 1건 (debates와 1:1 관계)</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:14%;">컬럼명</th>
+            <th style="width:17%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:4%;">NN</th>
+            <th style="width:4%;">PK</th>
+            <th style="width:4%;">FK</th>
+            <th style="width:4%;">UK</th>
+            <th style="width:4%;">CK</th>
+            <th style="width:32%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>판결ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">debates(id) 참조, UNIQUE (1:1)</td></tr>
+          <tr><td>최종승자</td><td class="col-name">winner_side</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">'A', 'B', 'draw'</td></tr>
+          <tr><td>판결요약</td><td class="col-name">summary</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">종합 판결 요약문</td></tr>
+          <tr><td>AI A측점수</td><td class="col-name">ai_score_a</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">3사 평균 (0~100)</td></tr>
+          <tr><td>AI B측점수</td><td class="col-name">ai_score_b</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">3사 평균 (0~100)</td></tr>
+          <tr><td>시민A측점수</td><td class="col-name">citizen_score_a</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0 (0~100)</td></tr>
+          <tr><td>시민B측점수</td><td class="col-name">citizen_score_b</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0 (0~100)</td></tr>
+          <tr><td>최종A측점수</td><td class="col-name">final_score_a</td><td class="col-type">NUMERIC</td><td>5,2</td><td></td><td></td><td></td><td></td><td></td><td class="left">AI 각 25%(75%) + 시민 25%</td></tr>
+          <tr><td>최종B측점수</td><td class="col-name">final_score_b</td><td class="col-type">NUMERIC</td><td>5,2</td><td></td><td></td><td></td><td></td><td></td><td class="left">AI 각 25%(75%) + 시민 25%</td></tr>
+          <tr><td>투표참여수</td><td class="col-name">citizen_vote_count</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0</td></tr>
+          <tr><td>시민반영여부</td><td class="col-name">is_citizen_applied</td><td class="col-type">BOOLEAN</td><td>1</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT FALSE, 30명 이상 시 true</td></tr>
+          <tr><td>생성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+          <tr><td>갱신시각</td><td class="col-name">updated_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW(), 시민 투표 반영 시 갱신</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">verdicts</span> (
+  id                  <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id           <span class="st">UUID</span> <span class="sc">REFERENCES</span> debates(id) <span class="sc">UNIQUE</span>,
+  winner_side         <span class="st">TEXT</span>,
+  summary             <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  ai_score_a          <span class="st">INTEGER</span>,
+  ai_score_b          <span class="st">INTEGER</span>,
+  citizen_score_a     <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  citizen_score_b     <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  final_score_a       <span class="st">NUMERIC(5,2)</span>,
+  final_score_b       <span class="st">NUMERIC(5,2)</span>,
+  citizen_vote_count  <span class="st">INTEGER</span> <span class="sd">DEFAULT 0</span>,
+  is_citizen_applied  <span class="st">BOOLEAN</span> <span class="sd">DEFAULT FALSE</span>,
+  created_at          <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>,
+  updated_at          <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 5. ai_judgments ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>ai_judgments (AI 개별 판결)</h3>
+      <span class="tbl-num">Table 5 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> AI 개별 판결</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> ai_judgments</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> GPT-4.1, Gemini 2.5 Flash, Claude Sonnet 3사의 개별 채점 및 판결문. JSONB 채점 상세(5항목x20점) 포함</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:15%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:30%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>판결ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>종합판결ID</td><td class="col-name">verdict_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">verdicts(id) ON DELETE CASCADE</td></tr>
+          <tr><td>AI모델명</td><td class="col-name">ai_model</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">gpt-4.1 / gemini-2.0-flash / claude-sonnet</td></tr>
+          <tr><td>AI승자판정</td><td class="col-name">winner_side</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">'A', 'B', 'draw'</td></tr>
+          <tr><td>판결문</td><td class="col-name">verdict_text</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">AI 판결 전문</td></tr>
+          <tr><td>A측총점</td><td class="col-name">score_a</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">0~100</td></tr>
+          <tr><td>B측총점</td><td class="col-name">score_b</td><td class="col-type">INTEGER</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td class="left">0~100</td></tr>
+          <tr><td>A측채점상세</td><td class="col-name">score_detail_a</td><td class="col-type">JSONB</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">{logic,evidence,rebuttal,consistency,expression}</td></tr>
+          <tr><td>B측채점상세</td><td class="col-name">score_detail_b</td><td class="col-type">JSONB</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">동일 구조</td></tr>
+          <tr><td>확신도</td><td class="col-name">confidence</td><td class="col-type">NUMERIC</td><td>4,2</td><td></td><td></td><td></td><td></td><td></td><td class="left">0.00 ~ 1.00</td></tr>
+          <tr><td>처리상태</td><td class="col-name">status</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 'success' (success/failed/timeout)</td></tr>
+          <tr><td>생성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">ai_judgments</span> (
+  id              <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  verdict_id      <span class="st">UUID</span> <span class="sc">REFERENCES</span> verdicts(id) <span class="sc">ON DELETE CASCADE</span>,
+  ai_model        <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  winner_side     <span class="st">TEXT</span>,
+  verdict_text    <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  score_a         <span class="st">INTEGER</span>,
+  score_b         <span class="st">INTEGER</span>,
+  score_detail_a  <span class="st">JSONB</span>,
+  score_detail_b  <span class="st">JSONB</span>,
+  confidence      <span class="st">NUMERIC(4,2)</span>,
+  status          <span class="st">TEXT</span> <span class="sd">DEFAULT 'success'</span>,
+  created_at      <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 6. votes ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>votes (시민 투표)</h3>
+      <span class="tbl-num">Table 6 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 시민 투표</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> votes</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 논쟁별 1인 1투표 (UNIQUE 복합 제약). 30명 이상 투표 시 시민 점수 반영</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>투표ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">debates(id) ON DELETE CASCADE</td></tr>
+          <tr><td>투표자</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>투표진영</td><td class="col-name">voted_side</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">'A' 또는 'B'</td></tr>
+          <tr><td>투표시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+          <tr><td colspan="10" style="background:var(--accent-bg); text-align:center; font-size:8pt;"><strong>UNIQUE(debate_id, user_id)</strong> -- 1인 1투표 보장</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">votes</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id   <span class="st">UUID</span> <span class="sc">REFERENCES</span> debates(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  voted_side  <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>,
+  <span class="sc">UNIQUE</span>(debate_id, user_id)
+);</div>
+  </div>
+
+  <!-- ===== 7. content_filter_logs ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>content_filter_logs (콘텐츠 방어 로그)</h3>
+      <span class="tbl-num">Table 7 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-03</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 콘텐츠 방어 로그</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> content_filter_logs</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 3단계 콘텐츠 필터링(1:비속어 사전, 2:AI 필터(Gemini Flash), 3:게이트키핑) 처리 결과 기록</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>로그ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">debates(id) 참조, NULL 가능</td></tr>
+          <tr><td>콘텐츠유형</td><td class="col-name">content_type</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">'argument', 'check', 'topic'</td></tr>
+          <tr><td>필터단계</td><td class="col-name">filter_stage</td><td class="col-type">INTEGER</td><td>4</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">1:비속어 사전, 2:AI 필터, 3:게이트키핑</td></tr>
+          <tr><td>처리결과</td><td class="col-name">result</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">block (차단 시에만 기록)</td></tr>
+          <tr><td>사유</td><td class="col-name">reason</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">차단/경고 사유</td></tr>
+          <tr><td>기록시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">content_filter_logs</span> (
+  id            <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  user_id       <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  debate_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> debates(id),
+  content_type  <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  filter_stage  <span class="st">INTEGER</span> <span class="sc">NOT NULL</span>,
+  result        <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  reason        <span class="st">TEXT</span>,
+  created_at    <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+
+  <!-- ===== 8. xp_logs ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>xp_logs (XP 이력)</h3>
+      <span class="tbl-num">Table 8 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-06</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> XP 이력</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> xp_logs</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 리그 시스템 경험치 획득/차감 이력. 승리/패배/투표 등 활동별 XP 기록, 기간별 집계 지원</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>이력ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) ON DELETE CASCADE</td></tr>
+          <tr><td>XP량</td><td class="col-name">xp_amount</td><td class="col-type">INTEGER</td><td>4</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">양수(획득) 또는 음수(차감)</td></tr>
+          <tr><td>사유</td><td class="col-name">reason</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">victory/defeat/draw/daily_debate/vote/bonus/penalty</td></tr>
+          <tr><td>참조ID</td><td class="col-name">reference_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td></td><td></td><td></td><td class="left">관련 debate_id 또는 vote_id</td></tr>
+          <tr><td>생성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT now()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">xp_logs</span> (
+  id            <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  user_id       <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id) <span class="sc">ON DELETE CASCADE</span>,
+  xp_amount     <span class="st">INTEGER</span> <span class="sc">NOT NULL</span>,
+  reason        <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  reference_id  <span class="st">UUID</span>,
+  created_at    <span class="st">TIMESTAMPTZ</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT now()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 9. comments ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>comments (댓글)</h3>
+      <span class="tbl-num">Table 9 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-05</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 댓글</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> comments</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 판결 결과에 대한 사용자 댓글. 논쟁별 댓글 작성 및 좋아요 카운트 관리</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>댓글ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">debates(id) 참조, ON DELETE CASCADE</td></tr>
+          <tr><td>작성자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>내용</td><td class="col-name">content</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">댓글 본문</td></tr>
+          <tr><td>좋아요수</td><td class="col-name">likes_count</td><td class="col-type">INTEGER</td><td>4</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT 0, 비정규화 카운트</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT now()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">comments</span> (
+  id            <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id     <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> debates(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id       <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id),
+  content       <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  likes_count   <span class="st">INTEGER</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT 0</span>,
+  created_at    <span class="st">TIMESTAMPTZ</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT now()</span>
+);</div>
+  </div>
+
+  <!-- ===== 10. comment_likes ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>comment_likes (댓글 좋아요)</h3>
+      <span class="tbl-num">Table 10 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-05</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 댓글 좋아요</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> comment_likes</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 댓글에 대한 좋아요 기록. 1인 1좋아요 (comment_id + user_id UNIQUE 제약)</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>좋아요ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>댓글ID</td><td class="col-name">comment_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">comments(id) 참조, ON DELETE CASCADE</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT now()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">comment_likes</span> (
+  id            <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  comment_id    <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> comments(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id       <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id),
+  created_at    <span class="st">TIMESTAMPTZ</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT now()</span>,
+  <span class="sc">UNIQUE</span> (comment_id, user_id)
+);</div>
+  </div>
+
+  <!-- ===== 11. feedbacks ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>feedbacks (사용자 피드백)</h3>
+      <span class="tbl-num">Table 11 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-12</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 사용자 피드백</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> feedbacks</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 서비스 만족도 피드백. 5항목 평점(0.5~5.0) + 텍스트 피드백. user_id UNIQUE (1인 1피드백, upsert)</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>피드백ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">profiles(id) 참조, UNIQUE</td></tr>
+          <tr><td>만족도</td><td class="col-name">satisfaction</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>AI정확도</td><td class="col-name">ai_accuracy</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>UI편의성</td><td class="col-name">ui_ease</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>공정성</td><td class="col-name">fairness</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>추천의향</td><td class="col-name">recommend</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>최고기능</td><td class="col-name">best_feature</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">선택 입력</td></tr>
+          <tr><td>개선사항</td><td class="col-name">improvement</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">선택 입력</td></tr>
+          <tr><td>추가의견</td><td class="col-name">additional</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">선택 입력</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">DEFAULT now()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">feedbacks</span> (
+  id            <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  user_id       <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id) <span class="sc">UNIQUE</span>,
+  satisfaction  <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (satisfaction >= 0.5 AND satisfaction <= 5),
+  ai_accuracy   <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (ai_accuracy >= 0.5 AND ai_accuracy <= 5),
+  ui_ease       <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (ui_ease >= 0.5 AND ui_ease <= 5),
+  fairness      <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (fairness >= 0.5 AND fairness <= 5),
+  recommend     <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (recommend >= 0.5 AND recommend <= 5),
+  best_feature  <span class="st">TEXT</span>,
+  improvement   <span class="st">TEXT</span>,
+  additional    <span class="st">TEXT</span>,
+  created_at    <span class="st">TIMESTAMPTZ</span> <span class="sc">NOT NULL</span> <span class="sd">DEFAULT now()</span>
+);</div>
+  </div>
+</div>
+
+<!-- ============================== NEW TABLES (12~17) ============================== -->
+<div class="page page-break">
+  <!-- ===== 12. chat_messages ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>chat_messages (실시간 채팅 메시지)</h3>
+      <span class="tbl-num">Table 12 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 실시간 채팅 메시지</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> chat_messages</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 논쟁 참여자의 실시간 채팅 메시지 저장. Socket.IO 연동, AI 판결 입력 데이터 활용 가능</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>메시지ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">debates(id) ON DELETE CASCADE</td></tr>
+          <tr><td>작성자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>닉네임</td><td class="col-name">nickname</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">작성 시점 사용자 닉네임 (비정규화)</td></tr>
+          <tr><td>메시지내용</td><td class="col-name">content</td><td class="col-type">TEXT</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">채팅 메시지 본문</td></tr>
+          <tr><td>진영</td><td class="col-name">side</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">'A' 또는 'B'</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">chat_messages</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id   <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> debates(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id),
+  nickname    <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  content     <span class="st">TEXT</span> <span class="sc">NOT NULL</span>,
+  side        <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+
+  <!-- ===== 13. notifications ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>notifications (알림)</h3>
+      <span class="tbl-num">Table 13 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 알림</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> notifications</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 사용자 알림 저장. 채팅 시작, 판결 완료, 투표 리마인더 등 알림 유형별 관리</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>알림ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) ON DELETE CASCADE</td></tr>
+          <tr><td>알림유형</td><td class="col-name">type</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">chat_start / verdict_complete / vote_reminder</td></tr>
+          <tr><td>제목</td><td class="col-name">title</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">알림 제목</td></tr>
+          <tr><td>메시지</td><td class="col-name">message</td><td class="col-type">TEXT</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">알림 상세 메시지</td></tr>
+          <tr><td>링크</td><td class="col-name">link</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">클릭 시 이동할 경로</td></tr>
+          <tr><td>읽음여부</td><td class="col-name">is_read</td><td class="col-type">BOOLEAN</td><td>1</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT FALSE, 읽음 처리 플래그</td></tr>
+          <tr><td>생성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">notifications</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id) <span class="sc">ON DELETE CASCADE</span>,
+  type        <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  title       <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  message     <span class="st">TEXT</span>,
+  link        <span class="st">VARCHAR</span>,
+  is_read     <span class="st">BOOLEAN</span> <span class="sd">DEFAULT FALSE</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 14. debate_likes ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>debate_likes (논쟁 좋아요)</h3>
+      <span class="tbl-num">Table 14 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 논쟁 좋아요</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> debate_likes</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 논쟁에 대한 좋아요 기록. 1인 1좋아요 (debate_id + user_id UNIQUE 제약)</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>좋아요ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>논쟁ID</td><td class="col-name">debate_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">debates(id) ON DELETE CASCADE</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+          <tr><td colspan="10" style="background:var(--accent-bg); text-align:center; font-size:8pt;"><strong>UNIQUE(debate_id, user_id)</strong> -- 1인 1좋아요 보장</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">debate_likes</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  debate_id   <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> debates(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id),
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>,
+  <span class="sc">UNIQUE</span> (debate_id, user_id)
+);</div>
+  </div>
+
+  <!-- ===== 15. verdict_ratings ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>verdict_ratings (판결 별점)</h3>
+      <span class="tbl-num">Table 15 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 판결 별점</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> verdict_ratings</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 판결 결과에 대한 사용자 별점. 0.5~5.0점 범위, 1인 1별점 (verdict_id + user_id UNIQUE 제약)</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>별점ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>판결ID</td><td class="col-name">verdict_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">verdicts(id) ON DELETE CASCADE</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td></td><td class="chk">Y</td><td class="chk">Y</td><td></td><td class="left">profiles(id) 참조</td></tr>
+          <tr><td>별점</td><td class="col-name">score</td><td class="col-type">NUMERIC(2,1)</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td class="chk">Y</td><td class="left">0.5~5.0 (0.5 단위)</td></tr>
+          <tr><td>작성시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+          <tr><td colspan="10" style="background:var(--accent-bg); text-align:center; font-size:8pt;"><strong>UNIQUE(verdict_id, user_id)</strong> -- 1인 1별점 보장</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">verdict_ratings</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  verdict_id  <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> verdicts(id) <span class="sc">ON DELETE CASCADE</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">NOT NULL REFERENCES</span> profiles(id),
+  score       <span class="st">NUMERIC(2,1)</span> <span class="sc">NOT NULL CHECK</span> (score >= 0.5 AND score <= 5),
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>,
+  <span class="sc">UNIQUE</span> (verdict_id, user_id)
+);</div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- ===== 16. page_views ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>page_views (페이지 조회)</h3>
+      <span class="tbl-num">Table 16 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 페이지 조회</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> page_views</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 사용자 페이지 조회 이력. 트래픽 분석 및 사용자 행동 추적용</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>조회ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>경로</td><td class="col-name">path</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">조회한 페이지 경로</td></tr>
+          <tr><td>세션ID</td><td class="col-name">session_id</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">브라우저 세션 식별자</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조, NULL 가능 (비로그인)</td></tr>
+          <tr><td>유입경로</td><td class="col-name">referrer</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">이전 페이지 URL</td></tr>
+          <tr><td>브라우저정보</td><td class="col-name">user_agent</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">User-Agent 문자열</td></tr>
+          <tr><td>조회시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">page_views</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  path        <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  session_id  <span class="st">VARCHAR</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  referrer    <span class="st">VARCHAR</span>,
+  user_agent  <span class="st">VARCHAR</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+
+  <!-- ===== 17. analytics_events ===== -->
+  <div class="tbl-card avoid-break">
+    <div class="tbl-card-header">
+      <h3>analytics_events (커스텀 이벤트)</h3>
+      <span class="tbl-num">Table 17 / 17</span>
+    </div>
+    <div class="tbl-meta">
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성일자</span> 2026-03-25</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">작성자</span> 김선관</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블명</span> 커스텀 이벤트</div>
+      <div class="tbl-meta-item"><span class="tbl-meta-label">테이블 ID</span> analytics_events</div>
+      <div class="tbl-meta-item" style="grid-column: 1 / -1; border-right: none;"><span class="tbl-meta-label">테이블설명</span> 서비스 내 주요 이벤트 추적. JSONB 메타데이터로 유연한 이벤트 속성 저장</div>
+    </div>
+    <div class="tbl-card-body">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:13%;">컬럼명</th>
+            <th style="width:14%;">컬럼 ID</th>
+            <th style="width:11%;">타입</th>
+            <th style="width:6%;">길이</th>
+            <th style="width:5%;">NN</th>
+            <th style="width:5%;">PK</th>
+            <th style="width:5%;">FK</th>
+            <th style="width:5%;">UK</th>
+            <th style="width:5%;">CK</th>
+            <th style="width:31%;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>이벤트ID</td><td class="col-name">id</td><td class="col-type">UUID</td><td>36</td><td class="chk">Y</td><td class="chk">Y</td><td></td><td></td><td></td><td class="left">DEFAULT gen_random_uuid()</td></tr>
+          <tr><td>이벤트명</td><td class="col-name">event_name</td><td class="col-type">VARCHAR</td><td>-</td><td class="chk">Y</td><td></td><td></td><td></td><td></td><td class="left">이벤트 식별 이름</td></tr>
+          <tr><td>메타데이터</td><td class="col-name">metadata</td><td class="col-type">JSONB</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">이벤트 추가 속성 (유연한 구조)</td></tr>
+          <tr><td>세션ID</td><td class="col-name">session_id</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">브라우저 세션 식별자</td></tr>
+          <tr><td>사용자ID</td><td class="col-name">user_id</td><td class="col-type">UUID</td><td>36</td><td></td><td></td><td class="chk">Y</td><td></td><td></td><td class="left">profiles(id) 참조, NULL 가능 (비로그인)</td></tr>
+          <tr><td>경로</td><td class="col-name">path</td><td class="col-type">VARCHAR</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">이벤트 발생 페이지 경로</td></tr>
+          <tr><td>발생시각</td><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>-</td><td></td><td></td><td></td><td></td><td></td><td class="left">DEFAULT NOW()</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sql-block"><span class="cm">-- Table 생성 스크립트</span>
+<span class="sk">CREATE TABLE</span> <span class="sn">analytics_events</span> (
+  id          <span class="st">UUID</span> <span class="sc">PRIMARY KEY</span> <span class="sd">DEFAULT gen_random_uuid()</span>,
+  event_name  <span class="st">VARCHAR</span> <span class="sc">NOT NULL</span>,
+  metadata    <span class="st">JSONB</span>,
+  session_id  <span class="st">VARCHAR</span>,
+  user_id     <span class="st">UUID</span> <span class="sc">REFERENCES</span> profiles(id),
+  path        <span class="st">VARCHAR</span>,
+  created_at  <span class="st">TIMESTAMPTZ</span> <span class="sd">DEFAULT NOW()</span>
+);</div>
+  </div>
+</div>
+
+  <!-- ============================== 변경 이력 ============================== -->
+  <div class="page page-break">
+    <h2>변경 이력</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%;">버전</th>
+          <th style="width:14%;">날짜</th>
+          <th style="width:12%;">작성자</th>
+          <th style="width:64%;">변경 내용</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>v1.0</strong></td>
+          <td>2026-03-03</td>
+          <td>김선관</td>
+          <td class="left">초기 작성 (TIER 1)<br>- 7개 테이블 정의: profiles, debates, arguments, verdicts, ai_judgments, votes, content_filter_logs<br>- 각 테이블 컬럼 명세 및 CREATE TABLE 스크립트 포함</td>
+        </tr>
+        <tr>
+          <td><strong>v1.1</strong></td>
+          <td>2026-03-05</td>
+          <td>김선관</td>
+          <td class="left">TIER 2 테이블 추가<br>- comments (댓글) 테이블 추가: 판결 결과에 대한 사용자 댓글, likes_count 비정규화 카운트<br>- comment_likes (댓글 좋아요) 테이블 추가: 1인 1좋아요 UNIQUE 제약<br>- 테이블 총 개수: 7개 → 9개<br>- 문서 버전 v1.0 → v1.1 갱신</td>
+        </tr>
+        <tr>
+          <td><strong>v1.2</strong></td>
+          <td>2026-03-06</td>
+          <td>김선관</td>
+          <td class="left">리그 시스템 테이블 추가<br>- profiles 테이블에 xp(경험치), tier(티어) 컬럼 추가<br>- xp_logs (XP 이력) 테이블 추가: 활동별 경험치 획득/차감 기록, 기간별 집계 지원<br>- 테이블 총 개수: 9개 → 10개<br>- 문서 버전 v1.1 → v1.2 갱신</td>
+        </tr>
+        <tr>
+          <td><strong>v1.3</strong></td>
+          <td>2026-03-12</td>
+          <td>김선관</td>
+          <td class="left">피드백 테이블 추가<br>- feedbacks (사용자 피드백) 테이블 추가: 5항목 만족도 평점(NUMERIC 0.5~5.0) + 텍스트 피드백 3개 필드<br>- user_id UNIQUE 제약 (1인 1피드백, upsert 방식)<br>- 테이블 총 개수: 10개 → 11개<br>- 문서 버전 v1.2 → v1.3 갱신</td>
+        </tr>
+        <tr>
+          <td><strong>v1.4</strong></td>
+          <td>2026-03-12</td>
+          <td>김선관</td>
+          <td class="left">content_filter_logs 테이블 보정<br>- result 필드: "pass/warn/block" → "block" (차단 시에만 기록)<br>- content_type 필드: 'argument', 'check', 'topic' 명시<br>- 문서 버전 v1.3 → v1.4 갱신</td>
+        </tr>
+        <tr>
+          <td><strong>v2.0</strong></td>
+          <td>2026-03-25</td>
+          <td>김선관</td>
+          <td class="left">채팅/알림/좋아요/별점/분석 테이블 추가 및 기존 테이블 확장<br>- chat_messages (실시간 채팅 메시지) 테이블 추가: 논쟁 참여자 채팅 저장, Socket.IO 연동<br>- notifications (알림) 테이블 추가: 채팅시작/판결완료/투표리마인더 유형별 알림<br>- debate_likes (논쟁 좋아요) 테이블 추가: 1인 1좋아요, UNIQUE(debate_id, user_id)<br>- verdict_ratings (판결 별점) 테이블 추가: 0.5~5.0 별점, UNIQUE(verdict_id, user_id)<br>- page_views (페이지 조회) 테이블 추가: 트래픽 분석용 조회 이력<br>- analytics_events (커스텀 이벤트) 테이블 추가: JSONB 메타데이터 기반 이벤트 추적<br>- profiles 테이블: gender(성별), age(나이), total_score(누적점수) 컬럼 추가<br>- debates 테이블: chat_deadline, chat_started_at, view_count, mode(chat/daily 추가) 컬럼 추가<br>- 테이블 총 개수: 11개 → 17개<br>- 문서 버전 v1.4 → v2.0 갱신</td>
+        </tr>
+        <tr>
+          <td><strong>v2.1</strong></td>
+          <td>2026-03-25</td>
+          <td>김선관</td>
+          <td class="left">컬럼/제약조건 보정<br>- arguments 테이블: round 컬럼 추가 (INTEGER NOT NULL DEFAULT 1, 1=본론/2=반박)<br>- debates 테이블: status 컬럼에 CHECK 제약조건 추가 (waiting/both_joined/arguing/chatting/judging/voting/completed)<br>- 문서 버전 v2.0 → v2.1 갱신</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="doc-footer">
+    Moragora &mdash; 테이블 명세서 v2.1 (arguments.round 추가, debates.status CHECK 추가) &middot; 2026-03-25
+  </div>
+</div>
+
+</body>
+</html>

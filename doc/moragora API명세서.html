@@ -1,0 +1,3331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moragora API 명세서</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --get: #61affe;
+    --post: #49cc90;
+    --patch: #50e3c2;
+    --delete: #f93e3e;
+    --get-bg: #ebf3fb;
+    --post-bg: #e8f6f0;
+    --patch-bg: #e8faf5;
+    --delete-bg: #fce8e8;
+    --get-border: #61affe;
+    --post-border: #49cc90;
+    --patch-border: #50e3c2;
+    --delete-border: #f93e3e;
+    --topbar: #1b1b1b;
+    --bg: #fafafa;
+    --white: #ffffff;
+    --dark: #3b4151;
+    --gray: #6b6b6b;
+    --light-border: #e0e0e0;
+    --tag-bg: #f0f0f0;
+    --socket: #9b59b6;
+    --socket-bg: #f3e5f5;
+    --socket-border: #9b59b6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  /* Top Bar */
+  .topbar {
+    background: var(--topbar);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-title {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .topbar-version {
+    background: #49cc90;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .topbar-meta {
+    color: #aaa;
+    font-size: 0.75rem;
+    margin-left: auto;
+  }
+  .topbar-meta span { margin: 0 8px; }
+
+  /* Info Header */
+  .api-info {
+    background: var(--white);
+    border-bottom: 1px solid var(--light-border);
+    padding: 28px 32px;
+  }
+  .api-info h1 { font-size: 2rem; color: var(--dark); margin-bottom: 4px; font-weight: 700; }
+  .api-info .description { color: var(--gray); font-size: 0.9rem; margin-top: 8px; }
+
+  /* Container */
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 24px; }
+
+  /* TOC */
+  .toc {
+    background: var(--white);
+    border: 1px solid var(--light-border);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .toc h2 { font-size: 1rem; color: var(--dark); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--light-border); }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; }
+  .toc a {
+    color: #4990e2;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .toc a:hover { background: #ebf3fb; }
+
+  /* Tag Group (Section) */
+  .tag-group { margin-bottom: 24px; }
+  .tag-group-header {
+    background: var(--white);
+    border: 1px solid var(--light-border);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    padding: 14px 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+  }
+  .tag-group-header:hover { background: #f8f8f8; }
+  .tag-group-header .arrow {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--gray);
+  }
+  .tag-group-header.collapsed .arrow { transform: rotate(-90deg); }
+  .tag-group-body {
+    background: var(--white);
+    border: 1px solid var(--light-border);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    padding: 16px 20px;
+  }
+  .tag-group-body.hidden { display: none; }
+
+  /* Endpoint */
+  .endpoint {
+    border: 1px solid var(--light-border);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .endpoint:last-child { margin-bottom: 0; }
+
+  .endpoint-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    flex-wrap: wrap;
+  }
+  .endpoint-summary:hover { opacity: 0.9; }
+
+  .endpoint.get { border-color: var(--get-border); }
+  .endpoint.get .endpoint-summary { background: var(--get-bg); border-left: 4px solid var(--get); }
+  .endpoint.post { border-color: var(--post-border); }
+  .endpoint.post .endpoint-summary { background: var(--post-bg); border-left: 4px solid var(--post); }
+  .endpoint.patch { border-color: var(--patch-border); }
+  .endpoint.patch .endpoint-summary { background: var(--patch-bg); border-left: 4px solid var(--patch); }
+  .endpoint.delete { border-color: var(--delete-border); }
+  .endpoint.delete .endpoint-summary { background: var(--delete-bg); border-left: 4px solid var(--delete); }
+
+  .method-badge {
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #fff;
+    min-width: 64px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .method-badge.get { background: var(--get); }
+  .method-badge.post { background: var(--post); }
+  .method-badge.patch { background: var(--patch); }
+  .method-badge.delete { background: var(--delete); }
+
+  .endpoint-path {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--dark);
+  }
+  .endpoint-desc-text {
+    color: var(--gray);
+    font-size: 0.82rem;
+    margin-left: auto;
+  }
+  .badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-auth { background: #ffe0b2; color: #e65100; }
+  .badge-public { background: #e0e0e0; color: #555; }
+  .badge-middleware { background: #e8daef; color: #6c3483; }
+  .badge-admin { background: #ffcdd2; color: #b71c1c; }
+  .badge-secret { background: #fff9c4; color: #f57f17; }
+
+  .endpoint-detail {
+    padding: 20px;
+    border-top: 1px solid var(--light-border);
+    background: var(--white);
+  }
+  .endpoint-detail.hidden { display: none; }
+
+  .endpoint-detail h4 {
+    font-size: 0.82rem;
+    color: var(--dark);
+    margin: 18px 0 6px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .endpoint-detail h4:first-child { margin-top: 0; }
+
+  /* Response code badges */
+  .response-code {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.78rem;
+    font-family: 'Consolas', monospace;
+    margin-right: 4px;
+  }
+  .response-code.c2xx { background: #d4edda; color: #155724; }
+  .response-code.c4xx { background: #fff3cd; color: #856404; }
+  .response-code.c5xx { background: #f8d7da; color: #721c24; }
+
+  /* Code blocks */
+  pre {
+    background: #1b1b1b;
+    color: #e0e0e0;
+    padding: 16px 20px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    margin: 6px 0 10px 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  code { font-family: 'Consolas', 'Courier New', monospace; }
+  .inline-code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.82rem;
+    color: #e53935;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+
+  /* Tables - Swagger style */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 0.82rem;
+  }
+  th {
+    background: #f5f5f5;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+    color: var(--dark);
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  tr:hover td { background: #f0f4ff; }
+
+  /* Info box */
+  .info-box {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-size: 0.82rem;
+  }
+  .info-box.note { background: #e3f2fd; border-left: 4px solid #2196f3; }
+  .info-box.warn { background: #fff8e1; border-left: 4px solid #ff9800; }
+  .info-box.error { background: #fce4ec; border-left: 4px solid #f44336; }
+
+  /* Schema cards */
+  .schema-card {
+    border: 1px solid var(--light-border);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .schema-card-header {
+    background: #3b4151;
+    color: #fff;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Consolas', monospace;
+  }
+  .schema-card-header .pk {
+    color: #f5a623;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(245,166,35,0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .schema-card-header .new-tag {
+    color: #49cc90;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(73,204,144,0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .schema-card table { margin: 0; }
+
+  /* Architecture diagram */
+  .diagram {
+    background: #1b1b1b;
+    color: #e0e0e0;
+    padding: 20px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.78rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.4;
+    margin: 12px 0;
+  }
+
+  /* Socket event styles */
+  .socket-event {
+    border: 1px solid var(--socket-border);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .socket-event .endpoint-summary {
+    background: var(--socket-bg);
+    border-left: 4px solid var(--socket);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
+    flex-wrap: wrap;
+  }
+  .socket-event .method-badge {
+    background: var(--socket);
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #fff;
+    min-width: 64px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .socket-event .endpoint-path {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--dark);
+  }
+  .socket-event .endpoint-desc-text {
+    color: var(--gray);
+    font-size: 0.82rem;
+    margin-left: auto;
+  }
+  .socket-event .endpoint-detail {
+    padding: 20px;
+    border-top: 1px solid var(--light-border);
+    background: var(--white);
+  }
+  .socket-event .endpoint-detail.hidden { display: none; }
+  .badge-emit { background: #e8daef; color: #6c3483; }
+  .badge-listen { background: #d1f2eb; color: #0e6655; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--gray);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--light-border);
+    margin-top: 20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container { padding: 12px; }
+    .topbar { flex-wrap: wrap; gap: 8px; }
+    .topbar-meta { margin-left: 0; }
+    .endpoint-summary { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .endpoint-desc-text { margin-left: 0; }
+    .toc-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Print */
+  @media print {
+    .topbar { position: static; background: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .endpoint-detail.hidden { display: block !important; }
+    .tag-group-body.hidden { display: block !important; }
+    body { font-size: 11px; background: #fff; }
+    .container { max-width: 100%; padding: 10px; }
+    pre { white-space: pre-wrap; word-break: break-all; }
+    .endpoint { break-inside: avoid; }
+    .schema-card { break-inside: avoid; }
+    .tag-group { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <span class="topbar-title">Moragora API</span>
+  <span class="topbar-version">v2.0</span>
+  <div class="topbar-meta">
+    <span>작성일: 2026-03-25</span>
+    <span>|</span>
+    <span>Base URL: /api</span>
+    <span>|</span>
+    <span>Backend: Express + Supabase + Socket.io</span>
+  </div>
+</div>
+
+<!-- ===== INFO HEADER ===== -->
+<div class="api-info">
+  <h1>Moragora API 명세서</h1>
+  <div class="description">Express + Supabase + Socket.io + Multi-AI Judgment System &mdash; 토론 판결 플랫폼 백엔드 API</div>
+</div>
+
+<div class="container">
+
+<!-- ===== TOC ===== -->
+<div class="toc">
+  <h2>목차</h2>
+  <div class="toc-grid">
+    <a href="#overview">1. 시스템 개요</a>
+    <a href="#auth-info">2. 인증 방식</a>
+    <a href="#db-schema">3. 데이터베이스 스키마 (16 tables)</a>
+    <a href="#api-auth">4. 인증 API (/api/auth)</a>
+    <a href="#api-debates">5. 토론 API (/api/debates)</a>
+    <a href="#api-arguments">6. 주장 API (/api/arguments)</a>
+    <a href="#api-judgments">7. 판결 API (/api/judgments)</a>
+    <a href="#api-votes">8. 투표 API (/api/votes)</a>
+    <a href="#api-profiles">9. 프로필 API (/api/profiles)</a>
+    <a href="#api-content">10. 콘텐츠 필터 API (/api/content)</a>
+    <a href="#ai-system">11. AI 판결 시스템</a>
+    <a href="#api-feedbacks">12. 피드백 API (/api/feedbacks)</a>
+    <a href="#api-og">13. OG 메타 API (/og)</a>
+    <a href="#api-chat">14. 채팅 API (/api/chat) [NEW]</a>
+    <a href="#api-comments">15. 댓글 API (/api/comments) [NEW]</a>
+    <a href="#api-notifications">16. 알림 API (/api/notifications) [NEW]</a>
+    <a href="#api-ai">17. AI 생성 API (/api/ai) [NEW]</a>
+    <a href="#api-cron">18. Cron API (/api/cron) [NEW]</a>
+    <a href="#api-admin">19. 관리자 API (/api/admin) [NEW]</a>
+    <a href="#socket-events">20. Socket.io 이벤트 [NEW]</a>
+    <a href="#error-codes">21. 에러 코드 정리</a>
+  </div>
+</div>
+
+<!-- ===== 1. OVERVIEW ===== -->
+<div class="tag-group" id="overview">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    1. 시스템 개요
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+    <div class="diagram">
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Client (React + Vite)                        │
+│                     Vercel: team-moragora-client                     │
+└──────────────┬───────────────────────────┬───────────────────────────┘
+               │  HTTPS (axios + JWT)       │  WebSocket (Socket.io)
+               ▼                            ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                      Express Server (Render)                         │
+│  Port: 5000  |  CORS: CLIENT_URL  |  Base: /api                     │
+├──────────────────────────────────────────────────────────────────────┤
+│  Middleware: requireAuth │ contentFilter │ errorHandler               │
+├──────────────────────────────────────────────────────────────────────┤
+│                     Socket.io (Real-time Layer)                      │
+│  join-room │ send-message │ typing │ presence │ game-start           │
+├─────────┬────────┬───────┴──┬───────────┬────────┬──────┬───────────┤
+│  /auth  │/debates│/arguments│ /judgments │ /votes │/prof.│ /content  │
+├─────────┼────────┼──────────┼───────────┼────────┼──────┼───────────┤
+│  /chat  │/comment│/notify   │ /ai       │ /cron  │/admin│/feedbacks │
+└────┬────┴────┬───┴─────┬────┴─────┬─────┴───┬────┴──┬───┴─────┬────┘
+     │         │         │          │          │       │         │
+     ▼         ▼         ▼          ▼          ▼       ▼         ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                     Supabase (PostgreSQL + Auth)                      │
+│  Tables (16): profiles, debates, arguments, verdicts, ai_judgments,  │
+│  votes, content_filter_logs, xp_logs, feedbacks, comments,           │
+│  chat_messages, notifications, debate_likes, verdict_ratings,        │
+│  page_views, analytics_events                                        │
+└──────────────────────────────────────────────────────────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+         ┌────────┐  ┌──────────┐  ┌────────┐
+         │GPT-4.1 │  │Gemini2.5 │  │ Claude │   ← 3개 AI 병렬 판결
+         │Judge G │  │ Judge M  │  │Judge C │
+         └────────┘  └──────────┘  └────────┘
+              │            │            │
+              └────────────┼────────────┘
+                           ▼
+                    ┌─────────────┐
+                    │  Grok 3 Mini│  ← 실패 시 대체 판사
+                    │  Judge X    │
+                    └─────────────┘</div>
+
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>서버</td><td>Express.js (Node.js) — Render 배포</td></tr>
+      <tr><td>데이터베이스</td><td>Supabase (PostgreSQL + Auth + RLS) — 16 tables</td></tr>
+      <tr><td>실시간</td><td>Socket.io (WebSocket) — 채팅, 프레즌스, 타이핑 표시</td></tr>
+      <tr><td>프론트엔드</td><td>React + Vite — Vercel 배포</td></tr>
+      <tr><td>인증</td><td>Supabase Auth (JWT Bearer Token)</td></tr>
+      <tr><td>AI 판결</td><td>GPT-4.1, Gemini 2.5 Flash, Claude Sonnet 4 (병렬) + Grok 3 Mini (폴백)</td></tr>
+      <tr><td>콘텐츠 필터</td><td>3단계 (사전 필터 → AI 유해성 → AI 주제 적합성)</td></tr>
+      <tr><td>입력 전처리</td><td>프롬프트 인젝션 방어 + 텍스트 정규화 + 유사도 검증</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== 2. AUTH INFO ===== -->
+<div class="tag-group" id="auth-info">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    2. 인증 방식
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+    <p>Supabase Auth 기반 JWT 토큰 인증을 사용합니다.</p>
+
+    <h4>Request Header</h4>
+    <pre><code>Authorization: Bearer &lt;supabase_access_token&gt;</code></pre>
+
+    <h4>인증 미들웨어 (requireAuth)</h4>
+    <table>
+      <tr><th>동작</th><th>설명</th></tr>
+      <tr><td>토큰 검증</td><td>Supabase Admin으로 JWT 검증 후 사용자 정보 추출</td></tr>
+      <tr><td>req.user 설정</td><td>검증된 사용자 객체를 <code class="inline-code">req.user</code>에 바인딩</td></tr>
+      <tr><td>실패 시</td><td><span class="response-code c4xx">401</span> Unauthorized 반환</td></tr>
+    </table>
+
+    <div class="info-box note">
+      <strong>참고:</strong> 공개 API(토론 목록, 판결 피드, 랭킹 등)는 인증 없이 접근 가능합니다. 각 엔드포인트의 <span class="badge badge-auth">AUTH</span> / <span class="badge badge-public">PUBLIC</span> 뱃지를 확인하세요.
+    </div>
+  </div>
+</div>
+
+<!-- ===== 3. DB SCHEMA ===== -->
+<div class="tag-group" id="db-schema">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    3. 데이터베이스 스키마 (16 tables)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- profiles -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> profiles</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK, FK auth.users CASCADE</td><td>사용자 ID</td></tr>
+        <tr><td>nickname</td><td>TEXT</td><td>NOT NULL</td><td>닉네임</td></tr>
+        <tr><td>gender</td><td>ENUM</td><td>male/female/other, NULL</td><td>성별</td></tr>
+        <tr><td>age</td><td>INT</td><td>1~150, NULL</td><td>나이</td></tr>
+        <tr><td>avatar_url</td><td>TEXT</td><td>NULL</td><td>프로필 이미지 URL</td></tr>
+        <tr><td>wins</td><td>INT</td><td>DEFAULT 0</td><td>승리 수</td></tr>
+        <tr><td>losses</td><td>INT</td><td>DEFAULT 0</td><td>패배 수</td></tr>
+        <tr><td>draws</td><td>INT</td><td>DEFAULT 0</td><td>무승부 수</td></tr>
+        <tr><td>total_score</td><td>INT</td><td>DEFAULT 0</td><td>총 점수</td></tr>
+        <tr><td>xp</td><td>INT</td><td>DEFAULT 0</td><td>경험치</td></tr>
+        <tr><td>tier</td><td>ENUM</td><td>시민/배심원/변호사/판사/대법관</td><td>등급 (DEFAULT 시민)</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>가입일</td></tr>
+      </table>
+    </div>
+
+    <!-- debates -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> debates</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK, DEFAULT gen_random_uuid()</td><td>토론 ID</td></tr>
+        <tr><td>creator_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>생성자</td></tr>
+        <tr><td>opponent_id</td><td>UUID</td><td>FK profiles, NULL</td><td>상대방 (참여 시 설정)</td></tr>
+        <tr><td>topic</td><td>TEXT</td><td>NOT NULL</td><td>토론 주제</td></tr>
+        <tr><td>description</td><td>TEXT</td><td>NULL</td><td>토론 설명 (선택)</td></tr>
+        <tr><td>category</td><td>TEXT</td><td>DEFAULT 'daily'</td><td>카테고리</td></tr>
+        <tr><td>purpose</td><td>TEXT</td><td>DEFAULT 'compete'</td><td>판결 목적 (compete/consensus/analysis)</td></tr>
+        <tr><td>lens</td><td>TEXT</td><td>DEFAULT 'general'</td><td>분석 렌즈 (logic/emotion/practical/ethics/general)</td></tr>
+        <tr><td>mode</td><td>TEXT</td><td>NOT NULL, DEFAULT 'duo', CHECK ('duo','solo','chat')</td><td>토론 모드 (duo: 대인, solo: AI 상대, chat: 실시간 채팅)</td></tr>
+        <tr><td>invite_code</td><td>TEXT</td><td>UNIQUE, NOT NULL</td><td>초대 코드 (8자)</td></tr>
+        <tr><td>status</td><td>TEXT</td><td>NOT NULL</td><td>waiting → chatting → arguing → judging → voting → completed</td></tr>
+        <tr><td>vote_deadline</td><td>TIMESTAMPTZ</td><td>NULL</td><td>투표 마감 시간</td></tr>
+        <tr><td>view_count</td><td>INT</td><td>DEFAULT 0</td><td>조회수</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>생성일</td></tr>
+      </table>
+    </div>
+
+    <!-- arguments -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> arguments</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>주장 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>작성자 (Solo 모드: NULL)</td></tr>
+        <tr><td>side</td><td>TEXT</td><td>'A' 또는 'B'</td><td>진영</td></tr>
+        <tr><td>content</td><td>TEXT</td><td>50~2,000자</td><td>주장 내용 (전처리 완료)</td></tr>
+        <tr><td>ai_generated</td><td>BOOLEAN</td><td>DEFAULT false</td><td>AI 생성 여부 (Solo 모드)</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>작성일</td></tr>
+      </table>
+    </div>
+
+    <!-- verdicts -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> verdicts</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>판결 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, UNIQUE</td><td>토론 ID (1:1)</td></tr>
+        <tr><td>winner_side</td><td>TEXT</td><td>'A' / 'B' / 'draw'</td><td>최종 승자</td></tr>
+        <tr><td>summary</td><td>TEXT</td><td></td><td>판결 요약</td></tr>
+        <tr><td>ai_score_a</td><td>INT</td><td>DEFAULT 0</td><td>AI 종합 점수 A</td></tr>
+        <tr><td>ai_score_b</td><td>INT</td><td>DEFAULT 0</td><td>AI 종합 점수 B</td></tr>
+        <tr><td>citizen_score_a</td><td>INT</td><td>NULL</td><td>시민 투표 점수 A</td></tr>
+        <tr><td>citizen_score_b</td><td>INT</td><td>NULL</td><td>시민 투표 점수 B</td></tr>
+        <tr><td>final_score_a</td><td>INT</td><td></td><td>최종 점수 A (AI 75% + 시민 25%)</td></tr>
+        <tr><td>final_score_b</td><td>INT</td><td></td><td>최종 점수 B</td></tr>
+        <tr><td>is_citizen_applied</td><td>BOOLEAN</td><td>DEFAULT false</td><td>시민 투표 반영 여부</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>판결일</td></tr>
+      </table>
+    </div>
+
+    <!-- ai_judgments -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> ai_judgments</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>AI 판결 ID</td></tr>
+        <tr><td>verdict_id</td><td>UUID</td><td>FK verdicts</td><td>판결 ID</td></tr>
+        <tr><td>ai_model</td><td>TEXT</td><td></td><td>gpt-4.1 / gemini-2.5-flash / claude-sonnet / grok-3-mini</td></tr>
+        <tr><td>winner_side</td><td>TEXT</td><td>'A' / 'B' / 'draw'</td><td>개별 AI 판정</td></tr>
+        <tr><td>verdict_text</td><td>TEXT</td><td></td><td>판결문 (캐릭터별 톤)</td></tr>
+        <tr><td>score_a</td><td>INT</td><td>0~100</td><td>A측 총점</td></tr>
+        <tr><td>score_b</td><td>INT</td><td>0~100</td><td>B측 총점</td></tr>
+        <tr><td>score_detail_a</td><td>JSONB</td><td></td><td>{logic, evidence, persuasion, consistency, expression}</td></tr>
+        <tr><td>score_detail_b</td><td>JSONB</td><td></td><td>{logic, evidence, persuasion, consistency, expression}</td></tr>
+        <tr><td>confidence</td><td>NUMERIC</td><td>0.00~1.00</td><td>판결 확신도</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>판결일</td></tr>
+      </table>
+    </div>
+
+    <!-- votes -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> votes</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>투표 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles</td><td>투표자</td></tr>
+        <tr><td>voted_side</td><td>TEXT</td><td>'A' 또는 'B'</td><td>투표한 진영</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>투표일</td></tr>
+      </table>
+    </div>
+
+    <!-- xp_logs -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> xp_logs</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>로그 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles</td><td>사용자</td></tr>
+        <tr><td>xp_amount</td><td>INT</td><td>NOT NULL</td><td>XP 변동량</td></tr>
+        <tr><td>reason</td><td>TEXT</td><td></td><td>victory/defeat/draw/daily_debate/vote/bonus/penalty</td></tr>
+        <tr><td>reference_id</td><td>UUID</td><td>NULL</td><td>관련 토론 ID</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>기록일</td></tr>
+      </table>
+    </div>
+
+    <!-- content_filter_logs -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> content_filter_logs</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>로그 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles</td><td>사용자</td></tr>
+        <tr><td>content_type</td><td>TEXT</td><td></td><td>콘텐츠 유형</td></tr>
+        <tr><td>filter_stage</td><td>INT</td><td>1 / 2 / 3</td><td>필터 단계</td></tr>
+        <tr><td>blocked</td><td>BOOLEAN</td><td></td><td>차단 여부</td></tr>
+        <tr><td>reason</td><td>TEXT</td><td>NULL</td><td>차단 사유</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>기록일</td></tr>
+      </table>
+    </div>
+
+    <!-- feedbacks -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> feedbacks</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>피드백 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, UNIQUE</td><td>사용자 (1인 1피드백)</td></tr>
+        <tr><td>satisfaction</td><td>NUMERIC</td><td>0.5~5.0</td><td>만족도</td></tr>
+        <tr><td>ai_accuracy</td><td>NUMERIC</td><td>0.5~5.0</td><td>AI 정확도</td></tr>
+        <tr><td>ui_ease</td><td>NUMERIC</td><td>0.5~5.0</td><td>UI 편의성</td></tr>
+        <tr><td>fairness</td><td>NUMERIC</td><td>0.5~5.0</td><td>공정성</td></tr>
+        <tr><td>recommend</td><td>NUMERIC</td><td>0.5~5.0</td><td>추천 의향</td></tr>
+        <tr><td>best_feature</td><td>TEXT</td><td>NULL</td><td>최고 기능</td></tr>
+        <tr><td>improvement</td><td>TEXT</td><td>NULL</td><td>개선사항</td></tr>
+        <tr><td>additional</td><td>TEXT</td><td>NULL</td><td>추가 의견</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>작성일</td></tr>
+      </table>
+    </div>
+
+    <!-- comments -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> comments</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>댓글 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>작성자</td></tr>
+        <tr><td>content</td><td>TEXT</td><td>NOT NULL</td><td>댓글 내용</td></tr>
+        <tr><td>likes_count</td><td>INT</td><td>DEFAULT 0</td><td>좋아요 수</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>작성일</td></tr>
+      </table>
+    </div>
+
+    <!-- chat_messages (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> chat_messages</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>메시지 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론(채팅방) ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>발신자</td></tr>
+        <tr><td>content</td><td>TEXT</td><td>NOT NULL</td><td>메시지 내용</td></tr>
+        <tr><td>side</td><td>TEXT</td><td>'A' / 'B'</td><td>발신자 진영</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>발신 시각</td></tr>
+      </table>
+    </div>
+
+    <!-- notifications (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> notifications</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>알림 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>수신자</td></tr>
+        <tr><td>type</td><td>TEXT</td><td>NOT NULL</td><td>알림 유형 (verdict/vote/comment/chat 등)</td></tr>
+        <tr><td>title</td><td>TEXT</td><td>NOT NULL</td><td>알림 제목</td></tr>
+        <tr><td>message</td><td>TEXT</td><td>NULL</td><td>알림 본문</td></tr>
+        <tr><td>reference_id</td><td>UUID</td><td>NULL</td><td>관련 리소스 ID (debate_id 등)</td></tr>
+        <tr><td>is_read</td><td>BOOLEAN</td><td>DEFAULT false</td><td>읽음 여부</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>생성일</td></tr>
+      </table>
+    </div>
+
+    <!-- debate_likes (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> debate_likes</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>좋아요 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>사용자 ID</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>좋아요 시각</td></tr>
+      </table>
+    </div>
+
+    <!-- verdict_ratings (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> verdict_ratings</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>평가 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NOT NULL</td><td>평가자</td></tr>
+        <tr><td>rating</td><td>INT</td><td>1~5, NOT NULL</td><td>판결 만족도 (1~5점)</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>평가일</td></tr>
+      </table>
+    </div>
+
+    <!-- page_views (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> page_views</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>조회 ID</td></tr>
+        <tr><td>debate_id</td><td>UUID</td><td>FK debates, NOT NULL</td><td>토론 ID</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NULL</td><td>조회자 (비로그인 시 NULL)</td></tr>
+        <tr><td>ip_address</td><td>TEXT</td><td>NULL</td><td>IP 주소</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>조회 시각</td></tr>
+      </table>
+    </div>
+
+    <!-- analytics_events (NEW) -->
+    <div class="schema-card">
+      <div class="schema-card-header"><span class="pk">PK</span> <span class="new-tag">NEW</span> analytics_events</div>
+      <table>
+        <tr><th>컬럼</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+        <tr><td>id</td><td>UUID</td><td>PK</td><td>이벤트 ID</td></tr>
+        <tr><td>event_type</td><td>TEXT</td><td>NOT NULL</td><td>이벤트 유형 (signup/debate_create/judgment/vote 등)</td></tr>
+        <tr><td>user_id</td><td>UUID</td><td>FK profiles, NULL</td><td>사용자</td></tr>
+        <tr><td>metadata</td><td>JSONB</td><td>NULL</td><td>이벤트 메타데이터</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td>기록일</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 4. AUTH API ===== -->
+<div class="tag-group" id="api-auth">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    4. 인증 API (/api/auth)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /api/auth/me -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/auth/me</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">현재 사용자 프로필 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "nickname": "string",
+  "gender": "male | female | other | null",
+  "age": 25,
+  "avatar_url": "string | null",
+  "wins": 0, "losses": 0, "draws": 0,
+  "total_score": 0, "xp": 0,
+  "tier": "시민",
+  "created_at": "2026-03-25T00:00:00Z"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 토큰 없음 또는 유효하지 않음</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- PATCH /api/auth/me -->
+    <div class="endpoint patch">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge patch">PATCH</span>
+        <span class="endpoint-path">/api/auth/me</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">프로필 수정</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "nickname": "string (optional)",
+  "avatar_url": "string (optional)"
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+        <p>수정된 프로필 객체 반환 (GET /api/auth/me와 동일 형태)</p>
+      </div>
+    </div>
+
+    <!-- POST /api/auth/logout -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/auth/logout</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">로그아웃</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>현재 사용자의 모든 세션을 무효화합니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "로그아웃 되었습니다."
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 5. DEBATE API ===== -->
+<div class="tag-group" id="api-debates">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    5. 토론 API (/api/debates)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/debates -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/debates</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">토론 생성</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "topic": "짜장면 vs 짬뽕, 어느 쪽이 더 나은 선택인가?",
+  "description": "점심 메뉴 고민에서 시작된 논쟁",  // optional, 토론 설명
+  "category": "일상",          // 사회 | 기술 | 정치 | 철학 | 일상 | 연애 | 문화 | 기타
+  "purpose": "승부",          // 승부 | 합의 | 분석
+  "lens": "일반",             // 논리 | 감정 | 현실 | 윤리 | 일반
+  "mode": "duo"               // "duo" (default) | "solo" | "chat" — solo: AI 상대, chat: 실시간 채팅
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "creator_id": "uuid",
+  "opponent_id": null,
+  "topic": "짜장면 vs 짬뽕...",
+  "description": "점심 메뉴 고민에서 시작된 논쟁",
+  "category": "일상",
+  "purpose": "승부",
+  "lens": "일반",
+  "mode": "duo",
+  "invite_code": "Ab3xK9mZ",     // 자동 생성 8자리
+  "status": "waiting",            // duo: "waiting", solo: "arguing", chat: "waiting"
+  "vote_deadline": null,
+  "created_at": "2026-03-25T..."
+}</code></pre>
+        <div class="info-box note">
+          <strong>상태 흐름:</strong> waiting → arguing → judging → voting → completed (duo/solo), waiting → chatting → judging → voting → completed (chat)
+        </div>
+        <div class="info-box warn">
+          <strong>Solo 모드:</strong> <code class="inline-code">mode="solo"</code>일 경우 상대방 없이 바로 <code class="inline-code">status="arguing"</code>으로 시작됩니다. 사용자가 A측 주장을 제출한 뒤 <code class="inline-code">POST /api/arguments/:debateId/solo</code>를 호출하여 AI 반대 주장을 생성합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/debates -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/debates</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">토론 목록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Query Parameters</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+          <tr><td>status</td><td>String</td><td>completed</td><td><code class="inline-code">lobby</code> 지정 시 waiting/chatting 상태의 chat 모드 토론 반환 (로비용)</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "topic": "string",
+    "category": "daily",
+    "status": "completed",
+    "invite_code": "Ab3xK9mZ",
+    "created_at": "ISO8601",
+    "creator": { "nickname": "닉네임" }
+  }
+]</code></pre>
+        <div class="info-box note">
+          <strong>로비 모드:</strong> <code class="inline-code">?status=lobby</code> 파라미터를 사용하면 waiting/chatting 상태의 chat 모드 토론 목록을 반환합니다. 실시간 논쟁 대기실 UI에 사용됩니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/debates/my/active -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/debates/my/active</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">내 활성 토론 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>현재 사용자가 참여 중인 활성(waiting/chatting/arguing/judging/voting) 토론 목록을 반환합니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "topic": "string",
+    "mode": "chat",
+    "status": "chatting",
+    "creator": { "nickname": "..." },
+    "opponent": { "nickname": "..." },
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/debates/chat/rooms -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/debates/chat/rooms</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">채팅방 목록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>활성 상태(waiting/chatting)의 chat 모드 토론방 목록을 반환합니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "topic": "string",
+    "status": "waiting",
+    "mode": "chat",
+    "creator": { "id": "uuid", "nickname": "...", "tier": "시민" },
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/debates/:id -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/debates/:id</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">토론 상세 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">id</code></td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "topic": "string",
+  "description": "string | null",
+  "category": "일상",
+  "purpose": "승부",
+  "lens": "일반",
+  "mode": "duo",
+  "status": "arguing",
+  "invite_code": "Ab3xK9mZ",
+  "view_count": 42,
+  "creator": { "id": "uuid", "nickname": "...", "tier": "시민", ... },
+  "opponent": { "id": "uuid", "nickname": "...", "tier": "배심원", ... }
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">404</span></td><td>토론을 찾을 수 없음</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/debates/join/:inviteCode -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/debates/join/:inviteCode</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">초대 코드로 토론 참여</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">inviteCode</code></td><td>String (8자)</td><td>초대 코드</td></tr>
+        </table>
+        <h4>비즈니스 로직</h4>
+        <table>
+          <tr><td>1</td><td>invite_code + status=waiting + opponent_id=null 인 토론 검색</td></tr>
+          <tr><td>2</td><td>본인이 생성한 토론인지 확인 (자기 자신 참여 차단)</td></tr>
+          <tr><td>3</td><td>opponent_id 설정 + status를 <code class="inline-code">arguing</code>으로 변경</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+        <p>업데이트된 토론 객체 반환</p>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>본인이 생성한 토론에 참여 시도</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>초대 코드 없음 또는 이미 진행 중인 토론</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/debates/:id/view -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/debates/:id/view</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">조회수 증가</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>토론 상세 페이지 진입 시 호출하여 view_count를 1 증가시킵니다.</p>
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">id</code></td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "view_count": 43
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- DELETE /api/debates/:id -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/debates/:id</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">토론 삭제</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>본인이 생성한 토론을 삭제합니다. CASCADE로 관련 주장/판결/투표/채팅 메시지 등 모두 삭제됩니다.</p>
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">id</code></td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "토론이 삭제되었습니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">403</span></td><td>토론 생성자가 아님</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>토론을 찾을 수 없음</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 6. ARGUMENT API ===== -->
+<div class="tag-group" id="api-arguments">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    6. 주장 API (/api/arguments)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/arguments/:debateId -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/arguments/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="badge badge-middleware">contentFilter</span>
+        <span class="endpoint-desc-text">주장 제출</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "content": "주장 내용 (50~2,000자)",
+  "side": "A",              // A 또는 B
+  "category": "daily",      // 콘텐츠 필터 단계 결정용
+  "topic": "토론 주제"       // 게이트키퍼 주제 적합성 검사용
+}</code></pre>
+
+        <h4>처리 파이프라인</h4>
+        <div class="diagram">
+사용자 입력
+    │
+    ▼
+┌─────────────────────────────┐
+│ 1. contentFilter 미들웨어    │ ← 비속어/AI유해성/주제적합성
+└──────────────┬──────────────┘
+               │ pass
+               ▼
+┌─────────────────────────────┐
+│ 2. preprocessArgument()      │ ← 인젝션 방어 + 정규화 + 유사도
+│   - 2,000자 초과 → 자름      │
+│   - 인젝션 패턴 → [필터링됨]  │    (15개 패턴 탐지)
+│   - HTML/코드블록 제거        │
+│   - 공백/개행 정리            │
+│   - 50자 미만 → 거부          │
+│   - 상대측 유사도 85%↑ → 거부 │    (Jaccard 유사도)
+└──────────────┬──────────────┘
+               │ valid
+               ▼
+┌─────────────────────────────┐
+│ 3. DB 저장 (정제된 텍스트)    │
+└─────────────────────────────┘</div>
+
+        <h4>Preprocessor 상세</h4>
+        <table>
+          <tr><th>단계</th><th>처리</th><th>설명</th></tr>
+          <tr><td>인젝션 방어</td><td>15개 패턴 탐지</td><td>프롬프트 인젝션 시도를 [필터링됨]으로 치환, warnings 배열에 기록</td></tr>
+          <tr><td>HTML 제거</td><td>태그/코드블록 strip</td><td>HTML 태그, 마크다운 코드블록 등 제거</td></tr>
+          <tr><td>유사도 검사</td><td>Jaccard &gt;85%</td><td>상대측 주장과의 토큰 기반 유사도가 85% 이상이면 거부</td></tr>
+        </table>
+
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "side": "A",
+  "content": "전처리 완료된 주장 텍스트",
+  "created_at": "ISO8601",
+  "warnings": ["프롬프트 인젝션 시도 2건 필터링됨"]   // optional
+}</code></pre>
+
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"부적절한 표현이 포함되어 있습니다" (Stage 1)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"유해한 콘텐츠가 감지되었습니다" (Stage 2)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주제와 관련 없는 내용입니다" (Stage 3)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주장 내용을 입력해주세요" (empty)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주장은 50자 이상이어야 합니다" (too_short)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"상대측과 동일한 주장은 제출할 수 없습니다" (duplicate)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/arguments/:debateId/solo -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/arguments/:debateId/solo</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">솔로 모드 AI 반대 주장 생성</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">debateId</code></td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+
+        <h4>Request Body</h4>
+        <p>없음 (요청 본문 불필요)</p>
+
+        <h4>비즈니스 로직</h4>
+        <table>
+          <tr><td>1</td><td>토론 존재 여부 확인</td></tr>
+          <tr><td>2</td><td>토론 상태가 <code class="inline-code">arguing</code>인지 확인</td></tr>
+          <tr><td>3</td><td>요청자가 토론 생성자(creator)인지 확인</td></tr>
+          <tr><td>4</td><td>A측(사용자) 주장이 이미 제출되었는지 확인</td></tr>
+          <tr><td>5</td><td>B측(AI) 주장이 아직 없는지 확인</td></tr>
+          <tr><td>6</td><td>AI가 A측 주장에 대한 반대 주장(B측)을 생성하여 저장</td></tr>
+        </table>
+
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": null,
+  "side": "B",
+  "content": "AI가 생성한 반대 주장 텍스트 (200~500자)",
+  "ai_generated": true,
+  "created_at": "ISO8601"
+}</code></pre>
+
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">404</span></td><td>"토론을 찾을 수 없습니다" (debate not found)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"토론이 주장 제출 단계가 아닙니다" (status != arguing)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"A측 주장이 먼저 필요합니다" (no A-side argument)</td></tr>
+          <tr><td><span class="response-code c4xx">403</span></td><td>"토론 생성자만 솔로 모드를 사용할 수 있습니다" (not creator)</td></tr>
+          <tr><td><span class="response-code c4xx">409</span></td><td>"이미 B측 주장이 존재합니다" (B-side already exists)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- GET /api/arguments/:debateId -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/arguments/:debateId</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">토론의 주장 목록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "debate_id": "uuid",
+    "user_id": "uuid",
+    "side": "A",
+    "content": "주장 내용",
+    "created_at": "ISO8601",
+    "user": { "nickname": "닉네임" }
+  }
+]</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 7. JUDGMENT API ===== -->
+<div class="tag-group" id="api-judgments">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    7. 판결 API (/api/judgments)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/judgments/:debateId -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/judgments/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">AI 판결 요청</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>사전 검증</h4>
+        <table>
+          <tr><td>1</td><td>토론 상태가 <code class="inline-code">arguing</code>인지 확인 (그 외 상태 → <span class="response-code c4xx">400</span>)</td></tr>
+          <tr><td>2</td><td>이미 판결(verdict)이 존재하는지 확인 (중복 → <span class="response-code c4xx">409</span>)</td></tr>
+          <tr><td>3</td><td>양측 주장(A, B)이 모두 존재하는지 확인</td></tr>
+        </table>
+
+        <h4>비즈니스 로직</h4>
+        <table>
+          <tr><td>1</td><td>토론 + 양측 주장(A, B) 조회</td></tr>
+          <tr><td>2</td><td>status → <code class="inline-code">judging</code> 원자적(atomic) 전환 (동시 요청 방지: arguing→judging CAS)</td></tr>
+          <tr><td>3</td><td>3개 AI 병렬 호출 (Promise.allSettled) — 실패 시 Grok 대체</td></tr>
+          <tr><td>4</td><td>개별 AI 판결을 ai_judgments 테이블에 저장</td></tr>
+          <tr><td>5</td><td>종합 판결 계산 (AI 점수 평균 + 다수결)</td></tr>
+          <tr><td>6</td><td>status → <code class="inline-code">voting</code>, vote_deadline = now + 24시간</td></tr>
+        </table>
+
+        <h4>Grok 폴백 메커니즘</h4>
+        <div class="info-box warn">
+          <strong>Grok 대체 판결:</strong> 3개 주요 AI(GPT-4.1, Gemini, Claude) 중 실패한 모델이 있을 경우, Grok 3 Mini를 최대 <code class="inline-code">Math.min(failedCount, 2)</code>회 호출하여 대체합니다. 모든 AI(Grok 포함)가 실패하면 status를 <code class="inline-code">arguing</code>으로 롤백하고 500 에러를 반환합니다.
+        </div>
+
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "verdict-uuid",
+  "debate_id": "uuid",
+  "winner_side": "A",
+  "summary": "A측의 구체적인 사례 제시가 결정적이었습니다...",
+  "ai_score_a": 78,
+  "ai_score_b": 65,
+  "final_score_a": 78,
+  "final_score_b": 65,
+  "is_citizen_applied": false,
+  "ai_judgments": [
+    {
+      "ai_model": "gpt-4.1",
+      "winner_side": "A",
+      "verdict_text": "양측의 주장을 면밀히 검토한 결과...",
+      "score_a": 80, "score_b": 63,
+      "score_detail_a": {
+        "logic": 17, "evidence": 16, "persuasion": 15,
+        "consistency": 16, "expression": 16
+      },
+      "score_detail_b": {
+        "logic": 12, "evidence": 13, "persuasion": 13,
+        "consistency": 13, "expression": 12
+      },
+      "confidence": 0.78
+    },
+    { "ai_model": "gemini-2.5-flash", "..." : "..." },
+    { "ai_model": "claude-sonnet", "..." : "..." }
+  ],
+  "vote_deadline": "2026-03-26T00:00:00Z"
+}</code></pre>
+
+        <h4>AI 판결 5항목 루브릭 (각 0~20점, 총 100점)</h4>
+        <table>
+          <tr><th>항목</th><th>키</th><th>평가 기준</th></tr>
+          <tr><td>논리 구조</td><td><code class="inline-code">logic</code></td><td>전제→근거→결론 연결, 논증 구조의 형식적 타당성</td></tr>
+          <tr><td>근거 품질</td><td><code class="inline-code">evidence</code></td><td>구체적 데이터/사례/연구 인용, 출처 명시</td></tr>
+          <tr><td>설득력</td><td><code class="inline-code">persuasion</code></td><td>예상 반론 대응, 감정적 호소의 적절성</td></tr>
+          <tr><td>일관성</td><td><code class="inline-code">consistency</code></td><td>논지 일관성, 자기모순 여부</td></tr>
+          <tr><td>표현 적절성</td><td><code class="inline-code">expression</code></td><td>문장 명확성, 논쟁에 적합한 어조</td></tr>
+        </table>
+
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"토론이 주장 제출 단계가 아닙니다" (status != arguing)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"양측 주장이 모두 필요합니다" (A 또는 B 주장 미제출)</td></tr>
+          <tr><td><span class="response-code c4xx">409</span></td><td>"이미 판결이 존재합니다" (verdict already exists)</td></tr>
+          <tr><td><span class="response-code c5xx">500</span></td><td>모든 AI 모델 실패 (Grok 포함) — status를 arguing으로 롤백</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- GET /api/judgments/:debateId -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/judgments/:debateId</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">판결 결과 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+        <p>POST 응답과 동일한 verdict + ai_judgments 객체</p>
+      </div>
+    </div>
+
+    <!-- GET /api/judgments/feed -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/judgments/feed</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">최근 판결 피드 (페이지네이션)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Query Parameters</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+          <tr><td>page</td><td>Number</td><td>1</td><td>페이지 번호</td></tr>
+          <tr><td>limit</td><td>Number</td><td>10</td><td>페이지당 항목 수</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "data": [
+    {
+      "id": "uuid",
+      "winner_side": "A",
+      "summary": "...",
+      "ai_score_a": 78, "ai_score_b": 65,
+      "final_score_a": 78, "final_score_b": 65,
+      "is_citizen_applied": true,
+      "debate": {
+        "topic": "짜장면 vs 짬뽕",
+        "category": "일상",
+        "creator": { "nickname": "닉네임" }
+      }
+    }
+  ],
+  "page": 1,
+  "limit": 10,
+  "hasNext": true
+}</code></pre>
+        <div class="info-box note">
+          <strong>페이지네이션:</strong> <code>hasNext</code>가 <code>true</code>이면 다음 페이지가 존재합니다. 프론트엔드에서 무한 스크롤 구현 시 활용합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/judgments/daily -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/judgments/daily</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">오늘의 논쟁 목록</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>오늘 생성된 데일리 논쟁 목록을 반환합니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "topic": "오늘의 주제: ...",
+    "category": "daily",
+    "status": "voting",
+    "created_at": "ISO8601",
+    "verdict": { "winner_side": "A", "ai_score_a": 75, "ai_score_b": 68 }
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/judgments/hall -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/judgments/hall</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">명예의 전당 (Hall of Fame)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>가장 높은 점수를 받은 판결/토론 목록을 반환합니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "topic": "string",
+    "winner_side": "A",
+    "final_score_a": 95,
+    "final_score_b": 42,
+    "vote_count": 120,
+    "creator": { "nickname": "...", "tier": "판사" },
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- POST /api/judgments/:debateId/rate -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/judgments/:debateId/rate</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">판결 만족도 평가 (1~5점)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "rating": 4    // 1~5 (필수, 정수)
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "rating": 4,
+  "created_at": "ISO8601"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"rating은 1~5 사이 정수여야 합니다"</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>"판결을 찾을 수 없습니다"</td></tr>
+          <tr><td><span class="response-code c4xx">409</span></td><td>"이미 평가했습니다"</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/judgments/:debateId/retry/:model -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/judgments/:debateId/retry/:model</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">실패한 AI 모델 개별 재시도</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>판결 과정에서 실패한 특정 AI 모델을 개별적으로 재시도합니다. 일부 모델만 실패했을 때 전체 판결을 다시 요청하지 않고 해당 모델만 재호출할 수 있습니다.</p>
+        <h4>Path Parameters</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td>debateId</td><td>UUID</td><td>토론 ID</td></tr>
+          <tr><td>model</td><td>String</td><td>재시도할 AI 모델 (<code class="inline-code">gpt</code> | <code class="inline-code">gemini</code> | <code class="inline-code">claude</code> | <code class="inline-code">grok</code>)</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "ai_model": "gpt-4.1",
+  "winner_side": "A",
+  "score_a": 72,
+  "score_b": 65,
+  "verdict_text": "...",
+  "confidence": 0.82,
+  "retried": true
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"유효하지 않은 모델입니다" (gpt/gemini/claude/grok 외 값)</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>"판결을 찾을 수 없습니다"</td></tr>
+          <tr><td><span class="response-code c5xx">502</span></td><td>AI 모델 재시도 실패</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 8. VOTE API ===== -->
+<div class="tag-group" id="api-votes">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    8. 투표 API (/api/votes)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/votes/:debateId -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/votes/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">시민 투표 (A 또는 B)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "voted_side": "A"    // A 또는 B (필수, 다른 값 → 400)
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "voted_side": "A",
+  "created_at": "ISO8601"
+}</code></pre>
+        <div class="info-box note">
+          <strong>Upsert:</strong> 이미 투표한 경우 투표를 변경할 수 있습니다 (마감 전까지).
+        </div>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"voted_side는 'A' 또는 'B'만 허용됩니다" (유효성 검증)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"투표 기간이 아닙니다" (status != voting)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"투표가 마감되었습니다" (deadline 초과 → 자동 정산)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- GET /api/votes/:debateId -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/votes/:debateId</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">투표 현황 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "A": 15,
+  "B": 12,
+  "total": 27,
+  "status": "voting",
+  "vote_deadline": "2026-03-26T00:00:00Z"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- DELETE /api/votes/:debateId -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/votes/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">투표 취소</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>현재 사용자의 투표를 취소합니다. 투표 기간(status=voting)에만 가능합니다.</p>
+        <h4>Path Parameter</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td>debateId</td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "투표가 취소되었습니다."
+}</code></pre>
+        <h4>에러 응답</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"투표 기간이 아닙니다." (status != voting)</td></tr>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/votes/finalize -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/votes/finalize</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">만료된 투표 일괄 정산</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>비즈니스 로직 (finalizeVerdict)</h4>
+        <table>
+          <tr><td>1</td><td>status=voting AND vote_deadline &lt; now 인 토론 검색</td></tr>
+          <tr><td>2</td><td>투표 30건 이상 → 시민 점수 반영 (AI 75% + 시민 25%)</td></tr>
+          <tr><td>3</td><td>투표 30건 미만 → AI 점수만 사용</td></tr>
+          <tr><td>4</td><td>최종 승자 결정 + status → <code class="inline-code">completed</code></td></tr>
+          <tr><td>5</td><td>양측(creator, opponent) 프로필 전적 자동 업데이트 (wins/losses/draws/total_score)</td></tr>
+        </table>
+
+        <div class="info-box note">
+          <strong>프로필 전적 자동 업데이트:</strong> 판결 확정 시 creator와 opponent의 profiles 레코드에 승/패/무 카운트 및 total_score를 자동으로 반영합니다.
+        </div>
+
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "finalized": 3,
+  "results": [
+    {
+      "debateId": "uuid",
+      "finalA": 76, "finalB": 68,
+      "finalWinner": "A",
+      "citizenApplied": true,
+      "voterCount": 45
+    }
+  ]
+}</code></pre>
+        <div class="info-box warn">
+          <strong>점수 계산:</strong> 시민 투표 30건 이상일 때 <code>최종 = AI(25% x 3모델 = 75%) + 시민(25%)</code>. 30건 미만이면 AI 점수만 사용.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 9. PROFILE API ===== -->
+<div class="tag-group" id="api-profiles">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    9. 프로필 API (/api/profiles)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /api/profiles/:userId -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/profiles/:userId</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">공개 프로필 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "nickname": "닉네임",
+  "avatar_url": "string | null",
+  "wins": 5, "losses": 3, "draws": 1,
+  "total_score": 420,
+  "xp": 420,
+  "tier": "배심원"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/profiles/me/verdicts -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/profiles/me/verdicts</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">나의 판결 기록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "debate-uuid",
+    "topic": "짜장면 vs 짬뽕",
+    "category": "daily",
+    "purpose": "compete",
+    "lens": "general",
+    "status": "completed",
+    "created_at": "ISO8601",
+    "verdicts": [
+      {
+        "winner_side": "A",
+        "summary": "...",
+        "ai_score_a": 78, "ai_score_b": 65,
+        "final_score_a": 76, "final_score_b": 68,
+        "is_citizen_applied": true
+      }
+    ]
+  }
+]</code></pre>
+        <div class="info-box note">
+          <strong>조건:</strong> 사용자가 creator 또는 opponent인 completed 상태 토론만 반환
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/profiles/ranking -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/profiles/ranking</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">랭킹 조회 (Top 50)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "nickname": "1위유저",
+    "avatar_url": "...",
+    "wins": 15, "losses": 3, "draws": 2,
+    "total_score": 1200,
+    "xp": 1200,
+    "tier": "변호사"
+  }
+]</code></pre>
+        <p>total_score 기준 내림차순 정렬, 상위 50명. <code>tier</code> 값: 시민 / 배심원 / 변호사 / 판사 / 대법관</p>
+      </div>
+    </div>
+
+    <!-- GET /api/profiles/me/xp-logs -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/profiles/me/xp-logs</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">나의 XP 이력 조회 (최근 50건)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "debate_id": "uuid | null",
+    "reason": "victory",
+    "xp_change": 30,
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+        <div class="info-box note">
+          <strong>reason 값:</strong> victory(+30), defeat(+5), draw(+15), daily_debate(+10), vote(+3/-3), bonus, penalty
+        </div>
+      </div>
+    </div>
+
+    <!-- GET /api/profiles/me/role -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/profiles/me/role</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">현재 사용자의 역할(관리자 여부) 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>현재 사용자의 역할(관리자 여부)을 조회합니다. 관리자 전용 UI 분기 처리에 활용됩니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "role": "user"
+}</code></pre>
+        <div class="info-box note">
+          <strong>role 값:</strong> <code class="inline-code">"user"</code> (일반 사용자) 또는 <code class="inline-code">"admin"</code> (관리자)
+        </div>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- DELETE /api/profiles/me -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/profiles/me</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">회원 탈퇴 (계정 삭제)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>현재 사용자의 계정을 삭제합니다. 프로필, 토론 참여 기록, 투표 등 모든 관련 데이터가 삭제됩니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "계정이 삭제되었습니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- DELETE /api/profiles/me/verdicts/:debateId -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/profiles/me/verdicts/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">나의 판결 기록 삭제</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>본인이 참여한 특정 토론의 판결 기록을 삭제합니다.</p>
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">debateId</code></td><td>UUID</td><td>토론 ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "판결 기록이 삭제되었습니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">403</span></td><td>해당 토론의 참여자가 아님</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>판결 기록을 찾을 수 없음</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 10. CONTENT FILTER API ===== -->
+<div class="tag-group" id="api-content">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    10. 콘텐츠 필터 API (/api/content)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/content/check -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/content/check</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">콘텐츠 사전 검사</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "content": "검사할 텍스트",
+  "category": "사회",          // optional, 필터 단계 결정 (한글/영문 모두 지원)
+  "debateId": "uuid"           // optional, 로그 연결용
+}</code></pre>
+        <h4>3단계 필터 기준</h4>
+        <table>
+          <tr><th>카테고리</th><th>Stage 1 (사전)</th><th>Stage 2 (AI 유해성)</th><th>Stage 3 (주제 적합성)</th></tr>
+          <tr><td>일상, 연애</td><td>O</td><td>-</td><td>-</td></tr>
+          <tr><td>직장, 교육</td><td>O</td><td>O</td><td>-</td></tr>
+          <tr><td>사회, 정치</td><td>O</td><td>O</td><td>O</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>// 통과
+{ "pass": true, "stage": 1 }
+
+// 차단
+{ "pass": false, "stage": 2, "reason": "혐오 발언 감지" }</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/content/logs -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/content/logs</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">내 필터 로그 조회 (최근 20건)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "content_type": "argument",
+    "filter_stage": 1,
+    "result": "block",
+    "reason": "금지어 포함: ㅅㅂ",
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 11. AI SYSTEM ===== -->
+<div class="tag-group" id="ai-system">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    11. AI 판결 시스템
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <h4>AI 판사 캐릭터</h4>
+    <table>
+      <tr><th>AI</th><th>캐릭터</th><th>모델</th><th>성격</th><th>말투</th></tr>
+      <tr><td style="color:#10A37F;font-weight:700;">Judge G</td><td>분석적 판사</td><td>GPT-4.1</td><td>균형잡힌, 분석적, 정중한</td><td>격식체 (~입니다, ~하겠습니다)</td></tr>
+      <tr><td style="color:#4285F4;font-weight:700;">Judge M</td><td>통찰적 판사</td><td>Gemini 2.5 Flash</td><td>다각적, 창의적, 통찰력</td><td>친근체 (~거든요, ~잖아요)</td></tr>
+      <tr><td style="color:#D97706;font-weight:700;">Judge C</td><td>배려하는 판사</td><td>Claude Sonnet 4</td><td>신중한, 공정한, 배려하는</td><td>부드러운 존댓말 (~네요, ~것 같아요)</td></tr>
+      <tr><td style="color:#636E72;font-weight:700;">Judge X</td><td>대체 판사</td><td>Grok 3 Mini</td><td>Judge G 스타일</td><td>격식체 (폴백용)</td></tr>
+    </table>
+
+    <h4>판결 프롬프트 구조 (System / User 분리)</h4>
+    <div class="diagram">
+┌────────────────────────────────────────────────┐
+│               System Prompt                     │
+│  ┌──────────────────────────────────────────┐   │
+│  │  캐릭터 설정 (Judge G/M/C 고유 성격)      │   │
+│  │  + 판결문 톤 예시                         │   │
+│  │  + 판결 원칙 (6개)                        │   │
+│  │  + 5항목 루브릭 (각 20점)                 │   │
+│  │  + confidence 기준표 (0.50~1.00)          │   │
+│  │  + 금지 사항 (6개)                        │   │
+│  │  + JSON 응답 스키마                       │   │
+│  └──────────────────────────────────────────┘   │
+├────────────────────────────────────────────────┤
+│               User Prompt                       │
+│  ┌──────────────────────────────────────────┐   │
+│  │  논쟁 주제 (topic)                        │   │
+│  │  + 판결 목적 (purpose)                    │   │
+│  │  + 분석 렌즈 (lens + 가중치 설명)          │   │
+│  │  + A측 주장 원문                          │   │
+│  │  + B측 주장 원문                          │   │
+│  └──────────────────────────────────────────┘   │
+└────────────────────────────────────────────────┘</div>
+
+    <h4>판결 목적 (purpose)</h4>
+    <table>
+      <tr><th>값</th><th>설명</th><th>판결 방식</th></tr>
+      <tr><td><code class="inline-code">compete</code></td><td>승부 판별</td><td>논리적 우열 → 승/패/무 판정 + 점수</td></tr>
+      <tr><td><code class="inline-code">consensus</code></td><td>합의 도출</td><td>양측 공통 접점과 합리적 결론 도출</td></tr>
+      <tr><td><code class="inline-code">analysis</code></td><td>분석 요청</td><td>양측 논리를 객관적으로 정리 비교</td></tr>
+    </table>
+
+    <h4>분석 렌즈 (lens) — 가중치 조정</h4>
+    <table>
+      <tr><th>값</th><th>설명</th><th>가중 항목</th></tr>
+      <tr><td><code class="inline-code">general</code></td><td>종합 관점</td><td>5개 항목 균등 (각 20점)</td></tr>
+      <tr><td><code class="inline-code">logic</code></td><td>논리/팩트</td><td>logic 항목에 가중치</td></tr>
+      <tr><td><code class="inline-code">emotion</code></td><td>관계/감정</td><td>persuasion 항목에 가중치</td></tr>
+      <tr><td><code class="inline-code">practical</code></td><td>실용/비용</td><td>evidence 항목에 가중치</td></tr>
+      <tr><td><code class="inline-code">ethics</code></td><td>윤리/가치</td><td>consistency 항목에 가중치</td></tr>
+    </table>
+
+    <h4>confidence 기준표</h4>
+    <table>
+      <tr><th>구간</th><th>의미</th><th>기준</th></tr>
+      <tr><td>0.90 ~ 1.00</td><td>압도적 차이</td><td>한쪽 구체적 근거 다수 vs 상대측 근거 전무</td></tr>
+      <tr><td>0.80 ~ 0.89</td><td>명확한 차이</td><td>양측 근거 있으나 한쪽 논리 구조가 확실히 우수</td></tr>
+      <tr><td>0.70 ~ 0.79</td><td>분명한 차이</td><td>양측 유사 수준이나 핵심 논점에서 한쪽 우위</td></tr>
+      <tr><td>0.55 ~ 0.69</td><td>근소한 차이</td><td>양측 모두 우수하나 미세한 차이로 판정</td></tr>
+      <tr><td>0.50 ~ 0.54</td><td>사실상 동점</td><td>draw 판정 시에만 사용</td></tr>
+    </table>
+
+    <h4>AI API 설정</h4>
+    <table>
+      <tr><th>항목</th><th>GPT-4.1</th><th>Gemini 2.5 Flash</th><th>Claude Sonnet 4</th><th>Grok 3 Mini</th></tr>
+      <tr><td>temperature</td><td>0.3</td><td>0.3</td><td>-</td><td>0.3</td></tr>
+      <tr><td>max_tokens</td><td>-</td><td>-</td><td>1,024</td><td>-</td></tr>
+      <tr><td>timeout</td><td>30초</td><td>30초</td><td>30초</td><td>30초</td></tr>
+      <tr><td>JSON 강제</td><td>response_format</td><td>responseMimeType</td><td>regex 파싱</td><td>response_format</td></tr>
+      <tr><td>prompt 분리</td><td>system + user</td><td>systemInstruction + contents</td><td>system + messages</td><td>system + user</td></tr>
+    </table>
+
+    <h4>Solo 모드 — AI 반대 주장 생성</h4>
+    <table>
+      <tr><th>항목</th><th>설정</th></tr>
+      <tr><td>사용 모델</td><td>GPT-4.1 (단독)</td></tr>
+      <tr><td>생성 길이</td><td>200~500자</td></tr>
+      <tr><td>temperature</td><td>0.7 (다양한 반대 의견)</td></tr>
+      <tr><td>저장</td><td>arguments 테이블, user_id: null, ai_generated: true</td></tr>
+      <tr><td>엔드포인트</td><td><code class="inline-code">POST /api/arguments/:debateId/solo</code></td></tr>
+      <tr><td>판결 시 공개</td><td>AI 생성 사실 비공개 (공정성)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== 12. FEEDBACK API ===== -->
+<div class="tag-group" id="api-feedbacks">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    12. 피드백 API (/api/feedbacks)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/feedbacks -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/feedbacks</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">피드백 제출 (Upsert)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>서비스 만족도 피드백을 제출합니다. 기존 피드백이 있으면 수정(upsert), 없으면 새로 생성합니다.</p>
+        <h4>Request Body</h4>
+<pre><code>{
+  "satisfaction": 4.5,     // 0.5~5 (0.5 단위, 필수)
+  "ai_accuracy": 4.0,     // 0.5~5 (0.5 단위, 필수)
+  "ui_ease": 3.5,         // 0.5~5 (0.5 단위, 필수)
+  "fairness": 4.0,        // 0.5~5 (0.5 단위, 필수)
+  "recommend": 5.0,       // 0.5~5 (0.5 단위, 필수)
+  "best_feature": "AI 판결이 재밌어요",  // optional (텍스트)
+  "improvement": "로딩이 느려요",        // optional (텍스트)
+  "additional": "추가 의견"              // optional (텍스트)
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "user_id": "uuid",
+  "satisfaction": 4.5,
+  "ai_accuracy": 4.0,
+  "ui_ease": 3.5,
+  "fairness": 4.0,
+  "recommend": 5.0,
+  "best_feature": "AI 판결이 재밌어요",
+  "improvement": "로딩이 느려요",
+  "additional": "추가 의견",
+  "created_at": "ISO8601"
+}</code></pre>
+        <h4>에러 응답</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"satisfaction는 0.5~5 사이 0.5 단위 값이어야 합니다." (유효성 검증)</td></tr>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- GET /api/feedbacks/me -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/feedbacks/me</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">나의 피드백 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "satisfaction": 4.5,
+    "ai_accuracy": 4.0,
+    "ui_ease": 3.5,
+    "fairness": 4.0,
+    "recommend": 5.0,
+    "best_feature": "...",
+    "improvement": "...",
+    "additional": "...",
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 13. OG META API ===== -->
+<div class="tag-group" id="api-og">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    13. OG 메타 API (/og)
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /og/invite/:inviteCode -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/og/invite/:inviteCode</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">동적 OG 메타태그 (초대 링크 공유용)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>초대 코드로 토론 정보를 조회하여 동적 OG 메타태그가 포함된 HTML을 반환합니다.
+        카카오톡/Discord/슬랙 등에서 링크 미리보기(OG 카드)에 토론 주제가 표시됩니다.
+        브라우저 접속 시 <code>&lt;meta http-equiv="refresh"&gt;</code>로 클라이언트 초대 페이지로 자동 리다이렉트됩니다.</p>
+        <h4>Path Parameter</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td>inviteCode</td><td>String</td><td>초대 코드 (8자리)</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span> (text/html)</h4>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta property="og:title" content="모라고라 - {토론 주제}" /&gt;
+  &lt;meta property="og:description" content="{카테고리} | {목적} 논쟁에 초대합니다" /&gt;
+  &lt;meta property="og:image" content="https://team-moragora-client.vercel.app/og-card.png" /&gt;
+  &lt;meta http-equiv="refresh" content="0;url=https://team-moragora-client.vercel.app/invite/{inviteCode}" /&gt;
+&lt;/head&gt;
+&lt;/html&gt;</code></pre>
+        <div class="info-box note">
+          <strong>사용법:</strong> 공유 링크를 <code>https://teammoragora.onrender.com/og/invite/{inviteCode}</code> 로 전달하면,
+          크롤러(카카오/디스코드)는 OG 태그를 읽고, 브라우저 사용자는 클라이언트 페이지로 자동 이동합니다.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 14. CHAT API (NEW) ===== -->
+<div class="tag-group" id="api-chat">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    14. 채팅 API (/api/chat) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /api/chat/:debateId/messages -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/chat/:debateId/messages</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">채팅 메시지 내역 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>특정 토론(채팅방)의 전체 메시지 내역을 시간순으로 반환합니다.</p>
+        <h4>Path Params</h4>
+        <table>
+          <tr><th>이름</th><th>타입</th><th>설명</th></tr>
+          <tr><td><code class="inline-code">debateId</code></td><td>UUID</td><td>토론(채팅방) ID</td></tr>
+        </table>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "debate_id": "uuid",
+    "user_id": "uuid",
+    "content": "메시지 내용",
+    "side": "A",
+    "created_at": "ISO8601",
+    "user": { "nickname": "닉네임", "avatar_url": "..." }
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- POST /api/chat/:debateId/messages -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/chat/:debateId/messages</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">채팅 메시지 전송</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "content": "메시지 내용",
+  "side": "A"    // A 또는 B
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "content": "메시지 내용",
+  "side": "A",
+  "created_at": "ISO8601"
+}</code></pre>
+        <div class="info-box note">
+          <strong>참고:</strong> 실시간 채팅은 주로 Socket.io를 통해 처리됩니다. 이 REST API는 메시지 영구 저장 및 폴백용으로 사용됩니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST /api/chat/:debateId/start -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/chat/:debateId/start</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">채팅 세션 시작</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>채팅 모드 토론의 실시간 대화 세션을 시작합니다. 토론 상태가 <code class="inline-code">chatting</code>으로 전환됩니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "채팅이 시작되었습니다.",
+  "debate_id": "uuid",
+  "status": "chatting"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"채팅을 시작할 수 없는 상태입니다"</td></tr>
+          <tr><td><span class="response-code c4xx">403</span></td><td>"토론 참여자만 채팅을 시작할 수 있습니다"</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/chat/:debateId/end -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/chat/:debateId/end</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">채팅 종료 및 판결 요청</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>채팅 세션을 종료하고 채팅 내역을 기반으로 AI 판결을 트리거합니다. 채팅 메시지가 각 진영의 주장으로 변환되어 판결에 사용됩니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "채팅이 종료되었습니다. 판결이 진행됩니다.",
+  "debate_id": "uuid",
+  "status": "judging"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"채팅 중인 토론만 종료할 수 있습니다" (status != chatting)</td></tr>
+          <tr><td><span class="response-code c4xx">403</span></td><td>"토론 참여자만 채팅을 종료할 수 있습니다"</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 15. COMMENT API (NEW) ===== -->
+<div class="tag-group" id="api-comments">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    15. 댓글 API (/api/comments) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /api/comments/:debateId -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/comments/:debateId</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">토론 댓글 목록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "debate_id": "uuid",
+    "user_id": "uuid",
+    "content": "댓글 내용",
+    "likes_count": 5,
+    "created_at": "ISO8601",
+    "user": { "nickname": "닉네임", "avatar_url": "...", "tier": "배심원" }
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- POST /api/comments/:debateId -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/comments/:debateId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">댓글 작성</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Request Body</h4>
+<pre><code>{
+  "content": "댓글 내용 (1~500자)"
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "content": "댓글 내용",
+  "likes_count": 0,
+  "created_at": "ISO8601"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"댓글 내용을 입력해주세요"</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- DELETE /api/comments/:commentId -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/comments/:commentId</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">댓글 삭제 (본인만)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "댓글이 삭제되었습니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">403</span></td><td>"본인의 댓글만 삭제할 수 있습니다"</td></tr>
+          <tr><td><span class="response-code c4xx">404</span></td><td>"댓글을 찾을 수 없습니다"</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/comments/:commentId/like -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/comments/:commentId/like</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">댓글 좋아요 토글</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>댓글에 좋아요를 누르거나 취소합니다 (토글). 이미 좋아요한 상태에서 다시 호출하면 취소됩니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "liked": true,       // true: 좋아요 추가, false: 좋아요 취소
+  "likes_count": 6
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 16. NOTIFICATION API (NEW) ===== -->
+<div class="tag-group" id="api-notifications">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    16. 알림 API (/api/notifications) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- GET /api/notifications -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/notifications</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">알림 목록 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "id": "uuid",
+    "type": "verdict",
+    "title": "판결이 완료되었습니다",
+    "message": "짜장면 vs 짬뽕 논쟁의 판결 결과를 확인하세요.",
+    "reference_id": "debate-uuid",
+    "is_read": false,
+    "created_at": "ISO8601"
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/notifications/unread-count -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/notifications/unread-count</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">읽지 않은 알림 수 조회</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "count": 3
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- PATCH /api/notifications/:id/read -->
+    <div class="endpoint patch">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge patch">PATCH</span>
+        <span class="endpoint-path">/api/notifications/:id/read</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">알림 읽음 처리</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "is_read": true
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- PATCH /api/notifications/read-all -->
+    <div class="endpoint patch">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge patch">PATCH</span>
+        <span class="endpoint-path">/api/notifications/read-all</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">모든 알림 읽음 처리</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "모든 알림을 읽음 처리했습니다.",
+  "updated": 5
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- DELETE /api/notifications/:id -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/notifications/:id</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">알림 삭제</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "알림이 삭제되었습니다."
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- DELETE /api/notifications -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/notifications</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">모든 알림 삭제</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "모든 알림이 삭제되었습니다.",
+  "deleted": 12
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 17. AI ROUTES (NEW) ===== -->
+<div class="tag-group" id="api-ai">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    17. AI 생성 API (/api/ai) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <!-- POST /api/ai/generate-sides -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/ai/generate-sides</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">주제에서 찬반 입장 자동 생성</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>사용자가 입력한 논쟁 주제를 분석하여 찬성(A측)과 반대(B측) 입장을 AI가 자동으로 생성합니다. 토론 생성 시 주장 작성 보조 용도로 사용됩니다.</p>
+        <h4>Request Body</h4>
+<pre><code>{
+  "topic": "재택근무가 사무실 근무보다 나은가?"
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "side_a": "재택근무가 더 효율적이다",
+  "side_b": "사무실 근무가 더 효율적이다",
+  "description": "업무 환경에 따른 생산성과 워라밸 비교"
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주제를 입력해주세요"</td></tr>
+          <tr><td><span class="response-code c5xx">502</span></td><td>AI 서비스 호출 실패</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/ai/analyze-topic -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/ai/analyze-topic</span>
+        <span class="badge badge-public">PUBLIC</span>
+        <span class="endpoint-desc-text">AI가 논쟁 주제를 분석하여 핵심 쟁점 도출</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>사용자가 입력한 논쟁 주제를 AI가 분석하여 핵심 쟁점과 논점을 도출합니다. 토론 생성 전 주제 탐색 용도로 사용됩니다.</p>
+        <h4>Request Body</h4>
+<pre><code>{
+  "topic": "재택근무가 사무실 근무보다 나은가?"
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "analysis": "이 주제의 핵심 쟁점은 1) 생산성 차이, 2) 워라밸과 삶의 질, 3) 팀 협업과 소통 효율성, 4) 비용 구조(통근비 vs 홈오피스 비용)입니다. 찬성 측은 유연성과 자율성을, 반대 측은 대면 소통과 조직문화를 강조할 수 있습니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주제를 입력해주세요"</td></tr>
+          <tr><td><span class="response-code c5xx">502</span></td><td>AI 서비스 호출 실패</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/ai/socratic-feedback -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/ai/socratic-feedback</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">소크라테스 코칭 — AI가 주장의 논리적 허점을 질문으로 피드백</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>사용자가 작성 중인 주장을 AI가 소크라테스식 질문법으로 분석하여, 논리적 허점이나 보완할 수 있는 포인트를 질문 형태로 피드백합니다. 주장 제출 전 논증 품질을 높이기 위한 코칭 용도입니다.</p>
+        <h4>Request Body</h4>
+<pre><code>{
+  "topic": "재택근무가 사무실 근무보다 나은가?",
+  "side": "A",
+  "argument": "재택근무는 출퇴근 시간을 절약하여 생산성을 높인다. 또한 자유로운 환경에서 창의력이 증가한다."
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "questions": [
+    "출퇴근 시간 절약이 곧 생산성 향상으로 이어진다는 근거가 있나요? 절약된 시간을 실제로 업무에 사용한다는 데이터가 있을까요?",
+    "자유로운 환경이 모든 직종에서 창의력을 높이나요? 반대로 구조화된 환경이 더 효과적인 경우는 없을까요?",
+    "재택근무의 단점(고립감, 소통 비용 등)에 대한 반론은 어떻게 준비하시겠어요?"
+  ],
+  "strength": "출퇴근 시간 절약이라는 구체적 장점을 제시한 점이 좋습니다.",
+  "suggestion": "구체적인 통계나 연구 결과를 인용하면 설득력이 크게 향상됩니다."
+}</code></pre>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주장을 입력해주세요" (argument 누락 또는 빈 값)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주제를 입력해주세요" (topic 누락)</td></tr>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+          <tr><td><span class="response-code c5xx">502</span></td><td>AI 서비스 호출 실패</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POST /api/ai/rubric-score -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/ai/rubric-score</span>
+        <span class="badge badge-auth">AUTH</span>
+        <span class="endpoint-desc-text">루브릭 점수 — AI가 주장을 5항목 루브릭으로 사전 채점</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>사용자가 작성 중인 주장을 판결에 사용되는 5항목 루브릭(논리 구조, 근거 품질, 설득력, 일관성, 표현 적절성)으로 사전 채점합니다. 제출 전 자신의 주장 품질을 미리 확인하고 개선할 수 있습니다.</p>
+        <h4>Request Body</h4>
+<pre><code>{
+  "topic": "재택근무가 사무실 근무보다 나은가?",
+  "side": "A",
+  "argument": "재택근무는 출퇴근 시간을 절약하여 생산성을 높인다. 스탠퍼드 연구에 따르면 재택근무자의 생산성이 13% 높았다. 또한 자유로운 환경에서 창의력이 증가한다."
+}</code></pre>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "total_score": 68,
+  "score_detail": {
+    "logic": 14,
+    "evidence": 15,
+    "persuasion": 13,
+    "consistency": 14,
+    "expression": 12
+  },
+  "feedback": {
+    "logic": "전제→근거→결론 흐름은 잡혀 있으나, '창의력 증가'와 '생산성 향상' 사이의 논리적 연결이 부족합니다.",
+    "evidence": "스탠퍼드 연구 인용이 좋습니다. 창의력 관련 구체적 데이터도 추가하면 더 강력해집니다.",
+    "persuasion": "반대측 예상 반론(소통 비용, 고립감)에 대한 선제 대응이 없습니다.",
+    "consistency": "전반적으로 일관성 있으나, 생산성과 창의력이라는 두 축을 더 명확히 구분하세요.",
+    "expression": "문장이 간결하나, 좀 더 구체적인 표현과 수치를 활용하면 좋겠습니다."
+  },
+  "grade": "B"
+}</code></pre>
+        <div class="info-box info">
+          <strong>등급 기준:</strong> S(90~100), A(80~89), B(70~79), C(60~69), D(50~59), F(0~49)
+        </div>
+        <h4>Error</h4>
+        <table>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주장을 입력해주세요" (argument 누락 또는 빈 값)</td></tr>
+          <tr><td><span class="response-code c4xx">400</span></td><td>"주제를 입력해주세요" (topic 누락)</td></tr>
+          <tr><td><span class="response-code c4xx">401</span></td><td>인증 필요</td></tr>
+          <tr><td><span class="response-code c5xx">502</span></td><td>AI 서비스 호출 실패</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 18. CRON ROUTES (NEW) ===== -->
+<div class="tag-group" id="api-cron">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    18. Cron API (/api/cron) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <div class="info-box warn">
+      <strong>인증:</strong> Cron API는 <code class="inline-code">CRON_SECRET</code> 헤더 검증을 통해 보호됩니다. 외부 스케줄러(Vercel Cron, cron-job.org 등)에서만 호출해야 합니다.
+    </div>
+
+    <!-- POST /api/cron/daily-debate -->
+    <div class="endpoint post">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/cron/daily-debate</span>
+        <span class="badge badge-secret">SECRET</span>
+        <span class="endpoint-desc-text">데일리 논쟁 자동 생성</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>매일 자동으로 "오늘의 논쟁"을 생성합니다. AI가 시사적이고 흥미로운 주제를 선정하여 토론을 생성합니다.</p>
+        <h4>Request Header</h4>
+<pre><code>Authorization: Bearer {CRON_SECRET}</code></pre>
+        <h4>Response <span class="response-code c2xx">201</span></h4>
+<pre><code>{
+  "id": "uuid",
+  "topic": "AI가 생성한 오늘의 논쟁 주제",
+  "category": "daily",
+  "status": "arguing",
+  "created_at": "ISO8601"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- DELETE /api/cron/daily-debate/:id -->
+    <div class="endpoint delete">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/cron/daily-debate/:id</span>
+        <span class="badge badge-secret">SECRET</span>
+        <span class="endpoint-desc-text">데일리 논쟁 삭제</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>설명</h4>
+        <p>특정 데일리 논쟁을 삭제합니다. 잘못 생성된 데일리 논쟁 정리용입니다.</p>
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "message": "데일리 논쟁이 삭제되었습니다."
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 19. ADMIN API (NEW) ===== -->
+<div class="tag-group" id="api-admin">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    19. 관리자 API (/api/admin) <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <div class="info-box warn">
+      <strong>인증:</strong> Admin API는 관리자 권한이 필요합니다. 일반 사용자는 접근할 수 없습니다.
+    </div>
+
+    <!-- GET /api/admin/stats -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/admin/stats</span>
+        <span class="badge badge-admin">ADMIN</span>
+        <span class="endpoint-desc-text">대시보드 통계</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "total_users": 1250,
+  "total_debates": 3400,
+  "total_verdicts": 2800,
+  "total_votes": 15000,
+  "active_debates": 45,
+  "today_signups": 12,
+  "today_debates": 28
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/admin/ai -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/admin/ai</span>
+        <span class="badge badge-admin">ADMIN</span>
+        <span class="endpoint-desc-text">AI 모델 통계</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "models": [
+    { "name": "gpt-4.1", "total_calls": 2800, "failures": 12, "avg_latency_ms": 4500 },
+    { "name": "gemini-2.5-flash", "total_calls": 2800, "failures": 8, "avg_latency_ms": 3200 },
+    { "name": "claude-sonnet", "total_calls": 2800, "failures": 15, "avg_latency_ms": 5100 },
+    { "name": "grok-3-mini", "total_calls": 35, "failures": 2, "avg_latency_ms": 3800 }
+  ],
+  "fallback_rate": 0.012
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/admin/trends -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/admin/trends</span>
+        <span class="badge badge-admin">ADMIN</span>
+        <span class="endpoint-desc-text">일별 트렌드</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>[
+  {
+    "date": "2026-03-25",
+    "signups": 12,
+    "debates_created": 28,
+    "verdicts_completed": 22,
+    "votes_cast": 180,
+    "active_users": 95
+  }
+]</code></pre>
+      </div>
+    </div>
+
+    <!-- GET /api/admin/analytics -->
+    <div class="endpoint get">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/admin/analytics</span>
+        <span class="badge badge-admin">ADMIN</span>
+        <span class="endpoint-desc-text">분석 데이터</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Response <span class="response-code c2xx">200</span></h4>
+<pre><code>{
+  "retention": { "d1": 0.45, "d7": 0.32, "d30": 0.18 },
+  "popular_categories": [
+    { "category": "일상", "count": 1200 },
+    { "category": "연애", "count": 850 },
+    { "category": "사회", "count": 620 }
+  ],
+  "avg_verdict_rating": 4.2,
+  "avg_messages_per_chat": 24,
+  "conversion_rate": { "signup_to_debate": 0.65, "debate_to_verdict": 0.82 }
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 20. SOCKET.IO EVENTS (NEW) ===== -->
+<div class="tag-group" id="socket-events">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    20. Socket.io 이벤트 <span style="color:#49cc90;font-size:0.8rem;">[NEW]</span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+
+    <div class="info-box note">
+      <strong>연결:</strong> Socket.io 서버는 Express 서버와 동일한 포트(5000)에서 실행됩니다. 클라이언트는 <code class="inline-code">io(SERVER_URL)</code>로 연결합니다. 인증은 연결 시 <code class="inline-code">auth.token</code>으로 JWT를 전달합니다.
+    </div>
+
+<pre><code>// 클라이언트 연결 예시
+const socket = io(SERVER_URL, {
+  auth: { token: supabase_access_token }
+});</code></pre>
+
+    <h4 style="margin-top:20px; margin-bottom:12px; font-size:0.95rem;">Client → Server (emit)</h4>
+
+    <!-- join-room -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">join-room</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">채팅방 입장</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid"
+}</code></pre>
+        <p>특정 토론 채팅방에 입장합니다. 해당 방의 메시지를 수신하기 시작합니다.</p>
+      </div>
+    </div>
+
+    <!-- leave-room -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">leave-room</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">채팅방 퇴장</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- join-presence -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">join-presence</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">프레즌스(대기실) 입장</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "userId": "uuid",
+  "nickname": "닉네임"
+}</code></pre>
+        <p>대기실에 입장하여 상대방의 접속 상태를 실시간으로 확인합니다.</p>
+      </div>
+    </div>
+
+    <!-- select-side -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">select-side</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">진영 선택</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "side": "A"    // A 또는 B
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- leave-presence -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">leave-presence</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">프레즌스(대기실) 퇴장</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- typing -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">typing</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">타이핑 상태 전송</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "isTyping": true
+}</code></pre>
+        <p>상대방에게 타이핑 중임을 알립니다. <code class="inline-code">isTyping: false</code>로 타이핑 종료를 알립니다.</p>
+      </div>
+    </div>
+
+    <!-- start-game -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">start-game</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">실시간 논쟁 시작</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid"
+}</code></pre>
+        <p>양측이 모두 준비되면 실시간 논쟁(채팅)을 시작합니다. 서버에서 타이머가 시작됩니다.</p>
+      </div>
+    </div>
+
+    <!-- send-message -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">send-message</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">채팅 메시지 전송</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "content": "메시지 내용",
+  "side": "A"
+}</code></pre>
+        <p>채팅 메시지를 전송합니다. 서버에서 DB 저장 후 방의 모든 참여자에게 브로드캐스트합니다. 토론 상태가 waiting일 경우 자동으로 chatting으로 전환되며 서버 타이머가 시작됩니다.</p>
+      </div>
+    </div>
+
+    <!-- request-time-change -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">request-time-change</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">토론 시간 변경 요청</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "newTime": 600    // 초 단위 (예: 600 = 10분)
+}</code></pre>
+        <p>상대방에게 토론 시간 변경을 제안합니다. 상대방이 수락하면 적용됩니다.</p>
+      </div>
+    </div>
+
+    <!-- vote-time-change -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">EMIT</span>
+        <span class="endpoint-path">vote-time-change</span>
+        <span class="badge badge-emit">CLIENT→SERVER</span>
+        <span class="endpoint-desc-text">시간 변경 투표 (수락/거절)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "approved": true    // true: 수락, false: 거절
+}</code></pre>
+      </div>
+    </div>
+
+    <h4 style="margin-top:28px; margin-bottom:12px; font-size:0.95rem;">Server → Client (on)</h4>
+
+    <!-- presence-sync -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">presence-sync</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">대기실 참여자 상태 동기화</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "users": [
+    { "userId": "uuid", "nickname": "닉네임", "side": "A", "online": true },
+    { "userId": "uuid", "nickname": "상대방", "side": "B", "online": true }
+  ]
+}</code></pre>
+        <p>대기실에 참여 중인 사용자 목록과 진영 선택 상태를 동기화합니다.</p>
+      </div>
+    </div>
+
+    <!-- opponent-typing -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">opponent-typing</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">상대방 타이핑 상태</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "isTyping": true
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- opponent-returned -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">opponent-returned</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">상대방 복귀</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <p>상대방이 연결 해제 후 다시 접속했을 때 발생합니다.</p>
+      </div>
+    </div>
+
+    <!-- opponent-left -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">opponent-left</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">상대방 이탈</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <p>상대방이 채팅방에서 연결이 끊어졌을 때 발생합니다.</p>
+      </div>
+    </div>
+
+    <!-- game-start -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">game-start</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">논쟁 시작 알림</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "timeLimit": 300,    // 초 단위
+  "startedAt": "ISO8601"
+}</code></pre>
+        <p>양측 준비 완료 후 논쟁이 시작되었음을 알립니다. 클라이언트에서 카운트다운 타이머를 시작합니다.</p>
+      </div>
+    </div>
+
+    <!-- new-message -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">new-message</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">새 채팅 메시지 수신</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "id": "uuid",
+  "debate_id": "uuid",
+  "user_id": "uuid",
+  "content": "메시지 내용",
+  "side": "A",
+  "created_at": "ISO8601",
+  "user": { "nickname": "닉네임" }
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- chat-ended -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">chat-ended</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">채팅 종료 (참여자에 의해)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "endedBy": "uuid",    // 종료한 사용자 ID
+  "reason": "manual"
+}</code></pre>
+        <p>참여자 중 한 명이 채팅을 종료했을 때 발생합니다. 이후 AI 판결이 진행됩니다.</p>
+      </div>
+    </div>
+
+    <!-- chat-auto-ended -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">chat-auto-ended</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">채팅 자동 종료 (타이머 만료)</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "debateId": "uuid",
+  "reason": "timeout"
+}</code></pre>
+        <p>설정된 토론 시간이 만료되어 채팅이 자동 종료되었을 때 발생합니다.</p>
+      </div>
+    </div>
+
+    <!-- filter-blocked -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">filter-blocked</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">메시지 필터 차단 알림</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "reason": "부적절한 표현이 포함되어 있습니다."
+}</code></pre>
+        <p>전송한 메시지가 콘텐츠 필터에 의해 차단되었을 때 발신자에게만 전달됩니다.</p>
+      </div>
+    </div>
+
+    <!-- time-change-request -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">time-change-request</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">시간 변경 요청 수신</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "requestedBy": "uuid",
+  "nickname": "닉네임",
+  "newTime": 600    // 초 단위
+}</code></pre>
+        <p>상대방이 토론 시간 변경을 요청했을 때 발생합니다. UI에서 수락/거절 버튼을 표시합니다.</p>
+      </div>
+    </div>
+
+    <!-- time-change-approved -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">time-change-approved</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">시간 변경 승인</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "newTime": 600,
+  "approvedBy": "uuid"
+}</code></pre>
+        <p>시간 변경 요청이 승인되어 새 시간이 적용되었을 때 발생합니다.</p>
+      </div>
+    </div>
+
+    <!-- time-change-cancelled -->
+    <div class="socket-event">
+      <div class="endpoint-summary" onclick="toggleEndpoint(this)">
+        <span class="method-badge">ON</span>
+        <span class="endpoint-path">time-change-cancelled</span>
+        <span class="badge badge-listen">SERVER→CLIENT</span>
+        <span class="endpoint-desc-text">시간 변경 거절</span>
+      </div>
+      <div class="endpoint-detail hidden">
+        <h4>Payload</h4>
+<pre><code>{
+  "cancelledBy": "uuid",
+  "reason": "rejected"
+}</code></pre>
+        <p>시간 변경 요청이 거절되었을 때 발생합니다.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 21. ERROR CODES ===== -->
+<div class="tag-group" id="error-codes">
+  <div class="tag-group-header" onclick="toggleTagGroup(this)">
+    21. 에러 코드 정리
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="tag-group-body">
+    <table>
+      <tr><th>코드</th><th>의미</th><th>발생 상황</th></tr>
+      <tr><td><span class="response-code c2xx">200</span></td><td>OK</td><td>정상 조회, 업데이트 성공</td></tr>
+      <tr><td><span class="response-code c2xx">201</span></td><td>Created</td><td>토론/주장/투표/댓글/메시지 생성 성공</td></tr>
+      <tr><td><span class="response-code c4xx">400</span></td><td>Bad Request</td><td>콘텐츠 필터 차단, 유효성 검증 실패, 토론 상태 불일치, 투표 마감 초과, voted_side 유효성</td></tr>
+      <tr><td><span class="response-code c4xx">401</span></td><td>Unauthorized</td><td>JWT 토큰 없음 또는 만료</td></tr>
+      <tr><td><span class="response-code c4xx">403</span></td><td>Forbidden</td><td>권한 없음 (Solo 모드: 생성자가 아닌 사용자, 타인 댓글 삭제, 관리자 API 접근)</td></tr>
+      <tr><td><span class="response-code c4xx">404</span></td><td>Not Found</td><td>토론/사용자/초대코드/댓글/알림 없음</td></tr>
+      <tr><td><span class="response-code c4xx">409</span></td><td>Conflict</td><td>중복 판결 요청, Solo 모드 B측 주장 중복, 중복 평가</td></tr>
+      <tr><td><span class="response-code c5xx">500</span></td><td>Internal Error</td><td>DB 오류, 모든 AI 모델 실패 (status → arguing 롤백)</td></tr>
+      <tr><td><span class="response-code c5xx">502</span></td><td>Bad Gateway</td><td>AI 서비스 호출 실패</td></tr>
+    </table>
+    <h4>공통 에러 응답 형식</h4>
+<pre><code>{
+  "error": "에러 메시지 (한국어)"
+}</code></pre>
+  </div>
+</div>
+
+</div> <!-- container -->
+
+<!-- Footer -->
+<div class="footer">
+  <p>Moragora API 명세서 v2.0 | 2026-03-25 | Backend A Team</p>
+  <p>Express + Supabase + Socket.io + Multi-AI Judgment System</p>
+</div>
+
+<script>
+function toggleEndpoint(summaryEl) {
+  var detail = summaryEl.nextElementSibling;
+  if (detail) {
+    detail.classList.toggle('hidden');
+  }
+}
+
+function toggleTagGroup(headerEl) {
+  var body = headerEl.nextElementSibling;
+  if (body) {
+    body.classList.toggle('hidden');
+    headerEl.classList.toggle('collapsed');
+  }
+}
+</script>
+
+</body>
+</html>

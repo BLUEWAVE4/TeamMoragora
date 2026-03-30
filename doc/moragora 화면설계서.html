@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moragora 화면설계서</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --accent: #6366F1; --accent-light: #818CF8; --accent-bg: #EEF2FF;
+    --text-primary: #1E1E2E; --text-secondary: #4A4A5A; --text-muted: #6B7280;
+    --border: #D1D5DB; --border-light: #E5E7EB; --bg-white: #FFFFFF; --bg-gray: #F9FAFB;
+    --success: #059669; --warning: #D97706; --danger: #DC2626;
+  }
+  body { font-family: 'Noto Sans KR', sans-serif; font-size: 10.5pt; line-height: 1.75; color: var(--text-primary); background: var(--bg-gray); }
+  .document { width: 210mm; margin: 0 auto; background: var(--bg-white); }
+  .page { width: 210mm; min-height: 297mm; padding: 25mm 22mm 30mm 22mm; background: var(--bg-white); position: relative; }
+
+  .cover-page { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 297mm; padding: 40mm 30mm; position: relative; }
+  .cover-badge { display: inline-block; background: var(--accent); color: white; font-size: 9pt; font-weight: 500; letter-spacing: 3px; padding: 6px 20px; border-radius: 20px; margin-bottom: 24px; }
+  .cover-title { font-size: 42pt; font-weight: 900; color: var(--accent); letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; }
+  .cover-subtitle { font-size: 16pt; font-weight: 500; color: var(--text-secondary); margin-bottom: 48px; }
+  .cover-divider { width: 80px; height: 3px; background: var(--accent); margin: 0 auto 48px; }
+  .cover-description { font-size: 11.5pt; color: var(--text-secondary); line-height: 1.9; max-width: 400px; margin-bottom: 60px; }
+  .cover-meta { border-top: 1px solid var(--border-light); padding-top: 32px; width: 100%; max-width: 360px; }
+  .cover-meta-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 9.5pt; }
+  .cover-meta-label { color: var(--text-muted); }
+  .cover-meta-value { color: var(--text-primary); font-weight: 500; }
+  .cover-footer { position: absolute; bottom: 25mm; left: 0; right: 0; text-align: center; font-size: 8.5pt; color: var(--text-muted); }
+
+  .toc-page { padding-top: 35mm; }
+  .toc-title { font-size: 18pt; font-weight: 700; color: var(--accent); margin-bottom: 32px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+  .toc-list { list-style: none; }
+  .toc-item { display: flex; align-items: baseline; padding: 10px 0; border-bottom: 1px dotted var(--border-light); }
+  .toc-number { font-weight: 700; color: var(--accent); min-width: 32px; font-size: 10pt; }
+  .toc-text { flex: 1; font-size: 10.5pt; font-weight: 500; }
+  .toc-sub { padding-left: 32px; }
+  .toc-sub .toc-number { font-weight: 400; color: var(--text-muted); min-width: 40px; font-size: 9.5pt; }
+  .toc-sub .toc-text { font-weight: 400; font-size: 9.5pt; color: var(--text-secondary); }
+
+  h2 { font-size: 18pt; font-weight: 700; color: var(--accent); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); line-height: 1.3; }
+  h2 .sn { font-weight: 900; }
+  h3 { font-size: 12.5pt; font-weight: 700; color: var(--text-primary); margin-top: 28px; margin-bottom: 12px; padding-left: 12px; border-left: 3px solid var(--accent); line-height: 1.4; }
+  h4 { font-size: 10.5pt; font-weight: 700; color: var(--text-secondary); margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 12px; text-align: justify; word-break: keep-all; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: 9.5pt; }
+  thead th { background: var(--accent); color: white; font-weight: 500; padding: 10px 12px; text-align: left; font-size: 9pt; white-space: nowrap; }
+  thead th:first-child { border-radius: 4px 0 0 0; } thead th:last-child { border-radius: 0 4px 0 0; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; line-height: 1.6; }
+  tbody tr:nth-child(even) { background: var(--bg-gray); }
+
+  .info-box { background: var(--accent-bg); border: 1px solid #C7D2FE; border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 16px 0 20px; font-size: 10pt; line-height: 1.75; }
+  .info-box strong { color: var(--accent); }
+  .no-break { page-break-inside: avoid; }
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 4px; line-height: 1.75; }
+
+  .flow-diagram { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 20px 0 24px; padding: 20px 16px; background: var(--bg-gray); border-radius: 8px; border: 1px solid var(--border-light); }
+  .flow-step { background: var(--accent); color: white; padding: 8px 16px; border-radius: 6px; font-size: 9pt; font-weight: 500; white-space: nowrap; }
+  .flow-arrow { color: var(--accent); font-size: 14pt; font-weight: 700; }
+
+  .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 20px; }
+  .color-card { border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); }
+  .color-swatch { height: 48px; }
+  .color-info { padding: 8px 10px; font-size: 8.5pt; }
+  .color-name { font-weight: 700; }
+  .color-hex { color: var(--text-muted); }
+
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 20px; }
+  .comp-card { border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; }
+  .comp-label { font-size: 8.5pt; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .comp-val { font-size: 9.5pt; font-weight: 500; line-height: 1.5; }
+
+  /* Phone Frame */
+  .phone { width: 220px; border: 2px solid #1A1A2E; border-radius: 22px; overflow: hidden; background: #FAFAF5; box-shadow: 0 6px 24px rgba(0,0,0,.1); flex-shrink: 0; }
+  .ph-notch { height: 16px; background: #1A1A2E; border-radius: 0 0 10px 10px; width: 80px; margin: 0 auto; }
+  .ph-scr { min-height: 360px; font-size: 6.5pt; line-height: 1.4; color: #1A1A2E; overflow: hidden; }
+  .ph-home { height: 6px; width: 60px; background: #1A1A2E; border-radius: 3px; margin: 4px auto; }
+
+  /* Mini phone components */
+  .mg { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; font-size: 7.5pt; font-weight: 800; border-bottom: 1px solid #eee; background: rgba(250,250,245,.9); }
+  .mt { display: flex; justify-content: space-around; padding: 3px 4px; background: #fff; border-top: 1px solid #eee; font-size: 5.5pt; text-align: center; }
+  .mt span { display: flex; flex-direction: column; align-items: center; gap: 1px; color: #9CA3AF; }
+  .mt span.a { color: #1B2A4A; font-weight: 700; }
+
+  .screen-layout { display: flex; gap: 16px; align-items: flex-start; margin: 16px 0 24px; }
+  .screen-layout .phone { width: 200px; }
+  .screen-layout .phone .ph-scr { min-height: 340px; }
+  .screen-spec { flex: 1; font-size: 9pt; }
+  .screen-spec table { font-size: 8.5pt; margin: 8px 0 12px; }
+
+  .phone-pair { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
+  .phone-pair .phone { width: 200px; }
+  .phone-pair .phone .ph-scr { min-height: 340px; }
+
+  /* Quick mini styles */
+  .mb { padding: 1px 4px; border-radius: 6px; font-size: 5pt; font-weight: 700; }
+  .mb-a { background: rgba(5,150,105,.1); color: #059669; }
+  .mb-b { background: rgba(66,133,244,.1); color: #4285F4; }
+  .mb-d { background: rgba(212,175,55,.1); color: #D4AF37; }
+  .mb-r { background: rgba(230,57,70,.1); color: #E63946; }
+  .mb-live { background: rgba(234,179,8,.1); color: #CA8A04; }
+  .jd { width: 11px; height: 11px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 4.5pt; font-weight: 800; color: #fff; }
+
+  /* Dark phone variant */
+  .phone-dark { background: #0f1829; }
+  .phone-dark .ph-scr { color: #E5E7EB; }
+
+  @media print {
+    @page { size: A4; margin: 20mm 18mm 25mm 18mm; }
+    body { background: white; font-size: 10pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .document { width: 100%; margin: 0; }
+    .page { width: 100%; min-height: auto; padding: 0; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .cover-page { min-height: auto; padding: 30mm 20mm; page-break-after: always; }
+    h2 { page-break-before: always; page-break-after: avoid; }
+    .page:first-of-type h2 { page-break-before: auto; }
+    h3, h4 { page-break-after: avoid; }
+    table, .info-box, .no-break, .phone, .screen-layout, .phone-pair { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="document">
+
+  <!-- COVER -->
+  <div class="page cover-page">
+    <div class="cover-badge">SCREEN DESIGN</div>
+    <div class="cover-title">Moragora</div>
+    <div class="cover-subtitle">화면설계서</div>
+    <div class="cover-divider"></div>
+    <div class="cover-description">
+      AI 기반 논쟁 판결 플랫폼<br>
+      모바일 퍼스트 (440px) &middot; 15개 화면<br>
+      라이트/다크 모드 &middot; Pretendard Variable
+    </div>
+    <div class="cover-meta">
+      <div class="cover-meta-row"><span class="cover-meta-label">문서 유형</span><span class="cover-meta-value">화면설계서 (Screen Design)</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">작성일</span><span class="cover-meta-value">2026년 3월 30일</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">버전</span><span class="cover-meta-value">v3.1</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">기준</span><span class="cover-meta-value">moragora-demo-v3 프로토타입</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">해상도</span><span class="cover-meta-value">440px (모바일 퍼스트)</span></div>
+    </div>
+    <div class="cover-footer">Moragora &mdash; AI 기반 논쟁 판결 플랫폼 &mdash; Confidential</div>
+  </div>
+
+  <!-- TOC -->
+  <div class="page toc-page">
+    <div class="toc-title">목차</div>
+    <ul class="toc-list">
+      <li class="toc-item"><span class="toc-number">01</span><span class="toc-text">디자인 시스템</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.1</span><span class="toc-text">컬러 팔레트</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.2</span><span class="toc-text">타이포그래피 &amp; 레이아웃</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.3</span><span class="toc-text">공통 컴포넌트</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">02</span><span class="toc-text">네비게이션 구조</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">03</span><span class="toc-text">화면 &mdash; 소셜 로그인</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">04</span><span class="toc-text">화면 &mdash; 홈 (피드)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">05</span><span class="toc-text">화면 &mdash; 리그 (랭킹)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">06</span><span class="toc-text">화면 &mdash; 논쟁 생성 (위자드)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">07</span><span class="toc-text">화면 &mdash; 주장 입력 &amp; 초대</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">08</span><span class="toc-text">화면 &mdash; 판결 대기</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">09</span><span class="toc-text">화면 &mdash; 판결 결과</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">10</span><span class="toc-text">화면 &mdash; 명예의 전당 &amp; 마이페이지</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">11</span><span class="toc-text">화면 &mdash; 실시간 로비 (DebateLobbyPage)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">12</span><span class="toc-text">화면 &mdash; 대기실 (ChatLobby)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">13</span><span class="toc-text">화면 &mdash; 실시간 채팅방 (ChatRoom)</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">14</span><span class="toc-text">화면 &mdash; 알림 패널</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">15</span><span class="toc-text">화면 &mdash; 관리자 대시보드</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">16</span><span class="toc-text">컴포넌트 인벤토리 &amp; 개발자 배정</span></li>
+    </ul>
+  </div>
+
+  <!-- 01. 디자인 시스템 -->
+  <div class="page">
+    <h2><span class="sn">01.</span> 디자인 시스템</h2>
+    <h3>1.1 컬러 팔레트</h3>
+    <h4>Primary &amp; Brand</h4>
+    <div class="color-grid">
+      <div class="color-card"><div class="color-swatch" style="background:#1B2A4A"></div><div class="color-info"><div class="color-name">Primary</div><div class="color-hex">#1B2A4A</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#D4AF37"></div><div class="color-info"><div class="color-name">Gold</div><div class="color-hex">#D4AF37</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#E63946"></div><div class="color-info"><div class="color-name">Accent</div><div class="color-hex">#E63946</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#FAFAF5"></div><div class="color-info"><div class="color-name">Background</div><div class="color-hex">#FAFAF5</div></div></div>
+    </div>
+    <h4>AI Judge</h4>
+    <div class="color-grid">
+      <div class="color-card"><div class="color-swatch" style="background:#10A37F"></div><div class="color-info"><div class="color-name">Judge G (GPT-4.1)</div><div class="color-hex">#10A37F</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#4285F4"></div><div class="color-info"><div class="color-name">Judge M (Gemini)</div><div class="color-hex">#4285F4</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#D97706"></div><div class="color-info"><div class="color-name">Judge C (Claude)</div><div class="color-hex">#D97706</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#059669"></div><div class="color-info"><div class="color-name">A측 Success</div><div class="color-hex">#059669</div></div></div>
+    </div>
+    <h4>실시간 채팅 (Dark Theme)</h4>
+    <div class="color-grid">
+      <div class="color-card"><div class="color-swatch" style="background:#0f1829"></div><div class="color-info"><div class="color-name">Chat BG</div><div class="color-hex">#0f1829</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#1a2540"></div><div class="color-info"><div class="color-name">Chat Card</div><div class="color-hex">#1a2540</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#F8F7F4"></div><div class="color-info"><div class="color-name">Lobby BG</div><div class="color-hex">#F8F7F4</div></div></div>
+      <div class="color-card"><div class="color-swatch" style="background:#CA8A04"></div><div class="color-info"><div class="color-name">Live Badge</div><div class="color-hex">#CA8A04</div></div></div>
+    </div>
+
+    <h3>1.2 타이포그래피 &amp; 레이아웃</h3>
+    <table>
+      <thead><tr><th>항목</th><th>설정값</th></tr></thead>
+      <tbody>
+        <tr><td><strong>서체</strong></td><td>Pretendard Variable (폴백: -apple-system, system-ui)</td></tr>
+        <tr><td><strong>기본 크기</strong></td><td>16px</td></tr>
+        <tr><td><strong>행간</strong></td><td>1.6</td></tr>
+        <tr><td><strong>최대 너비</strong></td><td>440px (모바일 퍼스트)</td></tr>
+        <tr><td><strong>GNB</strong></td><td>56px, sticky top, blur(12px), 버튼 w-9 h-9</td></tr>
+        <tr><td><strong>Tab Bar</strong></td><td>60px, fixed bottom, blur(16px)</td></tr>
+        <tr><td><strong>Radius</strong></td><td>sm:8 / md:12 / lg:16 / xl:24 / pill:9999px</td></tr>
+        <tr><td><strong>Shadow</strong></td><td>sm:1px 3px / md:4px 12px / lg:12px 32px</td></tr>
+      </tbody>
+    </table>
+
+    <h3>1.3 공통 컴포넌트</h3>
+    <div class="comp-grid">
+      <div class="comp-card"><div class="comp-label">GNB</div><div class="comp-val">Logo + 검색/알림(w-9 h-9)<br>서브: &larr; + 타이틀 + 액션</div></div>
+      <div class="comp-card"><div class="comp-label">Tab Bar</div><div class="comp-val">홈/로비/+(생성)/모라고라/MY<br>result, waiting에서 숨김</div></div>
+      <div class="comp-card"><div class="comp-label">MoragoraCard</div><div class="comp-val">카테고리+시간+주제<br>복합판결+결과+Judge도트<br>실시간 뱃지 지원</div></div>
+      <div class="comp-card"><div class="comp-label">OptionCard</div><div class="comp-val">아이콘+제목+설명<br>선택 시 border primary</div></div>
+      <div class="comp-card"><div class="comp-label">Judge Dot</div><div class="comp-val">22px 원형, G/M/C 컬러<br>승자 100%, 패자 40%</div></div>
+      <div class="comp-card"><div class="comp-label">Result Badge</div><div class="comp-val">pill, A승(green)<br>B승(blue) / 무승부(gold)</div></div>
+      <div class="comp-card"><div class="comp-label">LiveBadge</div><div class="comp-val">네모 태그, 실시간 논쟁 표시<br>SVG Zap 아이콘 + 텍스트</div></div>
+      <div class="comp-card"><div class="comp-label">NotificationPanel</div><div class="comp-val">벨 아이콘 드롭다운<br>알림 목록 + 읽음 처리</div></div>
+    </div>
+  </div>
+
+  <!-- 02. 네비게이션 -->
+  <div class="page">
+    <h2><span class="sn">02.</span> 네비게이션 구조</h2>
+
+    <h4>메인 탭 (Tab Bar) &mdash; 5탭</h4>
+    <div class="flow-diagram">
+      <span class="flow-step">🏠 홈</span><span class="flow-arrow">&harr;</span>
+      <span class="flow-step" style="background:#CA8A04;">⚡ 로비</span><span class="flow-arrow">&harr;</span>
+      <span class="flow-step" style="background:#E63946;">+ 생성</span><span class="flow-arrow">&harr;</span>
+      <span class="flow-step">🏛️ 모라고라</span><span class="flow-arrow">&harr;</span>
+      <span class="flow-step">👤 MY</span>
+    </div>
+
+    <h4>논쟁 생성 &rarr; 판결 플로우</h4>
+    <div class="flow-diagram">
+      <span class="flow-step">+ 버튼</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">모드 선택</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Step1 목적</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Step2 렌즈</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Step3 주제</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">주장 입력</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">초대 링크</span>
+    </div>
+    <div class="flow-diagram">
+      <span class="flow-step">B측 주장 입력</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">AI 판결 대기</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#D4AF37;">시민 투표 (24h)</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">판결 결과</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">공유 / 피드</span>
+    </div>
+
+    <h4>실시간 채팅 논쟁 플로우</h4>
+    <div class="flow-diagram">
+      <span class="flow-step" style="background:#CA8A04;">로비</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">방 생성/입장</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">대기실 (사이드 선택)</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#0f1829;">채팅 (15분)</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">AI 판결</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">결과</span>
+    </div>
+
+    <h4>화면별 Tab Bar / GNB 동작</h4>
+    <table>
+      <thead><tr><th>화면</th><th>GNB 타입</th><th>Tab Bar</th></tr></thead>
+      <tbody>
+        <tr><td>홈/로비/모라고라</td><td>메인 (Logo)</td><td>표시</td></tr>
+        <tr><td>마이페이지</td><td>없음 (프로필 헤더)</td><td>표시</td></tr>
+        <tr><td>논쟁 생성</td><td>서브 (&larr; + "새 논쟁")</td><td>숨김</td></tr>
+        <tr><td>주장 입력/초대</td><td>서브</td><td>숨김</td></tr>
+        <tr><td>판결 대기</td><td>Result GNB (Navy)</td><td>숨김</td></tr>
+        <tr><td>판결 결과</td><td>Result GNB (Navy + 공유)</td><td>숨김</td></tr>
+        <tr><td>실시간 채팅방</td><td>Dark GNB (주제 + 타이머)</td><td>숨김</td></tr>
+        <tr><td>대기실</td><td>Dark GNB (논제 표시)</td><td>숨김</td></tr>
+        <tr><td>관리자 대시보드</td><td>서브 (&larr; + "관리자")</td><td>숨김</td></tr>
+        <tr><td>소셜 로그인</td><td>없음</td><td>숨김</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      <strong>SPA 라우팅:</strong> .screen 클래스를 active 토글. fadeIn 0.3s ease + translateY(8px). 스크롤 top 리셋. 뒤로가기 시 이전 screen으로 전환.
+    </div>
+  </div>
+
+  <!-- 03. 로그인 -->
+  <div class="page">
+    <h2><span class="sn">03.</span> 소셜 로그인</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div style="background:linear-gradient(180deg,#1B2A4A,#2D4470);padding:20px 14px 16px;text-align:center;color:#fff;">
+            <div style="font-size:22px;">⚖️</div>
+            <div style="font-size:14pt;font-weight:900;">Moragora<span style="color:#D4AF37">.</span></div>
+            <div style="font-size:6.5pt;color:rgba(255,255,255,.6);margin-top:2px;">AI가 판결하는 논쟁 플랫폼</div>
+          </div>
+          <div style="padding:16px 12px;">
+            <div style="text-align:center;font-size:7pt;color:#6B7280;margin-bottom:12px;">소셜 계정으로 간편 로그인</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="padding:8px;border-radius:8px;background:#FEE500;text-align:center;font-size:7pt;font-weight:700;color:#3C1E1E;">🟡 카카오로 시작하기</div>
+              <div style="padding:8px;border-radius:8px;background:#fff;border:1.5px solid #eee;text-align:center;font-size:7pt;font-weight:700;color:#333;">🔵 Google로 시작하기</div>
+            </div>
+            <div style="text-align:center;margin-top:12px;font-size:5.5pt;color:#9CA3AF;">로그인 시 이용약관 및 개인정보처리방침에 동의합니다</div>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>앱 진입 첫 화면. Supabase Auth를 통한 카카오/구글 OAuth 소셜 로그인만 제공. 자체 회원가입 없이 소셜 계정으로 즉시 가입+로그인 처리.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>히어로</strong></td><td>브랜드</td><td>Navy 그라디언트 + ⚖️ + 로고</td></tr>
+            <tr><td><strong>카카오</strong></td><td>Button</td><td>#FEE500 배경, supabase.auth.signInWithOAuth({provider:'kakao'})</td></tr>
+            <tr><td><strong>Google</strong></td><td>Button</td><td>white 배경 + 테두리, supabase.auth.signInWithOAuth({provider:'google'})</td></tr>
+            <tr><td><strong>약관 안내</strong></td><td>Text</td><td>이용약관 및 개인정보처리방침 동의 안내</td></tr>
+          </tbody>
+        </table>
+        <h4>인터랙션</h4>
+        <ul>
+          <li>소셜 버튼 클릭 &rarr; OAuth 팝업/리다이렉트 &rarr; 로그인 성공 &rarr; 홈 피드</li>
+          <li>최초 로그인 시 자동 회원가입 (Supabase Auth 자동 처리)</li>
+          <li>OAuth 실패 시 toast 에러 메시지</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04. 홈 -->
+  <div class="page">
+    <h2><span class="sn">04.</span> 홈 (피드)</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>Moragora<span style="color:#D4AF37">.</span></span><span style="font-size:6.5pt;font-weight:400;">🔍 🔔</span></div>
+          <div style="margin:4px 8px;padding:4px 8px;background:linear-gradient(135deg,rgba(230,57,70,.08),rgba(212,175,55,.08));border-radius:5px;font-size:6pt;">🔥 <strong>7일 연속 논쟁 중!</strong></div>
+          <div style="margin:0 8px 4px;padding:7px;background:linear-gradient(135deg,#1B2A4A,#2D4470);border-radius:7px;color:#fff;font-size:6pt;">
+            <div style="font-size:5pt;color:#D4AF37;font-weight:700;">● 오늘의 논쟁</div>
+            <div style="font-size:7pt;font-weight:700;margin:3px 0;">"재택근무가 사무실 근무보다 생산적인가?"</div>
+            <div style="display:flex;gap:3px;"><span style="flex:1;text-align:center;padding:2px;background:rgba(5,150,105,.15);color:#6EE7B7;border-radius:3px;font-weight:700;">A측 찬성</span><span style="flex:1;text-align:center;padding:2px;background:rgba(230,57,70,.15);color:#FCA5A5;border-radius:3px;font-weight:700;">B측 반대</span></div>
+            <div style="font-size:5pt;color:rgba(255,255,255,.5);margin-top:3px;">👥 1,247명 · ⏰ 마감 18:42:00</div>
+          </div>
+          <div style="display:flex;gap:2px;padding:0 8px 3px;font-size:5.5pt;overflow:hidden;"><span style="padding:2px 6px;background:#1B2A4A;color:#fff;border-radius:8px;">🔥 인기</span><span style="padding:2px 6px;background:#fff;border:1px solid #eee;border-radius:8px;">⏰ 최신</span><span style="padding:2px 6px;background:#fff;border:1px solid #eee;border-radius:8px;">💑 연애</span><span style="padding:2px 6px;background:#fff;border:1px solid #eee;border-radius:8px;">🏢 직장</span></div>
+          <!-- Card with live badge -->
+          <div style="margin:3px 8px;padding:6px;background:#fff;border-radius:5px;border:1px solid #f0f0f0;font-size:5.5pt;">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="display:flex;gap:3px;align-items:center;"><span class="mb mb-r">🏠 일상</span><span style="padding:1px 4px;border-radius:3px;font-size:5pt;font-weight:700;background:rgba(234,179,8,.1);color:#CA8A04;">⚡ 실시간</span></span><span style="color:#9CA3AF;">2시간 전</span></div>
+            <div style="font-size:6.5pt;font-weight:700;margin:2px 0;">"변기 뚜껑은 내려야 한다 vs 각자 알아서"</div>
+            <div style="font-size:5pt;">🤖 AI 각25%(75%) + 🗳️ 시민 25%</div>
+            <div style="display:flex;align-items:center;gap:3px;margin-top:2px;"><span class="mb mb-a">A측 승리</span><span style="font-weight:700;">68.2 <span style="color:#9CA3AF">vs</span> 54.8</span><span style="margin-left:auto;display:flex;gap:1px;"><span class="jd" style="background:#10A37F">G</span><span class="jd" style="background:#4285F4">M</span><span class="jd" style="background:#D97706;opacity:.4">C</span></span></div>
+            <div style="display:flex;gap:4px;margin-top:2px;color:#9CA3AF;font-size:5pt;">좋아요 234 · 👁 1.2K · 💬 56 · 🗳️ 347</div>
+          </div>
+          <div style="margin:3px 8px;padding:6px;background:#fff;border-radius:5px;border:1px solid #f0f0f0;font-size:5.5pt;">
+            <div style="display:flex;justify-content:space-between;"><span class="mb mb-r">💑 연애</span><span style="color:#9CA3AF;">5시간 전</span></div>
+            <div style="font-size:6.5pt;font-weight:700;margin:2px 0;">"데이트 비용은 반반? vs 번갈아?"</div>
+            <div style="display:flex;align-items:center;gap:3px;margin-top:2px;"><span class="mb mb-d">무승부</span><span style="font-weight:700;">62.1 vs 61.8</span></div>
+          </div>
+          <div class="mt"><span class="a">🏠<br>홈</span><span>⚡<br>로비</span><span style="font-size:9pt;color:#E63946;font-weight:700;margin-top:-4px;">+</span><span>🏛️<br>모라고라</span><span>👤<br>MY</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>구성 요소</h4>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>데이터</th></tr></thead>
+          <tbody>
+            <tr><td><strong>GNB</strong></td><td>Logo + 🔍(w-9 h-9) + 🔔(w-9 h-9)</td><td>읽지 않은 알림 수 (뱃지)</td></tr>
+            <tr><td><strong>스트릭</strong></td><td>StreakBanner</td><td>profiles.streak_count</td></tr>
+            <tr><td><strong>오늘의 논쟁</strong></td><td>DailyDebate</td><td>debates(is_daily=true)<br>A/B 투표 &rarr; 실시간 비율 바<br><strong>v3.1:</strong> 인디케이터 도트 카드 하단 아래로 이동 (카드 위 오버랩 아님)</td></tr>
+            <tr><td><strong>카테고리</strong></td><td>수평 pill 탭</td><td>인기/최신/연애/직장/음식/일상</td></tr>
+            <tr><td><strong>피드</strong></td><td>MoragoraCard &times; N</td><td>debates + Moragoras JOIN<br>무한 스크롤 페이지네이션<br>실시간 뱃지: mode=chat일 때 표시</td></tr>
+          </tbody>
+        </table>
+        <h4>MoragoraCard 구조 (v3.0 변경)</h4>
+        <ul>
+          <li>카테고리 pill(accent) + <strong>실시간 뱃지(⚡ 실시간)</strong> + 상대시간</li>
+          <li>논쟁 주제 (15px, bold, max 2줄)</li>
+          <li>복합 판결 뱃지 "🤖 AI 각25%(75%) + 🗳️ 시민 25%"</li>
+          <li>결과 badge + 점수 + Judge 도트(G/M/C)</li>
+          <li><strong>좋아요(텍스트)</strong>/조회/댓글/투표 카운트 &mdash; 하트 아이콘 삭제, 텍스트만 표시</li>
+          <li>탭 &rarr; 판결 결과 화면</li>
+        </ul>
+        <h4>댓글 시스템 간소화 (v3.0)</h4>
+        <ul>
+          <li>좋아요: 하트 아이콘(&hearts;) &rarr; 텍스트("좋아요") 변경</li>
+          <li>삭제: 모달 다이얼로그 &rarr; 인라인 확인 방식으로 간소화</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05. 리그 -->
+  <div class="page">
+    <h2><span class="sn">05.</span> 리그 (랭킹)</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>Moragora<span style="color:#D4AF37">.</span></span><span style="font-size:6.5pt;">📅</span></div>
+          <div style="margin:5px 8px;padding:7px;background:linear-gradient(135deg,#1B2A4A,#2D4470);border-radius:7px;color:#fff;font-size:6pt;">
+            <div style="font-size:8.5pt;font-weight:800;">⚖️ 변호사 리그</div>
+            <div style="display:flex;gap:2px;margin:3px 0;font-size:5pt;text-align:center;"><span style="flex:1;">👤 시민</span><span style="flex:1;">📋 배심원</span><span style="flex:1;background:rgba(212,175,55,.2);color:#D4AF37;border-radius:3px;border:1px solid rgba(212,175,55,.3);">⚖️ 변호사</span><span style="flex:1;">🔨 판사</span><span style="flex:1;">🏛️ 대법관</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:5pt;"><span>2,450 XP</span><span>3,000 XP</span></div>
+            <div style="height:3px;background:rgba(255,255,255,.15);border-radius:2px;margin:2px 0;overflow:hidden;"><div style="height:100%;width:82%;background:#D4AF37;border-radius:2px;"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:5pt;color:rgba(255,255,255,.6);"><span>G-127조 (50명)</span><span>시즌 D-12</span></div>
+          </div>
+          <div style="padding:3px 8px;font-size:6.5pt;font-weight:700;">👥 조 랭킹</div>
+          <div style="display:flex;justify-content:center;align-items:flex-end;gap:6px;padding:6px 8px;">
+            <div style="text-align:center;"><div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#9CA3AF,#D1D5DB);margin:0 auto 2px;font-size:7pt;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;">2</div><div style="font-size:5pt;font-weight:700;">말로하면지는나</div><div style="height:20px;background:linear-gradient(180deg,#D1D5DB,#E5E7EB);border-radius:3px 3px 0 0;margin-top:2px;"></div></div>
+            <div style="text-align:center;"><div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#D4AF37,#F5D76E);margin:0 auto 2px;font-size:8pt;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;">1</div><div style="font-size:5pt;font-weight:700;">논리왕김철수</div><div style="height:28px;background:linear-gradient(180deg,#D4AF37,#F5E6B8);border-radius:3px 3px 0 0;margin-top:2px;"></div></div>
+            <div style="text-align:center;"><div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#B45309,#D97706);margin:0 auto 2px;font-size:7pt;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;">3</div><div style="font-size:5pt;font-weight:700;">진실의입</div><div style="height:14px;background:linear-gradient(180deg,#D97706,#FBBF24);border-radius:3px 3px 0 0;margin-top:2px;"></div></div>
+          </div>
+          <div style="padding:0 8px;font-size:5.5pt;">
+            <div style="display:flex;align-items:center;gap:3px;padding:3px 0;border-bottom:1px solid #f0f0f0;"><strong style="width:12px;text-align:center;">4</strong> 🧑‍💼 <span style="flex:1;">토론마스터 <span style="color:#9CA3AF;">18승4패</span></span> <span class="mb mb-a">승급</span></div>
+            <div style="display:flex;align-items:center;gap:3px;padding:3px;background:rgba(212,175,55,.06);border:1px solid #F5E6B8;border-radius:3px;margin:3px 0;"><strong style="width:12px;text-align:center;color:#D4AF37;">8</strong> 😎 <span style="flex:1;">김지훈 (나) <span style="color:#9CA3AF;">12승5패</span></span> <span class="mb mb-a">승급</span></div>
+          </div>
+          <div class="mt"><span>🏠<br>홈</span><span>⚡<br>로비</span><span style="font-size:9pt;color:#E63946;font-weight:700;margin-top:-4px;">+</span><span>🏛️<br>모라고라</span><span>👤<br>MY</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>구성 요소</h4>
+        <table>
+          <thead><tr><th>영역</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>리그 상태</strong></td><td>현재 티어명 + 5단계 pill + XP 프로그레스<br>조 번호, 시즌 잔여일</td></tr>
+            <tr><td><strong>포디엄</strong></td><td>1~3위: Gold/Silver/Bronze 아바타 + 바</td></tr>
+            <tr><td><strong>랭킹 리스트</strong></td><td>4위~ : 순위/아바타/닉네임/전적/XP<br>"나" 행: gold border 강조</td></tr>
+            <tr><td><strong>XP 내역</strong></td><td>승리/무승부/패배/일일논쟁/투표 XP 합산</td></tr>
+          </tbody>
+        </table>
+        <h4>티어 시스템</h4>
+        <table>
+          <thead><tr><th>티어</th><th>아이콘</th><th>승급 조건</th></tr></thead>
+          <tbody>
+            <tr><td>시민</td><td>👤</td><td>시작 티어</td></tr>
+            <tr><td>배심원</td><td>📋</td><td>조 상위 10명</td></tr>
+            <tr><td>변호사</td><td>⚖️</td><td>조 상위 10명</td></tr>
+            <tr><td>판사</td><td>🔨</td><td>조 상위 10명</td></tr>
+            <tr><td>대법관</td><td>🏛️</td><td>조 상위 10명</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06. 논쟁 생성 -->
+  <div class="page">
+    <h2><span class="sn">06.</span> 논쟁 생성 (3단계 위자드)</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>&larr;</span> <strong>새 논쟁</strong> <span></span></div>
+          <div style="display:flex;gap:4px;padding:5px 8px;">
+            <div style="flex:1;padding:5px 3px;border-radius:5px;text-align:center;border:1.5px solid #1B2A4A;background:rgba(27,42,74,.04);font-size:5.5pt;"><div style="font-size:12px;">🎯</div><strong>주제 지정</strong><br><span style="color:#9CA3AF;">원하는 주제로 시작</span></div>
+            <div style="flex:1;padding:5px 3px;border-radius:5px;text-align:center;border:1.5px solid #eee;font-size:5.5pt;"><div style="font-size:12px;">🎲</div><strong>랜덤 매칭</strong><br><span style="color:#9CA3AF;">같은 리그 매칭</span></div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:4px;padding:4px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#1B2A4A;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:#E5E7EB;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:#E5E7EB;"></div>
+          </div>
+          <div style="padding:2px 10px;font-size:8.5pt;font-weight:800;color:#1B2A4A;">논쟁 목적 선택</div>
+          <div style="padding:0 10px 3px;font-size:6pt;color:#6B7280;">어떤 목적으로 논쟁하시겠어요?</div>
+          <div style="margin:2px 8px;padding:5px 8px;border-radius:5px;border:1.5px solid #1B2A4A;background:rgba(27,42,74,.04);font-size:6pt;"><strong>🏆 승부 판별</strong><br><span style="color:#6B7280;">누가 맞는지 가려주세요</span></div>
+          <div style="margin:2px 8px;padding:5px 8px;border-radius:5px;border:1.5px solid #eee;font-size:6pt;"><strong>🤝 합의 도출</strong><br><span style="color:#6B7280;">최선의 결론을 찾아주세요</span></div>
+          <div style="margin:2px 8px;padding:5px 8px;border-radius:5px;border:1.5px solid #eee;font-size:6pt;"><strong>🔍 분석 요청</strong><br><span style="color:#6B7280;">양측 장단점을 정리해주세요</span></div>
+          <div style="margin:6px 8px;padding:5px;border-radius:10px;background:#1B2A4A;color:#fff;text-align:center;font-size:6.5pt;font-weight:700;">다음: 렌즈 선택 &rarr;</div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>3단계 위자드</h4>
+        <table>
+          <thead><tr><th>스텝</th><th>제목</th><th>선택지</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Step 1</strong></td><td>논쟁 목적</td><td>🏆 승부 판별 / 🤝 합의 도출 / 🔍 분석 요청</td></tr>
+            <tr><td><strong>Step 2</strong></td><td>판결 렌즈</td><td>🔬 논리/팩트 / 💛 관계/감정 / 💰 실용/비용 / ⚖️ 윤리/가치</td></tr>
+            <tr><td><strong>Step 3</strong></td><td>주제 입력</td><td>textarea 자유입력 + 추천 태그<br>🍜 라면+밥 / 💍 결혼 필수? 등</td></tr>
+          </tbody>
+        </table>
+        <h4>랜덤 매칭 모드</h4>
+        <ul>
+          <li>매칭 레이더 pulse 애니메이션</li>
+          <li>경과 시간 타이머 표시</li>
+          <li>30초 후 &plusmn;1 티어 확장, 최대 90초</li>
+          <li>매칭 취소 버튼 (accent border)</li>
+        </ul>
+        <h4>인터랙션</h4>
+        <ul>
+          <li>Step Indicator: 3도트 (active/done 상태)</li>
+          <li>Option Card 선택 시 border primary + bg tint</li>
+          <li>이전/다음 버튼으로 스텝 이동</li>
+          <li>Step 3 "🔥 논쟁 시작!" &rarr; 주장 입력 화면</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07. 주장 입력 & 초대 -->
+  <div class="page">
+    <h2><span class="sn">07.</span> 주장 입력 &amp; 초대</h2>
+    <div class="phone-pair">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>&larr;</span> <strong>주장 입력</strong> <span></span></div>
+          <div style="padding:5px 10px;font-size:5.5pt;color:#E63946;font-weight:700;background:#F9FAFB;border-bottom:1px solid #eee;">🏆 승부 판별 · 🔬 논리/팩트</div>
+          <div style="padding:6px 10px;font-size:7.5pt;font-weight:700;">"변기 뚜껑은 내려야 한다 vs 각자 알아서"</div>
+          <div style="padding:0 10px;font-size:5.5pt;color:#6B7280;">당신의 주장을 입력하세요 (A측)</div>
+          <div style="margin:4px 10px;padding:6px 8px;border:1.5px solid #eee;border-radius:5px;min-height:70px;font-size:5.5pt;color:#4A4A5A;background:#fff;">변기 뚜껑을 내려야 하는 이유는 크게 세 가지입니다. 첫째, 위생적 관점에서 물을 내릴 때 에어로졸이...</div>
+          <div style="text-align:right;padding:2px 10px;font-size:5pt;color:#9CA3AF;">247 / 2,000자</div>
+          <div style="display:flex;justify-content:space-between;padding:0 10px;font-size:5pt;color:#9CA3AF;"><span>최소 50자</span><span>최대 2,000자</span></div>
+          <div style="margin:6px 10px;padding:6px;border-radius:10px;background:#1B2A4A;color:#fff;text-align:center;font-size:6.5pt;font-weight:700;">✍️ 주장 제출하기</div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>&larr;</span> <strong>상대방 초대</strong> <span></span></div>
+          <div style="background:linear-gradient(135deg,#1B2A4A,#2D4470);padding:12px;text-align:center;color:#fff;border-radius:0 0 12px 12px;">
+            <div style="font-size:18px;">⚔️</div>
+            <div style="font-size:7.5pt;font-weight:700;">논쟁이 생성되었습니다!</div>
+            <div style="font-size:5.5pt;color:rgba(255,255,255,.6);">상대방을 초대하세요</div>
+          </div>
+          <div style="margin:6px 10px;padding:6px;background:#fff;border-radius:6px;border:1px solid #eee;font-size:5.5pt;">
+            <div style="color:#6B7280;">논쟁 주제</div>
+            <div style="font-size:6.5pt;font-weight:700;">"변기 뚜껑은 내려야 한다 vs 각자 알아서"</div>
+            <div style="color:#9CA3AF;">🏆 승부 판별 · 🔬 논리/팩트</div>
+          </div>
+          <div style="padding:3px 10px;font-size:6pt;font-weight:700;">초대 링크</div>
+          <div style="display:flex;gap:3px;margin:2px 10px;padding:4px 6px;background:#F9FAFB;border-radius:4px;border:1px solid #eee;font-size:5pt;align-items:center;">
+            <span style="flex:1;color:#6B7280;overflow:hidden;">moragora.com/invite/abc123...</span>
+            <span style="padding:2px 6px;background:#1B2A4A;color:#fff;border-radius:3px;font-weight:700;white-space:nowrap;">📋 복사</span>
+          </div>
+          <div style="display:flex;gap:4px;padding:6px 10px;">
+            <div style="flex:1;padding:4px;border-radius:5px;background:#FEE500;text-align:center;font-size:5.5pt;font-weight:700;color:#3C1E1E;">카카오 공유</div>
+            <div style="flex:1;padding:4px;border-radius:5px;background:#1B2A4A;text-align:center;font-size:5.5pt;font-weight:700;color:#fff;">링크 공유</div>
+          </div>
+          <div style="text-align:center;padding:6px;font-size:5pt;color:#9CA3AF;">상대방 수락 시 알림 발송<br><span style="color:#D97706;">⏰ 24시간 내 미수락 시 자동 취소</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>화면</th><th>구성 요소</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td><strong>주장 입력</strong></td><td>논쟁 정보 + textarea + 글자수 카운터 + 제출<br><strong>v3.1 신규: 소크라테스 산파술 코칭 위젯</strong></td><td>50~2,000자, 실시간 카운트<br>3단계 콘텐츠 방어 검증 후 저장<br><strong>코칭 위젯:</strong> 주장 입력 중 AI가 소크라테스식 질문으로 논리 보강 유도 (접이식 위젯)</td></tr>
+        <tr><td><strong>초대</strong></td><td>논쟁 요약 + 초대 링크 + 공유 버튼</td><td>Clipboard API 링크 복사<br>카카오/일반 공유, InvitePage<br>24h 미수락 자동 취소</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 08. 판결 대기 -->
+  <div class="page">
+    <h2><span class="sn">08.</span> 판결 대기</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr" style="padding:0;">
+          <div style="background:linear-gradient(180deg,#1B2A4A 0%,#2D4470 60%,#FAFAF5 100%);min-height:360px;">
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#fff;font-size:6.5pt;"><span>&larr;</span> <strong>판결 진행 중</strong> <span></span></div>
+            <div style="text-align:center;padding:12px 8px;color:#fff;">
+              <div style="font-size:26px;">⚖️</div>
+              <div style="font-size:8pt;font-weight:700;">AI가 판결 중입니다</div>
+              <div style="font-size:6pt;color:rgba(255,255,255,.6);">잠시만 기다려 주세요...</div>
+            </div>
+            <div style="margin:4px 8px;background:rgba(255,255,255,.08);border-radius:5px;padding:6px;">
+              <div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:5.5pt;color:rgba(255,255,255,.7);"><div style="width:16px;height:16px;border-radius:50%;background:#10A37F;display:flex;align-items:center;justify-content:center;font-size:5pt;font-weight:800;color:#fff;">G</div><span style="flex:1;"><strong style="color:#fff;">Judge G</strong> · 완료 3.2초</span> ✅</div>
+              <div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-top:1px solid rgba(255,255,255,.06);font-size:5.5pt;color:#fff;"><div style="width:16px;height:16px;border-radius:50%;background:#4285F4;display:flex;align-items:center;justify-content:center;font-size:5pt;font-weight:800;color:#fff;">M</div><span style="flex:1;"><strong>Judge M</strong> · 분석 중...</span> ⏳</div>
+              <div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-top:1px solid rgba(255,255,255,.06);font-size:5.5pt;color:rgba(255,255,255,.4);"><div style="width:16px;height:16px;border-radius:50%;background:#D97706;display:flex;align-items:center;justify-content:center;font-size:5pt;font-weight:800;color:#fff;">C</div><span style="flex:1;">Judge C · 대기 중</span> ⏳</div>
+            </div>
+            <div style="margin:5px 8px;padding:6px;background:rgba(255,255,255,.08);border-radius:5px;text-align:center;color:#fff;font-size:6pt;border:1px solid rgba(212,175,55,.2);">
+              <div style="font-weight:700;color:#D4AF37;">🗳️ 시민 투표 진행 중</div>
+              <div style="font-size:9pt;font-weight:800;">47 / 500명</div>
+            </div>
+            <div style="margin:4px 8px;padding:5px;background:linear-gradient(135deg,#E63946,#FF6B6B);color:#fff;border-radius:10px;text-align:center;font-size:6.5pt;font-weight:700;">⏩ 판결 결과 보기</div>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>구성 요소</h4>
+        <table>
+          <thead><tr><th>영역</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>히어로</strong></td><td>⚖️ float 애니메이션 3s<br>Navy 그라디언트 배경</td></tr>
+            <tr><td><strong>AI 진행 상태</strong></td><td>3스텝 (G&rarr;M&rarr;C)<br>done: ✅+소요시간 / active: ⏳+분석 중 / 대기: opacity .4</td></tr>
+            <tr><td><strong>시민 투표</strong></td><td>AI 3개 완료 후 status 'voting' 전환<br>투표 마감까지 남은 시간 표시 (vote_deadline)<br>실시간 참여자 카운트업 (800ms)</td></tr>
+            <tr><td><strong>플랜 안내</strong></td><td>무료: 1AI / 프리미엄: 3AI</td></tr>
+          </tbody>
+        </table>
+        <h4>애니메이션 시퀀스</h4>
+        <ol>
+          <li>Judge G: 즉시 done (3.2초)</li>
+          <li>Judge M: 2초 후 done (2.8초)</li>
+          <li>Judge C: 4초 후 done (2.5초)</li>
+          <li>0.5초 후 시민 투표 fade-in</li>
+          <li>참여자 수 카운트업</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- 09. 판결 결과 -->
+  <div class="page">
+    <h2><span class="sn">09.</span> 판결 결과</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr" style="padding:0;">
+          <div style="display:flex;justify-content:space-between;padding:5px 8px;background:#1B2A4A;color:#fff;font-size:6.5pt;"><span>&larr;</span> <strong>판결 결과</strong> <span style="color:#D4AF37;font-size:5.5pt;">📤 공유</span></div>
+          <div style="background:linear-gradient(180deg,#1B2A4A 0%,#1B2A4A 40%,#FAFAF5 100%);padding:8px;text-align:center;color:#fff;">
+            <div style="display:flex;gap:4px;justify-content:center;font-size:5.5pt;color:rgba(255,255,255,.6);"><span>🏠 일상</span><span style="padding:1px 4px;border-radius:3px;background:rgba(234,179,8,.15);color:#FDE68A;font-weight:700;">⚡ 실시간 논쟁</span><span>· 2시간 전</span></div>
+            <div style="font-size:7pt;font-weight:700;margin:2px 0;">"변기 뚜껑은 내려야 한다 vs 각자 알아서"</div>
+            <div style="background:#fff;border-radius:7px;padding:6px;text-align:center;margin-top:4px;color:#1A1A2E;">
+              <div style="font-size:16px;">⚖️</div>
+              <div style="font-size:5pt;color:#9CA3AF;letter-spacing:1px;font-weight:700;">복합 판결</div>
+              <div style="font-size:9pt;font-weight:800;">🏆 A측 승리</div>
+              <div style="background:#F9FAFB;border-radius:3px;padding:3px 5px;margin:3px 0;font-size:5pt;text-align:left;">
+                <span style="color:#9CA3AF;">🤖 AI 각 25% (75%)</span><br>
+                <span style="background:rgba(16,163,127,.1);color:#10A37F;padding:0 3px;border-radius:3px;font-weight:700;">G:A</span>
+                <span style="background:rgba(66,133,244,.1);color:#4285F4;padding:0 3px;border-radius:3px;font-weight:700;">M:A</span>
+                <span style="background:rgba(217,119,6,.1);color:#D97706;padding:0 3px;border-radius:3px;font-weight:700;">C:B</span>
+                &rarr; 다수결 A
+              </div>
+              <div style="background:#F9FAFB;border-radius:3px;padding:3px 5px;font-size:5pt;text-align:left;">
+                <span style="color:#9CA3AF;">🗳️ 시민 (25%)</span> A측 58.3%
+              </div>
+              <div style="background:#1B2A4A;border-radius:3px;padding:4px;margin-top:3px;color:#fff;">
+                <div style="font-size:4pt;color:rgba(255,255,255,.6);">최종 점수</div>
+                <div style="font-size:10pt;font-weight:800;"><span style="color:#6EE7B7;">68.2</span> <span style="font-size:6pt;color:rgba(255,255,255,.4);">VS</span> <span style="color:#FCA5A5;">54.8</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Chat log viewer preview -->
+          <div style="padding:3px 8px;font-size:5pt;font-weight:700;display:flex;align-items:center;gap:3px;">💬 채팅 논쟁 기록 <span style="color:#CA8A04;font-weight:400;">12:34</span></div>
+          <div style="margin:0 8px 3px;padding:4px;background:#0f1829;border-radius:4px;font-size:5pt;color:#E5E7EB;">
+            <div style="display:flex;gap:2px;margin-bottom:2px;"><span style="color:#059669;font-weight:700;">A:</span> 위생적 관점에서...</div>
+            <div style="display:flex;gap:2px;"><span style="color:#E63946;font-weight:700;">B:</span> 그건 과장이고...</div>
+            <div style="text-align:center;color:#9CA3AF;margin-top:2px;">전체 보기 &darr;</div>
+          </div>
+          <div style="padding:2px 8px;font-size:6.5pt;font-weight:700;">📊 점수 비교</div>
+          <div style="padding:0 8px;font-size:5.5pt;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>김지훈 (A)</span><span style="font-size:7pt;font-weight:800;"><span style="color:#059669;">72</span> <span style="color:#9CA3AF;font-size:5pt;">VS</span> <span style="color:#E63946;">58</span></span><span>박민수 (B)</span></div>
+            <div style="margin-bottom:2px;"><div style="font-size:5pt;font-weight:600;">발언 평가 /35</div><div style="display:flex;height:8px;gap:1px;"><div style="width:60%;background:linear-gradient(90deg,#059669,#10B981);border-radius:2px 0 0 2px;font-size:4pt;color:#fff;text-align:center;line-height:8px;">28</div><div style="width:40%;background:linear-gradient(90deg,#F87171,#E63946);border-radius:0 2px 2px 0;font-size:4pt;color:#fff;text-align:center;line-height:8px;">18</div></div></div>
+            <div style="margin-bottom:2px;"><div style="font-size:5pt;font-weight:600;">논지 근접 /35</div><div style="display:flex;height:8px;gap:1px;"><div style="width:53%;background:linear-gradient(90deg,#059669,#10B981);border-radius:2px 0 0 2px;font-size:4pt;color:#fff;text-align:center;line-height:8px;">25</div><div style="width:47%;background:linear-gradient(90deg,#F87171,#E63946);border-radius:0 2px 2px 0;font-size:4pt;color:#fff;text-align:center;line-height:8px;">22</div></div></div>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>구성 요소</h4>
+        <table>
+          <thead><tr><th>영역</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>GNB</strong></td><td>Navy, &larr; + "판결 결과" + 📤 공유</td></tr>
+            <tr><td><strong>히어로</strong></td><td>Navy&rarr;BG 그라디언트 + 카테고리/시간/주제<br><strong>v3.0: 채팅 논쟁 태그(⚡ 실시간 논쟁)</strong> 추가</td></tr>
+            <tr><td><strong>복합 판결</strong></td><td>⚖️ + 승자 + AI 3사 칩(G/M/C) + 시민투표 비율 + 최종점수(Navy) + 렌즈 뱃지<br><strong>v3.1 신규: 합의/분석 판결 모드</strong> &mdash; 목적이 "합의 도출" 또는 "분석 요청"인 경우 승패 대신 합의안/분석 리포트 형태로 판결문 표시</td></tr>
+            <tr><td><strong>채팅 기록 뷰어</strong></td><td><strong>v3.0 신규: ChatLogViewer</strong><br>채팅 논쟁(mode=chat)인 경우만 표시<br>다크 BG 미니 뷰 + "전체 보기" 토글<br>시간 버블 옆 타임스탬프 표시</td></tr>
+            <tr><td><strong>점수 비교</strong></td><td>양측 이름/총점 + 3항목 양방향 바 차트<br>발언평가(CQ)/논지근접(TA)/논리오류(LS)</td></tr>
+            <tr><td><strong>AI 판결문</strong></td><td>Judge 탭 3개(pill) G/M/C 전환<br>아바타+모델+승자 뱃지<br>A/B 점수+차이+판결문+확신도</td></tr>
+            <tr><td><strong>시민 투표</strong></td><td>총 참여자 + 비율 바<br>투표 마감까지 남은 시간<br>마감 후 30명 이상 시 복합 판결 확정 표시</td></tr>
+            <tr><td><strong>만족도</strong></td><td>★ 5점 별점</td></tr>
+            <tr><td><strong>공유 CTA</strong></td><td>Accent 그라디언트 pill</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. 명예의 전당 & 마이페이지 -->
+  <div class="page">
+    <h2><span class="sn">10.</span> 명예의 전당 &amp; 마이페이지</h2>
+    <div class="phone-pair">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>🏛️ 명예의 전당</span><span style="font-size:6pt;">📅</span></div>
+          <div style="margin:4px 8px;padding:4px;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05));border:1px solid rgba(212,175,55,.2);border-radius:5px;text-align:center;font-size:6.5pt;font-weight:700;color:#D4AF37;">🏛️ 2026년 3월</div>
+          <div style="margin:3px 8px;padding:6px;background:#fff;border:1.5px solid #D4AF37;border-radius:6px;font-size:5.5pt;">
+            <div style="color:#D4AF37;font-weight:700;">🏆 이달의 최고 논쟁</div>
+            <div style="font-size:7pt;font-weight:800;color:#1B2A4A;margin:2px 0;">AI가 인간의 창의성을 대체할 수 있는가?</div>
+            <div style="color:#6B7280;">👁️ 15.2K · 🗳️ 3,847 · ⚔️ 48:52</div>
+          </div>
+          <div style="margin:3px 8px;padding:4px 6px;background:#fff;border-radius:4px;border:1px solid #f0f0f0;font-size:5.5pt;display:flex;gap:4px;align-items:center;"><span style="font-size:7pt;">🥈</span><div style="flex:1;"><strong>비트코인은 미래인가?</strong><br><span style="color:#9CA3AF;">💰 경제 · 🗳️ 2,943</span></div></div>
+          <div style="margin:3px 8px;padding:4px 6px;background:#fff;border-radius:4px;border:1px solid #f0f0f0;font-size:5.5pt;display:flex;gap:4px;align-items:center;"><span style="font-size:7pt;">🥉</span><div style="flex:1;"><strong>육아휴직 남성 의무화?</strong><br><span style="color:#9CA3AF;">🏢 사회 · 🗳️ 2,567</span></div></div>
+          <div style="margin:4px 8px;padding:4px 8px;border:1.5px solid #eee;border-radius:10px;font-size:6pt;color:#9CA3AF;">🔍 비슷한 논쟁 찾기</div>
+          <div class="mt"><span>🏠<br>홈</span><span>⚡<br>로비</span><span style="font-size:9pt;color:#E63946;font-weight:700;margin-top:-4px;">+</span><span class="a">🏛️<br>모라고라</span><span>👤<br>MY</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div style="background:linear-gradient(180deg,#1B2A4A,#2D4470);padding:10px;text-align:center;color:#fff;">
+            <div style="width:28px;height:28px;border-radius:50%;background:#D4AF37;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:9pt;font-weight:800;color:#1B2A4A;">지훈</div>
+            <div style="font-size:9pt;font-weight:800;">김지훈</div>
+            <div style="display:flex;gap:2px;justify-content:center;margin:2px 0;"><span style="padding:1px 5px;border-radius:6px;background:rgba(212,175,55,.2);color:#D4AF37;font-size:5pt;">⚖️ 변호사</span><span style="padding:1px 5px;border-radius:6px;background:rgba(255,255,255,.15);color:#fff;font-size:5pt;">정배심원</span></div>
+            <div style="font-size:5.5pt;">🔥 7일 연속</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:4px;margin:-6px 10px 0;background:#fff;border-radius:5px;padding:5px;font-size:7.5pt;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.08);position:relative;z-index:1;"><span style="color:#059669">12승</span> / <span style="color:#E63946">5패</span> / <span style="color:#9CA3AF">2무</span></div>
+          <div style="margin:5px 8px;padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;text-align:center;font-size:5.5pt;">
+            <div style="font-size:6.5pt;font-weight:700;">📊 논리 분석 프로필</div>
+            <div style="color:#9CA3AF;">5항목 레이더 차트 (SVG)</div>
+            <div style="margin:3px 0;font-size:14px;">📊</div>
+            <div><span style="color:#059669;">💪 근거품질 88</span> · <span style="color:#E63946;">📈 반박능력 70</span></div>
+          </div>
+          <div style="padding:3px 8px;font-size:6pt;font-weight:700;">📋 최근 논쟁</div>
+          <div style="margin:2px 8px;padding:3px 6px;background:#fff;border-radius:3px;border:1px solid #f0f0f0;font-size:5.5pt;display:flex;align-items:center;gap:4px;"><span style="flex:1;"><strong>변기 뚜껑은 내려야 한다</strong><br><span style="color:#9CA3AF;font-size:5pt;">2시간 전 · vs 박민수</span></span><span class="mb mb-a">승리</span></div>
+          <div style="margin:2px 8px;padding:3px 6px;background:#fff;border-radius:3px;border:1px solid #f0f0f0;font-size:5.5pt;display:flex;align-items:center;gap:4px;"><span style="flex:1;"><strong>에어컨 적정 온도 24도</strong><br><span style="color:#9CA3AF;font-size:5pt;">어제 · vs 이수연</span></span><span class="mb mb-r">패배</span></div>
+          <div class="mt"><span>🏠<br>홈</span><span>⚡<br>로비</span><span style="font-size:9pt;color:#E63946;font-weight:700;margin-top:-4px;">+</span><span>🏛️<br>모라고라</span><span class="a">👤<br>MY</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>화면</th><th>구성 요소</th><th>담당/공수</th></tr></thead>
+      <tbody>
+        <tr><td><strong>명예의 전당</strong></td><td>월간 배너(Gold) + 이달의 최고 논쟁(Gold border) + TOP 5 리스트(메달) + 검색 바 + 해시태그 추천</td><td>김준민 프론트엔드 / 16h (피드 포함)</td></tr>
+        <tr><td><strong>마이페이지</strong></td><td>프로필 헤더(Navy, Gold 아바타 72px) + 전적(오버레이 카드) + 레이더 차트(SVG 5축) + 배심원 등급(5단계) + 플랜 카드 + 크리에이터 프로필 + 최근 논쟁</td><td>김준민 프론트엔드 / 12h</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 11. 실시간 로비 (DebateLobbyPage) -->
+  <div class="page">
+    <h2><span class="sn">11.</span> 실시간 로비 (DebateLobbyPage)</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr" style="background:#F8F7F4;">
+          <div class="mg"><span>Moragora<span style="color:#D4AF37">.</span></span><span style="font-size:6.5pt;font-weight:400;">🔍 🔔</span></div>
+          <!-- Banner -->
+          <div style="margin:4px 8px;padding:6px 8px;background:linear-gradient(135deg,#CA8A04,#EAB308);border-radius:7px;color:#fff;font-size:6pt;">
+            <div style="font-size:8pt;font-weight:800;">⚡ 실시간 논쟁</div>
+            <div style="font-size:5.5pt;color:rgba(255,255,255,.8);">지금 바로 상대와 채팅으로 논쟁하세요!</div>
+          </div>
+          <!-- Tabs (category filter only, no sort dropdown) -->
+          <div style="display:flex;gap:2px;padding:3px 8px;font-size:5.5pt;"><span style="padding:2px 6px;background:#1B2A4A;color:#fff;border-radius:8px;">전체</span><span style="padding:2px 6px;background:#fff;border:1px solid #eee;border-radius:8px;">대기중</span><span style="padding:2px 6px;background:#fff;border:1px solid #eee;border-radius:8px;">진행중</span></div>
+          <!-- Hot room card (실시간 인기 논쟁) -->
+          <div style="margin:3px 8px;padding:6px;background:#fff;border-radius:6px;border:1.5px solid #D4AF37;font-size:5.5pt;position:relative;">
+            <div style="text-align:center;margin-bottom:3px;"><span style="padding:1px 6px;border-radius:4px;background:linear-gradient(135deg,#D4AF37,#EAB308);color:#fff;font-size:5pt;font-weight:700;">🔥 실시간 인기 논쟁</span></div>
+            <!-- 3v3 avatar header -->
+            <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin:3px 0;">
+              <div style="display:flex;gap:-2px;"><span style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;">A</span><span style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;margin-left:-3px;opacity:.7;">A</span><span style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;margin-left:-3px;opacity:.5;">A</span></div>
+              <span style="font-size:5pt;font-weight:700;color:#9CA3AF;">VS</span>
+              <div style="display:flex;gap:-2px;"><span style="width:12px;height:12px;border-radius:50%;background:#E63946;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;">B</span><span style="width:12px;height:12px;border-radius:50%;background:#E63946;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;margin-left:-3px;opacity:.7;">B</span><span style="width:12px;height:12px;border-radius:50%;background:#E63946;display:inline-flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;margin-left:-3px;opacity:.5;">B</span></div>
+            </div>
+            <div style="font-size:6.5pt;font-weight:700;text-align:center;">"재택 vs 출근, 뭐가 낫나"</div>
+            <div style="display:flex;gap:3px;justify-content:center;margin:2px 0;"><span class="mb mb-r">🏢 직장</span><span style="padding:1px 5px;border-radius:4px;background:#DBEAFE;color:#1E40AF;font-size:5pt;font-weight:600;">진행중</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;padding-top:3px;border-top:1px solid #eee;">
+              <span style="font-size:5pt;color:#9CA3AF;">시민 24명 참여중</span>
+              <span style="font-size:5pt;color:#9CA3AF;">⏱ 12:34</span>
+            </div>
+          </div>
+          <!-- Room card 1 (waiting, 3v3 avatar header) -->
+          <div style="margin:3px 8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #eee;font-size:5.5pt;">
+            <!-- 3v3 avatar header -->
+            <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-bottom:2px;">
+              <div style="display:flex;"><span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;font-weight:800;">A</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span></div>
+              <span style="font-size:4.5pt;font-weight:700;color:#9CA3AF;">VS</span>
+              <div style="display:flex;"><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;">?</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:6.5pt;font-weight:700;">"밥 vs 빵, 아침 메뉴"</span><span style="padding:1px 5px;border-radius:4px;background:#FEF3C7;color:#92400E;font-size:5pt;font-weight:600;">대기중</span></div>
+            <div style="display:flex;gap:3px;margin:2px 0;"><span class="mb mb-r">🍜 음식</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;padding-top:3px;border-top:1px solid #eee;">
+              <span style="font-size:5pt;color:#9CA3AF;">시민 0명 참여중</span>
+              <span style="padding:2px 6px;background:#1B2A4A;color:#fff;border-radius:4px;font-size:5pt;font-weight:700;">입장하기</span>
+            </div>
+            <div style="text-align:center;font-size:5pt;color:#9CA3AF;margin-top:1px;">⏱ 00:00</div>
+          </div>
+          <!-- Room card 2 (chatting, 3v3 avatar header) -->
+          <div style="margin:3px 8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #eee;font-size:5.5pt;">
+            <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-bottom:2px;">
+              <div style="display:flex;"><span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;font-weight:800;">A</span><span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;opacity:.7;">A</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span></div>
+              <span style="font-size:4.5pt;font-weight:700;color:#9CA3AF;">VS</span>
+              <div style="display:flex;"><span style="width:10px;height:10px;border-radius:50%;background:#E63946;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;font-weight:800;">B</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span><span style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-flex;align-items:center;justify-content:center;font-size:3.5pt;color:#fff;margin-left:-2px;">?</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:6.5pt;font-weight:700;">"강아지 vs 고양이"</span><span style="padding:1px 5px;border-radius:4px;background:#DBEAFE;color:#1E40AF;font-size:5pt;font-weight:600;">진행중</span></div>
+            <div style="display:flex;gap:3px;margin:2px 0;"><span class="mb mb-r">🏠 일상</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;padding-top:3px;border-top:1px solid #eee;">
+              <span style="font-size:5pt;color:#9CA3AF;">시민 8명 참여중</span>
+              <span style="padding:2px 6px;background:#9CA3AF;color:#fff;border-radius:4px;font-size:5pt;font-weight:700;">입장하기</span>
+            </div>
+            <div style="text-align:center;font-size:5pt;color:#9CA3AF;margin-top:1px;">⏱ 08:42</div>
+          </div>
+          <!-- Auto refresh indicator -->
+          <div style="text-align:center;padding:4px;font-size:5pt;color:#9CA3AF;">🔄 10초마다 자동 갱신</div>
+          <!-- FAB -->
+          <div style="text-align:right;padding:0 8px 4px;"><span style="display:inline-block;padding:4px 10px;background:linear-gradient(135deg,#E63946,#FF6B6B);color:#fff;border-radius:12px;font-size:6pt;font-weight:700;">+ 방 만들기</span></div>
+          <div class="mt"><span>🏠<br>홈</span><span class="a">⚡<br>로비</span><span style="font-size:9pt;color:#E63946;font-weight:700;margin-top:-4px;">+</span><span>🏛️<br>모라고라</span><span>👤<br>MY</span></div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>실시간 채팅 논쟁 방 목록 로비. F8F7F4 밝은 배경에 카드 형태로 방 리스트를 표시하며, 10초마다 자동 갱신. 정렬 드롭다운(최신순) 제거 &mdash; 카테고리 필터만 제공.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>배너</strong></td><td>LobbyBanner</td><td>Gold 그라디언트, ⚡ 실시간 논쟁 안내</td></tr>
+            <tr><td><strong>필터 탭</strong></td><td>pill 탭</td><td>전체 / 대기중 / 진행중 (정렬 드롭다운 없음)</td></tr>
+            <tr><td><strong>인기 카드</strong></td><td>HotRoomCard</td><td>Gold border, 상단 중앙 "🔥 실시간 인기 논쟁" 라벨<br>3v3 아바타 헤더 + 주제 + 카테고리</td></tr>
+            <tr><td><strong>방 카드</strong></td><td>RoomCard</td><td><strong>v3.1 변경:</strong><br>&bull; 3v3 아바타 헤더 (A측 3 vs B측 3, 빈 슬롯 회색)<br>&bull; A/B 참여자 슬롯 박스 제거<br>&bull; 뱃지: rounded(border-radius:4px), pill 아님<br>&bull; 타이머: 대기중 "00:00" / 진행중 카운트다운 MM:SS<br>&bull; 하단 바: "시민 N명 참여중"(좌) + "입장하기"(우), border-top으로 구분</td></tr>
+            <tr><td><strong>FAB</strong></td><td>Button</td><td>"+ 방 만들기" &rarr; 대기실 생성</td></tr>
+            <tr><td><strong>자동 갱신</strong></td><td>Interval</td><td>10초마다 GET /api/chat-rooms 호출</td></tr>
+          </tbody>
+        </table>
+        <h4>인터랙션</h4>
+        <ul>
+          <li>대기중 방 카드 "입장하기" 클릭 &rarr; 대기실(ChatLobby) 이동</li>
+          <li>진행중 방은 관전 불가 (입장하기 버튼 비활성, 회색)</li>
+          <li>"+ 방 만들기" &rarr; 주제/카테고리 입력 모달 &rarr; 대기실 생성</li>
+          <li>인기 카드: 가장 많은 시민 참여 방을 Gold border로 강조</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. 대기실 (ChatLobby) -->
+  <div class="page">
+    <h2><span class="sn">12.</span> 대기실 (ChatLobby)</h2>
+    <div class="screen-layout">
+      <div class="phone phone-dark">
+        <div class="ph-notch"></div>
+        <div class="ph-scr" style="background:#0f1829;color:#E5E7EB;">
+          <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#fff;font-size:6.5pt;border-bottom:1px solid rgba(255,255,255,.1);"><span>&larr;</span> <strong>대기실</strong> <span style="font-size:5pt;color:#9CA3AF;">나가기</span></div>
+          <!-- Topic -->
+          <div style="text-align:center;padding:12px 10px;">
+            <div style="font-size:5pt;color:#9CA3AF;letter-spacing:1px;font-weight:600;">TOPIC</div>
+            <div style="font-size:8pt;font-weight:800;color:#fff;margin:4px 0;">"밥 vs 빵, 아침 메뉴로 뭐가 더 나은가?"</div>
+            <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;"><span class="mb mb-r">🍜 음식</span><span style="padding:1px 4px;border-radius:3px;background:rgba(234,179,8,.15);color:#CA8A04;font-size:5pt;font-weight:600;">⚡ 실시간</span></div>
+          </div>
+          <!-- Side selection -->
+          <div style="display:flex;gap:8px;padding:0 12px;margin:6px 0;">
+            <div style="flex:1;padding:8px;border-radius:8px;border:2px solid #059669;background:rgba(5,150,105,.1);text-align:center;">
+              <div style="font-size:7pt;font-weight:800;color:#059669;">PRO (A측)</div>
+              <div style="font-size:12px;margin:3px 0;">👍</div>
+              <div style="font-size:5pt;color:#6EE7B7;">찬성</div>
+              <div style="margin-top:4px;font-size:5pt;font-weight:700;color:#059669;">논리왕 ✓</div>
+            </div>
+            <div style="flex:1;padding:8px;border-radius:8px;border:2px solid rgba(230,57,70,.3);background:rgba(230,57,70,.05);text-align:center;">
+              <div style="font-size:7pt;font-weight:800;color:#E63946;">CON (B측)</div>
+              <div style="font-size:12px;margin:3px 0;">👎</div>
+              <div style="font-size:5pt;color:#FCA5A5;">반대</div>
+              <div style="margin-top:4px;font-size:5pt;color:#9CA3AF;">선택하기</div>
+            </div>
+          </div>
+          <!-- Participants -->
+          <div style="margin:6px 12px;padding:6px;background:rgba(255,255,255,.05);border-radius:6px;font-size:5.5pt;">
+            <div style="font-weight:700;color:#fff;margin-bottom:3px;">참여자 (1/2)</div>
+            <div style="display:flex;align-items:center;gap:3px;color:#6EE7B7;"><span style="width:6px;height:6px;border-radius:50%;background:#059669;"></span> 논리왕 (방장) <span style="color:#D4AF37;font-size:5pt;">👑</span></div>
+            <div style="display:flex;align-items:center;gap:3px;color:#9CA3AF;margin-top:2px;"><span style="width:6px;height:6px;border-radius:50%;background:#4B5563;"></span> 상대방 대기 중...</div>
+          </div>
+          <!-- Start button (disabled) -->
+          <div style="margin:8px 12px;padding:6px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);text-align:center;font-size:6.5pt;font-weight:700;">양측 준비 완료 시 시작 가능</div>
+          <div style="text-align:center;font-size:5pt;color:#9CA3AF;padding:4px;">Socket.io 실시간 동기화</div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>실시간 채팅 논쟁 대기실. 0f1829 다크 배경. 방장이 논제를 설정한 후, 참여자들이 PRO(A)/CON(B) 사이드를 선택하는 화면.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>논제</strong></td><td>TopicDisplay</td><td>주제 텍스트 + 카테고리 태그 + 실시간 뱃지</td></tr>
+            <tr><td><strong>사이드 선택</strong></td><td>SideSelector</td><td>PRO/CON 카드 2개, 클릭 시 선택<br>선택된 사이드: solid border + bg tint<br>이미 선택된 사이드 비활성</td></tr>
+            <tr><td><strong>참여자</strong></td><td>ParticipantList</td><td>실시간 Socket.io 동기화<br>방장 표시(👑), 온라인 상태 dot</td></tr>
+            <tr><td><strong>시작 버튼</strong></td><td>Button</td><td>방장만 활성화<br>양측 모두 참여 시 enabled<br>클릭 &rarr; chatting 상태 전환</td></tr>
+          </tbody>
+        </table>
+        <h4>인터랙션</h4>
+        <ul>
+          <li>사이드 선택 시 Socket.io로 상대방에게 실시간 반영</li>
+          <li>양측 모두 선택 완료 &rarr; 시작 버튼 활성화 (방장만)</li>
+          <li>방장 시작 클릭 &rarr; 서버 타이머 시작 &rarr; ChatRoom으로 이동</li>
+          <li>나가기 클릭 &rarr; 로비로 복귀, 방 상태 갱신</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. 실시간 채팅방 (ChatRoom) -->
+  <div class="page">
+    <h2><span class="sn">13.</span> 실시간 채팅방 (ChatRoom)</h2>
+    <div class="screen-layout">
+      <div class="phone phone-dark">
+        <div class="ph-notch"></div>
+        <div class="ph-scr" style="background:#0f1829;color:#E5E7EB;display:flex;flex-direction:column;min-height:360px;">
+          <!-- Header -->
+          <div style="padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:6pt;color:#fff;font-weight:700;">"밥 vs 빵"</span>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span style="font-size:5pt;color:#059669;font-weight:700;">A:논리왕</span>
+              <span style="font-size:5pt;color:#9CA3AF;">vs</span>
+              <span style="font-size:5pt;color:#E63946;font-weight:700;">B:말달인</span>
+            </div>
+            <span style="padding:1px 5px;background:rgba(230,57,70,.15);color:#FCA5A5;border-radius:3px;font-size:5.5pt;font-weight:700;">⏱ 12:34</span>
+          </div>
+          <!-- Messages area -->
+          <div style="flex:1;padding:4px 8px;overflow:hidden;">
+            <!-- Time bubble -->
+            <div style="text-align:center;margin:4px 0;"><span style="padding:1px 6px;background:rgba(255,255,255,.06);border-radius:8px;font-size:4.5pt;color:#9CA3AF;">14:23</span></div>
+            <!-- A message -->
+            <div style="display:flex;gap:3px;margin:3px 0;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;flex-shrink:0;">A</div>
+              <div style="background:rgba(5,150,105,.15);padding:3px 6px;border-radius:0 6px 6px 6px;font-size:5.5pt;max-width:75%;color:#E5E7EB;">밥은 영양학적으로 균형잡힌 아침 식사입니다. 탄수화물, 단백질, 식이섬유...</div>
+            </div>
+            <!-- B message -->
+            <div style="display:flex;gap:3px;margin:3px 0;justify-content:flex-end;">
+              <div style="background:rgba(230,57,70,.15);padding:3px 6px;border-radius:6px 0 6px 6px;font-size:5.5pt;max-width:75%;color:#E5E7EB;">빵은 준비 시간이 훨씬 짧아요. 바쁜 현대인에겐 시간이 곧 비용입니다.</div>
+              <div style="width:14px;height:14px;border-radius:50%;background:#E63946;display:flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;flex-shrink:0;">B</div>
+            </div>
+            <!-- A message -->
+            <div style="display:flex;gap:3px;margin:3px 0;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:4pt;color:#fff;font-weight:800;flex-shrink:0;">A</div>
+              <div style="background:rgba(5,150,105,.15);padding:3px 6px;border-radius:0 6px 6px 6px;font-size:5.5pt;max-width:75%;color:#E5E7EB;">그 시간을 5분만 투자해도 건강한 식사가 가능해요.</div>
+            </div>
+            <!-- Typing indicator -->
+            <div style="display:flex;gap:3px;margin:3px 0;justify-content:flex-end;">
+              <div style="background:rgba(230,57,70,.08);padding:3px 8px;border-radius:6px;font-size:5pt;color:#9CA3AF;">입력 중<span style="animation:blink 1s infinite;">...</span></div>
+            </div>
+          </div>
+          <!-- Remaining turns -->
+          <div style="text-align:center;padding:2px;font-size:5pt;color:#9CA3AF;border-top:1px solid rgba(255,255,255,.05);">남은 발언: A측 17개 / B측 18개</div>
+          <!-- Input area -->
+          <div style="padding:4px 8px;display:flex;gap:3px;align-items:center;background:rgba(255,255,255,.05);border-top:1px solid rgba(255,255,255,.1);">
+            <span style="width:16px;height:16px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#fff;font-weight:800;flex-shrink:0;">A</span>
+            <div style="flex:1;padding:3px 6px;background:rgba(255,255,255,.08);border-radius:6px;font-size:5.5pt;color:#9CA3AF;">메시지를 입력하세요...</div>
+            <span style="padding:2px 6px;background:#1B2A4A;color:#fff;border-radius:4px;font-size:5pt;font-weight:700;">전송</span>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>실시간 채팅 논쟁 메인 화면. 0f1829 다크 BG 위에 채팅 버블 UI, 서버 기준 15분 타이머, 발언권 20개 제한.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>헤더</strong></td><td>ChatHeader</td><td>주제 + A/B 닉네임 + 타이머(⏱)<br>타이머: 서버 기준 카운트다운</td></tr>
+            <tr><td><strong>메시지 영역</strong></td><td>MessageList</td><td>채팅 버블: A측(green tint, 좌) / B측(red tint, 우)<br>시간 버블: 분 단위 그룹핑<br>타이핑 인디케이터: "입력 중..."</td></tr>
+            <tr><td><strong>발언 카운터</strong></td><td>TurnCounter</td><td>A/B측 남은 발언 수 (최대 20개)</td></tr>
+            <tr><td><strong>입력창</strong></td><td>ChatInput</td><td>사이드 인디케이터(색상 dot) + textarea + 전송 버튼<br>비속어 필터 실시간 적용</td></tr>
+          </tbody>
+        </table>
+        <h4>종료 오버레이</h4>
+        <ul>
+          <li>타이머 만료 OR 상대 이탈(2분 대기 후) 시 표시</li>
+          <li>"논쟁이 종료되었습니다" + 판결 진행 안내</li>
+          <li>자동으로 AI 판결 트리거 &rarr; judging 상태 전환</li>
+        </ul>
+        <h4>Socket.io 이벤트</h4>
+        <table>
+          <thead><tr><th>이벤트</th><th>방향</th><th>데이터</th></tr></thead>
+          <tbody>
+            <tr><td>send-message</td><td>Client &rarr; Server</td><td>roomId, content, side</td></tr>
+            <tr><td>new-message</td><td>Server &rarr; Client</td><td>message object + timestamp</td></tr>
+            <tr><td>typing</td><td>양방향</td><td>roomId, userId, isTyping</td></tr>
+            <tr><td>timer-update</td><td>Server &rarr; Client</td><td>remainingSeconds</td></tr>
+            <tr><td>chat-ended</td><td>Server &rarr; Client</td><td>reason (timeout/disconnect)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. 알림 패널 -->
+  <div class="page">
+    <h2><span class="sn">14.</span> 알림 패널</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>Moragora<span style="color:#D4AF37">.</span></span><span style="font-size:6.5pt;font-weight:400;">🔍 <span style="position:relative;">🔔<span style="position:absolute;top:-2px;right:-3px;width:6px;height:6px;background:#E63946;border-radius:50%;border:1px solid #fff;"></span></span></span></div>
+          <!-- Notification dropdown -->
+          <div style="margin:0 8px;background:#fff;border-radius:8px;border:1px solid #eee;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #f0f0f0;">
+              <span style="font-size:7pt;font-weight:800;">🔔 알림</span>
+              <span style="font-size:5pt;color:#6366F1;font-weight:600;">전체 읽음</span>
+            </div>
+            <!-- Notification items -->
+            <div style="padding:5px 8px;border-bottom:1px solid #f5f5f5;background:rgba(99,102,241,.03);font-size:5.5pt;">
+              <div style="display:flex;gap:4px;align-items:flex-start;">
+                <span style="font-size:8px;">⚖️</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700;">판결 완료</div>
+                  <div style="color:#6B7280;">"밥 vs 빵" 논쟁의 AI 판결이 완료되었습니다</div>
+                  <div style="color:#9CA3AF;font-size:5pt;margin-top:1px;">5분 전</div>
+                </div>
+                <span style="width:5px;height:5px;border-radius:50%;background:#6366F1;margin-top:4px;"></span>
+              </div>
+            </div>
+            <div style="padding:5px 8px;border-bottom:1px solid #f5f5f5;font-size:5.5pt;">
+              <div style="display:flex;gap:4px;align-items:flex-start;">
+                <span style="font-size:8px;">⚡</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700;">채팅 시작</div>
+                  <div style="color:#6B7280;">말달인님이 채팅방에 입장했습니다</div>
+                  <div style="color:#9CA3AF;font-size:5pt;margin-top:1px;">1시간 전</div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:5px 8px;border-bottom:1px solid #f5f5f5;font-size:5.5pt;">
+              <div style="display:flex;gap:4px;align-items:flex-start;">
+                <span style="font-size:8px;">🗳️</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700;">투표 마감 임박</div>
+                  <div style="color:#6B7280;">"재택 vs 출근" 투표 마감까지 2시간 남았습니다</div>
+                  <div style="color:#9CA3AF;font-size:5pt;margin-top:1px;">2시간 전</div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:center;padding:5px;font-size:5pt;color:#6366F1;font-weight:600;">전체 알림 보기 &rarr;</div>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>Header의 🔔 벨 아이콘 클릭 시 드롭다운으로 표시되는 알림 패널. 읽지 않은 알림은 파란 dot으로 표시.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>헤더</strong></td><td>PanelHeader</td><td>"알림" 타이틀 + "전체 읽음" 버튼</td></tr>
+            <tr><td><strong>알림 항목</strong></td><td>NotificationItem</td><td>아이콘 + 제목 + 설명 + 상대시간<br>읽지 않은 항목: 파란 dot + 배경 tint</td></tr>
+            <tr><td><strong>하단 링크</strong></td><td>Link</td><td>"전체 알림 보기" &rarr; 알림 전체 페이지</td></tr>
+          </tbody>
+        </table>
+        <h4>알림 유형</h4>
+        <table>
+          <thead><tr><th>유형</th><th>아이콘</th><th>트리거</th></tr></thead>
+          <tbody>
+            <tr><td>판결 완료</td><td>⚖️</td><td>AI 판결 + 복합 판결 확정 시</td></tr>
+            <tr><td>채팅 시작</td><td>⚡</td><td>상대방 대기실 입장 / 채팅 시작 시</td></tr>
+            <tr><td>투표 알림</td><td>🗳️</td><td>투표 마감 2시간 전 / 마감 시</td></tr>
+            <tr><td>초대 수신</td><td>⚔️</td><td>논쟁 초대 링크 수신 시</td></tr>
+          </tbody>
+        </table>
+        <h4>인터랙션</h4>
+        <ul>
+          <li>벨 아이콘 클릭 &rarr; 드롭다운 토글</li>
+          <li>알림 항목 클릭 &rarr; 해당 화면으로 이동 + 읽음 처리</li>
+          <li>"전체 읽음" 클릭 &rarr; 모든 알림 read 처리</li>
+          <li>외부 영역 클릭 &rarr; 패널 닫기</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. 관리자 대시보드 -->
+  <div class="page">
+    <h2><span class="sn">15.</span> 관리자 대시보드 (AdminDashboardPage)</h2>
+    <div class="screen-layout">
+      <div class="phone">
+        <div class="ph-notch"></div>
+        <div class="ph-scr">
+          <div class="mg"><span>&larr;</span> <strong>관리자</strong> <span style="font-size:5pt;color:#E63946;">로그아웃</span></div>
+          <!-- Stats cards -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px 8px;">
+            <div style="padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;text-align:center;font-size:5pt;">
+              <div style="color:#9CA3AF;">전체 논쟁</div>
+              <div style="font-size:9pt;font-weight:800;color:#1B2A4A;">1,247</div>
+              <div style="color:#059669;">+12.5%</div>
+            </div>
+            <div style="padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;text-align:center;font-size:5pt;">
+              <div style="color:#9CA3AF;">활성 유저</div>
+              <div style="font-size:9pt;font-weight:800;color:#1B2A4A;">3,847</div>
+              <div style="color:#059669;">+8.3%</div>
+            </div>
+            <div style="padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;text-align:center;font-size:5pt;">
+              <div style="color:#9CA3AF;">AI 판결</div>
+              <div style="font-size:9pt;font-weight:800;color:#1B2A4A;">892</div>
+              <div style="color:#E63946;">-2.1%</div>
+            </div>
+            <div style="padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;text-align:center;font-size:5pt;">
+              <div style="color:#9CA3AF;">채팅방</div>
+              <div style="font-size:9pt;font-weight:800;color:#CA8A04;">56</div>
+              <div style="color:#059669;">+45%</div>
+            </div>
+          </div>
+          <!-- AI model usage -->
+          <div style="margin:4px 8px;padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;font-size:5.5pt;">
+            <div style="font-weight:700;margin-bottom:3px;">🤖 AI 모델별 사용량</div>
+            <div style="display:flex;align-items:center;gap:3px;margin:2px 0;"><span style="width:8px;height:8px;border-radius:50%;background:#10A37F;"></span><span style="width:30px;">GPT</span><div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:38%;background:#10A37F;border-radius:3px;"></div></div><span style="font-size:5pt;color:#9CA3AF;">38%</span></div>
+            <div style="display:flex;align-items:center;gap:3px;margin:2px 0;"><span style="width:8px;height:8px;border-radius:50%;background:#4285F4;"></span><span style="width:30px;">Gemini</span><div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:35%;background:#4285F4;border-radius:3px;"></div></div><span style="font-size:5pt;color:#9CA3AF;">35%</span></div>
+            <div style="display:flex;align-items:center;gap:3px;margin:2px 0;"><span style="width:8px;height:8px;border-radius:50%;background:#D97706;"></span><span style="width:30px;">Claude</span><div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:27%;background:#D97706;border-radius:3px;"></div></div><span style="font-size:5pt;color:#9CA3AF;">27%</span></div>
+          </div>
+          <!-- Daily trend -->
+          <div style="margin:4px 8px;padding:5px;background:#fff;border-radius:5px;border:1px solid #eee;font-size:5.5pt;">
+            <div style="font-weight:700;margin-bottom:3px;">📊 일별 트렌드</div>
+            <div style="display:flex;align-items:flex-end;gap:2px;height:40px;padding:0 4px;">
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:30%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:45%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:60%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:55%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:80%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#6366F1,#818CF8);border-radius:2px 2px 0 0;height:70%;"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#E63946,#FF6B6B);border-radius:2px 2px 0 0;height:100%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:4.5pt;color:#9CA3AF;margin-top:2px;padding:0 4px;"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span style="color:#E63946;">일</span></div>
+          </div>
+        </div>
+        <div class="ph-home"></div>
+      </div>
+      <div class="screen-spec">
+        <h4>화면 설명</h4>
+        <p>관리자 전용 대시보드. 서비스 핵심 지표, AI 모델별 사용량, 일별 트렌드 차트를 한 화면에서 확인.</p>
+        <table>
+          <thead><tr><th>영역</th><th>컴포넌트</th><th>상세</th></tr></thead>
+          <tbody>
+            <tr><td><strong>통계 카드</strong></td><td>StatCard &times; 4</td><td>전체 논쟁 / 활성 유저 / AI 판결 / 채팅방<br>수치 + 전주 대비 증감률</td></tr>
+            <tr><td><strong>AI 사용량</strong></td><td>AIUsageChart</td><td>GPT/Gemini/Claude 사용 비율<br>수평 바 차트 + 퍼센트</td></tr>
+            <tr><td><strong>일별 트렌드</strong></td><td>DailyTrendChart</td><td>최근 7일 논쟁 수 바 차트<br>오늘 강조 표시(accent color)</td></tr>
+          </tbody>
+        </table>
+        <h4>접근 제어</h4>
+        <ul>
+          <li>관리자 권한(is_admin=true)인 경우에만 접근 가능</li>
+          <li>마이페이지 &rarr; 관리자 메뉴로 진입</li>
+          <li>데이터: GET /api/admin/stats, GET /api/admin/ai-usage</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. 컴포넌트 인벤토리 & 배정 -->
+  <div class="page">
+    <h2><span class="sn">16.</span> 컴포넌트 인벤토리 &amp; 개발자 배정</h2>
+    <h3>컴포넌트 목록</h3>
+    <table>
+      <thead><tr><th style="width:140px;">컴포넌트</th><th>Props</th><th>사용 화면</th></tr></thead>
+      <tbody>
+        <tr><td><strong>GNB</strong></td><td>variant: main|sub|result|dark</td><td>전체</td></tr>
+        <tr><td><strong>TabBar</strong></td><td>activeTab, hidden</td><td>메인 5탭 (홈/로비/+/모라고라/MY)</td></tr>
+        <tr><td><strong>MoragoraCard</strong></td><td>debate, Moragora, votes, isLive</td><td>홈 피드</td></tr>
+        <tr><td><strong>DailyDebate</strong></td><td>debate, userVote</td><td>홈</td></tr>
+        <tr><td><strong>JudgeDot</strong></td><td>judge(G|M|C), winner</td><td>카드, 결과</td></tr>
+        <tr><td><strong>JudgeTab/Card</strong></td><td>judgment(scores, text, conf)</td><td>결과</td></tr>
+        <tr><td><strong>ScoreBar</strong></td><td>scoreA, scoreB, label</td><td>결과</td></tr>
+        <tr><td><strong>CompositeMoragora</strong></td><td>aiResult, citizenResult</td><td>결과</td></tr>
+        <tr><td><strong>CommunityVote</strong></td><td>totalVotes, ratio, grades</td><td>결과</td></tr>
+        <tr><td><strong>LeagueStatus</strong></td><td>tier, xp, targetXp</td><td>리그</td></tr>
+        <tr><td><strong>PodiumRanking</strong></td><td>top3, rankList</td><td>리그</td></tr>
+        <tr><td><strong>RadarChart</strong></td><td>5-axis values (SVG)</td><td>마이페이지</td></tr>
+        <tr><td><strong>AIProgressStep</strong></td><td>judge, status</td><td>대기</td></tr>
+        <tr><td><strong>OptionCard</strong></td><td>icon, title, desc, selected</td><td>위자드</td></tr>
+        <tr><td><strong>StarRating</strong></td><td>value, onChange</td><td>결과</td></tr>
+        <tr><td><strong>LiveBadge</strong></td><td>mode</td><td>피드 카드, 판결 결과</td></tr>
+        <tr><td><strong>ChatLogViewer</strong></td><td>messages, expanded</td><td>판결 결과 (chat mode)</td></tr>
+        <tr><td><strong>RoomCard</strong></td><td>room, onJoin</td><td>실시간 로비</td></tr>
+        <tr><td><strong>SideSelector</strong></td><td>selectedSide, onSelect</td><td>대기실</td></tr>
+        <tr><td><strong>ChatBubble</strong></td><td>message, side, timestamp</td><td>채팅방</td></tr>
+        <tr><td><strong>ChatInput</strong></td><td>side, onSend, disabled</td><td>채팅방</td></tr>
+        <tr><td><strong>NotificationItem</strong></td><td>notification, onRead</td><td>알림 패널</td></tr>
+        <tr><td><strong>StatCard</strong></td><td>title, value, change</td><td>관리자 대시보드</td></tr>
+      </tbody>
+    </table>
+
+    <h3>화면별 API 매핑</h3>
+    <table>
+      <thead><tr><th>화면</th><th>API</th><th>DB 테이블</th></tr></thead>
+      <tbody>
+        <tr><td>홈 피드</td><td>GET /api/debates</td><td>debates, Moragoras, votes</td></tr>
+        <tr><td>논쟁 생성</td><td>POST /api/debates</td><td>debates</td></tr>
+        <tr><td>주장 입력</td><td>POST /api/debates/:id/arguments</td><td>arguments, content_filter_logs</td></tr>
+        <tr><td>판결 대기</td><td>GET /api/debates/:id/status</td><td>ai_judgments</td></tr>
+        <tr><td>판결 결과</td><td>GET /api/debates/:id/Moragora</td><td>Moragoras, ai_judgments, votes</td></tr>
+        <tr><td>시민 투표</td><td>POST /api/debates/:id/votes</td><td>votes</td></tr>
+        <tr><td>리그</td><td>GET /api/league/ranking</td><td>profiles</td></tr>
+        <tr><td>마이페이지</td><td>GET /api/profiles/me</td><td>profiles, debates</td></tr>
+        <tr><td>실시간 로비</td><td>GET /api/chat-rooms</td><td>chat_rooms</td></tr>
+        <tr><td>대기실/채팅방</td><td>Socket.io /chat namespace</td><td>chat_rooms, chat_messages</td></tr>
+        <tr><td>알림</td><td>GET /api/notifications<br>PATCH /api/notifications/:id/read</td><td>notifications</td></tr>
+        <tr><td>관리자</td><td>GET /api/admin/stats</td><td>debates, profiles, ai_judgments</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 변경 이력 페이지 -->
+  <div class="page">
+    <h2><span class="section-num">Appendix</span> 변경 이력</h2>
+    <p style="margin-bottom:12px;text-align:justify;word-break:keep-all;">본 화면설계서의 버전별 변경 내역을 기록합니다.</p>
+
+    <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:9.5pt;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:80px;">버전</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:100px;">날짜</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border);">변경 내용</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:80px;">작성자</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.0</td>
+          <td style="padding:10px 12px;">2026-03-03</td>
+          <td style="padding:10px 12px;">
+            <strong>최초 작성</strong><br>
+            &bull; 전체 13개 화면 설계 (홈 피드, 논쟁 생성 위자드, 주장 입력, 판결 결과 등)<br>
+            &bull; 440px 모바일 퍼스트 기준 폰 목업<br>
+            &bull; 컴포넌트 정의 및 인터랙션 명세<br>
+            &bull; 화면별 API 매핑 테이블<br>
+            &bull; 팀원별 담당 화면 및 공수 배분
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v2.0</td>
+          <td style="padding:10px 12px;">2026-03-05</td>
+          <td style="padding:10px 12px;">
+            <strong>소셜 로그인 전환 &amp; 시민 투표 반영</strong><br>
+            &bull; 03. 로그인/회원가입 &rarr; 소셜 로그인으로 변경<br>
+            &bull; 이메일/비밀번호 입력 폼 제거, 카카오/Google OAuth 버튼으로 대체<br>
+            &bull; 인터랙션: 소셜 로그인 &rarr; Supabase signInWithOAuth 플로우로 변경<br>
+            &bull; 개발 공수: 로그인/회원가입 16h &rarr; 소셜 로그인 12h<br>
+            &bull; 네비게이션 테이블, TOC 명칭 일괄 변경
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v3.0</td>
+          <td style="padding:10px 12px;">2026-03-25</td>
+          <td style="padding:10px 12px;">
+            <strong>실시간 채팅 논쟁 &amp; 알림 시스템 추가</strong><br>
+            &bull; 11. 실시간 로비(DebateLobbyPage): F8F7F4 밝은 BG, 방 목록 카드, 10초 자동 갱신<br>
+            &bull; 12. 대기실(ChatLobby): 0f1829 다크 BG, PRO/CON 사이드 선택, 방장 시작 버튼<br>
+            &bull; 13. 실시간 채팅방(ChatRoom): 다크 BG, 채팅 버블, 타이머, 발언권 20개, 종료 오버레이<br>
+            &bull; 14. 알림 패널: Header 벨 아이콘 드롭다운, 판결/채팅/투표 알림, 읽음/전체읽음<br>
+            &bull; 15. 관리자 대시보드: 통계 카드, AI 모델별 사용량, 일별 트렌드 차트<br>
+            &bull; 홈 피드: 실시간 뱃지(⚡ 실시간) 추가, 댓글 좋아요 하트&rarr;텍스트, 삭제 모달&rarr;인라인<br>
+            &bull; 판결 상세: ChatLogViewer(채팅 논쟁 기록 뷰어) 추가, 실시간 논쟁 태그<br>
+            &bull; GNB: 버튼 크기 w-9 h-9로 축소<br>
+            &bull; 네비게이션: 5탭 유지 (홈/로비/+생성/모라고라/MY)<br>
+            &bull; 다크 테마 컬러 팔레트 추가 (#0f1829, #1a2540)<br>
+            &bull; 신규 컴포넌트 8종 추가 (LiveBadge, ChatLogViewer, RoomCard 등)
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v3.1</td>
+          <td style="padding:10px 12px;">2026-03-30</td>
+          <td style="padding:10px 12px;">
+            <strong>AI 모델 업데이트 &amp; 로비 UI 개편 &amp; 신규 기능</strong><br>
+            &bull; AI 판결 모델: GPT-4o &rarr; GPT-4.1로 변경 (Judge G 라벨 업데이트)<br>
+            &bull; 11. 로비: RoomCard 3v3 아바타 헤더 적용, A/B 참여자 슬롯 박스 제거<br>
+            &bull; 11. 로비: 뱃지 디자인 rounded(border-radius:4px)로 변경, pill 아님<br>
+            &bull; 11. 로비: 타이머 대기중 "00:00" / 진행중 카운트다운 MM:SS<br>
+            &bull; 11. 로비: 하단 바 "시민 N명 참여중"(좌) + "입장하기"(우), border 구분선<br>
+            &bull; 11. 로비: 인기 방 카드 "실시간 인기 논쟁" Gold 라벨 상단 중앙 배치<br>
+            &bull; 11. 로비: 카테고리 필터에서 정렬 드롭다운(최신순) 제거<br>
+            &bull; 04. 홈: TodayDebate 인디케이터 도트 카드 하단 아래로 이동<br>
+            &bull; 07. 주장 입력: 소크라테스 산파술 코칭 위젯 추가 (AI 질문으로 논리 보강 유도)<br>
+            &bull; 09. 판결 결과: 합의/분석 판결 모드 추가 (목적별 판결문 형태 분기)
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 40px; padding-top: 24px; border-top: 2px solid var(--border-light);">
+      <p style="text-align: center; color: var(--text-muted); font-size: 9pt;">&mdash; 문서 끝 &mdash;</p>
+      <p style="text-align: center; color: var(--text-muted); font-size: 8.5pt; margin-top: 8px;">
+        Moragora 화면설계서 v3.1 | 2026년 3월 30일 작성<br>본 문서는 Moragora 프로젝트의 내부 화면설계 문서입니다.
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

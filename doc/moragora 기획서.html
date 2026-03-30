@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moragora  기획서</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --accent: #6366F1; --accent-light: #818CF8; --accent-bg: #EEF2FF;
+    --text-primary: #1E1E2E; --text-secondary: #4A4A5A; --text-muted: #6B7280;
+    --border: #D1D5DB; --border-light: #E5E7EB; --bg-white: #FFFFFF; --bg-gray: #F9FAFB;
+    --success: #059669; --warning: #D97706; --danger: #DC2626;
+  }
+  body { font-family: 'Noto Sans KR', sans-serif; font-size: 10.5pt; line-height: 1.75; color: var(--text-primary); background: var(--bg-gray); }
+  .document { width: 210mm; margin: 0 auto; background: var(--bg-white); }
+  .page { width: 210mm; min-height: 297mm; padding: 25mm 22mm 30mm 22mm; background: var(--bg-white); position: relative; }
+
+  /* Cover */
+  .cover-page { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 297mm; padding: 40mm 30mm; position: relative; }
+  .cover-badge { display: inline-block; background: var(--accent); color: white; font-size: 9pt; font-weight: 500; letter-spacing: 3px; padding: 6px 20px; border-radius: 20px; margin-bottom: 24px; }
+  .cover-title { font-size: 42pt; font-weight: 900; color: var(--accent); letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; }
+  .cover-subtitle { font-size: 16pt; font-weight: 500; color: var(--text-secondary); margin-bottom: 48px; }
+  .cover-divider { width: 80px; height: 3px; background: var(--accent); margin: 0 auto 48px; }
+  .cover-description { font-size: 11.5pt; color: var(--text-secondary); line-height: 1.9; max-width: 400px; margin-bottom: 60px; }
+  .cover-meta { border-top: 1px solid var(--border-light); padding-top: 32px; width: 100%; max-width: 360px; }
+  .cover-meta-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 9.5pt; }
+  .cover-meta-label { color: var(--text-muted); font-weight: 400; }
+  .cover-meta-value { color: var(--text-primary); font-weight: 500; }
+  .cover-footer { position: absolute; bottom: 25mm; left: 0; right: 0; text-align: center; font-size: 8.5pt; color: var(--text-muted); }
+
+  /* TOC */
+  .toc-page { padding-top: 35mm; }
+  .toc-title { font-size: 18pt; font-weight: 700; color: var(--accent); margin-bottom: 32px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+  .toc-list { list-style: none; }
+  .toc-item { display: flex; align-items: baseline; padding: 10px 0; border-bottom: 1px dotted var(--border-light); }
+  .toc-number { font-weight: 700; color: var(--accent); min-width: 32px; font-size: 10pt; }
+  .toc-text { flex: 1; font-size: 10.5pt; font-weight: 500; color: var(--text-primary); }
+  .toc-sub { padding-left: 32px; }
+  .toc-sub .toc-number { font-weight: 400; color: var(--text-muted); min-width: 40px; font-size: 9.5pt; }
+  .toc-sub .toc-text { font-weight: 400; font-size: 9.5pt; color: var(--text-secondary); }
+
+  /* Headings */
+  h2 { font-size: 18pt; font-weight: 700; color: var(--accent); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); line-height: 1.3; }
+  h2 .section-num { font-weight: 900; }
+  h3 { font-size: 12.5pt; font-weight: 700; color: var(--text-primary); margin-top: 28px; margin-bottom: 12px; padding-left: 12px; border-left: 3px solid var(--accent); line-height: 1.4; }
+  h4 { font-size: 10.5pt; font-weight: 700; color: var(--text-secondary); margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 12px; text-align: justify; word-break: keep-all; }
+  .lead { font-size: 11pt; color: var(--text-secondary); line-height: 1.85; margin-bottom: 20px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: 9.5pt; }
+  thead th { background: var(--accent); color: white; font-weight: 500; padding: 10px 12px; text-align: left; font-size: 9pt; letter-spacing: 0.3px; white-space: nowrap; }
+  thead th:first-child { border-radius: 4px 0 0 0; }
+  thead th:last-child { border-radius: 0 4px 0 0; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; line-height: 1.6; }
+  tbody tr:nth-child(even) { background: var(--bg-gray); }
+  .table-total td { font-weight: 700; background: var(--accent-bg) !important; border-top: 2px solid var(--accent); }
+
+  /* Boxes */
+  .info-box { background: var(--accent-bg); border: 1px solid #C7D2FE; border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 16px 0 20px; font-size: 10pt; line-height: 1.75; }
+  .info-box strong { color: var(--accent); }
+  .highlight-box { background: #FFF7ED; border: 1px solid #FED7AA; border-left: 4px solid var(--warning); border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 16px 0 20px; font-size: 10pt; }
+
+  /* Lists */
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 4px; line-height: 1.75; }
+
+  /* Flow */
+  .flow-diagram { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 20px 0 24px; padding: 20px 16px; background: var(--bg-gray); border-radius: 8px; border: 1px solid var(--border-light); }
+  .flow-step { background: var(--accent); color: white; padding: 8px 16px; border-radius: 6px; font-size: 9pt; font-weight: 500; white-space: nowrap; }
+  .flow-arrow { color: var(--accent); font-size: 14pt; font-weight: 700; }
+
+  /* Tech Grid */
+  .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 20px; }
+  .tech-card { border: 1px solid var(--border-light); border-radius: 6px; padding: 14px 16px; background: var(--bg-white); }
+  .tech-card-label { font-size: 8.5pt; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .tech-card-value { font-size: 9.5pt; font-weight: 500; color: var(--text-primary); line-height: 1.5; }
+
+  /* Tier */
+  .tier-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .tier-1 { background: #DCFCE7; color: #166534; }
+  .tier-2 { background: #FEF3C7; color: #92400E; }
+
+  /* Score */
+  .score-formula { background: var(--bg-gray); border: 1px solid var(--border-light); border-radius: 8px; padding: 20px 24px; margin: 16px 0 20px; text-align: center; font-size: 12pt; font-weight: 500; color: var(--text-primary); line-height: 2; }
+  .score-formula .operator { color: var(--accent); font-weight: 700; margin: 0 8px; }
+
+  /* Defense */
+  .defense-levels { display: flex; gap: 12px; margin: 16px 0 20px; }
+  .defense-level { flex: 1; border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; text-align: center; }
+  .defense-level-num { display: inline-block; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 9pt; font-weight: 700; margin-bottom: 8px; }
+  .defense-level-title { font-size: 9.5pt; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .defense-level-desc { font-size: 8.5pt; color: var(--text-muted); line-height: 1.5; }
+
+  /* Timeline */
+  .timeline { margin: 16px 0 20px; }
+  .timeline-week { display: flex; align-items: stretch; margin-bottom: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-light); }
+  .timeline-label { background: var(--accent); color: white; padding: 14px 16px; min-width: 100px; display: flex; flex-direction: column; justify-content: center; font-size: 9pt; font-weight: 700; }
+  .timeline-days { font-size: 8pt; font-weight: 400; opacity: 0.85; margin-top: 2px; }
+  .timeline-content { flex: 1; padding: 12px 16px; background: var(--bg-white); font-size: 9.5pt; line-height: 1.7; }
+  .timeline-content ul { margin: 0 0 0 16px; }
+  .timeline-content li { margin-bottom: 2px; }
+
+  /* Risk */
+  .risk-high { color: var(--danger); font-weight: 700; }
+  .risk-mid { color: var(--warning); font-weight: 700; }
+
+  /* Success */
+  .success-flow { counter-reset: step; list-style: none; margin: 16px 0 20px 0; padding: 0; }
+  .success-flow li { counter-increment: step; padding: 10px 12px 10px 48px; position: relative; border-left: 2px solid var(--border-light); margin-bottom: 0; margin-left: 14px; }
+  .success-flow li::before { content: counter(step); position: absolute; left: -15px; top: 8px; width: 28px; height: 28px; line-height: 28px; text-align: center; background: var(--accent); color: white; border-radius: 50%; font-size: 8.5pt; font-weight: 700; }
+  .success-flow li:last-child { border-left-color: transparent; }
+
+  /* Roadmap */
+  .roadmap-item { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+  .roadmap-priority { min-width: 60px; padding: 3px 10px; border-radius: 4px; font-size: 8.5pt; font-weight: 700; text-align: center; white-space: nowrap; }
+  .priority-1 { background: #FEE2E2; color: #991B1B; }
+  .priority-2 { background: #FEF3C7; color: #92400E; }
+  .priority-3 { background: #DBEAFE; color: #1E40AF; }
+  .priority-4 { background: #E5E7EB; color: #374151; }
+  .roadmap-text { font-size: 10pt; line-height: 1.6; }
+
+  /* Stat Grid */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0 20px; }
+  .stat-card { border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; text-align: center; }
+  .stat-num { font-size: 22pt; font-weight: 900; color: var(--accent); line-height: 1.2; }
+  .stat-label { font-size: 8.5pt; color: var(--text-muted); margin-top: 4px; }
+  .stat-card.warn .stat-num { color: var(--warning); }
+  .stat-card.danger .stat-num { color: var(--danger); }
+
+  /* Positioning Map */
+  .pos-map { position: relative; width: 100%; height: 280px; border: 1px solid var(--border-light); border-radius: 8px; margin: 16px 0 20px; background: var(--bg-gray); overflow: hidden; }
+  .pos-axis-x { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+  .pos-axis-y { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border); }
+  .pos-label { position: absolute; font-size: 7.5pt; color: var(--text-muted); font-weight: 500; }
+  .pos-dot { position: absolute; width: 80px; text-align: center; }
+  .pos-dot-circle { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: 700; color: white; }
+  .pos-dot-name { display: block; font-size: 7pt; color: var(--text-primary); font-weight: 700; margin-top: 3px; }
+
+  /* No break */
+  .no-break { page-break-inside: avoid; }
+
+  /* Completed badge */
+  .completed-badge { display: inline-block; background: #DCFCE7; color: #166534; font-size: 8pt; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin-left: 6px; }
+
+  /* Print */
+  @media print {
+    @page { size: A4; margin: 20mm 18mm 25mm 18mm; }
+    body { background: white; font-size: 10pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .document { width: 100%; margin: 0; }
+    .page { width: 100%; min-height: auto; padding: 0; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .cover-page { min-height: auto; padding: 30mm 20mm; page-break-after: always; }
+    h2 { page-break-before: always; page-break-after: avoid; }
+    .page:first-of-type h2, .toc-page + .page h2:first-child { page-break-before: auto; }
+    h3, h4 { page-break-after: avoid; }
+    table, .info-box, .highlight-box, .score-formula, .flow-diagram, .defense-levels, .tech-grid, .timeline-week, .no-break { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="document">
+
+  <!-- ==================== COVER ==================== -->
+  <div class="page cover-page">
+    <div class="cover-badge"> Planning Document</div>
+    <div class="cover-title">Moragora</div>
+    <div class="cover-subtitle"> 기획서</div>
+    <div class="cover-divider"></div>
+    <div class="cover-description">
+      AI 기반 논쟁 판결 플랫폼<br>
+      두 사람의 논쟁에 3개 AI 모델이<br>
+      독립적으로 판결을 내리고,<br>
+      시민 투표와 결합한 복합 판결을 제공합니다.<br>
+      <span style="font-size:10pt; color:var(--accent); font-weight:500;">+ 실시간 채팅 논쟁 &middot; 소크라테스 코칭 &middot; 합의/분석 모드 &middot; 실시간 루브릭</span>
+    </div>
+    <div class="cover-meta">
+      <div class="cover-meta-row"><span class="cover-meta-label">문서 유형</span><span class="cover-meta-value"> 기획서 (Product Requirements)</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">작성일</span><span class="cover-meta-value">2026년 2월 27일</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">버전</span><span class="cover-meta-value">v2.0</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">최종 수정일</span><span class="cover-meta-value">2026년 3월 30일</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">팀 구성</span><span class="cover-meta-value">백엔드 1명 + 프론트엔드 3명</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">개발 기간</span><span class="cover-meta-value">20일 (4주)</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">핵심 가치</span><span class="cover-meta-value" style="color: var(--accent); font-weight: 700;">"AI 판결을 통한 논쟁 종결"</span></div>
+    </div>
+    <div class="cover-footer">Moragora &mdash; AI 기반 논쟁 판결 플랫폼 &mdash; Confidential</div>
+  </div>
+
+  <!-- ==================== TOC ==================== -->
+  <div class="page toc-page">
+    <div class="toc-title">목차</div>
+    <ul class="toc-list">
+      <li class="toc-item"><span class="toc-number">01</span><span class="toc-text">프로젝트 개요</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.1</span><span class="toc-text">서비스 소개</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.2</span><span class="toc-text">팀 구성 및 가용 리소스</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">1.3</span><span class="toc-text">기술 스택</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">02</span><span class="toc-text">제안 배경</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">2.1</span><span class="toc-text">사회적 배경 &mdash; 온라인 갈등 심화</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">2.2</span><span class="toc-text">기술적 배경 &mdash; 생성형 AI 성숙</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">2.3</span><span class="toc-text">필요성</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">03</span><span class="toc-text">시장 분석</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">3.1</span><span class="toc-text">국내외 시장 규모</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">3.2</span><span class="toc-text">유사 서비스 비교</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">3.3</span><span class="toc-text">차별성 &amp; 경쟁 우위</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">04</span><span class="toc-text">STP 전략</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">4.1</span><span class="toc-text">Segmentation (시장 세분화)</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">4.2</span><span class="toc-text">Targeting (표적 시장)</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">4.3</span><span class="toc-text">Positioning (포지셔닝)</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">05</span><span class="toc-text"> 원칙 및 기능 범위</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">5.1</span><span class="toc-text"> 원칙</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">5.2</span><span class="toc-text">TIER 1 &mdash; 핵심 기능 (464h)</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">5.3</span><span class="toc-text">TIER 2 &mdash; 경쟁력 강화 (100h)</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">5.4</span><span class="toc-text">제외 및 축소 항목</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">06</span><span class="toc-text">핵심 시스템 설계</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.1</span><span class="toc-text">AI 판결 시스템</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.2</span><span class="toc-text">복합 판결 (AI 각 25% + 시민 25%)</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.3</span><span class="toc-text">3단계 콘텐츠 방어</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.4</span><span class="toc-text">AI 프롬프트 설계</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.5</span><span class="toc-text">실시간 채팅 논쟁 시스템</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">6.6</span><span class="toc-text">논쟁 상태 전이</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">07</span><span class="toc-text">인력 배분 및 일정</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">7.1</span><span class="toc-text">역할 분담</span></li>
+      <li class="toc-item toc-sub"><span class="toc-number">7.2</span><span class="toc-text">주차별 일정</span></li>
+
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">08</span><span class="toc-text">리스크 및 대응 전략</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">09</span><span class="toc-text">기대효과 및 활용방안</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">10</span><span class="toc-text"> 성공 기준</span></li>
+      <li class="toc-item" style="margin-top:8px;"><span class="toc-number">11</span><span class="toc-text">v2.0 로드맵</span></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 01. 프로젝트 개요 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">01.</span> 프로젝트 개요</h2>
+
+    <h3>1.1 서비스 소개</h3>
+    <table>
+      <tbody>
+        <tr><td style="width:120px; font-weight:700; background:var(--accent-bg);">서비스명</td><td><strong>Moragora</strong></td></tr>
+        <tr><td style="font-weight:700; background:var(--accent-bg);">과제명</td><td>AI 멀티모델 논쟁 판결 플랫폼 &mdash; 3개 AI가 독립 채점하고 시민 투표와 결합하여 복합 판결을 제공하는 중개 서비스</td></tr>
+        <tr><td style="font-weight:700; background:var(--accent-bg);">서비스 설명</td><td>두 사람이 논쟁 주제에 대해 각자 주장을 입력하거나 <strong>실시간 채팅으로 논쟁</strong>하면, 3개의 AI 모델(GPT-4.1, Gemini 2.5 Flash, Claude Sonnet 4)이 독립적으로 채점 및 판결을 내리고(1~2개 실패 시 Grok-3-Mini가 fallback 대체), 시민 투표와 결합한 복합 판결을 제공하는 서비스.</td></tr>
+        <tr><td style="font-weight:700; background:var(--accent-bg);">핵심 가치</td><td style="color:var(--accent); font-weight:700;">"AI 판결을 통한 논쟁 종결"</td></tr>
+        <tr><td style="font-weight:700; background:var(--accent-bg);">v2.0 추가</td><td>실시간 채팅 논쟁 모드 (Socket.io, 15분 제한) / 실시간 로비 / 알림 시스템 / 관리자 대시보드 / 댓글 시스템 / AI 주제 분석 / 소크라테스 산파술 코칭 / 합의·분석 판결 모드 / 실시간 루브릭 점수</td></tr>
+      </tbody>
+    </table>
+
+    <h4>핵심 루프 (텍스트 모드)</h4>
+    <div class="flow-diagram">
+      <span class="flow-step">논쟁 생성</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">주장 입력</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">AI 판결</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#D4AF37;">시민 투표 (24h)</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">결과 확인</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">공유</span>
+    </div>
+
+    <h4>핵심 루프 (실시간 채팅 모드) <span class="completed-badge">v2.0 NEW</span></h4>
+    <div class="flow-diagram">
+      <span class="flow-step">로비 입장</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">방 생성/참여</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#059669;">실시간 채팅 (15분)</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">AI 판결</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#D4AF37;">시민 투표</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">결과 확인</span>
+    </div>
+
+    <h3>1.2 팀 구성 및 가용 리소스</h3>
+    <div class="no-break">
+      <table>
+        <tbody>
+          <tr><td style="width:120px; font-weight:700; background:var(--accent-bg);">인원</td><td>백엔드 개발자 <strong>1명</strong> + 프론트엔드 개발자 <strong>3명</strong> (에이전트/PM/디자이너 없음)</td></tr>
+          <tr><td style="font-weight:700; background:var(--accent-bg);">기간</td><td><strong>20일</strong> (9:00~18:00, 주 5일 &times; 4주)</td></tr>
+          <tr><td style="font-weight:700; background:var(--accent-bg);">총 가용 시간</td><td>20일 &times; 8h &times; 4명 = 640인시</td></tr>
+          <tr><td style="font-weight:700; background:var(--accent-bg);">실질 가용량</td><td><strong>약 360인시</strong> (러닝커브 30% + 예비 20% 감안)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.3 기술 스택</h3>
+    <div class="tech-grid">
+      <div class="tech-card"><div class="tech-card-label">Frontend</div><div class="tech-card-value">React.js 19 (Vite)<br>JavaScript + Tailwind CSS + Axios<br><strong>Framer Motion</strong> (애니메이션)</div></div>
+      <div class="tech-card"><div class="tech-card-label">Backend</div><div class="tech-card-value">Express.js (Node.js)<br>Supabase JS Client</div></div>
+      <div class="tech-card"><div class="tech-card-label">DB / Storage</div><div class="tech-card-value">Supabase<br>(PostgreSQL + Storage + Auth)</div></div>
+      <div class="tech-card"><div class="tech-card-label">AI Integration</div><div class="tech-card-value">GPT-4.1 + Gemini 2.5 Flash + Claude Sonnet 4<br>+ Grok-3-Mini (X.AI) fallback<br>Promise.allSettled 병렬 호출</div></div>
+      <div class="tech-card"><div class="tech-card-label">Real-time</div><div class="tech-card-value"><strong>Socket.io</strong><br>실시간 채팅 / 프레즌스 / 알림</div></div>
+      <div class="tech-card"><div class="tech-card-label">Infrastructure</div><div class="tech-card-value">Vercel (프론트) + Render (백엔드)<br>+ Supabase (DB/Auth)</div></div>
+      <div class="tech-card"><div class="tech-card-label">Authentication</div><div class="tech-card-value">Supabase Auth<br>카카오 + 구글 소셜 로그인</div></div>
+      <div class="tech-card"><div class="tech-card-label">Animation</div><div class="tech-card-value"><strong>Framer Motion</strong><br>판결 연출, 페이지 전환, UI 인터랙션</div></div>
+    </div>
+  </div>
+
+  <!-- ==================== 02. 제안 배경 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">02.</span> 제안 배경</h2>
+
+    <h3>2.1 사회적 배경 &mdash; 온라인 갈등 심화</h3>
+
+    <p>2025년 기준 국내 소셜 미디어 이용자는 약 4,600만 명 이상으로, 일상적인 의견 충돌과 온라인 논쟁은 커뮤니티, SNS, 메신저를 가리지 않고 폭발적으로 증가하고 있습니다.</p>
+
+    <div class="stat-grid no-break">
+      <div class="stat-card"><div class="stat-num">4,600만</div><div class="stat-label">국내 소셜 미디어 이용자</div></div>
+      <div class="stat-card warn"><div class="stat-num">73%</div><div class="stat-label">온라인 논쟁 경험 비율<br>(2025 미디어 리서치)</div></div>
+      <div class="stat-card danger"><div class="stat-num">62%</div><div class="stat-label">논쟁 후 감정 악화 경험<br>(상대와의 관계 훼손)</div></div>
+    </div>
+
+    <ul>
+      <li><strong>커뮤니티 양극화</strong>: 정치, 젠더, 세대 갈등 등 주제별 진영 논리가 강화되며 건설적 토론이 실종되고 있음</li>
+      <li><strong>감정적 소비</strong>: 논쟁이 '승리'가 아닌 '분노 해소' 목적으로 전환되며 인신공격과 혐오 표현 증가</li>
+      <li><strong>중재 부재</strong>: 기존 온라인 공간에는 객관적 판정 시스템이 존재하지 않아, 논쟁이 평행선을 달리거나 감정 싸움으로 변질</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>결론:</strong> 온라인 논쟁에 대한 <strong>객관적이고 공정한 판결 시스템</strong>에 대한 사회적 수요가 존재하며, 이를 해결할 수 있는 기술적 기반이 성숙해졌음.
+    </div>
+
+    <h3>2.2 기술적 배경 &mdash; 생성형 AI 성숙</h3>
+
+    <ul>
+      <li><strong>LLM 성능 고도화</strong>: GPT-4.1, Gemini 2.5, Claude Sonnet 4 등 최신 모델들이 자연어 분석, 논리 평가, 텍스트 생성에서 인간 수준에 근접한 성능 달성</li>
+      <li><strong>멀티모델 크로스 체크</strong>: 단일 AI의 편향(hallucination) 리스크를 3사 독립 판결 + 다수결 방식으로 구조적으로 완화 가능</li>
+      <li><strong>API 접근성 대중화</strong>: OpenAI, Google, Anthropic 모두 개발자 친화적 API를 제공하며, 판결당 비용이 ~185원 수준(GPT-4.1 80원 + Claude Sonnet 4 100원 + Gemini 5원)으로 서비스화 가능한 단가까지 하락</li>
+      <li><strong>콘텐츠 안전 기술</strong>: AI 기반 유해 콘텐츠 필터링(선동/혐오/불법) 기술이 성숙하여 플랫폼 운영 안전성 확보 가능</li>
+      <li><strong>실시간 통신 기술</strong>: Socket.io 기반 WebSocket 통신이 안정적으로 성숙하여, 실시간 채팅 논쟁 + 프레즌스 시스템 구현이 용이</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>결론:</strong> 기술적으로는 이미 구현 가능하지만, <strong>3개 AI를 독립적으로 병렬 호출하여 멀티 판결을 제공하는 서비스</strong>는 아직 존재하지 않는 블루오션 영역임.
+    </div>
+
+    <h3>2.3 필요성</h3>
+
+    <table>
+      <thead>
+        <tr><th style="width:40px;">#</th><th style="width:160px;">문제</th><th>현황</th><th>필요성</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>객관적 판정 부재</strong></td>
+          <td>온라인 논쟁에서 승패를 가릴 수 있는 객관적 기준이 없어 끝없는 평행선</td>
+          <td>AI 기반 정량적 채점(5항목 루브릭)으로 논쟁에 구조와 결론을 부여</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>단일 관점 편향</strong></td>
+          <td>1개 AI만 사용 시 모델 고유의 편향이 판결에 반영될 위험</td>
+          <td>3사 AI 독립 판결 + 다수결로 교차 검증하여 공정성 극대화</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>시민 참여 부족</strong></td>
+          <td>AI 판결만으로는 사회적 합의를 반영하기 어려움</td>
+          <td>AI 각 25%(3사 75%) + 시민 25% 복합 판결로 기계적 판단과 인간적 판단의 균형</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>유해 콘텐츠 확산</strong></td>
+          <td>논쟁 플랫폼이 혐오/선동 발언의 온상이 될 위험</td>
+          <td>3단계 콘텐츠 방어 시스템(비속어+AI필터+게이트키핑)으로 건전한 논쟁 환경 보장</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>AI 시대 논리적 사고력 필요</strong></td>
+          <td>생성형 AI 시대에 프롬프트 작성 능력과 논리적 사고력이 핵심 역량으로 부상했지만, 이를 자연스럽게 훈련할 수 있는 플랫폼이 부재</td>
+          <td>논쟁 주장을 작성하는 과정 자체가 자신의 생각을 구조화하고 근거를 정리하는 훈련이 되며, AI가 5항목 루브릭으로 즉각적인 피드백을 제공하여 논리적 사고력을 자연스럽게 향상</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>다양한 관점 이해 부족</strong></td>
+          <td>온라인 커뮤니티의 확증 편향(echo chamber)으로 자기 진영의 논리만 소비하며, 반대 의견을 이해하려는 시도 자체가 줄어드는 추세</td>
+          <td>논쟁 과정에서 상대측 주장을 읽고 AI의 양측 분석 판결문을 확인함으로써, 반대 논리의 타당한 지점을 자연스럽게 인식하게 되어 세상을 더 넓은 관점에서 바라보는 시야를 확장</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      <strong>핵심 가치:</strong> Moragora는 단순히 누가 이겼는지를 판정하는 서비스가 아닙니다. AI 시대에 필수적인 <strong>논리적 사고력</strong>을 재미있는 논쟁을 통해 자연스럽게 훈련하고, 상대방의 주장과 AI의 양측 분석을 통해 <strong>나와 다른 관점을 이해하는 폭</strong>을 넓혀주는 &mdash; 놀이이자 성장 도구입니다. 주장을 작성하면서 프롬프트처럼 생각을 구조화하는 능력이 길러지고, 판결문을 읽으면서 "상대의 논리에도 이런 타당한 점이 있구나"를 깨닫게 되는 경험은 어떤 토론 교육보다 효과적입니다.
+    </div>
+  </div>
+
+  <!-- ==================== 03. 시장 분석 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">03.</span> 시장 분석</h2>
+
+    <h3>3.1 국내외 시장 규모</h3>
+
+    <h4>AI 기반 콘텐츠 서비스 시장</h4>
+    <p>글로벌 생성형 AI 시장은 2025년 약 670억 달러 규모에서 2030년 2,070억 달러로 연평균 25.3% 성장이 전망됩니다. 특히 AI를 활용한 소셜/커뮤니티/콘텐츠 플랫폼 분야는 빠르게 성장하고 있습니다.</p>
+
+    <div class="stat-grid no-break">
+      <div class="stat-card"><div class="stat-num">670억$</div><div class="stat-label">2025 글로벌 생성형 AI 시장</div></div>
+      <div class="stat-card"><div class="stat-num">25.3%</div><div class="stat-label">연평균 성장률 (CAGR)</div></div>
+      <div class="stat-card"><div class="stat-num">2,070억$</div><div class="stat-label">2030 전망치</div></div>
+    </div>
+
+    <h4>국내 온라인 토론/논쟁 서비스 현황</h4>
+    <ul>
+      <li>국내 커뮤니티 이용자: 월 활성 사용자(MAU) 기준 네이버 카페 2,100만, 디시인사이드 850만, 에브리타임 600만 등</li>
+      <li>이 중 토론/논쟁 관련 게시물 비중: 커뮤니티별 15~30%로 추정</li>
+      <li>기존 서비스는 단순 투표 기능만 제공하며, AI 기반 정량적 판결 서비스는 <strong>전무한 상태</strong></li>
+    </ul>
+
+    <h3>3.2 유사 서비스 비교</h3>
+
+    <table>
+      <thead>
+        <tr><th style="width:100px;">구분</th><th>Moragora (본 서비스)</th><th>밸런스게임 앱</th><th>커뮤니티 투표</th><th>ChatGPT 직접 이용</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>서비스 성격</strong></td>
+          <td>AI 멀티모델 판결 + 시민 투표 복합 중개 플랫폼</td>
+          <td>가벼운 양자택일 엔터테인먼트</td>
+          <td>커뮤니티 내 여론 조사</td>
+          <td>개인이 AI에 직접 질의</td>
+        </tr>
+        <tr>
+          <td><strong>판결 방식</strong></td>
+          <td>3사 AI 독립 채점(5항목&times;20점) + 시민 25%</td>
+          <td>단순 다수결 투표</td>
+          <td>단순 다수결 투표</td>
+          <td>1개 AI 단일 응답</td>
+        </tr>
+        <tr>
+          <td><strong>공정성 장치</strong></td>
+          <td>3사 크로스 체크 + 루브릭 정량화</td>
+          <td>없음</td>
+          <td>없음</td>
+          <td>없음 (편향 위험)</td>
+        </tr>
+        <tr>
+          <td><strong>콘텐츠 방어</strong></td>
+          <td>3단계 방어 (비속어+AI+게이트키핑)</td>
+          <td>기본 필터</td>
+          <td>사후 신고</td>
+          <td>모델 내장 필터</td>
+        </tr>
+        <tr>
+          <td><strong>실시간 논쟁</strong></td>
+          <td><strong>Socket.io 기반 1:1 실시간 채팅 (15분)</strong></td>
+          <td>없음</td>
+          <td>없음</td>
+          <td>없음</td>
+        </tr>
+        <tr>
+          <td><strong>사용자 경험</strong></td>
+          <td>위자드 기반 구조화된 논쟁 + 실시간 채팅 + 시각화된 결과</td>
+          <td>단순 선택</td>
+          <td>텍스트 중심</td>
+          <td>대화형 인터페이스</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3.3 차별성 &amp; 경쟁 우위</h3>
+
+    <div class="no-break">
+      <table>
+        <thead>
+          <tr><th style="width:40px;">#</th><th style="width:170px;">차별 요소</th><th>상세</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td><strong>3사 AI 독립 병렬 판결</strong></td><td>GPT-4.1, Gemini, Claude 3사가 각각 독립적으로 5항목 루브릭 채점. 1~2개 모델 실패 시 Grok-3-Mini(X.AI)가 fallback 대체. 다수결로 교차 검증하여 단일 AI 편향을 구조적으로 제거</td></tr>
+          <tr><td>2</td><td><strong>AI+시민 복합 판결</strong></td><td>AI 각 25%(3사 75%)의 객관적 분석과 시민 25%의 집단 지성을 결합. 기존 어디에도 없는 하이브리드 판결 모델</td></tr>
+          <tr><td>3</td><td><strong>5항목 정량 루브릭</strong></td><td>논리구조/근거품질/반박대응/일관성/표현적절성 5개 항목을 각 0~20점으로 정량화하여 감정이 아닌 데이터 기반 판결</td></tr>
+          <tr><td>4</td><td><strong>3단계 위자드</strong></td><td>목적(승부/합의/분석) &rarr; 렌즈(논리/감정/실용/윤리/종합/자유) &rarr; 주제. 논쟁의 프레임을 사전에 구조화하여 논쟁 품질 향상</td></tr>
+          <tr><td>5</td><td><strong>3단계 콘텐츠 방어</strong></td><td>비속어 사전 + AI 콘텐츠 필터 + AI 게이트키핑으로 건전한 논쟁 환경을 기술적으로 보장</td></tr>
+          <tr><td>6</td><td><strong>실시간 채팅 논쟁</strong> <span class="completed-badge">v2.0</span></td><td>Socket.io 기반 1:1 실시간 채팅 모드(15분 제한). 로비에서 공개 방 탐색 + 사이드 선택 후 즉시 논쟁 시작. 실시간 비속어 필터링 + 이탈 감지</td></tr>
+          <tr><td>7</td><td><strong>소크라테스 코칭</strong> <span class="completed-badge">v2.0</span></td><td>o4-mini 기반 소크라테스 산파술 코칭. 주장 작성 시 논리 보강을 위한 유도 질문 자동 생성으로 논증력 향상 지원</td></tr>
+          <tr><td>8</td><td><strong>다중 판결 모드</strong> <span class="completed-badge">v2.0</span></td><td>승부(compete) 외 합의(consensus)·분석(analyze) 모드 지원. 목적에 따라 AI 판결 관점이 달라지는 맞춤형 판결</td></tr>
+          <tr><td>9</td><td><strong>실시간 루브릭 점수</strong> <span class="completed-badge">v2.0</span></td><td>gpt-4.1-mini 기반 주장 입력 중 5항목 루브릭 점수 실시간 피드백. 제출 전 논증 품질을 즉시 확인하고 개선 가능</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 04. STP 전략 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">04.</span> STP 전략</h2>
+
+    <h3>4.1 Segmentation (시장 세분화)</h3>
+
+    <table>
+      <thead>
+        <tr><th style="width:130px;">세그먼트</th><th>대상</th><th>특성</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>일반 소비자</strong></td>
+          <td>10~30대 온라인 커뮤니티 활동 사용자</td>
+          <td>일상적 의견 충돌이 빈번하며, 객관적 판정에 대한 호기심과 재미 추구</td>
+        </tr>
+        <tr>
+          <td><strong>콘텐츠 크리에이터</strong></td>
+          <td>유튜버, 블로거, 스트리머</td>
+          <td>논쟁 콘텐츠를 소재로 활용, 판결 결과를 공유하여 콘텐츠 생성</td>
+        </tr>
+        <tr>
+          <td><strong>교육 기관</strong></td>
+          <td>중고등학교, 대학교 토론 수업</td>
+          <td>학생들의 논증 능력을 AI 루브릭으로 정량 평가, 교육적 활용</td>
+        </tr>
+        <tr>
+          <td><strong>기업/단체</strong></td>
+          <td>사내 의사결정, 워크숍</td>
+          <td>찬반 토론을 구조화하여 의사결정 지원 도구로 활용</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.2 Targeting (표적 시장)</h3>
+
+    <h4>1차 표적 시장</h4>
+    <div class="info-box">
+      <strong>10~30대 온라인 활동 사용자</strong> (국내 약 1,800만 명)<br>
+      커뮤니티, SNS에서 일상적으로 의견 충돌을 경험하며, AI 기술에 대한 수용도가 높은 디지털 네이티브 세대. "라면에 치즈 넣기", "재택근무 vs 출근" 같은 일상 논쟁부터 사회 이슈까지 다양한 주제에 대한 판결 수요가 존재.
+    </div>
+
+    <h4>2차 표적 시장</h4>
+    <ul>
+      <li><strong>콘텐츠 크리에이터</strong>: 논쟁 판결 결과를 콘텐츠 소재로 활용 (바이럴 효과)</li>
+      <li><strong>교육 기관</strong>: 토론 수업에서 학생 논증력을 5항목 루브릭으로 정량 평가</li>
+    </ul>
+
+    <h3>4.3 Positioning (포지셔닝)</h3>
+
+    <div class="highlight-box" style="text-align: center; font-size: 12pt; font-weight: 700; padding: 24px;">
+      "단순 투표가 아닌,<br>AI 3사가 독립 채점하고 시민이 함께 판결하는<br><span style="color: var(--accent);">공정한 논쟁 종결 플랫폼</span>"
+    </div>
+
+    <div class="pos-map no-break">
+      <div class="pos-axis-x"></div>
+      <div class="pos-axis-y"></div>
+      <div class="pos-label" style="top:8px; left:50%; transform:translateX(-50%);">AI 판결 (정량)</div>
+      <div class="pos-label" style="bottom:8px; left:50%; transform:translateX(-50%);">사람 투표 (정성)</div>
+      <div class="pos-label" style="top:50%; left:8px; transform:translateY(-50%);">가벼운 재미</div>
+      <div class="pos-label" style="top:50%; right:8px; transform:translateY(-50%);">심도 있는 분석</div>
+
+      <!-- Moragora -->
+      <div class="pos-dot" style="top: 25%; right: 22%; transform: translate(50%, -50%);">
+        <div class="pos-dot-circle" style="background: var(--accent); width:48px; height:48px; font-size:9pt;">V</div>
+        <span class="pos-dot-name" style="font-size:8pt; color:var(--accent);">Moragora</span>
+      </div>
+      <!-- 밸런스게임 -->
+      <div class="pos-dot" style="bottom: 25%; left: 18%; transform: translate(-50%, 50%);">
+        <div class="pos-dot-circle" style="background: #F59E0B;">B</div>
+        <span class="pos-dot-name">밸런스게임</span>
+      </div>
+      <!-- 커뮤니티 투표 -->
+      <div class="pos-dot" style="bottom: 30%; right: 30%; transform: translate(50%, 50%);">
+        <div class="pos-dot-circle" style="background: #94A3B8;">C</div>
+        <span class="pos-dot-name">커뮤니티투표</span>
+      </div>
+      <!-- ChatGPT 직접 -->
+      <div class="pos-dot" style="top: 30%; left: 22%; transform: translate(-50%, -50%);">
+        <div class="pos-dot-circle" style="background: #10B981;">G</div>
+        <span class="pos-dot-name">ChatGPT직접</span>
+      </div>
+    </div>
+
+    <p>Moragora는 <strong>"AI 판결(정량)"</strong>과 <strong>"심도 있는 분석"</strong> 영역에 포지셔닝됩니다. 기존 밸런스게임(가벼운+정성)이나 ChatGPT 직접 이용(가벼운+AI)과 명확히 차별화되며, 3사 AI 크로스 체크 + 시민 복합이라는 독보적 위치를 점유합니다.</p>
+  </div>
+
+  <!-- ==================== 05.  원칙 및 기능 범위 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">05.</span>  원칙 및 기능 범위</h2>
+
+    <h3>5.1  원칙</h3>
+    <div class="info-box">
+      <strong>"AI 판결을 통한 논쟁 종결"의 핵심 루프 1회전을 완성한다.</strong><br>
+      v4.0 기획서의 55개+ 기능 중 핵심 루프를 구성하는 기능을 구현하여, 서비스의 본질적 가치를 검증합니다. v2.0에서 실시간 채팅 논쟁, 로비, 알림, 관리자 대시보드, 댓글, AI 주제 분석, 오늘의 논쟁을 TIER 1에 추가하였습니다.
+    </div>
+
+    <h3>5.2 TIER 1 &mdash; 반드시 구현 (핵심 루프)</h3>
+    <span class="tier-badge tier-1">TIER 1 &mdash; MUST HAVE &mdash; 464h</span>
+    <table>
+      <thead><tr><th style="width:30px;">#</th><th style="width:160px;">기능</th><th>설명</th><th style="width:50px; text-align:right;">공수</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>회원가입/로그인</strong></td><td>Supabase Auth 카카오+구글 소셜 로그인</td><td style="text-align:right;">16h</td></tr>
+        <tr><td>2</td><td><strong>논쟁 방 생성<br>(3단계 위자드)</strong></td><td>목적 선택(승부/합의/분석) &rarr; 렌즈 선택(논리/감정/실용/윤리/종합/자유) &rarr; 주제+카테고리 입력</td><td style="text-align:right;">32h</td></tr>
+        <tr><td>3</td><td><strong>상대방 초대</strong></td><td>링크 복사 공유</td><td style="text-align:right;">12h</td></tr>
+        <tr><td>4</td><td><strong>주장 입력</strong></td><td>양측 텍스트 입력 (50~2,000자), 글자수 카운터. 반박 라운드(Round 2) 지원 &mdash; 양측 본론 후 반박 주장 추가 입력 가능</td><td style="text-align:right;">16h</td></tr>
+        <tr><td>5</td><td><strong>AI 판결 생성</strong></td><td>3사 AI 병렬 호출 &rarr; 5항목&times;20점 루브릭 채점 &rarr; 판결문 생성</td><td style="text-align:right;">48h</td></tr>
+        <tr><td>6</td><td><strong>판결문 표시</strong></td><td>3개 AI 개별 판결 + 종합 판결(다수결) + 승/패 + 5항목 점수</td><td style="text-align:right;">32h</td></tr>
+        <tr><td>7</td><td><strong>복합 판결 (AI+시민)</strong></td><td>AI 판결 후 시민 투표 기간(기본 24h, VOTE_DURATION_HOURS 환경변수) 운영. 마감 후 30명 이상 시 AI 각 25%(75%) + 시민 25% 복합 판결 확정</td><td style="text-align:right;">32h</td></tr>
+        <tr><td>8</td><td><strong>3단계 콘텐츠 방어</strong></td><td>비속어 사전 + AI 콘텐츠 필터 + AI 게이트키핑. 카테고리별 필터 강도 차등</td><td style="text-align:right;">32h</td></tr>
+        <tr><td>9</td><td><strong>판결문 목록</strong></td><td>완료된 판결문 공개 피드 (카드 리스트)</td><td style="text-align:right;">16h</td></tr>
+        <tr><td>10</td><td><strong>마이페이지</strong></td><td>닉네임, 전적, 내 판결 목록</td><td style="text-align:right;">12h</td></tr>
+        <tr><td>11</td><td><strong>판결문 공유</strong></td><td>결과 이미지/링크 복사. 카카오/SNS 공유 시 동적 OG 메타태그 생성 (논쟁 주제+결과 미리보기)</td><td style="text-align:right;">12h</td></tr>
+        <tr><td>12</td><td><strong>오늘의 논쟁</strong></td><td>매일 1개 공개 논쟁 주제 자동 게시(09:00), A/B 선택 + 140자 의견(선택), 경량 AI 판결 + 시민 투표 결합</td><td style="text-align:right;">24h</td></tr>
+        <tr style="background:#EEF2FF;"><td>13</td><td><strong>실시간 채팅 논쟁</strong> <span class="completed-badge">v2.0</span></td><td>Socket.io 기반 1:1 실시간 채팅 모드. 15분 서버 타이머, 비속어 실시간 필터, opponent 자동 등록, waiting&rarr;chatting 자동 전환, 이탈 감지(2분 후 자동 판결)</td><td style="text-align:right;">40h</td></tr>
+        <tr style="background:#EEF2FF;"><td>14</td><td><strong>실시간 로비</strong> <span class="completed-badge">v2.0</span></td><td>공개 방 목록 실시간 업데이트, 참여자 프레즌스 표시, 사이드(A/B) 선택 후 입장</td><td style="text-align:right;">24h</td></tr>
+        <tr style="background:#EEF2FF;"><td>15</td><td><strong>알림 시스템</strong> <span class="completed-badge">v2.0</span></td><td>판결 완료 알림, 채팅 시작 알림, 투표 알림, 읽음/미읽음 처리, 알림 센터 UI</td><td style="text-align:right;">20h</td></tr>
+        <tr style="background:#EEF2FF;"><td>16</td><td><strong>댓글 시스템</strong> <span class="completed-badge">v2.0</span></td><td>판결문에 의견 작성 (1 depth), 좋아요 토글</td><td style="text-align:right;">16h</td></tr>
+        <tr style="background:#EEF2FF;"><td>17</td><td><strong>관리자 대시보드</strong> <span class="completed-badge">v2.0</span></td><td>서비스 통계 (논쟁 수, 사용자 수, AI 사용량), 일별 트렌드 차트, 관리 기능</td><td style="text-align:right;">24h</td></tr>
+        <tr style="background:#EEF2FF;"><td>18</td><td><strong>오늘의 논쟁 (Daily Debate)</strong> <span class="completed-badge">v2.0</span></td><td>매일 자동 생성되는 공개 논쟁 주제, 전체 사용자 참여</td><td style="text-align:right;">20h</td></tr>
+        <tr style="background:#EEF2FF;"><td>19</td><td><strong>AI 주제 분석</strong> <span class="completed-badge">v2.0</span></td><td>주제 입력 시 AI가 자동으로 찬/반 논점 생성, 사용자 논쟁 시작 지원</td><td style="text-align:right;">12h</td></tr>
+        <tr style="background:#EEF2FF;"><td>20</td><td><strong>연습 모드 (Solo)</strong> <span class="completed-badge">v2.0</span></td><td>AI(gpt-4o-mini)가 상대방 역할을 대신하여 1:1 논쟁 연습. solo.service.js로 AI 반론 자동 생성, 혼자서도 논증력 훈련 가능</td><td style="text-align:right;">20h</td></tr>
+        <tr style="background:#EEF2FF;"><td>21</td><td><strong>소크라테스 산파술 코칭</strong> <span class="completed-badge">v2.0</span></td><td>o4-mini 기반 소크라테스식 질문 코칭 시스템. 주장 작성 시 논리 보강을 위한 유도 질문을 자동 생성하여 논증력 향상 지원</td><td style="text-align:right;">16h</td></tr>
+        <tr style="background:#EEF2FF;"><td>22</td><td><strong>합의/분석 판결 모드</strong> <span class="completed-badge">v2.0</span></td><td>승부(compete) 외에 합의(consensus)·분석(analyze) 판결 모드 지원. 합의 모드는 양측 공통점 도출, 분석 모드는 객관적 팩트 중심 분석 제공</td><td style="text-align:right;">12h</td></tr>
+        <tr style="background:#EEF2FF;"><td>23</td><td><strong>실시간 루브릭 점수</strong> <span class="completed-badge">v2.0</span></td><td>gpt-4.1-mini 기반 주장 입력 중 실시간 5항목 루브릭 점수 피드백. 사용자가 주장을 다듬을 수 있도록 즉각적인 점수 변화 표시</td><td style="text-align:right;">12h</td></tr>
+        <tr class="table-total"><td></td><td>소계</td><td></td><td style="text-align:right;">504h</td></tr>
+      </tbody>
+    </table>
+
+    <h3>5.3 TIER 2 &mdash; 가능하면 구현 (경쟁력 강화)</h3>
+    <span class="tier-badge tier-2">TIER 2 &mdash; NICE TO HAVE &mdash; 100h</span>
+    <table>
+      <thead><tr><th style="width:30px;">#</th><th style="width:160px;">기능</th><th>설명</th><th style="width:50px; text-align:right;">공수</th></tr></thead>
+      <tbody>
+        <tr><td>21</td><td><strong>리그 랭킹</strong></td><td>5단계 리그 시스템 (시민&rarr;배심원&rarr;변호사&rarr;판사&rarr;대법관), XP 기반 승격/강등, 50명 단위 조별 랭킹</td><td style="text-align:right;">16h</td></tr>
+        <tr><td>22</td><td><strong>판결 대기 UX</strong></td><td>로딩 애니메이션 + 진행 상태</td><td style="text-align:right;">12h</td></tr>
+        <tr><td>23</td><td><strong>글자수 가이드</strong></td><td>미달/초과 안내</td><td style="text-align:right;">4h</td></tr>
+        <tr><td>24</td><td><strong>AI 실패 처리</strong></td><td>재시도 + 에러 안내</td><td style="text-align:right;">8h</td></tr>
+        <tr><td>25</td><td><strong>커뮤니티 게시판</strong></td><td>사용자 간 자유 소통 게시판 (글 작성/목록/상세)</td><td style="text-align:right;">24h</td></tr>
+        <tr><td>26</td><td><strong>분석 상세 대시보드</strong></td><td>최근 판결 vs 새 판결의 5항목 점수 비교 시각화 (레이더 차트 + 변화량 표시)</td><td style="text-align:right;">20h</td></tr>
+        <tr><td>27</td><td><strong>채팅 로그 뷰어</strong></td><td>실시간 논쟁 채팅 기록 타임라인 뷰어, 시간 버블 표시</td><td style="text-align:right;">16h</td></tr>
+        <tr class="table-total"><td></td><td>소계</td><td></td><td style="text-align:right;">100h</td></tr>
+      </tbody>
+    </table>
+
+    <h3>5.4 제외 및 축소 항목</h3>
+    <h4>v3.0 이후로 제외</h4>
+    <ul>
+      <li>랜덤 매칭</li>
+      <li>Moragora Pro (결제)</li><li>논리 분석 프로필</li><li>구독/후원, 명예의전당</li>
+      <li>다국어 지원</li><li>소셜 그래프</li><li>토너먼트</li>
+    </ul>
+    <h4>에서 축소한 항목</h4>
+    <table>
+      <thead><tr><th>항목</th><th>원안</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>초대/공유</td><td>카카오톡 공유 API + QR코드</td><td>링크 복사만</td></tr>
+        <tr><td>공유 카드</td><td>SNS별 OG 카드 + 이미지 렌더링</td><td>기본 OG 메타태그 + 링크 복사</td></tr>
+        <tr><td>소셜 로그인</td><td>OAuth 3종 (카카오+구글+애플)</td><td>카카오 + 구글 2종</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight-box">
+      <strong>원안 유지 항목:</strong> AI 각 25%(75%)+시민 25% 복합 판결, 3단계 위자드, 5항목&times;20점 루브릭, 3단계 콘텐츠 방어 &mdash; 이상 4개 핵심 시스템은 축소 없이 그대로 구현합니다.
+    </div>
+  </div>
+
+  <!-- ==================== 06. 핵심 시스템 설계 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">06.</span> 핵심 시스템 설계</h2>
+
+    <h3>6.1 AI 판결 시스템</h3>
+    <h4>3사 병렬 호출 구조</h4>
+    <p><code>Promise.allSettled</code>를 사용하여 GPT-4.1, Gemini 2.5 Flash, Claude Sonnet 4 3개 AI를 동시에 호출합니다. 1~2개 모델 실패 시 Grok-3-Mini(X.AI)가 fallback으로 대체 호출됩니다.</p>
+    <table>
+      <thead><tr><th>AI 모델</th><th>라이브러리</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><strong>GPT-4.1</strong></td><td>openai</td><td>독립 채점 및 판결 (OpenAI)</td></tr>
+        <tr><td><strong>Gemini 2.5 Flash</strong></td><td>@google/generative-ai</td><td>독립 채점 및 판결 (Google)</td></tr>
+        <tr><td><strong>Claude Sonnet 4</strong></td><td>@anthropic-ai/sdk</td><td>독립 채점 및 판결 (Anthropic)</td></tr>
+        <tr><td><strong>Grok-3-Mini</strong> <span style="font-size:8pt; color:var(--text-muted);">fallback</span></td><td>x.ai REST API</td><td>1~2개 모델 실패 시 대체 채점 및 판결</td></tr>
+        <tr><td><strong>o4-mini</strong></td><td>openai</td><td>소크라테스 산파술 코칭</td></tr>
+        <tr><td><strong>gpt-4.1-mini</strong></td><td>openai</td><td>주제 분석 / 입장 생성 / 루브릭 점수</td></tr>
+        <tr><td><strong>gpt-4o-mini</strong></td><td>openai</td><td>Solo 모드 반대 주장 생성</td></tr>
+        <tr><td><strong>gpt-4o</strong></td><td>openai</td><td>콘텐츠 필터</td></tr>
+      </tbody>
+    </table>
+
+    <h4>5항목 &times; 20점 루브릭</h4>
+    <table>
+      <thead><tr><th style="width:30px;">#</th><th style="width:130px;">평가 항목</th><th>설명</th><th style="width:60px; text-align:center;">배점</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>논리 구조</strong></td><td>주장의 논리적 전개와 구조의 체계성</td><td style="text-align:center;">0~20점</td></tr>
+        <tr><td>2</td><td><strong>근거 품질</strong></td><td>제시된 근거의 타당성과 신뢰도</td><td style="text-align:center;">0~20점</td></tr>
+        <tr><td>3</td><td><strong>반박 대응</strong></td><td>예상 반론에 대한 선제적 대응력</td><td style="text-align:center;">0~20점</td></tr>
+        <tr><td>4</td><td><strong>일관성</strong></td><td>주장 전반의 논리적 일관성</td><td style="text-align:center;">0~20점</td></tr>
+        <tr><td>5</td><td><strong>표현 적절성</strong></td><td>언어 사용과 표현의 적절성</td><td style="text-align:center;">0~20점</td></tr>
+        <tr class="table-total"><td></td><td>합계</td><td></td><td style="text-align:center;">100점</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.2 복합 판결 (AI 각 25% + 시민 25%)</h3>
+    <div class="score-formula">
+      <div style="margin-bottom:8px;">
+        <strong>최종 점수</strong> <span class="operator">=</span>
+        ( GPT-4.1 점수 <span class="operator">&times;</span> 0.25 )
+        <span class="operator">+</span>
+        ( Gemini 점수 <span class="operator">&times;</span> 0.25 )
+        <span class="operator">+</span>
+        ( Claude 점수 <span class="operator">&times;</span> 0.25 )
+        <span class="operator">+</span>
+        ( 시민 점수 <span class="operator">&times;</span> 0.25 )
+      </div>
+      <div style="font-size:9pt; color:var(--text-muted); font-weight:400;">
+        각 AI = 5항목 점수 합산 (100점 만점) &nbsp;|&nbsp;
+        시민 점수 = (내 측 투표 수 / 전체 투표 수) &times; 100
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>투표 기간:</strong> AI 판결 완료 후 시민 투표 기간(기본 24시간, VOTE_DURATION_HOURS 환경변수로 조정 가능)이 시작됩니다. AI 결과는 즉시 당사자에게 표시되고, 시민 투표는 마감까지 별도 진행됩니다.<br>
+      <strong>임계값 규칙:</strong> 투표 마감 시점에 시민 투표 참여자가 <strong>30명 미만</strong>일 경우, 시민 점수는 반영되지 않으며 <strong>AI 100%</strong>로 판결합니다.
+    </div>
+
+    <h3>6.3 3단계 콘텐츠 방어</h3>
+    <div class="defense-levels">
+      <div class="defense-level"><div class="defense-level-num">1</div><div class="defense-level-title">비속어 사전 필터</div><div class="defense-level-desc">비속어 사전 + 개인정보 정규식<br>(실시간 미들웨어)<br><strong>+ 채팅 실시간 필터</strong></div></div>
+      <div class="defense-level"><div class="defense-level-num">2</div><div class="defense-level-title">AI 콘텐츠 필터</div><div class="defense-level-desc">AI 콘텐츠 필터 (gpt-4o)<br>선동/혐오/불법 판별<br>(pass / warn / block)</div></div>
+      <div class="defense-level"><div class="defense-level-num">3</div><div class="defense-level-title">AI 게이트키핑</div><div class="defense-level-desc">주제 적합성 검토<br>카테고리 맞춤 검증</div></div>
+    </div>
+    <h4>카테고리별 방어 강도</h4>
+    <table>
+      <thead><tr><th>카테고리</th><th>강도</th><th>적용 단계</th></tr></thead>
+      <tbody>
+        <tr><td>일상 / 연애</td><td style="color:var(--success); font-weight:700;">낮음</td><td>1단계만</td></tr>
+        <tr><td>직장 / 교육</td><td style="color:var(--warning); font-weight:700;">중간</td><td>1~2단계</td></tr>
+        <tr><td>사회 / 정치</td><td style="color:var(--danger); font-weight:700;">높음</td><td>1~3단계</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.4 AI 프롬프트 설계</h3>
+    <table>
+      <thead><tr><th>구분</th><th>옵션</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><strong>판결 목적</strong></td><td>compete / consensus / analyze</td><td>승부 결정 / 합의점 도출 / 객관적 분석</td></tr>
+        <tr><td><strong>분석 렌즈</strong></td><td>logic / emotion / practical / ethics / general / custom</td><td>논리 / 감정 / 실용 / 윤리 / 종합 / 자유</td></tr>
+      </tbody>
+    </table>
+    <h4>AI 응답 형식 (JSON)</h4>
+    <div class="info-box" style="font-family: monospace; font-size: 9pt; line-height: 1.8;">
+      {<br>
+      &nbsp;&nbsp;"winner": "A" | "B" | "draw",<br>
+      &nbsp;&nbsp;"Moragora": "판결 요약 텍스트",<br>
+      &nbsp;&nbsp;"score_a": { "logic": 17, "evidence": 15, "rebuttal": 14, "consistency": 18, "expression": 16 },<br>
+      &nbsp;&nbsp;"score_b": { "logic": 14, "evidence": 16, "rebuttal": 12, "consistency": 15, "expression": 14 },<br>
+      &nbsp;&nbsp;"summary": "종합 분석 텍스트"<br>
+      }
+    </div>
+
+    <h3>6.5 실시간 채팅 논쟁 시스템 <span class="completed-badge">v2.0 NEW</span></h3>
+    <p>Socket.io 기반의 1:1 실시간 채팅 논쟁 모드입니다. 기존 텍스트 입력 모드와 병행하여 사용자가 선택할 수 있습니다.</p>
+
+    <table>
+      <thead><tr><th style="width:150px;">항목</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td><strong>기반 기술</strong></td><td>Socket.io (WebSocket + 폴백)</td></tr>
+        <tr><td><strong>제한 시간</strong></td><td>15분 서버 타이머 (클라이언트 동기화)</td></tr>
+        <tr><td><strong>비속어 필터</strong></td><td>채팅 메시지 전송 시 실시간 비속어 사전 필터 적용</td></tr>
+        <tr><td><strong>자동 전환</strong></td><td>B측 참여 시 waiting &rarr; chatting 자동 전환 + 서버 타이머 시작</td></tr>
+        <tr><td><strong>Opponent 자동 등록</strong></td><td>B측이 send-message 시 opponent 자동 등록</td></tr>
+        <tr><td><strong>이탈 감지</strong></td><td>disconnect 후 2분 내 미복귀 시 자동 판결 (채팅 로그 기반)</td></tr>
+        <tr><td><strong>타이머 만료</strong></td><td>15분 경과 시 자동으로 채팅 종료 &rarr; AI 판결 시작</td></tr>
+        <tr><td><strong>채팅 로그 보존</strong></td><td>모든 메시지는 DB 저장, 판결문에서 채팅 로그 타임라인 뷰어 제공</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.6 논쟁 상태 전이 <span class="completed-badge">v2.0 UPDATE</span></h3>
+    <div class="flow-diagram">
+      <span class="flow-step">waiting</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">both_joined</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">arguing</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#059669;">chatting</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:var(--warning);">judging</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#D4AF37;">voting</span><span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:var(--success);">completed</span>
+    </div>
+    <div class="info-box">
+      <strong>텍스트 모드:</strong> waiting &rarr; both_joined &rarr; arguing &rarr; judging &rarr; voting &rarr; completed<br>
+      <strong>채팅 모드:</strong> waiting &rarr; chatting (15분 타이머) &rarr; judging &rarr; voting &rarr; completed<br>
+      <strong>자동 전환:</strong> B측 참여 시 waiting&rarr;chatting 자동 전환, 타이머 만료 시 chatting&rarr;judging 자동 전환
+    </div>
+  </div>
+
+  <!-- ==================== 07. 인력 배분 및 일정 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">07.</span> 인력 배분 및 일정</h2>
+
+    <h3>7.1 역할 분담</h3>
+    <table>
+      <thead><tr><th style="width:120px;">담당</th><th>기능 및 공수</th></tr></thead>
+      <tbody>
+        <tr><td><strong>김선관</strong><br><span style="font-size:8.5pt; color:var(--accent);">백엔드 + 팀리드</span></td><td><ul style="margin:0 0 0 16px;"><li>Express + Socket.io 서버 아키텍처 설계 및 구현 (서버 코어, 소켓 핸들러 30개, 방 관리)</li><li>AI 판결 시스템 &mdash; GPT-4.1 / Gemini / Claude Sonnet 4 3모델 병렬 호출 + 폴백(Grok-3-Mini) + 재시도</li><li>판결 확정 + 시민투표 반영 + XP/경험치 시스템</li><li>3단계 콘텐츠 방어 (비속어 사전 + AI 안전성 검사 + 주제 관련성 검증)</li><li>DB 스키마 설계 + Supabase 연동 + JWT 인증 미들웨어</li><li>전체 15개 라우트 + 11개 컨트롤러 + 비즈니스 서비스 계층</li><li><strong>[v2.0]</strong> Socket.io 실시간 채팅 서버 (타이머, 강퇴, 시간 변경, 시민 투표)</li><li><strong>[v2.0]</strong> 알림 시스템 API + 관리자 대시보드 API + 댓글/좋아요 API</li><li><strong>[클라이언트]</strong> 공통 모달, 에러 바운더리, Zustand 스토어(테마/알림/소켓), 커스텀 훅(타이핑/로비채팅/시민투표/모달), 유틸(perf/dateFormatter/avatar), 어드민 대시보드</li></ul><div style="text-align:right; font-weight:700; color:var(--accent); font-size:9pt;">소계 172h</div></td></tr>
+        <tr><td><strong>서우주</strong><br><span style="font-size:8.5pt; color:var(--accent);">프론트엔드A</span></td><td><ul style="margin:0 0 0 16px;"><li>논쟁 생성 3단계 위자드 UI (주제 입력 + AI 찬반 자동 생성 &rarr; 목적&amp;기준 선택 &rarr; 카테고리&amp;시간)</li><li>실시간 3v3 채팅 논쟁 UI (ChatRoom: 소켓 기반 대기실+채팅+투표+강퇴)</li><li>채팅 대기실 (ChatLobby: 참여자 준비, 사이드 선택) + 실시간 방 목록 (ChatLobbyList)</li><li>논쟁 진행 페이지 (주장/반박 작성, 초대 링크, AI 판결 진행/결과, 판결 상세)</li><li>공통 UI 컴포넌트 (Button, Card, Input, Modal, StepWizard)</li><li>레이아웃/네비게이션 (Header, TabBar, Layout, CategoryFilter, ModeSelector)</li></ul><div style="text-align:right; font-weight:700; color:var(--accent); font-size:9pt;">소계 104h</div></td></tr>
+        <tr><td><strong>채유진</strong><br><span style="font-size:8.5pt; color:var(--text-muted);">프론트엔드B</span></td><td><ul style="margin:0 0 0 16px;"><li>인증/로그인 페이지 (카카오/구글 OAuth, 인앱 브라우저 감지) + 닉네임 설정</li><li>실시간 논쟁 로비 생성 (DebateLobbyPage) + 디자인 + 참여 인원 반영</li><li>판결 대기 화면 + confetti 연출 구현</li><li>초대 링크 + 카카오 공유 + 링크 복사 플로우</li><li>주장 페이지 디자인 수정 + 뱃지 통일 + 타이머 기능</li><li>디자인/UI 통일 작업 (프로필, 피드 카드, 오늘의 논쟁, 탭바 연결)</li><li>개인정보처리방침 + 이용약관 + 서비스 평가 모달</li><li><strong>[서버 연동]</strong> 투표/판결 컨트롤러 수정 + 판결 확정 시민투표 반영</li></ul><div style="text-align:right; font-weight:700; color:var(--accent); font-size:9pt;">소계 76h</div></td></tr>
+        <tr><td><strong>김준민</strong><br><span style="font-size:8.5pt; color:var(--text-muted);">프론트엔드C</span></td><td><ul style="margin:0 0 0 16px;"><li>프로필 페이지 (iOS 스타일, 승률 카드, 경험치 바, 아바타 에디터, 논리 분석)</li><li>랭킹 페이지 (포디엄, 리더보드 TOP 50, 명예의전당, 플레이어 바텀시트)</li><li>홈피드 무한스크롤 최적화 + 피드 카드 (좋아요/댓글/조회수/투표)</li><li>오늘의 논쟁 UI + 판결 상세 UI 개선 + 채팅 로그 뷰어</li><li>알림 센터 UI (상단 슬라이드 드롭다운, 삭제 기능) + 탭바 알림 뱃지</li><li>등급 시스템 모달 (시민&rarr;대법관 5단계) + 판결문 카카오 공유</li><li><strong>[서버 연동]</strong> 알림 CRUD 컨트롤러 + 프로필/랭킹 조회 + 판결 트리거 알림</li></ul><div style="text-align:right; font-weight:700; color:var(--accent); font-size:9pt;">소계 92h</div></td></tr>
+      </tbody>
+    </table>
+
+    <h3>7.2 주차별 일정</h3>
+    <div class="timeline">
+      <div class="timeline-week"><div class="timeline-label">WEEK 1<span class="timeline-days">Day 1~5</span></div><div class="timeline-content"><strong>환경 세팅 + 기반 작업</strong><ul><li>Git 모노레포 구성 (client / server)</li><li>React + Vite 초기화, Tailwind 설정</li><li>Express 서버 초기화, CORS 설정</li><li>Supabase 프로젝트 생성, DB 스키마 마이그레이션</li><li>공통 컴포넌트 구현, Auth 연동</li><li><strong>[v2.0]</strong> Socket.io 서버 초기 세팅</li></ul></div></div>
+      <div class="timeline-week"><div class="timeline-label">WEEK 2<span class="timeline-days">Day 6~10</span></div><div class="timeline-content"><strong>핵심 기능 구현</strong><ul><li>AI 판결 API (3사 병렬 + Grok fallback + 5항목 루브릭)</li><li>논쟁 CRUD API, 초대 링크</li><li>3단계 위자드 UI 완성</li><li>주장 입력 + 판결문 피드</li><li><strong>[v2.0]</strong> 실시간 채팅 기본 구현 + 로비</li></ul></div></div>
+      <div class="timeline-week"><div class="timeline-label">WEEK 3<span class="timeline-days">Day 11~15</span></div><div class="timeline-content"><strong>완성도 + v2.0 기능</strong><ul><li>복합 판결 로직, 시민 투표 API/UI</li><li>3단계 콘텐츠 방어 시스템</li><li>5항목 점수 시각화, 마이페이지, 랭킹</li><li>판결문 공유</li><li>오늘의 논쟁 (Daily Debate) 구현</li><li><strong>[v2.0]</strong> 알림 시스템, 댓글, 관리자 대시보드</li></ul></div></div>
+      <div class="timeline-week"><div class="timeline-label" style="background:#059669;">WEEK 4<span class="timeline-days">Day 16~20</span></div><div class="timeline-content"><strong>통합 테스트 + 배포</strong><ul><li>E2E 시나리오 테스트 (텍스트 모드 + 채팅 모드)</li><li>버그 수정 및 UI 폴리싱</li><li>Vercel + Render 배포</li><li>최종 데모 준비</li><li><strong>[v2.0]</strong> Socket.io 부하 테스트 + 이탈 감지 검증</li></ul></div></div>
+    </div>
+    <div class="info-box"><strong>공수 요약:</strong> A(백엔드 172h) + B(프론트A 104h) + C(프론트B 76h) + D(프론트C 92h) = 총 464h. v2.0 기능 추가로 인해 기존 320h에서 464h로 증가. AI 에이전트(Claude Code) 활용으로 생산성 보완.</div>
+  </div>
+
+  <!-- ==================== 08. 리스크 및 대응 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">08.</span> 리스크 및 대응 전략</h2>
+    <table>
+      <thead><tr><th style="width:180px;">리스크</th><th>대응 전략</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CORS 이슈</strong></td><td>Express cors 미들웨어 <strong>Day 1</strong>에 설정. 환경별 origin 분리 관리.</td></tr>
+        <tr><td><strong>AI 응답 형식 불일치</strong></td><td>동일 프롬프트 + JSON 모드 강제. 파싱 실패 시 해당 AI 제외, 나머지로 판결.</td></tr>
+        <tr><td><strong>AI API 비용</strong></td><td>개발 중 mock 데이터. 콘텐츠 필터는 gpt-4o. 판결당 ~185원 (GPT-4.1 80원 + Claude Sonnet 4 100원 + Gemini 5원).</td></tr>
+        <tr><td><strong>Supabase 학습 곡선</strong></td><td>Day 1~2 전원 튜토리얼. 공식 문서 핸즈온.</td></tr>
+        <tr><td><strong>TIER 1 확대 (464h)</strong></td><td>핵심 루프 #1~6 최우선 &rarr; #7~8 후순위. 지연 시 v2.0 기능 드롭. AI 에이전트 활용으로 생산성 보완.</td></tr>
+        <tr><td><strong>5항목 루브릭 편차</strong></td><td>프롬프트에 항목별 기준 명확 기술 + Few-shot 예시. 테스트 10건 검증.</td></tr>
+        <tr><td><strong>30명 임계값 부족</strong></td><td>투표 마감 시 30명 미만이면 AI 100% 판결. "N명 더 참여 시 반영" 안내. VOTE_DURATION_HOURS 환경변수로 투표 기간 조정 가능.</td></tr>
+        <tr><td><strong>콘텐츠 방어 오탐</strong></td><td>1단계 보수적, 2단계 warn 위주. 차단 로그 기록 후 분석.</td></tr>
+        <tr><td><strong>Socket.io 연결 불안정</strong> <span class="completed-badge">v2.0</span></td><td>WebSocket 폴백(polling) 자동 전환. 재연결 로직 내장. 이탈 감지 2분 유예.</td></tr>
+        <tr><td><strong>채팅 서버 부하</strong> <span class="completed-badge">v2.0</span></td><td>방별 네임스페이스 분리. 메시지 배치 처리. 동시 접속 상한 설정.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==================== 09. 기대효과 및 활용방안 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">09.</span> 기대효과 및 활용방안</h2>
+
+    <h3>기대효과</h3>
+    <table>
+      <thead><tr><th style="width:40px;">#</th><th style="width:170px;">효과</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>온라인 논쟁 문화 개선</strong></td><td>감정적 싸움 대신 5항목 루브릭 기반의 구조화된 논쟁으로 전환. 논리와 근거 중심의 건전한 토론 문화 형성 기여</td></tr>
+        <tr><td>2</td><td><strong>AI 공정성 검증 모델 제시</strong></td><td>단일 AI가 아닌 3사 독립 판결 + 다수결 방식을 통해 AI 편향 문제를 구조적으로 완화하는 레퍼런스 모델 확립</td></tr>
+        <tr><td>3</td><td><strong>시민 참여형 판결 프레임</strong></td><td>AI 3사(각 25%)와 시민(25%)을 75:25로 결합하는 새로운 의사결정 프레임워크 제시</td></tr>
+        <tr><td>4</td><td><strong>논증력 향상 도구</strong></td><td>5항목 점수 시각화를 통해 사용자가 자신의 논증 강점/약점을 파악하고 개선할 수 있는 학습 효과</td></tr>
+        <tr><td>5</td><td><strong>유해 콘텐츠 감소</strong></td><td>3단계 방어 시스템으로 비속어, 혐오, 선동 콘텐츠를 사전 차단하여 플랫폼 건전성 유지</td></tr>
+        <tr><td>6</td><td><strong>실시간 소통 활성화</strong> <span class="completed-badge">v2.0</span></td><td>실시간 채팅 논쟁으로 즉각적인 논쟁 경험 제공. 로비 시스템을 통한 자연스러운 매칭과 커뮤니티 형성</td></tr>
+      </tbody>
+    </table>
+
+    <h3>활용방안</h3>
+    <table>
+      <thead><tr><th style="width:150px;">활용 분야</th><th>활용 방식</th><th>대상</th></tr></thead>
+      <tbody>
+        <tr><td><strong>일상 논쟁 해결</strong></td><td>친구, 연인, 동료 간 사소한 의견 충돌을 AI 판결로 재미있게 해결</td><td>일반 사용자</td></tr>
+        <tr><td><strong>실시간 논쟁</strong> <span class="completed-badge">v2.0</span></td><td>로비에서 공개 방에 참여하여 즉시 실시간 채팅 논쟁. 15분 제한으로 집중력 있는 토론</td><td>일반 사용자</td></tr>
+        <tr><td><strong>교육 현장</strong></td><td>토론 수업에서 학생 논증력을 AI 5항목 루브릭으로 정량 평가. 논술/면접 대비 연습 도구</td><td>학교, 학원</td></tr>
+        <tr><td><strong>콘텐츠 제작</strong></td><td>유튜브, SNS 콘텐츠 소재로 논쟁 판결 결과 활용 (바이럴 마케팅 효과)</td><td>크리에이터</td></tr>
+        <tr><td><strong>기업 의사결정</strong></td><td>사내 브레인스토밍이나 정책 결정 시 찬반 논쟁을 구조화하여 의사결정 지원</td><td>기업/단체</td></tr>
+        <tr><td><strong>정책 여론 분석</strong></td><td>사회적 이슈에 대한 AI 분석 + 시민 투표 데이터를 통해 여론 동향 파악</td><td>연구 기관, 미디어</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==================== 10.  성공 기준 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">10.</span>  성공 기준</h2>
+    <p class="lead">아래 시나리오가 중단 없이 완전하게 동작하면  성공으로 판단합니다.</p>
+
+    <h4>텍스트 모드 (10단계)</h4>
+    <ol class="success-flow">
+      <li><strong>카카오 로그인</strong> &mdash; 소셜 로그인으로 계정 생성 및 인증 완료</li>
+      <li><strong>3단계 위자드</strong> &mdash; 목적(승부/합의/분석) &rarr; 렌즈(논리/감정 등) &rarr; 주제+카테고리 입력</li>
+      <li><strong>초대 링크 생성</strong> &mdash; 고유 링크 복사 후 상대방에게 전달</li>
+      <li><strong>상대방 참여</strong> &mdash; 초대 링크를 통해 논쟁 방 입장</li>
+      <li><strong>주장 입력 (콘텐츠 방어)</strong> &mdash; 양측 50~2,000자 입력. 3단계 필터 정상 동작</li>
+      <li><strong>AI 3사 5항목 채점</strong> &mdash; GPT-4.1, Gemini, Claude Sonnet 4 병렬 호출 및 루브릭 채점</li>
+      <li><strong>판결 결과 표시</strong> &mdash; AI 판결 즉시 표시 + status 'voting' 전환 + vote_deadline 설정</li>
+      <li><strong>시민 투표</strong> &mdash; 투표 기간(24h) 동안 공개 피드에서 시민이 A/B 중 선택하여 투표</li>
+      <li><strong>복합 판결 반영</strong> &mdash; 투표 마감 후 30명 이상 시 AI 각 25%(75%) + 시민 25% 복합 점수 확정, status 'completed' 전환</li>
+      <li><strong>랭킹 갱신</strong> &mdash; 판결 결과에 따른 사용자 랭킹 업데이트</li>
+    </ol>
+
+    <h4>채팅 모드 (8단계) <span class="completed-badge">v2.0 NEW</span></h4>
+    <ol class="success-flow">
+      <li><strong>로비 입장</strong> &mdash; 공개 방 목록 실시간 표시, 참여자 프레즌스 확인</li>
+      <li><strong>방 생성 또는 참여</strong> &mdash; 사이드(A/B) 선택 후 채팅방 입장</li>
+      <li><strong>실시간 채팅</strong> &mdash; 15분 서버 타이머 작동, 비속어 실시간 필터링</li>
+      <li><strong>상태 자동 전환</strong> &mdash; B측 참여 시 waiting&rarr;chatting, 타이머 만료 시 chatting&rarr;judging</li>
+      <li><strong>AI 판결</strong> &mdash; 채팅 로그 기반 3사 AI 병렬 판결</li>
+      <li><strong>판결 결과 + 시민 투표</strong> &mdash; 텍스트 모드와 동일한 복합 판결 플로우</li>
+      <li><strong>알림 수신</strong> &mdash; 판결 완료 알림, 읽음 처리</li>
+      <li><strong>이탈 감지</strong> &mdash; disconnect 후 2분 내 미복귀 시 자동 판결 정상 동작</li>
+    </ol>
+  </div>
+
+  <!-- ==================== 11. v2.0 로드맵 ==================== -->
+  <div class="page">
+    <h2><span class="section-num">11.</span> v2.0 로드맵</h2>
+    <p class="lead"> 출시 이후, 사용자 피드백과 데이터를 기반으로 아래 우선순위에 따라 기능을 확장합니다. v2.0에서 구현 완료된 항목은 표시하였습니다.</p>
+
+    <div class="roadmap-item">
+      <span class="roadmap-priority priority-1">1순위</span>
+      <div class="roadmap-text"><strong>실시간 채팅 논쟁 모드</strong> <span class="completed-badge">v2.0 구현 완료</span> &mdash; Socket.io 기반 1:1 실시간 채팅, 15분 서버 타이머, 이탈 감지<br><strong>알림 시스템</strong> <span class="completed-badge">v2.0 구현 완료</span> &mdash; 판결 완료/채팅 시작/투표 알림, 읽음 처리<br><strong>관리자 대시보드</strong> <span class="completed-badge">v2.0 구현 완료</span> &mdash; 서비스 통계, AI 사용량, 일별 트렌드</div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority priority-1">1순위</span>
+      <div class="roadmap-text"><strong>반박 라운드 추가</strong> &mdash; 3단계 라운드(주장 &rarr; 반박 &rarr; 최종변론)<br><strong>카카오톡 공유 + OG 카드</strong> &mdash; 네이티브 공유 API 및 커스텀 OG 이미지</div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority priority-2">2순위</span>
+      <div class="roadmap-text"><strong>Next.js 전환</strong> &mdash; SSR/ISR 도입 (SEO 개선)<br><strong>애플 OAuth</strong> &mdash; 소셜 로그인 3종 완성</div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority priority-3">3순위</span>
+      <div class="roadmap-text"><strong>랜덤 매칭</strong> &mdash; 같은 리그 내 랜덤 상대 매칭<br><strong>논리 분석 프로필</strong> &mdash; 사용자별 논증 스타일 분석</div>
+    </div>
+    <div class="roadmap-item">
+      <span class="roadmap-priority priority-4">4순위</span>
+      <div class="roadmap-text"><strong>Moragora Pro (결제)</strong> &mdash; 프리미엄 기능 (무제한 논쟁, 상세 리포트, 광고 제거)</div>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 24px; border-top: 2px solid var(--border-light);">
+      <p style="text-align: center; color: var(--text-muted); font-size: 9pt;">&mdash; 다음 페이지: 변경 이력 &mdash;</p>
+    </div>
+  </div>
+
+  <!-- 변경 이력 페이지 -->
+  <div class="page">
+    <h2><span class="section-num">Appendix</span> 변경 이력</h2>
+    <p class="lead">본 기획서의 버전별 변경 내역을 기록합니다.</p>
+
+    <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:9.5pt;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:80px;">버전</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:100px;">날짜</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border);">변경 내용</th>
+          <th style="padding:10px 12px; text-align:left; border-bottom:2px solid var(--border); width:80px;">작성자</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.0</td>
+          <td style="padding:10px 12px;">2026-02-27</td>
+          <td style="padding:10px 12px;">
+            <strong>최초 작성</strong><br>
+            &bull; 프로젝트 개요 및 핵심 가치 정의<br>
+            &bull; 주요 기능 정의 (논쟁 생성, 주장 작성, AI 판결, 시민 투표)<br>
+            &bull; 기술 스택 선정 (React 18 + Vite, Express.js, Supabase)<br>
+            &bull; 5단계 논쟁 플로우 설계<br>
+            &bull; AI 판결 시스템 설계 (3개 AI 합의)<br>
+            &bull; 개발 일정 및 마일스톤 수립 (4주 20일)<br>
+            &bull; v2.0 로드맵 초안
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.1</td>
+          <td style="padding:10px 12px;">2026-03-05</td>
+          <td style="padding:10px 12px;">
+            <strong>시민 투표 & 소셜 로그인 반영</strong><br>
+            &bull; 로그인/회원가입 &rarr; 소셜 로그인(카카오/Google OAuth)으로 변경<br>
+            &bull; 시민 투표 단계 상세화 (24시간 제한, 30명 이상 시 반영)<br>
+            &bull; 복합 판결 구조 도입 (AI 각 25% + 시민 25%)<br>
+            &bull; VOTE_DURATION_HOURS 환경변수 추가<br>
+            &bull; 논쟁 상태에 voting 단계 추가 (waiting &rarr; arguing &rarr; judging &rarr; voting &rarr; completed)<br>
+            &bull; 변경 이력 페이지 추가
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.2</td>
+          <td style="padding:10px 12px;">2026-03-05</td>
+          <td style="padding:10px 12px;">
+            <strong>TIER 2 기능 추가 (56h &rarr; 100h)</strong><br>
+            &bull; #17 커뮤니티 게시판 추가 (사용자 간 자유 소통, 24h)<br>
+            &bull; #18 분석 상세 대시보드 추가 (최근 vs 새 판결 5항목 점수 비교, 20h)
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.3</td>
+          <td style="padding:10px 12px;">2026-03-05</td>
+          <td style="padding:10px 12px;">
+            <strong>오늘의 논쟁 TIER 1 승격</strong><br>
+            &bull; "오늘의 논쟁" v2.0 제외 &rarr; TIER 1 #12로 이동 (24h)<br>
+            &bull; TIER 1 공수 260h &rarr; 284h<br>
+            &bull; v2.0 로드맵 2순위에서 제거<br>
+            &bull; WEEK 3 일정에 오늘의 논쟁 구현 추가<br>
+            &bull; TIER 2 번호 재조정 (#13~#19)
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.4</td>
+          <td style="padding:10px 12px;">2026-03-06</td>
+          <td style="padding:10px 12px;">
+            <strong>리그 시스템 TIER 2 반영</strong><br>
+            &bull; TIER 2 #13 "랭킹" &rarr; "리그 랭킹"으로 변경 (5단계 리그, XP, 조별 랭킹 상세 기술)<br>
+            &bull; 5단계 리그를 v2.0 제외 항목에서 제거 (TIER 2로 승격)<br>
+            &bull; v2.0 로드맵 3순위에서 리그 제거, 랜덤 매칭만 잔류
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v1.5</td>
+          <td style="padding:10px 12px;">2026-03-12</td>
+          <td style="padding:10px 12px;">
+            <strong>실제 배포 반영 (v1.1.0 릴리즈)</strong><br>
+            &bull; XP 시스템 구현 (승리+30, 패배+5, 무승부+15, 일일논쟁+10, 투표 정산+3/-3)<br>
+            &bull; 티어 시스템 구현 (시민/배심원/변호사/판사/대법관 XP 기반 5단계)<br>
+            &bull; 투표 취소 API 추가 (DELETE /api/votes/:debateId)<br>
+            &bull; 동적 OG 메타태그 엔드포인트 추가 (GET /og/invite/:inviteCode)<br>
+            &bull; 홈피드 API 페이지네이션 추가 (page, limit, hasNext)<br>
+            &bull; AI 병렬 판결 (GPT-4.1 + Gemini 2.5 Flash + Claude Sonnet 4, Grok-3-Mini fallback)<br>
+            &bull; 콘텐츠 필터 3단계 시스템 (금칙어 &rarr; AI 분석 &rarr; 최종 차단)<br>
+            &bull; 피드백 시스템 (만족도 5항목 + 텍스트 피드백)<br>
+            &bull; 카테고리/목적/렌즈 영문 &rarr; 한글 통일<br>
+            &bull; 카카오톡 공유 동적 제목 (토론 주제 포함)<br>
+            &bull; 인프라: Render(백엔드) + Vercel(프론트) + Supabase(DB) 배포 완료
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v2.0</td>
+          <td style="padding:10px 12px;">2026-03-25</td>
+          <td style="padding:10px 12px;">
+            <strong>실시간 채팅 모드 + 로비 + 알림 + 관리자 대시보드</strong><br>
+            &bull; Socket.io 기반 실시간 채팅 논쟁 모드 추가 (15분 서버 타이머, 비속어 실시간 필터, opponent 자동 등록, waiting&rarr;chatting 자동 전환, 이탈 감지 2분 후 자동 판결)<br>
+            &bull; 실시간 로비 시스템 추가 (공개 방 목록, 참여자 프레즌스, 사이드 선택)<br>
+            &bull; 알림 시스템 추가 (판결 완료/채팅 시작/투표 알림, 읽음 처리)<br>
+            &bull; 관리자 대시보드 추가 (서비스 통계, AI 사용량, 일별 트렌드)<br>
+            &bull; 댓글 시스템 추가 (판결문 의견 작성, 좋아요)<br>
+            &bull; AI 주제 분석 추가 (주제에서 자동 찬/반 생성)<br>
+            &bull; 오늘의 논쟁 (Daily Debate) 자동 생성 기능 추가<br>
+            &bull; 기술 스택 업데이트: React 19, Socket.io, Framer Motion 추가<br>
+            &bull; 논쟁 상태 전이 확장: waiting &rarr; both_joined &rarr; arguing &rarr; chatting &rarr; judging &rarr; voting &rarr; completed<br>
+            &bull; TIER 1 공수 284h &rarr; 444h (v2.0 기능 160h 추가)<br>
+            &bull; TIER 2 번호 재조정 (#20~#26), 채팅 로그 뷰어 추가
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light); background:var(--bg-gray);">
+          <td style="padding:10px 12px; font-weight:700; color:var(--accent);">v2.1</td>
+          <td style="padding:10px 12px;">2026-03-30</td>
+          <td style="padding:10px 12px;">
+            <strong>AI 모델 업데이트 + 신규 기능 추가</strong><br>
+            &bull; 판결 AI 모델 변경: GPT-4o &rarr; GPT-4.1, Claude Sonnet &rarr; Claude Sonnet 4<br>
+            &bull; 판결 폴백 모델: Grok 3 Mini &rarr; Grok-3-Mini<br>
+            &bull; 소크라테스 산파술 코칭 시스템 추가 (o4-mini 기반)<br>
+            &bull; 합의/분석 판결 모드 추가 (compete 외 consensus/analyze 모드)<br>
+            &bull; 실시간 루브릭 점수 추가 (gpt-4.1-mini 기반 주장 작성 중 실시간 피드백)<br>
+            &bull; AI 모델 역할 세분화: 주제 분석/입장 생성(gpt-4.1-mini), Solo 반론(gpt-4o-mini), 콘텐츠 필터(gpt-4o), 루브릭 점수(gpt-4.1-mini)<br>
+            &bull; TIER 1 공수 464h &rarr; 504h (신규 기능 40h 추가)
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 40px; padding-top: 24px; border-top: 2px solid var(--border-light);">
+      <p style="text-align: center; color: var(--text-muted); font-size: 9pt;">&mdash; 문서 끝 &mdash;</p>
+      <p style="text-align: center; color: var(--text-muted); font-size: 8.5pt; margin-top: 8px;">
+        Moragora  기획서 v2.1 | 2026년 3월 30일 최종 수정<br>본 문서는 Moragora 프로젝트의 내부 기획 문서입니다.
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

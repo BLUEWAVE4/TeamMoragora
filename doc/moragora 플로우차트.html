@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moragora 플로우차트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --accent: #6366F1; --accent-light: #818CF8; --accent-bg: #EEF2FF;
+  --navy: #1B2A4A; --gold: #D4AF37;
+  --text-primary: #1E1E2E; --text-secondary: #4A4A5A; --text-muted: #6B7280;
+  --border: #D1D5DB; --border-light: #E5E7EB; --bg-white: #FFFFFF; --bg-gray: #F9FAFB;
+  --success: #059669; --warning: #D97706; --danger: #DC2626;
+  --gpt: #10A37F; --gemini: #4285F4; --claude: #D97706;
+  --live: #CA8A04;
+}
+body { font-family: 'Noto Sans KR', sans-serif; font-size: 10.5pt; line-height: 1.75; color: var(--text-primary); background: var(--bg-gray); }
+.document { width: 210mm; margin: 0 auto; background: var(--bg-white); }
+.page { width: 210mm; min-height: 297mm; padding: 25mm 22mm 30mm 22mm; background: var(--bg-white); position: relative; }
+@media print {
+  body { background: #fff; }
+  .page { box-shadow: none; page-break-after: always; min-height: auto; padding: 15mm 18mm; }
+  .page:last-child { page-break-after: avoid; }
+}
+
+/* Cover */
+.cover-page { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 297mm; padding: 40mm 30mm; }
+.cover-badge { display: inline-block; background: var(--accent); color: white; font-size: 9pt; font-weight: 500; letter-spacing: 3px; padding: 6px 20px; border-radius: 20px; margin-bottom: 24px; }
+.cover-title { font-size: 42pt; font-weight: 900; color: var(--accent); letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; }
+.cover-subtitle { font-size: 16pt; font-weight: 500; color: var(--text-secondary); margin-bottom: 48px; }
+.cover-divider { width: 80px; height: 3px; background: var(--accent); margin: 0 auto 48px; }
+.cover-meta { border-top: 1px solid var(--border-light); padding-top: 32px; width: 100%; max-width: 360px; }
+.cover-meta-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 9.5pt; }
+.cover-meta-label { color: var(--text-muted); }
+.cover-meta-value { color: var(--text-primary); font-weight: 500; }
+
+/* Headings */
+h2 { font-size: 18pt; font-weight: 900; color: var(--navy); margin-bottom: 20px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
+h2 .sn { color: var(--accent); margin-right: 8px; }
+h3 { font-size: 12pt; font-weight: 700; color: var(--text-primary); margin: 24px 0 12px; }
+p.lead { font-size: 10pt; color: var(--text-secondary); margin-bottom: 20px; }
+
+/* ===== FLOWCHART ===== */
+.flow-container { position: relative; padding: 0 20px; }
+
+/* Vertical line */
+.flow-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: var(--border-light); transform: translateX(-50%); z-index: 0; }
+
+/* Node */
+.flow-node { position: relative; display: flex; align-items: center; margin-bottom: 12px; z-index: 1; }
+.flow-node.left { justify-content: flex-end; padding-right: calc(50% + 28px); }
+.flow-node.right { justify-content: flex-start; padding-left: calc(50% + 28px); }
+.flow-node.center { justify-content: center; }
+
+.flow-card { background: var(--bg-white); border: 2px solid var(--border); border-radius: 12px; padding: 14px 18px; max-width: 240px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: border-color 0.2s; }
+.flow-card:hover { border-color: var(--accent-light); box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+
+.flow-card-num { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 8.5pt; font-weight: 700; text-align: center; margin-right: 8px; vertical-align: middle; }
+.flow-card-title { display: inline; font-size: 10.5pt; font-weight: 700; color: var(--navy); }
+.flow-card-desc { font-size: 8.5pt; color: var(--text-muted); margin-top: 6px; line-height: 1.6; }
+.flow-card-screen { display: inline-block; margin-top: 6px; font-size: 7.5pt; font-weight: 600; color: var(--accent); background: var(--accent-bg); padding: 2px 8px; border-radius: 10px; }
+.flow-card-status { display: inline-block; margin-top: 6px; margin-left: 4px; font-size: 7.5pt; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.status-waiting { background: #FEF3C7; color: #92400E; }
+.status-arguing { background: #DBEAFE; color: #1E40AF; }
+.status-chatting { background: #FDF4FF; color: #86198F; }
+.status-judging { background: #E0E7FF; color: #3730A3; }
+.status-voting { background: #FDE68A; color: #78350F; }
+.status-completed { background: #D1FAE5; color: #065F46; }
+
+/* Connector dot on center line */
+.flow-dot { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); transform: translate(-50%, -50%); z-index: 2; }
+.flow-dot.gold { background: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+.flow-dot.success { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+.flow-dot.danger { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+.flow-dot.navy { background: var(--navy); box-shadow: 0 0 0 2px var(--navy); }
+.flow-dot.live { background: var(--live); box-shadow: 0 0 0 2px var(--live); }
+
+/* Arrow between nodes */
+.flow-arrow-down { text-align: center; margin: -4px 0; position: relative; z-index: 1; color: var(--border); font-size: 14pt; line-height: 1; }
+
+/* Decision diamond */
+.flow-diamond { background: #FEF3C7; border: 2px solid var(--warning); border-radius: 8px; padding: 10px 16px; max-width: 200px; text-align: center; font-size: 9pt; font-weight: 600; color: #92400E; transform: rotate(0deg); }
+
+/* Branch labels */
+.flow-branch { display: flex; justify-content: center; gap: 80px; margin: 8px 0; position: relative; z-index: 1; }
+.flow-branch-label { font-size: 8pt; font-weight: 700; padding: 3px 12px; border-radius: 10px; }
+.branch-yes { background: #D1FAE5; color: #065F46; }
+.branch-no { background: #FEE2E2; color: #991B1B; }
+
+/* AI cards */
+.ai-cards { display: flex; gap: 8px; margin-top: 8px; }
+.ai-chip { font-size: 7pt; font-weight: 700; color: #fff; padding: 2px 8px; border-radius: 8px; }
+
+/* Phase group */
+.phase-group { margin-bottom: 8px; }
+.phase-label { text-align: center; font-size: 8pt; font-weight: 700; letter-spacing: 2px; color: var(--text-muted); background: var(--bg-gray); border-radius: 20px; padding: 4px 16px; display: inline-block; margin: 0 auto 12px; position: relative; z-index: 1; }
+.phase-wrapper { text-align: center; margin-bottom: 6px; }
+
+/* Info box */
+.info-box { background: var(--accent-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 9.5pt; }
+
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 16px; background: var(--bg-gray); border-radius: 8px; font-size: 8.5pt; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Socket event table */
+.socket-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 12px 0; }
+.socket-table th { background: var(--navy); color: #fff; padding: 8px 12px; text-align: left; font-size: 8.5pt; }
+.socket-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-light); font-size: 8.5pt; }
+.socket-table tr:nth-child(even) { background: var(--bg-gray); }
+</style>
+</head>
+<body>
+<div class="document">
+
+  <!-- ===== COVER ===== -->
+  <div class="page cover-page">
+    <div class="cover-badge">MORAGORA</div>
+    <div class="cover-title">플로우차트</div>
+    <div class="cover-subtitle">핵심 기능 흐름도</div>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+      <div class="cover-meta-row"><span class="cover-meta-label">문서 유형</span><span class="cover-meta-value">플로우차트 (Flowchart)</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">작성일</span><span class="cover-meta-value">2026년 3월 25일</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">버전</span><span class="cover-meta-value">v2.0</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">참조 문서</span><span class="cover-meta-value">기획서 v1.3 · 화면설계서 v3.0</span></div>
+      <div class="cover-meta-row"><span class="cover-meta-label">핵심 플로우</span><span class="cover-meta-value" style="color:var(--accent);font-weight:700;">로그인 → 논쟁 → 채팅 → 판결 → 투표</span></div>
+    </div>
+  </div>
+
+  <!-- ===== 01. 메인 플로우 ===== -->
+  <div class="page">
+    <h2><span class="sn">01.</span> 핵심 논쟁 플로우</h2>
+    <p class="lead">사용자가 소셜 로그인 후 논쟁을 생성하고, AI 판결 + 시민 투표를 거쳐 최종 복합 판결이 확정되는 전체 흐름입니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <!-- Phase: 인증 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 1 · 인증</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">1</span><span class="flow-card-title">소셜 로그인</span>
+          <div class="flow-card-desc">카카오 / Google OAuth<br>Supabase Auth → signInWithOAuth</div>
+          <span class="flow-card-screen">소셜 로그인 화면</span>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot"></div>
+        <div class="flow-card">
+          <span class="flow-card-num">2</span><span class="flow-card-title">프로필 생성</span>
+          <div class="flow-card-desc">최초 로그인 시 profiles 테이블 자동 생성<br>닉네임 · 아바타 설정</div>
+          <span class="flow-card-screen">홈 피드 이동</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 논쟁 생성 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 2 · 논쟁 생성</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">3</span><span class="flow-card-title">3단계 위자드</span>
+          <div class="flow-card-desc">
+            Step 1: 목적 선택 (승부/합의/분석)<br>
+            Step 2: 렌즈 선택 (논리/감정/실용/윤리/종합/자유)<br>
+            Step 3: 주제 + 카테고리 입력
+          </div>
+          <span class="flow-card-screen">논쟁 생성 화면</span>
+          <span class="flow-card-status status-waiting">waiting</span>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot"></div>
+        <div class="flow-card">
+          <span class="flow-card-num">4</span><span class="flow-card-title">초대 링크 공유</span>
+          <div class="flow-card-desc">고유 초대 코드 생성 → 링크 복사<br>상대방에게 전달</div>
+          <span class="flow-card-screen">초대 화면</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 모드 분기 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">🎮 모드 선택?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">duo → 상대 초대</span>
+        <span class="flow-branch-label branch-no">solo → AI 반박</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 주장 입력 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 3 · 주장 입력</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">5</span><span class="flow-card-title">A측 주장 입력</span>
+          <div class="flow-card-desc">50~2,000자 텍스트 입력<br>입력 전처리(인젝션 방어 15패턴 + HTML 제거 + 유사도 검사)<br>3단계 콘텐츠 방어 필터 통과</div>
+          <span class="flow-card-screen">주장 입력 화면</span>
+          <span class="flow-card-status status-arguing">arguing</span>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot"></div>
+        <div class="flow-card">
+          <span class="flow-card-num">6</span><span class="flow-card-title">B측 주장 입력</span>
+          <div class="flow-card-desc"><strong>duo:</strong> 초대 링크로 입장 → 주장 작성<br><strong>solo:</strong> GPT-4o가 B측 반대 주장 자동 생성<br>양측 모두 완료 시 AI 호출 트리거</div>
+          <span class="flow-card-screen">주장 입력 화면</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 콘텐츠 필터 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">🛡️ 콘텐츠 방어 통과?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">통과 → 계속</span>
+        <span class="flow-branch-label branch-no">차단 → 재작성</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: AI 판결 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 4 · AI 판결</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">7</span><span class="flow-card-title">AI 3사 병렬 호출</span>
+          <div class="flow-card-desc">Promise.allSettled 병렬 실행<br>5항목 × 20점 루브릭 독립 채점<br><strong>1-2개 실패 시 Grok 3 Mini fallback 투입</strong></div>
+          <div class="ai-cards">
+            <span class="ai-chip" style="background:var(--gpt);">GPT-4.1 (25%)</span>
+            <span class="ai-chip" style="background:var(--gemini);">Gemini (25%)</span>
+            <span class="ai-chip" style="background:var(--claude);">Claude (25%)</span>
+            <span class="ai-chip" style="background:#E74C3C;">Grok (fallback)</span>
+          </div>
+          <span class="flow-card-screen">판결 대기 화면</span>
+          <span class="flow-card-status status-judging">judging</span>
+        </div>
+        <div class="flow-dot navy"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot navy"></div>
+        <div class="flow-card">
+          <span class="flow-card-num">8</span><span class="flow-card-title">AI 판결 결과 즉시 표시</span>
+          <div class="flow-card-desc">3사 개별 판결 + 다수결 종합<br>5항목 점수 시각화 + 판결문</div>
+          <span class="flow-card-screen">판결 결과 화면</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 시민 투표 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 5 · 시민 투표</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:var(--gold);">
+          <span class="flow-card-num" style="background:var(--gold);">9</span><span class="flow-card-title">시민 투표 개시</span>
+          <div class="flow-card-desc">vote_deadline 설정 (24h)<br>공개 피드에 논쟁 노출<br>시민이 A/B 중 선택 투표 (1인 1표)</div>
+          <span class="flow-card-screen">홈 피드 · 판결 상세</span>
+          <span class="flow-card-status status-voting">voting</span>
+        </div>
+        <div class="flow-dot gold"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 30명 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">🗳️ 투표 마감 · 30명 이상?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">≥ 30명 → 복합 판결</span>
+        <span class="flow-branch-label branch-no">&lt; 30명 → AI 100%</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 최종 판결 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 6 · 최종 판결</span></div>
+
+      <div class="flow-node right">
+        <div class="flow-dot success"></div>
+        <div class="flow-card" style="border-color:var(--success);">
+          <span class="flow-card-num" style="background:var(--success);">10</span><span class="flow-card-title">복합 판결 확정</span>
+          <div class="flow-card-desc">
+            GPT-4.1(25%) + Gemini(25%) + Claude(25%) + 시민(25%)<br>
+            최종 점수 산출 → winner_side 결정<br>
+            status → completed 전환
+          </div>
+          <span class="flow-card-screen">판결 결과 화면</span>
+          <span class="flow-card-status status-completed">completed</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--navy);">11</span><span class="flow-card-title">프로필 전적 자동 갱신</span>
+          <div class="flow-card-desc">finalizeVerdict()에서 자동 실행<br>wins/losses/draws + total_score 갱신<br>판결문 링크 복사 / 공유</div>
+          <span class="flow-card-screen">마이페이지 · 리그</span>
+        </div>
+        <div class="flow-dot success"></div>
+      </div>
+
+    </div><!-- /flow-container -->
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> 일반 단계</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--navy);"></div> AI 판결</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold);"></div> 시민 투표</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--success);"></div> 최종 확정</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div> 분기 판단</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--live);"></div> 실시간 채팅</div>
+    </div>
+  </div>
+
+  <!-- ===== 02. 콘텐츠 방어 플로우 ===== -->
+  <div class="page">
+    <h2><span class="sn">02.</span> 콘텐츠 방어 플로우</h2>
+    <p class="lead">주장 입력 시 3단계 콘텐츠 방어 시스템이 순차적으로 적용됩니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--danger);">1</span><span class="flow-card-title">1단계: 비속어 사전 필터</span>
+          <div class="flow-card-desc">비속어 사전 + 개인정보 정규식<br>실시간 미들웨어 · 즉시 차단</div>
+        </div>
+        <div class="flow-dot danger"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node center">
+        <div class="flow-diamond">통과?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">통과</span>
+        <span class="flow-branch-label branch-no">차단 → 수정 요청</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot" style="background:var(--warning);box-shadow:0 0 0 2px var(--warning);"></div>
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--warning);">2</span><span class="flow-card-title">2단계: AI 콘텐츠 필터</span>
+          <div class="flow-card-desc">Gemini Flash 경량 AI 분석<br>선동 / 혐오 / 불법 판별<br>결과: pass · warn · block</div>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node center">
+        <div class="flow-diamond">pass / warn / block?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">pass / warn → 계속</span>
+        <span class="flow-branch-label branch-no">block → 차단</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--navy);">3</span><span class="flow-card-title">3단계: AI 게이트키핑</span>
+          <div class="flow-card-desc">주제 적합성 검토<br>카테고리 맞춤 검증<br>카테고리별 필터 강도 차등 적용</div>
+        </div>
+        <div class="flow-dot navy"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot success"></div>
+        <div class="flow-card" style="border-color:var(--success);">
+          <span class="flow-card-num" style="background:var(--success);">✓</span><span class="flow-card-title">주장 등록 완료</span>
+          <div class="flow-card-desc">content_filter_logs 기록<br>arguments 테이블 저장</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>카테고리별 방어 강도:</strong>
+      정치/사회 → <strong style="color:var(--danger);">높음</strong> (1~3단계 전체) &nbsp;|&nbsp;
+      연애/일상 → <strong style="color:var(--success);">낮음</strong> (1단계만) &nbsp;|&nbsp;
+      직장/교육 → <strong style="color:var(--warning);">중간</strong> (1~2단계)
+    </div>
+  </div>
+
+  <!-- ===== 03. 복합 판결 계산 플로우 ===== -->
+  <div class="page">
+    <h2><span class="sn">03.</span> 복합 판결 계산 플로우</h2>
+    <p class="lead">AI 3사 독립 채점과 시민 투표를 결합하여 최종 점수를 산출하는 상세 흐름입니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--gpt);">G</span><span class="flow-card-title">GPT-4.1 채점</span>
+          <div class="flow-card-desc">5항목 × 20점 독립 채점<br>score_a · score_b · verdict_text</div>
+          <span class="flow-card-screen">가중치 25%</span>
+        </div>
+        <div class="flow-dot" style="background:var(--gpt);box-shadow:0 0 0 2px var(--gpt);"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot" style="background:var(--gemini);box-shadow:0 0 0 2px var(--gemini);"></div>
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--gemini);">M</span><span class="flow-card-title">Gemini 2.5 Flash 채점</span>
+          <div class="flow-card-desc">5항목 × 20점 독립 채점<br>+ 콘텐츠 필터 역할 겸임</div>
+          <span class="flow-card-screen">가중치 25%</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--claude);">C</span><span class="flow-card-title">Claude Sonnet 채점</span>
+          <div class="flow-card-desc">5항목 × 20점 독립 채점<br>score_a · score_b · verdict_text</div>
+          <span class="flow-card-screen">가중치 25%</span>
+        </div>
+        <div class="flow-dot" style="background:var(--claude);box-shadow:0 0 0 2px var(--claude);"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Grok fallback 분기 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">1-2개 모델 실패?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">실패 → Grok 3 Mini fallback</span>
+        <span class="flow-branch-label branch-no">전원 성공 → 계속</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:#E74C3C;">
+          <span class="flow-card-num" style="background:#E74C3C;">X</span><span class="flow-card-title">Grok 3 Mini Fallback</span>
+          <div class="flow-card-desc">실패 모델 대체 투입<br>동일 루브릭 · 동일 가중치로 채점<br>최소 2모델 이상 확보 시 판결 진행</div>
+          <span class="flow-card-screen">가중치: 실패 모델 대체</span>
+        </div>
+        <div class="flow-dot danger"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot gold"></div>
+        <div class="flow-card" style="border-color:var(--gold);">
+          <span class="flow-card-num" style="background:var(--gold);">🗳</span><span class="flow-card-title">시민 투표</span>
+          <div class="flow-card-desc">24시간 투표 기간<br>시민 점수 = (내 측 투표 / 전체) × 100</div>
+          <span class="flow-card-screen">가중치 25%</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node center">
+        <div class="flow-diamond">투표 참여 ≥ 30명?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">복합 판결</span>
+        <span class="flow-branch-label branch-no">AI 100%</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:var(--success);background:linear-gradient(135deg,#F0FDF4,#DCFCE7);">
+          <span class="flow-card-num" style="background:var(--success);">⚖</span><span class="flow-card-title">최종 점수 산출</span>
+          <div class="flow-card-desc" style="color:var(--text-primary);">
+            <strong>복합:</strong> G(25%) + M(25%) + C(25%) + 시민(25%)<br>
+            <strong>AI 전용:</strong> (G + M + C) / 3 = 평균 100%
+          </div>
+        </div>
+        <div class="flow-dot success"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot success"></div>
+        <div class="flow-card" style="border-color:var(--success);">
+          <span class="flow-card-num" style="background:var(--success);">✓</span><span class="flow-card-title">verdicts 테이블 확정</span>
+          <div class="flow-card-desc">final_score_a / final_score_b 저장<br>winner_side 결정 (A / B / draw)<br>is_citizen_applied 플래그 설정</div>
+          <span class="flow-card-status status-completed">completed</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>5항목 루브릭:</strong>
+      ① 논리 구조 (20점) · ② 근거 품질 (20점) · ③ 반박 대응 (20점) · ④ 일관성 (20점) · ⑤ 표현 적절성 (20점) = <strong>100점 만점</strong>
+    </div>
+  </div>
+
+  <!-- ===== 04. 상태 전이도 ===== -->
+  <div class="page">
+    <h2><span class="sn">04.</span> 논쟁 상태 전이도</h2>
+    <p class="lead">debates 테이블의 status 컬럼이 변경되는 전이 흐름입니다. v2.0에서 chatting 상태가 추가되었습니다.</p>
+
+    <h3>일반 모드 (mode: text)</h3>
+    <div style="display:flex;justify-content:center;align-items:center;gap:0;flex-wrap:wrap;margin:30px 0;">
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#FEF3C7;border:2px solid #F59E0B;font-weight:700;font-size:11pt;">waiting</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">논쟁 생성됨<br>상대방 대기</div>
+      </div>
+      <div style="padding:0 12px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#DBEAFE;border:2px solid #3B82F6;font-weight:700;font-size:11pt;">arguing</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">양측 주장<br>입력 중</div>
+      </div>
+      <div style="padding:0 12px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#E0E7FF;border:2px solid #6366F1;font-weight:700;font-size:11pt;">judging</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">AI 3사<br>판결 중</div>
+      </div>
+      <div style="padding:0 12px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#FDE68A;border:2px solid var(--gold);font-weight:700;font-size:11pt;">voting</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">시민 투표<br>진행 중 (24h)</div>
+      </div>
+      <div style="padding:0 12px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#D1FAE5;border:2px solid #059669;font-weight:700;font-size:11pt;">completed</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">최종 판결<br>확정</div>
+      </div>
+    </div>
+
+    <h3>채팅 모드 (mode: chat) &mdash; v2.0 신규</h3>
+    <div style="display:flex;justify-content:center;align-items:center;gap:0;flex-wrap:wrap;margin:30px 0;">
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#FEF3C7;border:2px solid #F59E0B;font-weight:700;font-size:11pt;">waiting</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">대기실<br>사이드 선택</div>
+      </div>
+      <div style="padding:0 10px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#FDF4FF;border:2px solid #A855F7;font-weight:700;font-size:11pt;color:#86198F;">chatting</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">실시간 채팅<br>논쟁 (15분)</div>
+      </div>
+      <div style="padding:0 10px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#E0E7FF;border:2px solid #6366F1;font-weight:700;font-size:11pt;">judging</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">AI 3사<br>판결 중</div>
+      </div>
+      <div style="padding:0 10px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#FDE68A;border:2px solid var(--gold);font-weight:700;font-size:11pt;">voting</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">시민 투표<br>(24h)</div>
+      </div>
+      <div style="padding:0 10px;font-size:20pt;color:var(--border);">→</div>
+      <div style="text-align:center;">
+        <div style="display:inline-block;padding:12px 24px;border-radius:10px;background:#D1FAE5;border:2px solid #059669;font-weight:700;font-size:11pt;">completed</div>
+        <div style="font-size:8pt;color:var(--text-muted);margin-top:4px;">최종 판결<br>확정</div>
+      </div>
+    </div>
+
+    <h3>상태 전이 조건</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:100px;">From</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:100px;">To</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:60px;">Mode</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">트리거 조건</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-waiting">waiting</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-arguing">arguing</span></td>
+          <td style="padding:10px 12px;">text</td>
+          <td style="padding:10px 12px;">duo: B측 사용자가 초대 링크를 통해 참여 / solo: 생성 시 즉시 arguing</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-waiting">waiting</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-chatting">chatting</span></td>
+          <td style="padding:10px 12px;">chat</td>
+          <td style="padding:10px 12px;">양측 사이드 선택 완료 + 방장 시작 클릭 → Socket.io <code>start-chat</code> 이벤트</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-arguing">arguing</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-judging">judging</span></td>
+          <td style="padding:10px 12px;">text</td>
+          <td style="padding:10px 12px;">양측 주장 입력 완료 (A측 + B측 모두 제출)</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-chatting">chatting</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-judging">judging</span></td>
+          <td style="padding:10px 12px;">chat</td>
+          <td style="padding:10px 12px;">타이머 15분 만료 OR 상대 이탈(2분 대기 후) → Socket.io <code>chat-ended</code> → 자동 판결 트리거</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-judging">judging</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-voting">voting</span></td>
+          <td style="padding:10px 12px;">all</td>
+          <td style="padding:10px 12px;">AI 3사 판결 완료 → verdicts 저장 + vote_deadline 설정</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-voting">voting</span></td>
+          <td style="padding:10px 12px;"><span class="flow-card-status status-completed">completed</span></td>
+          <td style="padding:10px 12px;">all</td>
+          <td style="padding:10px 12px;">vote_deadline 도달 → finalizeVerdict() 실행 → 복합 판결 확정</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Socket.io 이벤트 (채팅 모드)</h3>
+    <table class="socket-table">
+      <thead>
+        <tr>
+          <th>이벤트</th>
+          <th>방향</th>
+          <th>상태 전이</th>
+          <th>설명</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>join-room</code></td><td>C → S</td><td>-</td><td>대기실 입장, 참여자 목록 갱신</td></tr>
+        <tr><td><code>select-side</code></td><td>C → S</td><td>-</td><td>PRO/CON 사이드 선택</td></tr>
+        <tr><td><code>start-chat</code></td><td>C → S</td><td>waiting → chatting</td><td>방장이 시작 클릭, 서버 타이머 시작</td></tr>
+        <tr><td><code>send-message</code></td><td>C → S</td><td>waiting → chatting (자동)</td><td>메시지 전송, B측 opponent 자동 등록</td></tr>
+        <tr><td><code>new-message</code></td><td>S → C</td><td>-</td><td>브로드캐스트 메시지</td></tr>
+        <tr><td><code>typing</code></td><td>양방향</td><td>-</td><td>타이핑 인디케이터</td></tr>
+        <tr><td><code>timer-update</code></td><td>S → C</td><td>-</td><td>서버 기준 잔여 시간</td></tr>
+        <tr><td><code>chat-ended</code></td><td>S → C</td><td>chatting → judging</td><td>타이머 만료 / 상대 이탈, 판결 트리거</td></tr>
+      </tbody>
+    </table>
+
+    <h3>화면 매핑</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:120px;">상태</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">화면</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">API / Socket</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">DB 테이블</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-waiting">waiting</span></td>
+          <td style="padding:10px 12px;">초대 링크 / 대기실(ChatLobby)</td>
+          <td style="padding:10px 12px;">POST /api/debates<br>Socket: join-room, select-side</td>
+          <td style="padding:10px 12px;">debates, chat_rooms</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-arguing">arguing</span></td>
+          <td style="padding:10px 12px;">주장 입력 화면</td>
+          <td style="padding:10px 12px;">POST /api/debates/:id/arguments</td>
+          <td style="padding:10px 12px;">arguments, content_filter_logs</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-chatting">chatting</span></td>
+          <td style="padding:10px 12px;">실시간 채팅방(ChatRoom)</td>
+          <td style="padding:10px 12px;">Socket: send-message, timer-update</td>
+          <td style="padding:10px 12px;">chat_rooms, chat_messages</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-judging">judging</span></td>
+          <td style="padding:10px 12px;">판결 대기 화면</td>
+          <td style="padding:10px 12px;">GET /api/debates/:id/status</td>
+          <td style="padding:10px 12px;">ai_judgments</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-voting">voting</span></td>
+          <td style="padding:10px 12px;">판결 결과 + 투표</td>
+          <td style="padding:10px 12px;">POST /api/debates/:id/votes</td>
+          <td style="padding:10px 12px;">votes, verdicts</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;"><span class="flow-card-status status-completed">completed</span></td>
+          <td style="padding:10px 12px;">최종 판결 결과</td>
+          <td style="padding:10px 12px;">GET /api/debates/:id/verdict</td>
+          <td style="padding:10px 12px;">verdicts</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== 05. 실시간 채팅 논쟁 플로우 ===== -->
+  <div class="page">
+    <h2><span class="sn">05.</span> 실시간 채팅 논쟁 플로우</h2>
+    <p class="lead">로비 입장부터 채팅 논쟁, AI 판결까지의 실시간 채팅 전체 흐름입니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <!-- Phase: 로비 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 1 · 로비</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--live);">1</span><span class="flow-card-title">로비 입장</span>
+          <div class="flow-card-desc">실시간 논쟁 탭(로비) 클릭<br>공개 방 목록 조회 (10초 자동 갱신)<br>필터: 전체 / 대기중 / 진행중</div>
+          <span class="flow-card-screen">DebateLobbyPage</span>
+        </div>
+        <div class="flow-dot live"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 방 생성 or 입장 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">방 생성 or 입장?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">기존 방 입장</span>
+        <span class="flow-branch-label branch-no">새 방 생성</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 대기실 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 2 · 대기실</span></div>
+
+      <div class="flow-node right">
+        <div class="flow-dot live"></div>
+        <div class="flow-card" style="border-color:var(--live);">
+          <span class="flow-card-num" style="background:var(--live);">2</span><span class="flow-card-title">대기실 (ChatLobby)</span>
+          <div class="flow-card-desc">논제 표시 + 카테고리 태그<br>PRO(A) / CON(B) 사이드 선택<br>Socket.io 실시간 참여자 동기화</div>
+          <span class="flow-card-screen">ChatLobby</span>
+          <span class="flow-card-status status-waiting">waiting</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 양측 준비 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">양측 참여 완료?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">양측 선택 → 시작 가능</span>
+        <span class="flow-branch-label branch-no">대기 중...</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--navy);">3</span><span class="flow-card-title">방장 시작 클릭</span>
+          <div class="flow-card-desc">방장(방 생성자)만 시작 버튼 활성화<br>Socket.io <code>start-chat</code> 이벤트<br>서버 타이머 15분 시작</div>
+        </div>
+        <div class="flow-dot navy"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 채팅 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 3 · 채팅 (15분)</span></div>
+
+      <div class="flow-node right">
+        <div class="flow-dot" style="background:#A855F7;box-shadow:0 0 0 2px #A855F7;"></div>
+        <div class="flow-card" style="border-color:#A855F7;">
+          <span class="flow-card-num" style="background:#A855F7;">4</span><span class="flow-card-title">실시간 채팅</span>
+          <div class="flow-card-desc">메시지 송수신 (Socket.io)<br>비속어 필터 실시간 적용<br>발언권: 양측 각 20개<br>타이핑 인디케이터 표시</div>
+          <span class="flow-card-screen">ChatRoom</span>
+          <span class="flow-card-status status-chatting">chatting</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Decision: 종료 조건 -->
+      <div class="flow-node center">
+        <div class="flow-diamond">⏱ 종료 조건?</div>
+      </div>
+      <div class="flow-branch">
+        <span class="flow-branch-label branch-yes">타이머 만료 (15분)</span>
+        <span class="flow-branch-label branch-no">상대 이탈 (2분 대기)</span>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--danger);">5</span><span class="flow-card-title">종료 오버레이</span>
+          <div class="flow-card-desc">Socket.io <code>chat-ended</code> 수신<br>"논쟁이 종료되었습니다" 표시<br>채팅 로그 DB 확정 저장</div>
+        </div>
+        <div class="flow-dot danger"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <!-- Phase: 판결 -->
+      <div class="phase-wrapper"><span class="phase-label">PHASE 4 · 자동 판결 트리거</span></div>
+
+      <div class="flow-node right">
+        <div class="flow-dot navy"></div>
+        <div class="flow-card" style="border-color:var(--navy);">
+          <span class="flow-card-num" style="background:var(--navy);">6</span><span class="flow-card-title">AI 3모델 병렬 판결</span>
+          <div class="flow-card-desc">채팅 로그 → AI 프롬프트 조립<br>GPT-4.1 + Gemini + Claude 병렬 호출<br>채팅 기반 채점 (발언 평가 / 논지 근접 / 논리 오류)</div>
+          <div class="ai-cards">
+            <span class="ai-chip" style="background:var(--gpt);">GPT-4.1</span>
+            <span class="ai-chip" style="background:var(--gemini);">Gemini</span>
+            <span class="ai-chip" style="background:var(--claude);">Claude</span>
+          </div>
+          <span class="flow-card-status status-judging">judging</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:var(--success);">
+          <span class="flow-card-num" style="background:var(--success);">7</span><span class="flow-card-title">판결 결과 + 시민 투표</span>
+          <div class="flow-card-desc">AI 판결 결과 표시<br>ChatLogViewer로 채팅 기록 열람<br>시민 투표 24h → 복합 판결 확정</div>
+          <span class="flow-card-screen">판결 결과 화면</span>
+          <span class="flow-card-status status-voting">voting</span>
+        </div>
+        <div class="flow-dot success"></div>
+      </div>
+
+    </div><!-- /flow-container -->
+
+    <div class="info-box">
+      <strong>채팅 논쟁 핵심 제약:</strong>
+      타이머 15분 (서버 기준) · 발언권 양측 각 20개 · 비속어 필터 실시간 적용 · 상대 이탈 시 2분 대기 후 자동 종료
+    </div>
+  </div>
+
+  <!-- ===== 06. 알림 플로우 ===== -->
+  <div class="page">
+    <h2><span class="sn">06.</span> 알림 플로우</h2>
+    <p class="lead">서비스 내 주요 이벤트 발생 시 알림이 생성되고, 사용자에게 전달되는 흐름입니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <div class="phase-wrapper"><span class="phase-label">PHASE 1 · 트리거 이벤트</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">1</span><span class="flow-card-title">이벤트 발생</span>
+          <div class="flow-card-desc">
+            <strong>판결 완료:</strong> AI 판결 / 복합 판결 확정<br>
+            <strong>채팅 시작:</strong> 상대방 대기실 입장 / 채팅 시작<br>
+            <strong>투표 알림:</strong> 마감 2시간 전 / 마감 시<br>
+            <strong>초대 수신:</strong> 논쟁 초대 링크 수신
+          </div>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="phase-wrapper"><span class="phase-label">PHASE 2 · 저장</span></div>
+
+      <div class="flow-node right">
+        <div class="flow-dot navy"></div>
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--navy);">2</span><span class="flow-card-title">notifications DB 저장</span>
+          <div class="flow-card-desc">
+            INSERT notifications (user_id, type, title, body, link, is_read)<br>
+            type: verdict | chat | vote | invite<br>
+            is_read: false (기본값)
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="phase-wrapper"><span class="phase-label">PHASE 3 · 전달</span></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">3</span><span class="flow-card-title">클라이언트 조회</span>
+          <div class="flow-card-desc">
+            GET /api/notifications (목록 조회)<br>
+            GNB 🔔 아이콘에 읽지 않은 수 뱃지<br>
+            드롭다운 패널로 최근 알림 표시
+          </div>
+          <span class="flow-card-screen">알림 패널 (Header)</span>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot success"></div>
+        <div class="flow-card" style="border-color:var(--success);">
+          <span class="flow-card-num" style="background:var(--success);">4</span><span class="flow-card-title">읽음 처리</span>
+          <div class="flow-card-desc">
+            개별 읽음: PATCH /api/notifications/:id/read<br>
+            전체 읽음: PATCH /api/notifications/read-all<br>
+            알림 클릭 → 해당 화면으로 이동
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /flow-container -->
+
+    <h3>알림 유형별 상세</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:80px;">유형</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:60px;">아이콘</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">트리거</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">이동 링크</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;font-weight:700;">verdict</td>
+          <td style="padding:10px 12px;">⚖️</td>
+          <td style="padding:10px 12px;">AI 판결 완료 / 복합 판결 확정</td>
+          <td style="padding:10px 12px;">/debates/:id/verdict</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;font-weight:700;">chat</td>
+          <td style="padding:10px 12px;">⚡</td>
+          <td style="padding:10px 12px;">상대방 대기실 입장 / 채팅 시작</td>
+          <td style="padding:10px 12px;">/chat/:roomId</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;font-weight:700;">vote</td>
+          <td style="padding:10px 12px;">🗳️</td>
+          <td style="padding:10px 12px;">투표 마감 2시간 전 / 마감 시</td>
+          <td style="padding:10px 12px;">/debates/:id/verdict</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;font-weight:700;">invite</td>
+          <td style="padding:10px 12px;">⚔️</td>
+          <td style="padding:10px 12px;">논쟁 초대 링크 수신</td>
+          <td style="padding:10px 12px;">/invite/:code</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      <strong>DB 스키마:</strong> notifications (id UUID PK, user_id FK, type VARCHAR, title TEXT, body TEXT, link TEXT, is_read BOOLEAN DEFAULT false, created_at TIMESTAMPTZ)
+    </div>
+  </div>
+
+  <!-- ===== 07. 연습 모드(Solo) 플로우 ===== -->
+  <div class="page page-break">
+    <h2><span class="sn">07.</span> 연습 모드(Solo) 플로우</h2>
+    <p class="lead">AI가 상대방 역할을 대행하는 1인 연습 모드의 전체 흐름입니다. 논쟁 생성 시 mode=solo를 선택하면 상대 초대 없이 즉시 진행됩니다.</p>
+
+    <div class="flow-container">
+      <div class="flow-line"></div>
+
+      <div class="flow-node left">
+        <div class="flow-card">
+          <span class="flow-card-num">1</span><span class="flow-card-title">논쟁 생성 (mode=solo)</span>
+          <div class="flow-card-desc">3단계 위자드 완료 후 모드를 solo로 선택<br>상대 초대 없이 즉시 arguing 상태 전환<br>opponent_id = NULL</div>
+          <span class="flow-card-screen">논쟁 생성 화면</span>
+          <span class="flow-card-status status-arguing">arguing</span>
+        </div>
+        <div class="flow-dot"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot"></div>
+        <div class="flow-card">
+          <span class="flow-card-num">2</span><span class="flow-card-title">사용자 A측 주장 입력</span>
+          <div class="flow-card-desc">50~2,000자 텍스트 입력<br>입력 전처리 + 콘텐츠 방어 필터 통과<br>arguments 테이블에 side='A' 저장</div>
+          <span class="flow-card-screen">주장 입력 화면</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:var(--gpt);">
+          <span class="flow-card-num" style="background:var(--gpt);">AI</span><span class="flow-card-title">AI 반론 자동 생성</span>
+          <div class="flow-card-desc">solo.service.js → GPT-4o가 B측 반대 주장 자동 생성<br>AI가 상대방 역할 대행<br>arguments 테이블에 side='B' 저장 (user_id=NULL)</div>
+          <span class="flow-card-screen">자동 처리</span>
+        </div>
+        <div class="flow-dot" style="background:var(--gpt);box-shadow:0 0 0 2px var(--gpt);"></div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node right">
+        <div class="flow-dot navy"></div>
+        <div class="flow-card">
+          <span class="flow-card-num" style="background:var(--navy);">4</span><span class="flow-card-title">AI 3모델 판결</span>
+          <div class="flow-card-desc">양측 주장 완료 → AI 판결 자동 트리거<br>Promise.allSettled 병렬 실행<br>1-2개 실패 시 Grok 3 Mini fallback 투입</div>
+          <div class="ai-cards">
+            <span class="ai-chip" style="background:var(--gpt);">GPT-4.1</span>
+            <span class="ai-chip" style="background:var(--gemini);">Gemini</span>
+            <span class="ai-chip" style="background:var(--claude);">Claude</span>
+          </div>
+          <span class="flow-card-status status-judging">judging</span>
+        </div>
+      </div>
+      <div class="flow-arrow-down">▼</div>
+
+      <div class="flow-node left">
+        <div class="flow-card" style="border-color:var(--success);background:linear-gradient(135deg,#F0FDF4,#DCFCE7);">
+          <span class="flow-card-num" style="background:var(--success);">5</span><span class="flow-card-title">결과 표시</span>
+          <div class="flow-card-desc">3사 개별 판결 + 종합 판결 시각화<br>5항목 점수 + 판결문 표시<br>solo 모드는 시민 투표 없이 AI 100% 확정</div>
+          <span class="flow-card-screen">판결 결과 화면</span>
+          <span class="flow-card-status status-completed">completed</span>
+        </div>
+        <div class="flow-dot success"></div>
+      </div>
+
+    </div><!-- /flow-container -->
+
+    <div class="info-box">
+      <strong>Solo 모드 특징:</strong>
+      상대 초대 불필요 → 즉시 arguing 시작 · GPT-4o가 B측 반론 자동 생성 (solo.service.js) · 시민 투표 미적용 (AI 100% 판결) · opponent_id = NULL · 연습/학습 목적
+    </div>
+  </div>
+
+  <!-- ===== Appendix. 변경 이력 ===== -->
+  <div class="page">
+    <h2><span class="sn">Appendix</span> 변경 이력</h2>
+    <p class="lead">본 플로우차트의 버전별 변경 내역을 기록합니다.</p>
+
+    <table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:9.5pt;">
+      <thead>
+        <tr style="background:var(--accent-bg);">
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:80px;">버전</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:100px;">날짜</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);">변경 내용</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);width:80px;">작성자</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;font-weight:700;color:var(--accent);">v1.0</td>
+          <td style="padding:10px 12px;">2026-03-06</td>
+          <td style="padding:10px 12px;">
+            <strong>최초 작성</strong><br>
+            &bull; 01. 핵심 논쟁 플로우 (11단계: 소셜 로그인 → 공유/랭킹)<br>
+            &bull; 02. 콘텐츠 방어 플로우 (3단계 필터 순차 적용)<br>
+            &bull; 03. 복합 판결 계산 플로우 (AI 각 25% + 시민 25%)<br>
+            &bull; 04. 논쟁 상태 전이도 (waiting → arguing → judging → voting → completed)<br>
+            &bull; 참조: 기획서 v1.3, 화면설계서 v2.0
+          </td>
+          <td style="padding:10px 12px;">기획팀</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;font-weight:700;color:var(--accent);">v1.1</td>
+          <td style="padding:10px 12px;">2026-03-09</td>
+          <td style="padding:10px 12px;">
+            <strong>백엔드 기능 반영</strong><br>
+            &bull; 솔로 모드(solo) 분기 추가 (GPT-4o B측 자동 생성)<br>
+            &bull; 입력 전처리 단계 추가 (인젝션 방어 15패턴, HTML 제거, 유사도 검사)<br>
+            &bull; 프로필 전적 자동 갱신 (wins/losses/draws/total_score)<br>
+            &bull; 상태 전이: solo 모드 즉시 arguing 전환 반영
+          </td>
+          <td style="padding:10px 12px;">백엔드A</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px 12px;font-weight:700;color:var(--accent);">v2.0</td>
+          <td style="padding:10px 12px;">2026-03-25</td>
+          <td style="padding:10px 12px;">
+            <strong>실시간 채팅 논쟁 &amp; 알림 플로우 추가</strong><br>
+            &bull; 05. 실시간 채팅 논쟁 플로우: 로비→대기실→채팅(15분)→종료→자동 판결<br>
+            &bull; 06. 알림 플로우: 트리거 이벤트(판결/채팅/투표/초대)→DB 저장→클라이언트 조회→읽음 처리<br>
+            &bull; 04. 상태 전이도: chatting 상태 추가 (waiting→chatting→judging)<br>
+            &bull; 04. 상태 전이도: chat 모드 전용 전이 경로 추가<br>
+            &bull; Socket.io 이벤트 매핑 테이블 추가 (join-room, select-side, start-chat, send-message, chat-ended 등)<br>
+            &bull; 상태 전이 조건 테이블에 Mode 컬럼 추가 (text/chat/all)<br>
+            &bull; 화면 매핑 테이블: ChatLobby, ChatRoom 추가<br>
+            &bull; 참조 문서: 화면설계서 v3.0으로 갱신
+          </td>
+          <td style="padding:10px 12px;">김선관</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-light);background:var(--bg-gray);">
+          <td style="padding:10px 12px;font-weight:700;color:var(--accent);">v2.1</td>
+          <td style="padding:10px 12px;">2026-03-25</td>
+          <td style="padding:10px 12px;">
+            <strong>Solo 모드 플로우 &amp; Grok fallback 추가</strong><br>
+            &bull; 07. 연습 모드(Solo) 플로우: 논쟁 생성(mode=solo)→사용자 주장 입력→AI 반론 자동 생성(solo.service.js)→AI 3모델 판결→결과 표시<br>
+            &bull; 01. 핵심 논쟁 플로우: AI 3사 병렬 호출에 "1-2개 실패 시 Grok 3 Mini fallback 투입" 분기 추가<br>
+            &bull; 03. 복합 판결 계산 플로우: Grok 3 Mini fallback 분기 노드 추가
+          </td>
+          <td style="padding:10px 12px;">Claude</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:40px;padding-top:24px;border-top:2px solid var(--border-light);">
+      <p style="text-align:center;color:var(--text-muted);font-size:9pt;">&mdash; 문서 끝 &mdash;</p>
+      <p style="text-align:center;color:var(--text-muted);font-size:8.5pt;margin-top:8px;">
+        Moragora 플로우차트 v2.1 | 2026년 3월 25일 작성<br>본 문서는 Moragora 프로젝트의 내부 플로우차트 문서입니다.
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
