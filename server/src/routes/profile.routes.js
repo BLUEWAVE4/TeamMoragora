@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPublicProfile, getMyVerdicts, getMyXPLogs, getRanking, deleteMyDebate, deleteAccount, getMyProfile, updateMyProfile, getMyDebates, getMyAnalysis } from '../controllers/profile.controller.js';
+import { getPublicProfile, getMyVerdicts, getMyXPLogs, getRanking, deleteMyDebate, deleteAccount, getMyProfile, updateMyProfile, getMyDebates, getMyAnalysis, completeOnboarding } from '../controllers/profile.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validateUUID, validateProfileUpdate } from '../middleware/validate.middleware.js';
 import { supabaseAdmin } from '../config/supabase.js';
@@ -9,6 +9,7 @@ const router = Router();
 router.get('/ranking', getRanking);
 router.get('/me', requireAuth, getMyProfile);
 router.patch('/me', requireAuth, validateProfileUpdate, updateMyProfile);
+router.patch('/me/onboarding', requireAuth, completeOnboarding);
 router.get('/me/role', requireAuth, async (req, res, next) => {
   try {
     const { data } = await supabaseAdmin.from('profiles').select('role').eq('id', req.user.id).single();

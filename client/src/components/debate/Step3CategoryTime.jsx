@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../common/Button";
 import Modal from "../common/Modal";
 import Input from "../common/Input";
+import { getGuideStep } from "../common/OnboardingModal";
 
 export default function Step3CategoryTime({
   topic,
@@ -90,8 +91,17 @@ export default function Step3CategoryTime({
 
           {/* BUTTON */}
           <div className="flex gap-3">
-            <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-            <Button onClick={() => setIsModalOpen(true)} className="w-full" autoFocus>논쟁 생성</Button>
+            <div className="flex-1"><Button variant="accent" onClick={prevStep} className="w-full">이전</Button></div>
+            <div className="relative flex-1">
+              {!isModalOpen && getGuideStep() && (
+                <>
+                  <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
+                  <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
+                  <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
+                </>
+              )}
+              <Button onClick={() => setIsModalOpen(true)} className="w-full" autoFocus>논쟁 생성</Button>
+            </div>
           </div>
         </>
       ) : (
@@ -161,8 +171,17 @@ export default function Step3CategoryTime({
 
           {/* BUTTON */}
           <div className="flex gap-3">
-            <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-            <Button onClick={handleStart} className="w-full" autoFocus>논쟁 생성</Button>
+            <div className="flex-1"><Button variant="accent" onClick={prevStep} className="w-full">이전</Button></div>
+            <div className="relative flex-1">
+              {!isModalOpen && getGuideStep() && (
+                <>
+                  <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
+                  <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
+                  <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
+                </>
+              )}
+              <Button onClick={handleStart} className="w-full" autoFocus>논쟁 생성</Button>
+            </div>
           </div>
         </>
       )}
@@ -212,13 +231,22 @@ export default function Step3CategoryTime({
               >
                 취소
               </button>
-              <button
-                onClick={handleSubmit}
-                autoFocus
-                className="flex-1 py-3 rounded-xl font-extrabold text-[14px] bg-[#D4AF37] text-[#1B2A4A] border-2 border-[#D4AF37]/50 active:scale-95 transition-all"
-              >
-                논쟁 생성
-              </button>
+              <div className="relative flex-1">
+                {getGuideStep() && (
+                  <>
+                    <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
+                    <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
+                    <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
+                  </>
+                )}
+                <button
+                  onClick={handleSubmit}
+                  autoFocus
+                  className="w-full py-3 rounded-xl font-extrabold text-[14px] bg-[#D4AF37] text-[#1B2A4A] border-2 border-[#D4AF37]/50 active:scale-95 transition-all"
+                >
+                  논쟁 생성
+                </button>
+              </div>
             </div>
           </div>
           <style>{`@keyframes modal-pop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>

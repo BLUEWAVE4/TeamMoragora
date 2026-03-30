@@ -5,7 +5,8 @@ import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
-import OnboardingModal, { isOnboardingDone } from '../components/common/OnboardingModal';
+import { isOnboardingDone, markOnboardingDone } from '../components/common/OnboardingModal';
+import OnboardingBanner from '../components/home/OnboardingBanner';
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
@@ -143,22 +144,13 @@ export default function HomePage() {
     });
   };
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
-  // 로딩 완료 시 스플래시 제거 → 스플래시 완전 제거 후 온보딩 표시
+  // 로딩 완료 시 스플래시 제거 → 가이드 배너 표시
   useEffect(() => {
     if (!loading) {
       window.__removeSplash?.();
-      if (!isOnboardingDone()) {
-        // 스플래시 DOM 제거 감지 후 온보딩 표시
-        const checkSplash = setInterval(() => {
-          if (!document.getElementById('splash')) {
-            clearInterval(checkSplash);
-            setTimeout(() => setShowOnboarding(true), 400);
-          }
-        }, 300);
-        return () => clearInterval(checkSplash);
-      }
+      if (!isOnboardingDone()) setShowGuide(true);
     }
   }, [loading]);
 
@@ -174,7 +166,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
-      <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      {showGuide && <OnboardingBanner onDismiss={() => { setShowGuide(false); markOnboardingDone(); }} key="guide" />}
       <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-6 px-5">
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />

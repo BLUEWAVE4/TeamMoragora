@@ -49,14 +49,15 @@ function DebateCard({ feed }) {
   const debateData = feed?.debate || feed || {};
   const debateStatus = debateData?.status;
   const isVotingStatus = debateStatus === 'voting';
-  const isCompleted = debateStatus === 'completed';
 
   const voteDuration = debateData?.vote_duration ?? null;
   const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration);
   const hasTimer = !!voteDuration;
   const timerExpired = timeLeft?.expired === true;
-  const isClosed = !isVotingStatus || timerExpired;
-  const canVote = isVotingStatus && !timerExpired;
+  // 타이머가 있고 아직 안 만료되면 투표 가능 (status와 무관)
+  const isVoteOpen = hasTimer && !timerExpired;
+  const isCompleted = debateStatus === 'completed' && !isVoteOpen;
+  const canVote = (isVotingStatus || isVoteOpen) && !timerExpired;
 
   const barColor = !timeLeft || timeLeft.progressRatio > 0.5 ? '#10b981'
     : timeLeft.progressRatio > 0.2 ? '#f59e0b' : '#ef4444';

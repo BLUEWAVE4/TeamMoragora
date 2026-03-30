@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ===== 온보딩 슬라이드 데이터 =====
@@ -23,28 +24,80 @@ const SLIDES = [
   },
 ];
 
-const STORAGE_KEY = 'moragora-onboarding-done';
+// ===== 1vs1 가이드 슬라이드 =====
+const GUIDE_SLIDES = [
+  {
+    icon: '📝',
+    title: '1. 주제 입력',
+    desc: '논쟁 주제를 입력하면\nAI가 찬성/반대 입장을 자동 생성합니다.',
+    accent: '#D4AF37',
+  },
+  {
+    icon: '🔗',
+    title: '2. 상대방 초대',
+    desc: '생성된 초대 링크를 상대에게 공유하세요.\n카카오톡이나 링크 복사로 간편하게!',
+    accent: '#007AFF',
+  },
+  {
+    icon: '⚔️',
+    title: '3. 주장 작성 (2라운드)',
+    desc: '1라운드: 나의 주장 펼치기\n2라운드: 상대 주장에 반박하기',
+    accent: '#E63946',
+  },
+  {
+    icon: '⚖️',
+    title: '4. AI 판결 + 시민 투표',
+    desc: 'AI 3명이 독립 판결하고\n시민 투표로 최종 승자가 결정됩니다.',
+    accent: '#059669',
+  },
+];
 
-// ===== 온보딩 완료 여부 확인 =====
+const STORAGE_KEY = 'moragora-onboarding-done';
+const GUIDE_KEY = 'moragora-guide-step';
+
+// ===== 온보딩 완료 여부 확인 (localStorage 캐시 + DB) =====
 export function isOnboardingDone() {
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function markOnboardingDone() {
   localStorage.setItem(STORAGE_KEY, 'true');
+  localStorage.setItem(GUIDE_KEY, 'mode');
+  // DB에도 저장 (실패해도 localStorage로 동작)
+  import('../../services/api').then(({ completeOnboarding }) => {
+    completeOnboarding().catch(() => {});
+  });
 }
 
 export function resetOnboarding() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(GUIDE_KEY);
+}
+
+// ===== 가이드 스텝 관리 =====
+export function getGuideStep() {
+  return localStorage.getItem(GUIDE_KEY);
+}
+
+export function advanceGuide(next) {
+  if (next) localStorage.setItem(GUIDE_KEY, next);
+  else localStorage.removeItem(GUIDE_KEY);
+}
+
+export function clearGuide() {
+  localStorage.removeItem(GUIDE_KEY);
 }
 
 // ===== 온보딩 모달 컴포넌트 =====
 export default function OnboardingModal({ isOpen, onClose }) {
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState('intro'); // 'intro' | 'guide'
   const [current, setCurrent] = useState(0);
   const touchStart = useRef(0);
   const touchEnd = useRef(0);
 
-  // 키보드 네비게이션
+  const slides = phase === 'intro' ? SLIDES : GUIDE_SLIDES;
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e) => {
@@ -54,12 +107,18 @@ export default function OnboardingModal({ isOpen, onClose }) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, current]);
+  }, [isOpen, current, phase]);
 
   const handleNext = useCallback(() => {
-    if (current < SLIDES.length - 1) setCurrent(c => c + 1);
-    else handleComplete();
-  }, [current]);
+    if (current < slides.length - 1) {
+      setCurrent(c => c + 1);
+    } else if (phase === 'intro') {
+      setPhase('guide');
+      setCurrent(0);
+    } else {
+      handleComplete();
+    }
+  }, [current, phase, slides.length]);
 
   const handlePrev = useCallback(() => {
     if (current > 0) setCurrent(c => c - 1);
@@ -68,16 +127,18 @@ export default function OnboardingModal({ isOpen, onClose }) {
   const handleSkip = useCallback(() => {
     // markOnboardingDone(); // 테스트용: 건너뛰기 시 플래그 저장 안 함
     setCurrent(0);
+    setPhase('intro');
     onClose();
   }, [onClose]);
 
   const handleComplete = useCallback(() => {
     markOnboardingDone();
     setCurrent(0);
+    setPhase('intro');
     onClose();
-  }, [onClose]);
+    navigate('/debate/create');
+  }, [onClose, navigate]);
 
-  // 스와이프 감지
   const onTouchStart = (e) => { touchStart.current = e.changedTouches[0].screenX; };
   const onTouchEnd = (e) => {
     touchEnd.current = e.changedTouches[0].screenX;
@@ -90,8 +151,9 @@ export default function OnboardingModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const slide = SLIDES[current];
-  const isLast = current === SLIDES.length - 1;
+  const slide = slides[current];
+  const isLast = current === slides.length - 1;
+  const isGuide = phase === 'guide';
 
   return (
     <AnimatePresence>
@@ -113,7 +175,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
           onTouchEnd={onTouchEnd}
         >
           {/* 건너뛰기 버튼 */}
-          {!isLast && (
+          {!(isGuide && isLast) && (
             <button
               onClick={handleSkip}
               className="absolute top-4 right-4 z-20 text-white/50 text-[13px] font-medium px-3 py-1.5 rounded-full bg-white/10 active:bg-white/20 transition-colors"
@@ -122,30 +184,39 @@ export default function OnboardingModal({ isOpen, onClose }) {
             </button>
           )}
 
-          {/* 이미지 영역 */}
+          {/* 이미지 or 아이콘 영역 */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={current}
+              key={`${phase}-${current}`}
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -60 }}
               transition={{ duration: 0.3 }}
-              className="relative w-full aspect-[4/3] overflow-hidden"
+              className={`relative w-full overflow-hidden ${isGuide ? 'pt-10 pb-4 flex items-center justify-center' : 'aspect-[4/3]'}`}
             >
-              <img
-                src={slide.image}
-                alt={slide.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A] via-[#1B2A4A]/30 to-transparent" />
+              {isGuide ? (
+                <div className="text-[64px]">{slide.icon}</div>
+              ) : (
+                <>
+                  <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A] via-[#1B2A4A]/30 to-transparent" />
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
+
+          {/* 페이즈 라벨 */}
+          {isGuide && (
+            <div className="px-7 mb-1">
+              <span className="text-[11px] font-bold text-[#D4AF37] tracking-widest uppercase">1 vs 1 가이드</span>
+            </div>
+          )}
 
           {/* 텍스트 영역 */}
           <div className="px-7 pb-7 pt-2">
             <AnimatePresence mode="wait">
               <motion.div
-                key={current}
+                key={`${phase}-${current}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -162,9 +233,8 @@ export default function OnboardingModal({ isOpen, onClose }) {
 
             {/* 인디케이터 + 버튼 */}
             <div className="flex items-center justify-between mt-7">
-              {/* 도트 인디케이터 */}
               <div className="flex gap-2">
-                {SLIDES.map((_, i) => (
+                {slides.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}
@@ -179,14 +249,13 @@ export default function OnboardingModal({ isOpen, onClose }) {
                 ))}
               </div>
 
-              {/* 다음/시작 버튼 */}
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleNext}
                 className="px-6 py-3 rounded-xl font-bold text-[15px] text-white transition-colors"
                 style={{ background: slide.accent }}
               >
-                {isLast ? '시작하기' : '다음'}
+                {isGuide && isLast ? '논쟁 시작하기' : isLast && !isGuide ? '다음' : '다음'}
               </motion.button>
             </div>
           </div>
