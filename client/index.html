@@ -45,59 +45,58 @@
       <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
     </div>
     <script>
-      // 타이핑 애니메이션
+      // 타이핑 애니메이션 — 순차 실행
       (function(){
         var el = document.getElementById('splash-typed');
+        var cursor = document.getElementById('splash-cursor');
         if (!el) return;
-        var phases = [
-          { text: 'AI 논쟁 판결 플랫폼', type: true, pause: 800 },
-          { text: 'AI 논쟁 판결 플랫폼', type: false, pause: 300 },
-          { text: '모라고라?', type: true, pause: 600 },
-          { text: '?', type: false, pause: 200 },
-          { text: '.', type: true, pause: 9999 },
-        ];
-        var current = '';
-        var phaseIdx = 0;
-        var charIdx = 0;
-        var speed = 80;
-        var deleteSpeed = 40;
+        var typeSpeed = 80, deleteSpeed = 40;
 
-        function tick() {
-          if (phaseIdx >= phases.length) return;
-          var phase = phases[phaseIdx];
-
-          if (phase.type) {
-            // 타이핑 (current에 이어붙이기)
-            if (charIdx < phase.text.length) {
-              current += phase.text[charIdx];
-              el.textContent = current;
-              charIdx++;
-              setTimeout(tick, speed);
-            } else {
-              // 타이핑 완료
-              if (phase.pause >= 9999) {
-                // 최종 상태 → 커서 숨김
-                var cursor = document.getElementById('splash-cursor');
-                if (cursor) cursor.style.display = 'none';
-                return;
-              }
-              setTimeout(function() { phaseIdx++; charIdx = 0; tick(); }, phase.pause);
-            }
-          } else {
-            // 지우기: 뒤에서부터 phase.text 길이만큼
-            var target = current.length - phase.text.length;
-            if (current.length > target) {
-              current = current.slice(0, -1);
-              el.textContent = current;
-              setTimeout(tick, deleteSpeed);
-            } else {
-              setTimeout(function() { phaseIdx++; charIdx = 0; tick(); }, phase.pause);
-            }
-          }
+        function typeText(text, cb) {
+          var i = 0;
+          (function t() {
+            if (i < text.length) { el.textContent += text[i++]; setTimeout(t, typeSpeed); }
+            else if (cb) cb();
+          })();
         }
+        function deleteAll(cb) {
+          (function d() {
+            var cur = el.textContent;
+            if (cur.length > 0) { el.textContent = cur.slice(0, -1); setTimeout(d, deleteSpeed); }
+            else if (cb) cb();
+          })();
+        }
+        function deleteChars(n, cb) {
+          var count = 0;
+          (function d() {
+            if (count < n && el.textContent.length > 0) { el.textContent = el.textContent.slice(0, -1); count++; setTimeout(d, deleteSpeed); }
+            else if (cb) cb();
+          })();
+        }
+        function pause(ms, cb) { setTimeout(cb, ms); }
 
-        // 0.5초 커서 깜빡임 후 시작
-        setTimeout(tick, 500);
+        // 0.5초 커서 깜빡임 → 시퀀스 시작
+        pause(500, function() {
+          typeText('AI 논쟁 판결 플랫폼', function() {
+            pause(800, function() {
+              deleteAll(function() {
+                pause(300, function() {
+                  typeText('모라고라?', function() {
+                    pause(600, function() {
+                      deleteChars(1, function() {
+                        pause(200, function() {
+                          typeText('.', function() {
+                            if (cursor) cursor.style.display = 'none';
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
       })();
     </script>
     <div id="root"></div>
