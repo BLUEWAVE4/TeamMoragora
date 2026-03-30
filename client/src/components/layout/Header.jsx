@@ -19,12 +19,20 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 // --- 아이콘 컴포넌트 정의 ---
 
 const ScalesLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2.5">
-    <path d="M12 3V21" stroke="#2D3350" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M9 21H15" stroke="#2D3350" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M5 7C7.5 6 16.5 6 19 7" stroke="#2D3350" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M5 7L3 13C3 13 3 15 5 15C7 15 7 13 7 13L5 7Z" fill="#FFBD43" stroke="#FFBD43" strokeWidth="1.5" strokeLinejoin="round"/>
-    <path d="M19 7L17 13C17 13 17 15 19 15C21 15 21 13 21 13L19 7Z" fill="#FFBD43" stroke="#FFBD43" strokeWidth="1.5" strokeLinejoin="round"/>
+  <svg width="28" height="28" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" className="mr-2.5">
+    <defs><linearGradient id="hdr-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f0c96a"/><stop offset="40%" stopColor="#c9a84c"/><stop offset="100%" stopColor="#8a6a20"/></linearGradient></defs>
+    <polygon points="60,8 56,16 64,16" fill="url(#hdr-gold)"/>
+    <rect x="58" y="16" width="4" height="12" fill="url(#hdr-gold)"/>
+    <rect x="12" y="26" width="96" height="3" rx="1" fill="url(#hdr-gold)"/>
+    <line x1="18" y1="29" x2="10" y2="62" stroke="url(#hdr-gold)" strokeWidth="2.5"/>
+    <line x1="18" y1="29" x2="26" y2="62" stroke="url(#hdr-gold)" strokeWidth="2.5"/>
+    <path d="M6,62 Q18,78 30,62" stroke="url(#hdr-gold)" strokeWidth="2.5" fill="none"/>
+    <line x1="102" y1="29" x2="94" y2="62" stroke="url(#hdr-gold)" strokeWidth="2.5"/>
+    <line x1="102" y1="29" x2="110" y2="62" stroke="url(#hdr-gold)" strokeWidth="2.5"/>
+    <path d="M90,62 Q102,78 114,62" stroke="url(#hdr-gold)" strokeWidth="2.5" fill="none"/>
+    <rect x="58" y="28" width="4" height="50" fill="url(#hdr-gold)"/>
+    <polygon points="52,78 60,68 68,78" fill="url(#hdr-gold)"/>
+    <rect x="46" y="78" width="28" height="3" rx="1" fill="url(#hdr-gold)"/>
   </svg>
 );
 
