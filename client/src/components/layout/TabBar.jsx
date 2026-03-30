@@ -226,6 +226,7 @@ export default function TabBar() {
   }, [activeDebates]);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
   const showModal = (type, title, description, onConfirm) => setModal({ isOpen: true, type, title, description, onConfirm });
   const closeModal = () => setModal({ isOpen: false, type: 'error', title: '', description: '', onConfirm: null });
@@ -438,7 +439,14 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
 
             {/* 헤더 */}
             <div className="px-5 pt-2 pb-3 flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#1B2A4A]/35">진행중인 논쟁</p>
+                <button onClick={() => setShowPolicyModal(true)} className="text-[#1B2A4A]/25 active:text-[#1B2A4A]/50 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* 진행중 논쟁 목록 */}
@@ -602,6 +610,45 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
           animation: slide-up 0.25s ease-out;
         }
       `}</style>
+
+      {/* 논쟁 관리 정책 안내 모달 */}
+      {showPolicyModal && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-6" onClick={() => setShowPolicyModal(false)}>
+          <div className="w-full max-w-sm bg-gradient-to-b from-[#F5F0E8] to-white rounded-2xl shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#1B2A4A] px-5 py-3">
+              <p className="text-[13px] font-extrabold text-[#D4AF37] tracking-[0.05em]">논쟁 자동 관리 안내</p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                <div>
+                  <p className="text-[13px] font-bold text-[#1B2A4A]">상대 대기중</p>
+                  <p className="text-[11px] text-[#1B2A4A]/50 mt-0.5">24시간 내 상대가 참여하지 않으면 자동 삭제됩니다.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                <div>
+                  <p className="text-[13px] font-bold text-[#1B2A4A]">주장 작성중</p>
+                  <p className="text-[11px] text-[#1B2A4A]/50 mt-0.5">48시간 내 양측 주장이 완료되지 않으면 자동 삭제됩니다.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                <div>
+                  <p className="text-[13px] font-bold text-[#1B2A4A]">시민 투표 진행중</p>
+                  <p className="text-[11px] text-[#1B2A4A]/50 mt-0.5">설정한 투표 기간이 만료되면 자동으로 최종 판결이 확정됩니다.</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 pb-5">
+              <button onClick={() => setShowPolicyModal(false)} className="w-full py-2.5 rounded-xl bg-[#1B2A4A] text-[#D4AF37] text-[14px] font-bold active:scale-95 transition-transform">
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <MoragoraModal
         isOpen={modal.isOpen}
