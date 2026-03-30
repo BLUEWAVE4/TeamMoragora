@@ -116,6 +116,24 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// 디버그: DB 업데이트 테스트
+app.post('/api/debug/force-chatting/:debateId', async (req, res) => {
+  try {
+    const { debateId } = req.params;
+    const now = new Date();
+    const deadline = new Date(now.getTime() + 15 * 60 * 1000 + 7000).toISOString();
+    const { data, error } = await supabaseAdmin
+      .from('debates')
+      .update({ status: 'chatting', chat_deadline: deadline, chat_started_at: now.toISOString() })
+      .eq('id', debateId)
+      .select('id, status, chat_deadline');
+    if (error) return res.status(500).json({ error: error.message, code: error.code });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Error handler
 app.use(errorHandler);
 
