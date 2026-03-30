@@ -291,7 +291,7 @@ confidence 기준 (분석 모드):
 
 export function buildSystemPrompt(judge, lens = 'general', purpose = 'battle') {
   const CHARACTER_MAP = {
-    'o3': JUDGE_G_CHARACTER,
+    'gpt-4.1': JUDGE_G_CHARACTER,
     'gemini-2.5-flash': JUDGE_M_CHARACTER,
     'claude-sonnet': JUDGE_C_CHARACTER,
     'grok-3-mini': JUDGE_GROK_CHARACTER,
@@ -370,7 +370,7 @@ ${rebuttalB || '(반박 미제출)'}
 // ========== 하위 호환: 기존 단일 프롬프트 (fallback) ==========
 
 export function buildJudgmentPrompt(debateContext) {
-  return `${buildSystemPrompt('o3')}\n\n${buildUserPrompt(debateContext)}`;
+  return `${buildSystemPrompt('gpt-4.1')}\n\n${buildUserPrompt(debateContext)}`;
 }
 
 // ========== Solo 모드: AI 반대 주장 생성 ==========
