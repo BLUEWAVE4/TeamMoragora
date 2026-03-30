@@ -36,12 +36,71 @@
     </script>
   </head>
   <body>
-    <!-- PWA 스플래시 화면 (React 로드 시 자동 제거) -->
+    <!-- PWA 스플래시 화면 -->
     <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
       <img src="/icon-192.png" alt="" style="width:80px;height:80px;border-radius:20px;" />
       <div style="color:#D4AF37;font-size:22px;font-weight:900;letter-spacing:-0.5px;">모라고라<span style="color:#D4AF37;">.</span></div>
-      <div style="color:rgba(255,255,255,0.3);font-size:11px;font-weight:600;">AI 논쟁 판결 플랫폼</div>
+      <div id="splash-text" style="color:rgba(255,255,255,0.4);font-size:12px;font-weight:600;height:18px;display:flex;align-items:center;">
+        <span id="splash-typed"></span><span id="splash-cursor" style="display:inline-block;width:2px;height:14px;background:rgba(255,255,255,0.5);margin-left:1px;animation:blink 0.7s step-end infinite;"></span>
+      </div>
+      <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
     </div>
+    <script>
+      // 타이핑 애니메이션
+      (function(){
+        var el = document.getElementById('splash-typed');
+        if (!el) return;
+        var phases = [
+          { text: 'AI 논쟁 판결 플랫폼', type: true, pause: 800 },
+          { text: 'AI 논쟁 판결 플랫폼', type: false, pause: 200 },
+          { text: '모라고라?', type: true, pause: 600 },
+          { text: '?', type: false, pause: 300 },
+          { text: '', type: false, pause: 9999 },
+        ];
+        var current = '';
+        var phaseIdx = 0;
+        var charIdx = 0;
+        var speed = 80;
+        var deleteSpeed = 40;
+
+        function tick() {
+          if (phaseIdx >= phases.length) return;
+          var phase = phases[phaseIdx];
+
+          if (phase.type) {
+            // 타이핑
+            if (charIdx <= phase.text.length) {
+              current = phase.text.slice(0, charIdx);
+              el.textContent = current;
+              charIdx++;
+              setTimeout(tick, speed);
+            } else {
+              // 타이핑 완료 → 대기
+              setTimeout(function() { phaseIdx++; charIdx = 0; tick(); }, phase.pause);
+            }
+          } else {
+            // 지우기
+            if (phase.text === '') {
+              // 지울 것 없음 → 최종 상태 유지
+              el.textContent = current;
+              return;
+            }
+            // 뒤에서부터 phase.text 길이만큼 지우기
+            var target = current.length - phase.text.length;
+            if (current.length > target) {
+              current = current.slice(0, -1);
+              el.textContent = current;
+              setTimeout(tick, deleteSpeed);
+            } else {
+              setTimeout(function() { phaseIdx++; charIdx = current.length; tick(); }, phase.pause);
+            }
+          }
+        }
+
+        // 0.5초 커서 깜빡임 후 시작
+        setTimeout(tick, 500);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
@@ -54,17 +113,26 @@
         if (s) s.remove();
       }
 
-      // 스플래시 제거 함수 (HomePage에서 데이터 로딩 완료 시 호출)
+      // 스플래시 제거 함수 (최소 5초 보장)
+      var splashStart = Date.now();
+      var splashMinMs = 5000;
       window.__removeSplash = function() {
-        var splash = document.getElementById('splash');
-        if (splash) {
-          splash.style.transition = 'opacity 0.3s ease-out';
-          splash.style.opacity = '0';
-          setTimeout(function() { splash.remove(); }, 300);
-        }
+        var elapsed = Date.now() - splashStart;
+        var delay = Math.max(0, splashMinMs - elapsed);
+        setTimeout(function() {
+          var splash = document.getElementById('splash');
+          if (splash) {
+            splash.style.transition = 'opacity 0.4s ease-out';
+            splash.style.opacity = '0';
+            setTimeout(function() { splash.remove(); }, 400);
+          }
+        }, delay);
       };
-      // 안전장치: 10초 후 강제 제거 (로딩 실패 시)
-      setTimeout(function() { window.__removeSplash(); }, 10000);
+      // 안전장치: 15초 후 강제 제거 (로딩 실패 시)
+      setTimeout(function() {
+        var splash = document.getElementById('splash');
+        if (splash) { splash.style.opacity = '0'; setTimeout(function() { splash.remove(); }, 300); }
+      }, 15000);
     </script>
   </body>
 </html>
