@@ -1193,6 +1193,12 @@ const handleVote = (agree) => {
 
       {/* ━━━━━ 헤더 ━━━━━ */}
       <div className="shrink-0 sticky top-0 z-20 bg-gradient-to-b from-[#1B2A4A] to-[#0f1829] px-4 pt-4 pb-3 border-b border-white/5">
+        {/* 시민 나가기 버튼 */}
+        {isCitizen && (
+          <button onClick={() => navigate('/debate/lobby')} className="absolute left-3 top-3 z-30 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        )}
         {/* 1. 논쟁 제목 + 태그 */}
         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-1">실시간 논쟁</p>
         <h1 className="text-white text-[15px] font-black text-center leading-snug line-clamp-2 px-8">{debate?.topic || ''}</h1>
