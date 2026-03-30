@@ -288,13 +288,21 @@ export function initializeSocket(io) {
       const chat_started_at = now.toISOString();
 
       try {
-        await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+        const { error } = await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+        if (error) throw error;
         console.log(`[start-game] ${debateId} → chatting (deadline: ${chat_deadline})`);
         if (roomParticipants[debateId]) {
           Object.values(roomParticipants[debateId]).forEach(p => { p._gameStarted = true; });
         }
       } catch (err) {
-        console.error(`[start-game] DB 업데이트 실패:`, err.message);
+        console.error(`[start-game] DB 업데이트 실패 — 1회 재시도:`, err.message);
+        // 재시도
+        try {
+          await supabaseAdmin.from('debates').update({ chat_deadline, chat_started_at, status: 'chatting' }).eq('id', debateId);
+          console.log(`[start-game] ${debateId} → chatting (재시도 성공)`);
+        } catch (retryErr) {
+          console.error(`[start-game] 재시도 실패:`, retryErr.message);
+        }
       }
 
       io.to(debateId).emit('game-start', { chat_deadline, chat_started_at });
