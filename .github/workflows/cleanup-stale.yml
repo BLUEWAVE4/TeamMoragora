@@ -1,0 +1,19 @@
+name: Cleanup Stale Debates
+
+on:
+  schedule:
+    # 매 6시간마다 실행 (UTC 0, 6, 12, 18 = KST 9, 15, 21, 3)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # 수동 실행 버튼
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup stale debates
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail --silent --show-error \
+            https://teammoragora.onrender.com/api/cron/cleanup-stale
