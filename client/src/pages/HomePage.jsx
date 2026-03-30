@@ -140,11 +140,12 @@ export default function HomePage() {
     });
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
-      <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  // 로딩 완료 시 스플래시 제거
+  useEffect(() => {
+    if (!loading) window.__removeSplash?.();
+  }, [loading]);
+
+  if (loading) return null; // 스플래시가 보이므로 별도 로딩 UI 불필요
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
