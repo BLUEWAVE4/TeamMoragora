@@ -122,18 +122,23 @@ export default function HomePage() {
 
 
   const getProcessedFeeds = () => {
-  let result = [...feeds];
-  return result.sort((a, b) => {
-    const aData = a.debate || {};
-    const bData = b.debate || {};
-    switch (sortBy) {
-      case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
-      case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
-      case '조회순': return (b.views_count || 0) - (a.views_count || 0);
-      case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
-    }
-  });
-};
+    let result = [...feeds].filter(feed => {
+      const debateData = feed.debate || feed || {};
+      if (debateData.mode === 'chat') return true;
+      return !!debateData.vote_duration;
+    });
+
+    return result.sort((a, b) => {
+      const aData = a.debate || {};
+      const bData = b.debate || {};
+      switch (sortBy) {
+        case '좋아요순': return (b.likes_count || 0) - (a.likes_count || 0);
+        case '댓글순': return (b.comments_count || 0) - (a.comments_count || 0);
+        case '조회순': return (b.views_count || 0) - (a.views_count || 0);
+        case '최신순': default: return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">

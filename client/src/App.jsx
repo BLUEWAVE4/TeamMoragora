@@ -26,8 +26,6 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const ChatRoom = lazy(() => import('./pages/debate/ChatRoom'));
 const DebateLobbyPage = lazy(() => import('./pages/debate/DebateLobbyPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
-const ChatLobby = lazy(() => import('./pages/debate/ChatLobby'));
-const ChatLobbyList = lazy(() => import('./pages/debate/ChatLobbyList'));
 
 function PageLoader() {
   return (
@@ -68,8 +66,6 @@ export default function App() {
               <Route path="/auth/nickname" element={<NicknamePage />} />
               <Route path="/debate/create" element={<DebateCreatePage />} />
 
-              <Route path="/debate/:debateId/lobby" element={<ChatLobby />} />
-              <Route path="/debate/chat/list" element={<ChatLobbyList />} />
 
               <Route path="/debate/chat/room" element={<ChatRoom />} />
               <Route path="/debate/:debateId/chat" element={<ChatRoom />} />
