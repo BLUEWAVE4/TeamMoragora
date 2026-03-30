@@ -45,6 +45,15 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // standalone(PWA 설치) 여부 확인
+      var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      // standalone이면 OS 스플래시가 있으므로 앱 내 스플래시 즉시 제거
+      if (isStandalone) {
+        var s = document.getElementById('splash');
+        if (s) s.remove();
+      }
+
       // 스플래시 제거 함수 (HomePage에서 데이터 로딩 완료 시 호출)
       window.__removeSplash = function() {
         var splash = document.getElementById('splash');
