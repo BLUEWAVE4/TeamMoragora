@@ -938,7 +938,7 @@ const handleVote = (agree) => {
   const remainingMsgs = MAX_MSGS - msgCount;
 
   return (
-    <div className="flex overflow-hidden flex-col bg-[#0f1829] fixed inset-0 z-[50]" style={{ paddingBottom: keyboardHeight }}>
+    <div className="flex overflow-hidden flex-col bg-[#0f1829] fixed inset-0 z-[60]" style={{ paddingBottom: keyboardHeight }}>
 
       {/* 소켓 연결 끊김 배너 */}
       <AnimatePresence>
