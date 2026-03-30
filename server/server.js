@@ -97,11 +97,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.get('/api/rooms/participants', (_req, res) => {
   const result = {};
   for (const [debateId, room] of Object.entries(roomParticipants)) {
-    const slots = { A: [], B: [] };
+    const slots = { A: [], B: [], citizen: [] };
     Object.values(room).forEach(p => {
-      const { socketIds, ...safe } = p;
+      const { socketIds, _gameStarted, ...safe } = p;
       if (p.side === 'A') slots.A.push(safe);
-      if (p.side === 'B') slots.B.push(safe);
+      else if (p.side === 'B') slots.B.push(safe);
+      else if (p._isCitizen) slots.citizen.push(safe);
     });
     slots.A.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
     slots.B.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
