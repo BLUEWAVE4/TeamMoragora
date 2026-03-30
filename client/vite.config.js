@@ -17,7 +17,7 @@ export default defineConfig({
         short_name: '모라고라',
         description: 'AI 3모델 병렬 판결 + 시민 투표 기반 논쟁 판결 플랫폼',
         theme_color: '#ffffff',
-        background_color: '#ffffff',
+        background_color: '#1B2A4A',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
