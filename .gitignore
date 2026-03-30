@@ -56,3 +56,4 @@ role.md
 # Misc
 *.tgz
 .cache/
+.claudeignore
