@@ -65,9 +65,10 @@ function handlePostKick(io, debateId, targetId, targetSide) {
     return;
   }
 
-  // 다인원에서 한 측이 비었을 때 → 카운트다운
+  // 다인원에서 한 측 전원 강퇴 → 논쟁 무효 처리
   if (targetSideMembers.length === 0) {
     if (kickSkipTimers[debateId]) clearTimeout(kickSkipTimers[debateId]);
+    const emptySide = targetSide === 'A' ? 'A측' : 'B측';
     io.to(debateId).emit('kick-skip-countdown', { side: targetSide, seconds: KICK_SKIP_COUNTDOWN_SEC });
     kickSkipTimers[debateId] = setTimeout(async () => {
       delete kickSkipTimers[debateId];
@@ -75,15 +76,12 @@ function handlePostKick(io, debateId, targetId, targetSide) {
       const stillEmpty = targetSide === 'A' ? currentSlots.A.length === 0 : currentSlots.B.length === 0;
       if (!stillEmpty) return;
       try {
-        const { data: debate } = await supabaseAdmin.from('debates').select('status').eq('id', debateId).single();
-        if (debate?.status === 'chatting') {
-          await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', debateId).eq('status', 'chatting');
-          io.to(debateId).emit('chat-ended', { debateId });
-          cleanupDebateRoom(debateId);
-          const { triggerJudgment } = await import('../services/judgmentTrigger.service.js');
-          triggerJudgment(debateId).catch(err => console.error('[KickSkip] 판결 실패:', err.message));
-        }
-      } catch (err) { console.error('[KickSkip] 에러:', err.message); }
+        await supabaseAdmin.from('chat_messages').delete().eq('debate_id', debateId).then(() => {});
+        await supabaseAdmin.from('debates').delete().eq('id', debateId);
+        io.to(debateId).emit('chat-cancelled', { reason: `${emptySide} 전원 강퇴로 논쟁이 무효 처리되었습니다.` });
+        cleanupDebateRoom(debateId);
+        console.log(`[KickVoid] ${debateId} → 무효 삭제 (${emptySide} 전원 강퇴)`);
+      } catch (err) { console.error('[KickVoid] 에러:', err.message); }
     }, KICK_SKIP_COUNTDOWN_SEC * 1000);
   }
 }
