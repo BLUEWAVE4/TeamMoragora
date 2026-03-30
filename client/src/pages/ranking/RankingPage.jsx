@@ -435,24 +435,33 @@ export default function RankingPage() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [rankings, setRankings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rankPage, setRankPage] = useState(1);
+  const [rankHasNext, setRankHasNext] = useState(false);
+  const [rankLoadingMore, setRankLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState('user'); // 'user' | 'debate'
   const [hallData, setHallData] = useState([]);
   const [hallLoading, setHallLoading] = useState(false);
-  const [hallVisible, setHallVisible] = useState(10);
+  const [hallPage, setHallPage] = useState(1);
+  const [hallHasNext, setHallHasNext] = useState(false);
   const [hallLoadingMore, setHallLoadingMore] = useState(false);
 
-  // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
+  const RANK_LIMIT = 20;
+  const HALL_LIMIT = 10;
+
+  // 랭킹: stale-while-revalidate + 무한스크롤
   useEffect(() => {
     let hasCached = false;
     try {
       const cached = JSON.parse(sessionStorage.getItem('ranking_cache'));
-      if (cached) { setRankings(cached); setIsLoading(false); hasCached = true; }
+      if (cached?.data) { setRankings(cached.data); setRankHasNext(cached.hasNext ?? false); setIsLoading(false); hasCached = true; }
     } catch {}
     const fetchRankings = async () => {
       if (!hasCached) setIsLoading(true);
       try {
-        const res = await api.get('/profiles/ranking');
-        setRankings(res);
+        const res = await api.get(`/profiles/ranking?page=1&limit=${RANK_LIMIT}`);
+        setRankings(res.data || res);
+        setRankHasNext(res.hasNext ?? false);
+        setRankPage(1);
         sessionStorage.setItem('ranking_cache', JSON.stringify(res));
       } catch (err) {
         console.error('랭킹 불러오기 실패:', err);
@@ -461,18 +470,33 @@ export default function RankingPage() {
     fetchRankings();
   }, []);
 
+  const loadMoreRankings = useCallback(async () => {
+    if (rankLoadingMore || !rankHasNext) return;
+    setRankLoadingMore(true);
+    try {
+      const nextPage = rankPage + 1;
+      const res = await api.get(`/profiles/ranking?page=${nextPage}&limit=${RANK_LIMIT}`);
+      setRankings(prev => [...prev, ...(res.data || [])]);
+      setRankHasNext(res.hasNext ?? false);
+      setRankPage(nextPage);
+    } catch {} finally { setRankLoadingMore(false); }
+  }, [rankPage, rankHasNext, rankLoadingMore]);
+
+  // 명예의 전당: stale-while-revalidate + 무한스크롤
   useEffect(() => {
     if (activeTab !== 'debate') return;
     let hasCached = false;
     try {
       const cached = JSON.parse(sessionStorage.getItem('hall_cache'));
-      if (cached) { setHallData(cached); setHallLoading(false); hasCached = true; }
+      if (cached?.data) { setHallData(cached.data); setHallHasNext(cached.hasNext ?? false); setHallLoading(false); hasCached = true; }
     } catch {}
     const fetchHall = async () => {
       if (!hasCached) setHallLoading(true);
       try {
-        const res = await api.get('/judgments/hall?limit=20');
-        setHallData(res);
+        const res = await api.get(`/judgments/hall?page=1&limit=${HALL_LIMIT}`);
+        setHallData(res.data || res);
+        setHallHasNext(res.hasNext ?? false);
+        setHallPage(1);
         sessionStorage.setItem('hall_cache', JSON.stringify(res));
       } catch (err) {
         console.error('명예의 전당 불러오기 실패:', err);
@@ -480,6 +504,18 @@ export default function RankingPage() {
     };
     fetchHall();
   }, [activeTab]);
+
+  const loadMoreHall = useCallback(async () => {
+    if (hallLoadingMore || !hallHasNext) return;
+    setHallLoadingMore(true);
+    try {
+      const nextPage = hallPage + 1;
+      const res = await api.get(`/judgments/hall?page=${nextPage}&limit=${HALL_LIMIT}`);
+      setHallData(prev => [...prev, ...(res.data || [])]);
+      setHallHasNext(res.hasNext ?? false);
+      setHallPage(nextPage);
+    } catch {} finally { setHallLoadingMore(false); }
+  }, [hallPage, hallHasNext, hallLoadingMore]);
 
   const myRankIndex = rankings.findIndex(r => r.id === user?.id);
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
@@ -498,8 +534,9 @@ export default function RankingPage() {
       ? (idx === 0 ? 'bg-gradient-to-b from-[#2a2a1a] to-[#1a1a10]' : idx === 1 ? 'bg-gradient-to-b from-[#252530] to-[#1a1a22]' : 'bg-gradient-to-b from-[#2a2218] to-[#1a1810]')
       : (idx === 0 ? 'bg-gradient-to-b from-white to-[#FFF9E5]' : idx === 1 ? 'bg-gradient-to-b from-white to-[#F5F5F7]' : 'bg-gradient-to-b from-white to-[#FAF5F0]'),
   }));
-  const top10List = searchQuery ? filteredRankings : rankings.slice(3, 10);
-  const myIsOutsideTop10 = myRankIndex >= 10;
+  const top10List = searchQuery ? filteredRankings : rankings.slice(3);
+  // 내가 현재 로드된 리스트에 없을 때만 하단 고정 표시
+  const myIsOutsideVisible = myRankIndex === -1 && myData === null && user;
 
   return (
     <div className="min-h-screen bg-[#F3F1EC] font-sans">
@@ -542,7 +579,7 @@ export default function RankingPage() {
       <QuoteLoader />
     ) : (
       <div className="max-w-[440px] mx-auto pt-6 flex flex-col gap-3">
-        {hallData.slice(0, hallVisible).map((v, idx) => {
+        {hallData.map((v, idx) => {
           const d = v.debate || {};
           const creator = d.creator || {};
           const rank = idx + 1;
@@ -649,22 +686,16 @@ export default function RankingPage() {
         })}
 
         {/* 무한 스크롤 트리거 */}
-        {hallVisible < hallData.length && (
+        {hallHasNext && (
           <div ref={el => {
             if (!el) return;
             const observer = new IntersectionObserver(([entry]) => {
-              if (entry.isIntersecting && !hallLoadingMore) {
-                setHallLoadingMore(true);
-                setTimeout(() => {
-                  setHallVisible(prev => prev + 5);
-                  setHallLoadingMore(false);
-                }, 400);
-              }
+              if (entry.isIntersecting) loadMoreHall();
             }, { threshold: 0.1 });
             observer.observe(el);
             return () => observer.disconnect();
           }} className="flex justify-center py-6">
-            <div className="w-6 h-6 border-3 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />
+            {hallLoadingMore && <div className="w-6 h-6 border-3 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />}
           </div>
         )}
       </div>
@@ -802,7 +833,7 @@ export default function RankingPage() {
                 );
               })}
 
-              {myIsOutsideTop10 && myData && (
+              {myIsOutsideVisible && myData && (
                 <>
                   <div className="flex items-center justify-center py-2">
                     <div className="flex gap-1">
@@ -838,6 +869,20 @@ export default function RankingPage() {
           </>}
           </>
         )}
+
+              {/* 랭킹 무한스크롤 트리거 */}
+              {rankHasNext && !searchQuery && (
+                <div ref={el => {
+                  if (!el) return;
+                  const observer = new IntersectionObserver(([entry]) => {
+                    if (entry.isIntersecting) loadMoreRankings();
+                  }, { threshold: 0.1 });
+                  observer.observe(el);
+                  return () => observer.disconnect();
+                }} className="flex justify-center py-6">
+                  {rankLoadingMore && <div className="w-6 h-6 border-3 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />}
+                </div>
+              )}
       </div>
 
       {/* 등급 시스템 바텀시트 */}
