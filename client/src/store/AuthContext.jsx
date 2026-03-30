@@ -53,7 +53,18 @@ export function AuthProvider({ children }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    // 탭 복귀 시 세션 갱신 (백그라운드에서 토큰 만료 대비)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          setAuthToken(session?.access_token || null);
+          if (!session) { setUser(null); setIsAdmin(false); useProfileStore.getState().reset(); }
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => { subscription.unsubscribe(); document.removeEventListener('visibilitychange', handleVisibility); };
   }, []);
 
   const signInWithKakao = () =>
