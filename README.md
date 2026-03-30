@@ -152,7 +152,8 @@ moragora/
 
 | 이름 | 역할 | 사용기술 |
 |------|------|---------|
-| 김선권 | Backend | Express.js (Node.js), Supabase DB/Storage/Auth, OpenAI API, Google Generative AI, Anthropic SDK, xAI SDK, Socket.IO |
+| **공통** | AI API | OpenAI API, Google Generative AI, Anthropic SDK, xAI SDK |
+| 김선관 | Backend | Express.js (Node.js), Supabase DB/Storage/Auth, Socket.IO |
 | 서우주 | Frontend A | React 19 (Vite), JS, Tailwind CSS(v4), Axios, React Router, Framer Motion |
 | 채유진 | Frontend B | React 19 (Vite), JS, Tailwind CSS(v4), Axios, Supabase Auth |
 | 김준민 | Frontend C | React 19 (Vite), JS, Tailwind CSS(v4), Axios |
