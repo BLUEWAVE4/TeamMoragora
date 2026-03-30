@@ -175,8 +175,10 @@ export default function Header() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [activeTab, setActiveTab] = useState(getDeviceOS() === 'ios' ? 'ios' : 'android');
 
-  // PWA standalone 모드면 설치 버튼 숨김
+  // PWA standalone 또는 PC에서는 설치 버튼 숨김
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const showInstallBtn = !isStandalone && isMobile;
 
   // Android: beforeinstallprompt 이벤트 캡처
   useEffect(() => {
@@ -306,7 +308,7 @@ export default function Header() {
               <BellIcon active={unreadCount > 0} />
               {unreadCount > 0 && <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </button>
-            {!isStandalone && (
+            {showInstallBtn && (
               <button aria-label="앱 설치" onClick={handleInstallClick} className="w-11 h-11 flex items-center justify-center text-[#2D3350]/50 rounded-full">
                 <DownloadIcon />
               </button>
