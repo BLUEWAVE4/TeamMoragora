@@ -546,7 +546,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
 
       {/* ===== 탭바 ===== */}
       <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
-        <nav className="w-full max-w-[450px] bg-white/95 backdrop-blur-md border-t border-gray-100 h-[60px] flex items-center justify-around pointer-events-auto pb-[env(safe-area-inset-bottom,0px)] overflow-hidden">
+        <nav className="w-full max-w-[450px] bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center justify-around pointer-events-auto overflow-hidden" style={{ height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
 
           {menuItems.map((item, idx) => {
             if (item.isButton) {
