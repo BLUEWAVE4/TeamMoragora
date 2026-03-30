@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
 import { formatDate } from '../../utils/dateFormatter';
+import QuoteLoader from '../../components/common/QuoteLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import api from '../../services/api';
@@ -442,12 +443,13 @@ export default function RankingPage() {
 
   // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
   useEffect(() => {
+    let hasCached = false;
     try {
       const cached = JSON.parse(sessionStorage.getItem('ranking_cache'));
-      if (cached) { setRankings(cached); setIsLoading(false); }
+      if (cached) { setRankings(cached); setIsLoading(false); hasCached = true; }
     } catch {}
     const fetchRankings = async () => {
-      if (rankings.length === 0) setIsLoading(true);
+      if (!hasCached) setIsLoading(true);
       try {
         const res = await api.get('/profiles/ranking');
         setRankings(res);
@@ -461,12 +463,13 @@ export default function RankingPage() {
 
   useEffect(() => {
     if (activeTab !== 'debate') return;
+    let hasCached = false;
     try {
       const cached = JSON.parse(sessionStorage.getItem('hall_cache'));
-      if (cached) { setHallData(cached); setHallLoading(false); return; }
+      if (cached) { setHallData(cached); setHallLoading(false); hasCached = true; }
     } catch {}
     const fetchHall = async () => {
-      setHallLoading(true);
+      if (!hasCached) setHallLoading(true);
       try {
         const res = await api.get('/judgments/hall?limit=20');
         setHallData(res);
@@ -502,9 +505,7 @@ export default function RankingPage() {
     <div className="min-h-screen bg-[#F3F1EC] font-sans">
       <div className="max-w-md mx-auto px-5 pt-6 pb-32">
         {isLoading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <QuoteLoader />
         ) : (
           <>
             <div className="mb-6">
@@ -538,9 +539,7 @@ export default function RankingPage() {
 {activeTab === 'debate' && (
   <div className="px-4 pb-24 min-h-screen font-[-apple-system,sans-serif] tracking-tight antialiased">
     {hallLoading ? (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
-      </div>
+      <QuoteLoader />
     ) : (
       <div className="max-w-[440px] mx-auto pt-6 flex flex-col gap-3">
         {hallData.slice(0, hallVisible).map((v, idx) => {

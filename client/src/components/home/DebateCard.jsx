@@ -41,7 +41,7 @@ function useVoteCountdown(createdAt, voteDuration) {
   return timeLeft;
 }
 
-function DebateCard({ feed }) {
+function DebateCard({ feed, initialVote, initialLiked }) {
   const { user } = useAuth();
   const isDark = useThemeStore(s => s.isDark);
   const navigate = useNavigate();
@@ -65,23 +65,24 @@ function DebateCard({ feed }) {
   const optionAText = debateData?.pro_side || feed?.pro_side || "";
   const optionBText = debateData?.con_side || feed?.con_side || "";
 
-  const [myVote, setMyVote] = useState(null);
+  const [myVote, setMyVote] = useState(initialVote || null);
 
-  // 서버에서 투표 상태 조회
+  // 배치 데이터 없으면 개별 조회 폴백
   useEffect(() => {
+    if (initialVote !== undefined) return;
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId || !user) return;
     getMyVote(debateId).then(res => {
       setMyVote(res?.voted_side || null);
     }).catch(() => {});
-  }, [feed?.debate_id, debateData?.id, user]);
+  }, [feed?.debate_id, debateData?.id, user, initialVote]);
   const [voteCounts, setVoteCounts] = useState({
     agree: feed?.citizen_score_a ?? 0,
     disagree: feed?.citizen_score_b ?? 0,
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLiked || false);
   // 서버에서 내려준 좋아요 수 사용
   const [likeCount, setLikeCount] = useState(feed?.likes_count ?? 0);
   const [isLiking, setIsLiking] = useState(false);
@@ -101,12 +102,13 @@ function DebateCard({ feed }) {
     '기타': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
   };
 
-  // 내가 좋아요 했는지 서버 API로 조회
+  // 배치 데이터 없으면 개별 조회 폴백
   useEffect(() => {
+    if (initialLiked !== undefined) return;
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId || !user) return;
     api.get(`/debates/${debateId}/like/me`).then(res => setLiked(!!res?.liked)).catch(() => {});
-  }, [feed?.debate_id, debateData?.id, user]);
+  }, [feed?.debate_id, debateData?.id, user, initialLiked]);
 
 
   if (!feed) return null;

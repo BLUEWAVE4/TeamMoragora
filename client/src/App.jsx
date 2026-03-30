@@ -3,6 +3,7 @@ import { useEffect, lazy, Suspense } from 'react';
 import Layout from './components/layout/Layout';
 import { trackPageView } from './services/analytics';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import QuoteLoader from './components/common/QuoteLoader';
 
 // 초기 번들에 포함 (핵심 페이지)
 import HomePage from './pages/HomePage';
@@ -28,11 +29,7 @@ const DebateLobbyPage = lazy(() => import('./pages/debate/DebateLobbyPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 
 function PageLoader() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
-      <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  return <QuoteLoader />;
 }
 
 export default function App() {

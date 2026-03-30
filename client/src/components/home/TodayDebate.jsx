@@ -10,22 +10,23 @@ import useModalState from '../../hooks/useModalState';
 import CommentBottomSheet from '../common/CommentBottomSheet';
 
 // 개별 카드 컴포넌트
-const DebateBannerCard = React.memo(function DebateBannerCard({ item }) {
+const DebateBannerCard = React.memo(function DebateBannerCard({ item, initialVote }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const debateId = item?.debate_id;
   const isVotingStatus = item?.debate?.status === 'voting';
   const isCompleted = item?.debate?.status === 'completed';
-  const [myVote, setMyVote] = useState(null);
+  const [myVote, setMyVote] = useState(initialVote || null);
 
-  // 서버에서 투표 상태 조회
+  // 배치 데이터 없으면 개별 조회 폴백
   useEffect(() => {
+    if (initialVote !== undefined) return;
     if (!debateId || !user) return;
     getMyVote(debateId).then(res => {
       setMyVote(res?.voted_side || null);
     }).catch(() => {});
-  }, [debateId, user]);
+  }, [debateId, user, initialVote]);
   const [voteCounts, setVoteCounts] = useState({ A: item?.citizen_score_a ?? 0, B: item?.citizen_score_b ?? 0 });
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
@@ -309,7 +310,7 @@ function SlideArrow({ direction, onClick, disabled }) {
 }
 
 // 배너 래퍼 컴포넌트
-export default function TodayDebate({ items = [] }) {
+export default function TodayDebate({ items = [], myVotesMap = {} }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const startXRef = useRef(null);
   const containerRef = useRef(null);
@@ -367,7 +368,7 @@ export default function TodayDebate({ items = [] }) {
           >
             {validItems.map((item, i) => (
               <div key={item?.debate_id || i} className="w-full flex-shrink-0">
-                <DebateBannerCard item={item} />
+                <DebateBannerCard item={item} initialVote={myVotesMap[item?.debate_id]} />
               </div>
             ))}
           </div>

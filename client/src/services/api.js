@@ -118,6 +118,7 @@ export const getHallOfFame = (limit = 10, q) => api.get('/judgments/hall', { par
 export const castVote = (debateId, voted_side) => api.post(`/votes/${debateId}`, { voted_side });
 export const getVoteTally = (debateId) => api.get(`/votes/${debateId}`);
 export const getMyVote = (debateId) => api.get(`/votes/${debateId}/my`);
+export const getMyVotesBatch = (debateIds) => api.post('/votes/batch/my', { debateIds });
 export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`);
 
 // ===== 댓글 (Comments) =====
@@ -127,6 +128,7 @@ export const deleteComment = (commentId) => api.delete(`/comments/${commentId}`)
 export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}/like`);
 
 export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
+export const getMyLikesBatch = (debateIds) => api.post('/debates/batch/likes', { debateIds });
 
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/profiles/me');

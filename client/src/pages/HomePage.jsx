@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { throttle } from '../utils/perf';
 import { useSearchParams } from 'react-router-dom';
-import { getVerdictFeed, getDailyVerdicts } from '../services/api';
+import { getVerdictFeed, getDailyVerdicts, getMyVotesBatch, getMyLikesBatch } from '../services/api';
+import { useAuth } from '../store/AuthContext';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
 import { isOnboardingDone, markOnboardingDone } from '../components/common/OnboardingModal';
 import OnboardingBanner from '../components/home/OnboardingBanner';
+import QuoteLoader from '../components/common/QuoteLoader';
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [filter, setFilter] = useState('전체');
@@ -17,6 +20,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasNext, setHasNext] = useState(true);
+  const [myVotesMap, setMyVotesMap] = useState({});
+  const [myLikesMap, setMyLikesMap] = useState({});
   const [page, setPage] = useState(1);
   const [dailyItems, setDailyItems] = useState([]);
 
@@ -73,6 +78,7 @@ export default function HomePage() {
   // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
   useEffect(() => {
     const CACHE_KEY = 'home_cache';
+    let hasCached = false;
     try {
       const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
       if (cached?.feeds && cached?.daily) {
@@ -80,12 +86,15 @@ export default function HomePage() {
         setDailyItems(cached.daily);
         setHasNext(cached.hasNext ?? false);
         hasNextRef.current = cached.hasNext ?? false;
+        if (cached.myVotes) setMyVotesMap(cached.myVotes);
+        if (cached.myLikes) setMyLikesMap(cached.myLikes);
         setLoading(false);
+        hasCached = true;
       }
     } catch {}
 
     const init = async () => {
-      if (feeds.length === 0) setLoading(true);
+      if (!hasCached) setLoading(true);
       const [feedResult, dailyResult] = await Promise.allSettled([
         getVerdictFeed(1, 5),
         getDailyVerdicts(5),
@@ -99,7 +108,18 @@ export default function HomePage() {
       hasNextRef.current = freshHasNext;
       pageRef.current = 1;
       setLoading(false);
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ feeds: freshFeeds, daily: freshDaily, hasNext: freshHasNext }));
+
+      // 배치로 투표/좋아요 상태 조회 (로그인 시) + 캐시에 포함
+      let freshVotes = {}, freshLikes = {};
+      if (user) {
+        const allIds = [...freshFeeds, ...freshDaily].map(f => f?.debate_id || f?.debate?.id).filter(Boolean);
+        if (allIds.length > 0) {
+          const [votes, likes] = await Promise.allSettled([getMyVotesBatch(allIds), getMyLikesBatch(allIds)]);
+          if (votes.status === 'fulfilled') { freshVotes = votes.value || {}; setMyVotesMap(freshVotes); }
+          if (likes.status === 'fulfilled') { freshLikes = likes.value || {}; setMyLikesMap(freshLikes); }
+        }
+      }
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ feeds: freshFeeds, daily: freshDaily, hasNext: freshHasNext, myVotes: freshVotes, myLikes: freshLikes }));
     };
     init();
   }, []);
@@ -154,26 +174,22 @@ export default function HomePage() {
     }
   }, [loading]);
 
-  // 스플래시가 있으면 숨기고, 없으면 로딩 스피너 표시
+  // 스플래시가 있으면 숨기고, 없으면 명언 로더 표시
   if (loading) {
     if (document.getElementById('splash')) return null;
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
-        <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <QuoteLoader />;
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
       {showGuide && <OnboardingBanner onDismiss={() => { setShowGuide(false); markOnboardingDone(); }} key="guide" />}
-      <TodayDebate items={dailyItems} />
+      <TodayDebate items={dailyItems} myVotesMap={myVotesMap} />
       <main className="flex flex-col mt-6 px-5">
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
 
         <section className="mt-2 flex flex-col gap-3">
           {getProcessedFeeds().map((feed) => (
-            <DebateCard key={feed.id} feed={feed} />
+            <DebateCard key={feed.id} feed={feed} initialVote={myVotesMap[feed?.debate_id]} initialLiked={myLikesMap[feed?.debate_id]} />
           ))}
         </section>
 
