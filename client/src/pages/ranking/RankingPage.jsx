@@ -275,58 +275,46 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
         {/* ── 새 디자인: 포인트/티어 + 승률 카드 ── */}
         <div className="space-y-4 mb-6">
 
-          {/* 1. 포인트 & 티어 진행도 카드 */}
-          <div className="relative bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 overflow-hidden">
+          {/* 1. 포인트 & 티어 진행도 카드 (마이페이지 통일) */}
+          <div className="relative bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/[0.06] overflow-hidden active:scale-[0.98] transition-transform">
             <div className="relative z-10">
               <div className="flex justify-between items-center mb-5">
                 <div className="space-y-0.5">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-[32px] font-black text-gray-900 tracking-tighter">
+                    <span className="text-[32px] font-black text-gray-900 dark:text-white tracking-tighter">
                       <CountUp end={currentScore} separator="," />
                     </span>
-                    <span className="text-[14px] font-bold text-gray-400">P</span>
+                    <span className="text-[14px] font-bold text-gray-400 dark:text-white/40">P</span>
                   </div>
                 </div>
-                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-gray-50 flex items-center justify-center">
+                <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl shadow-sm border border-gray-50 dark:border-white/10 flex items-center justify-center">
                   <tier.icon size={24} style={{ color: tier.color }} />
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-end px-1">
-                  <span className="text-[14px] font-bold tracking-tight" style={{ color: tier.color }}>
-                    {tier.name}
-                  </span>
-                  {nextTier && (
-                    <span className="text-[13px] font-bold text-gray-400">
-                      NEXT: {nextTier.min.toLocaleString()}P
-                    </span>
-                  )}
+                  <span className="text-[14px] font-heavy tracking-tight" style={{ color: tier.color }}>{tier.name}</span>
                 </div>
 
-                {/* XP 진행 바 */}
                 <div className="relative w-full">
-                  <div className="w-full h-3.5 bg-gray-200/50 rounded-full overflow-hidden border border-white/40 relative p-[1px]">
+                  <div className="w-full h-3.5 bg-gray-200/50 dark:bg-white/10 rounded-full overflow-hidden border border-white/40 dark:border-white/5 relative p-[1px]">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 1.5, ease: 'circOut' }}
                       className="h-full rounded-full relative"
-                      style={{
-                        background: 'linear-gradient(to right, #FFD500, #FFAB00)',
-                        boxShadow: '0 1px 3px rgba(255,171,0,0.3)',
-                      }}
+                      style={{ background: 'linear-gradient(to right, #FFD500, #FFAB00)', boxShadow: '0 1px 3px rgba(255, 171, 0, 0.3)' }}
                     >
                       <div className="absolute top-0 left-0 w-full h-[35%] bg-white/40 rounded-full" />
                     </motion.div>
                   </div>
                   <div className="mt-2.5 flex justify-between items-center px-1">
-                    <span className="text-[13px] font-black text-gray-500 tracking-tighter">
-                      {progress}%
+                    <span className="text-[13px] font-black text-gray-500 dark:text-white/50 tracking-tighter">
+                      {progress.toFixed ? progress.toFixed(2) : progress}%
                     </span>
-                    <span className="text-[11px] font-bold text-gray-400 tracking-tight">
-                      {currentScore.toLocaleString()} <span className="text-gray-600">/</span>{' '}
-                      {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
+                    <span className="text-[11px] font-bold text-gray-400 dark:text-white/30 tracking-tight">
+                      {currentScore.toLocaleString()} <span className="text-gray-600 dark:text-white/20">/</span> {nextTier ? nextTier.min.toLocaleString() : 'MAX'}
                     </span>
                   </div>
                 </div>
@@ -334,53 +322,45 @@ function PlayerProfileSheet({ player, rank, onClose, isDark }) {
             </div>
           </div>
 
-          {/* 2. 승률 스코어보드 카드 */}
-          <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80">
+          {/* 2. 승률 스코어보드 카드 (마이페이지 통일) */}
+          <div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.03)] border border-white/80 dark:border-white/[0.06] active:scale-[0.98] transition-transform">
 
-            {/* 요약 */}
             <div className="flex justify-between items-center mb-8">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-1 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
-                  <span className="text-[13px] font-bold text-gray-400 uppercase tracking-widest">전적</span>
+                  <span className="text-[16px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest">전적</span>
                 </div>
                 <div className="flex items-baseline leading-none">
-                  <span className="text-[32px] font-black text-gray-900 tracking-tighter">
+                  <span className="text-[32px] font-black text-gray-900 dark:text-white tracking-tighter">
                     {winRate.toFixed(1)}
                   </span>
                   <span className="text-[20px] font-bold text-blue-500 ml-1">%</span>
                 </div>
               </div>
 
-              <div className="bg-gray-50/80 px-4 py-2.5 rounded-2xl border border-gray-100/50 text-right">
-                <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</p>
-                <p className="text-[22px] font-black text-gray-900 leading-none">{totalGames}</p>
+              <div className="bg-gray-50/80 dark:bg-white/[0.06] px-4 py-2.5 rounded-2xl border border-gray-100/50 dark:border-white/[0.06] text-center">
+                <p className="text-[12px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest mt-1">Total</p>
+                <p className="text-[22px] font-black text-gray-900 dark:text-[#D4AF37] leading-none">{totalGames}</p>
               </div>
             </div>
 
-            {/* 승/무/패 그리드 */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: '승리', value: wins, textColor: 'text-blue-600', bg: 'bg-blue-50/40', border: 'border-blue-100/50' },
-                { label: '무승부', value: draws, textColor: 'text-gray-500', bg: 'bg-gray-50/60', border: 'border-gray-200/50' },
-                { label: '패배', value: losses, textColor: 'text-red-600', bg: 'bg-red-50/40', border: 'border-red-100/50' },
+                { label: '승리', value: wins, textColor: 'text-blue-600', bg: 'bg-blue-50/40 dark:bg-blue-500/10', border: 'border-blue-100/50 dark:border-blue-500/20' },
+                { label: '무승부', value: draws, textColor: 'text-gray-500 dark:text-white/50', bg: 'bg-gray-50/60 dark:bg-white/[0.04]', border: 'border-gray-200/50 dark:border-white/10' },
+                { label: '패배', value: losses, textColor: 'text-red-600', bg: 'bg-red-50/40 dark:bg-red-500/10', border: 'border-red-100/50 dark:border-red-500/20' },
               ].map((item, i) => (
                 <div key={i} className={`${item.bg} ${item.border} rounded-[24px] py-4 flex flex-col items-center border shadow-[0_4px_12px_rgba(0,0,0,0.01)]`}>
                   <span className={`text-[24px] font-black ${item.textColor} tracking-tight leading-none`}>
                     {item.value}
                   </span>
-                  <span className="text-[10px] font-bold text-gray-400 mt-2">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 mt-2">
                     {item.label}
                   </span>
                 </div>
               ))}
             </div>
-
-            {draws > 0 && (
-              <p className="text-[11px] text-gray-400 text-center mt-4">
-                승률은 무승부를 제외하고 계산됩니다
-              </p>
-            )}
           </div>
         </div>
 
