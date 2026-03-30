@@ -1203,8 +1203,8 @@ const handleVote = (agree) => {
         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-1">실시간 논쟁</p>
         <h1 className="text-white text-[15px] font-black text-center leading-snug line-clamp-2 px-8">{debate?.topic || ''}</h1>
         <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
-          {debate?.purpose && <span onClick={() => showToast(`판결 목적: ${debate.purpose}`, 'info', 2000)} className="text-[10px] px-2 py-0.5 rounded-full bg-white/8 text-white/30 font-bold cursor-pointer active:scale-95 transition-all">{debate.purpose}</span>}
-          {debate?.lens && debate.lens !== '미선택' && <span onClick={() => showToast(`판결 기준: ${debate.lens}`, 'info', 2000)} className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]/70 font-bold cursor-pointer active:scale-95 transition-all">{debate.lens}</span>}
+          {debate?.purpose && <span onClick={() => showToast(`판결 목적: ${debate.purpose}`, 'info', 2000)} className="text-[10px] px-2 py-0.5 rounded bg-white/8 text-white/30 font-bold cursor-pointer active:scale-95 transition-all">{debate.purpose}</span>}
+          {debate?.lens && debate.lens !== '미선택' && <span onClick={() => showToast(`판결 기준: ${debate.lens}`, 'info', 2000)} className="text-[10px] px-2 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37]/70 font-bold cursor-pointer active:scale-95 transition-all">{debate.lens}</span>}
         </div>
 
         {/* A/B + 타이머 (3등분 레이아웃 — 타이머 항상 정중앙) */}
