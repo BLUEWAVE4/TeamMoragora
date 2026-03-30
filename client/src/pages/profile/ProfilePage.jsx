@@ -504,7 +504,7 @@ const [showInfo, setShowInfo] = useState(false);
         {/* Avatar + Nickname */}
         <div className="flex flex-col items-center mb-8">
           <div
-            className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-sm relative cursor-pointer"
+            className="w-20 h-20 rounded-full overflow-hidden bg-[#F3F1EC] dark:bg-[#1B2A4A] mb-3 shadow-sm relative cursor-pointer"
             onClick={() => {
               if (isEditing && profileData?.gender) {
                 const currentUrl = profileData.avatar_url || '';
