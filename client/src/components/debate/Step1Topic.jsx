@@ -186,6 +186,7 @@ export default function Step1Topic({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder=""
+            disabled={showDraft}
           />
           {/* 타이프라이터 플레이스홀더 오버레이 */}
           {!topic && !isFocused && (
@@ -267,7 +268,7 @@ export default function Step1Topic({
 
       {/* ── 하단 버튼 ── */}
       <div className="flex gap-3">
-        <Button variant="accent" onClick={prevStep} className="w-full" disabled={aiLoading}>뒤로</Button>
+        <Button variant="accent" onClick={() => showDraft ? resetTopic() : prevStep()} className="w-full" disabled={aiLoading}>뒤로</Button>
         <Button onClick={handleNext} className="w-full" disabled={aiLoading}>
           {aiLoading ? "AI 생성 중..." : "다음"}
         </Button>

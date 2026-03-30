@@ -287,8 +287,8 @@ export default function Header() {
 
   return (
     <>
-      <header className={`bg-white/80 border-b border-gray-100 sticky top-0 z-[100] h-14 flex items-end backdrop-blur-md transition-transform duration-300 pt-[env(safe-area-inset-top,0px)] ${visible || isStandalone ? 'translate-y-0' : '-translate-y-full'}`}>
-        <div className="max-w-md mx-auto px-5 w-full flex items-center justify-between">
+      <header className={`bg-white border-b border-gray-100 sticky top-0 z-[100] backdrop-blur-md transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="max-w-md mx-auto px-5 w-full h-14 flex items-center justify-between">
           {isSearchOpen ? (
             <form onSubmit={(e) => { e.preventDefault(); setSearchParams(searchQuery ? { q: searchQuery } : {}); setIsSearchOpen(false); }} className="flex-1 flex items-center bg-gray-100/80 rounded-xl px-3 py-1.5 mr-2">
               <SearchIcon className="text-gray-400 mr-2 shrink-0" />
