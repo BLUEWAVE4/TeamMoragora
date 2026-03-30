@@ -71,7 +71,7 @@ export default function InvitePage() {
             sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
           } else if (debateData.opponent_id === user.id) {
             // B측: 이미 참여한 논쟁 → 현재 상태에 맞는 페이지로 바로 이동
-            navigate(getDebateRoute(debateData.id, debateData.status), { replace: true })
+            navigate(getDebateRoute(debateData), { replace: true })
             return
           } else {
             // B측: 소환장 UI 표시 (참여 버튼 클릭 시 joinByInvite 실행)
@@ -173,7 +173,7 @@ if (debate?.opponent_id === user.id) {
       if (status === 409 || msg.includes('이미 상대방')) {
         setError('이미 다른 사용자가 참여한 논쟁입니다.')
       } else if (status === 400 && msg.includes('본인')) {
-        navigate(getDebateRoute(debate.id, debate.status))
+        navigate(getDebateRoute(debate))
       } else {
         showModal('참여 처리 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.', 'error')
       }
@@ -407,7 +407,7 @@ if (debate?.opponent_id === user.id) {
         {/* 푸터 - 상태 버튼 */}
         <div className="bg-[#F5F0E8] px-5 py-4 border-t border-[#1B2A4A]/10">
 <button
-  onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
+  onClick={() => isOpponentJoined && navigate(getDebateRoute(debate))}
   disabled={!isOpponentJoined}
   className={`w-full h-[52px] font-black text-[15px] rounded-xl transition-all duration-500 flex items-center justify-center gap-2 ${
     isOpponentJoined
