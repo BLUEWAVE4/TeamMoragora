@@ -18,6 +18,7 @@
     <meta property="og:image:height" content="630" />
     <title>모라고라 | Moragora</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <link rel="preload" as="image" href="/practice2.webp">
     <link rel="preload" as="image" href="/fight2.webp">
     <link rel="preload" as="image" href="/3vs3.webp">
@@ -37,67 +38,187 @@
   </head>
   <body>
     <!-- PWA 스플래시 화면 -->
-    <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;align-items:flex-start;justify-content:center;padding-top:10vh;transition:background 1.2s ease;">
-      <div style="position:absolute;inset:0;background:url('/practice.webp') center/cover no-repeat;opacity:0.08;"></div>
-      <div style="position:relative;z-index:1;display:flex;align-items:center;height:30px;">
-        <span id="splash-typed" style="font-size:44px;font-weight:900;letter-spacing:-0.5px;"></span><span id="splash-cursor" style="display:inline-block;width:3px;height:44px;background:rgba(255,255,255,0.4);margin-left:2px;animation:blink 0.7s step-end infinite;"></span>
+    <style>
+      #splash *,#splash *::before,#splash *::after{box-sizing:border-box;margin:0;padding:0;}
+      :root{--agora-stone:#1a1714;--agora-stone-mid:#241f1b;--athenian-gold:#c9a84c;--athenian-gold-bright:#f0c96a;--hemlock-red:#8b2e2e;--marble:#e8e0d0;--marble-dim:#a09888;}
+      #splash .bg-layer{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,#2a2218 0%,var(--agora-stone) 70%),repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.012) 2px,rgba(255,255,255,0.012) 4px);z-index:0;}
+      #splash .vignette{position:absolute;inset:0;background:radial-gradient(ellipse 90% 90% at 50% 50%,transparent 40%,rgba(0,0,0,0.85) 100%);z-index:1;}
+      #splash .columns{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+      #splash .col{position:absolute;bottom:0;width:3px;background:linear-gradient(to top,rgba(201,168,76,0.25),transparent);opacity:0;animation:sp-col-rise 2.4s ease-out forwards;}
+      #splash .col::before{content:'';position:absolute;top:0;left:-5px;width:13px;height:8px;background:rgba(201,168,76,0.3);border-radius:1px;}
+      #splash .col:nth-child(1){left:8%;height:55vh;animation-delay:0.1s;}
+      #splash .col:nth-child(2){left:15%;height:40vh;animation-delay:0.2s;}
+      #splash .col:nth-child(3){right:15%;height:40vh;animation-delay:0.2s;}
+      #splash .col:nth-child(4){right:8%;height:55vh;animation-delay:0.1s;}
+      @keyframes sp-col-rise{from{opacity:0;transform:scaleY(0);transform-origin:bottom;}to{opacity:1;transform:scaleY(1);transform-origin:bottom;}}
+      #splash .sp-main{position:relative;z-index:10;width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}
+      #splash .epigraph{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(0.7rem,1.2vw,0.9rem);color:var(--marble-dim);letter-spacing:0.18em;text-transform:uppercase;opacity:0;transform:translateY(-12px);animation:sp-fade-down 1s ease forwards;animation-delay:0.6s;margin-bottom:2.4rem;}
+      #splash .divider-top{display:flex;align-items:center;gap:1rem;opacity:0;animation:sp-fade-in 0.8s ease forwards;animation-delay:0.9s;margin-bottom:2rem;}
+      #splash .divider-top .line{width:clamp(60px,8vw,120px);height:1px;background:linear-gradient(to right,transparent,var(--athenian-gold));}
+      #splash .divider-top .line.right{background:linear-gradient(to left,transparent,var(--athenian-gold));}
+      #splash .divider-top .diamond{width:6px;height:6px;background:var(--athenian-gold);transform:rotate(45deg);}
+      #splash .logo-v{font-size:clamp(4rem,10vw,8rem);line-height:1;opacity:0;transform:scale(0.85);animation:sp-logo-appear 1.2s cubic-bezier(0.16,1,0.3,1) forwards;animation-delay:1.1s;margin-bottom:0.6rem;}
+      @keyframes sp-logo-appear{from{opacity:0;transform:scale(0.85);filter:drop-shadow(0 0 0px rgba(201,168,76,0));}to{opacity:1;transform:scale(1);filter:drop-shadow(0 0 40px rgba(201,168,76,0.35));}}
+      #splash .wordmark{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(2rem,5vw,3.8rem);letter-spacing:0.35em;color:var(--marble);text-shadow:0 2px 40px rgba(201,168,76,0.2);}
+      #splash .subtitle{font-family:'EB Garamond',serif;font-size:clamp(0.75rem,1.4vw,1rem);color:var(--marble-dim);letter-spacing:0.22em;text-transform:uppercase;opacity:0;animation:sp-fade-in 1s ease forwards;animation-delay:2s;margin-top:0.8rem;}
+      #splash .divider-bottom{display:flex;align-items:center;gap:1rem;opacity:0;animation:sp-fade-in 0.8s ease forwards;animation-delay:2.1s;margin-top:2rem;}
+      #splash .divider-bottom .line{width:clamp(60px,8vw,120px);height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.5));}
+      #splash .divider-bottom .line.right{background:linear-gradient(to left,transparent,rgba(201,168,76,0.5));}
+      #splash .divider-bottom .omega{font-family:'Cinzel',serif;font-size:0.75rem;color:var(--athenian-gold);opacity:0.7;}
+      #splash .wordmark-wrap{display:flex;align-items:center;opacity:0;transform:translateY(8px);animation:sp-fade-up 1s ease forwards;animation-delay:1.5s;min-height:clamp(2.4rem,5.5vw,4.2rem);}
+      #splash .wordmark-cursor{display:inline-block;width:3px;height:clamp(2rem,4.5vw,3.4rem);background:var(--athenian-gold);margin-left:2px;animation:sp-blink 0.7s step-end infinite;}
+      #splash .quote-block{position:absolute;bottom:clamp(2rem,5vh,4rem);text-align:center;opacity:0;animation:sp-fade-up 1.2s ease forwards;animation-delay:2.5s;}
+      #splash .quote-text{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(0.8rem,1.3vw,1rem);color:rgba(160,152,136,0.7);letter-spacing:0.05em;line-height:1.6;}
+      #splash .quote-attr{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.25em;color:rgba(201,168,76,0.45);margin-top:0.5rem;text-transform:uppercase;}
+      #splash .loader-wrap{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,0.04);overflow:hidden;opacity:0;animation:sp-fade-in 0.5s ease forwards;animation-delay:2.8s;}
+      #splash .loader-bar{height:100%;width:0%;background:linear-gradient(to right,var(--hemlock-red),var(--athenian-gold));animation:sp-load-progress 2.5s ease-in-out forwards;animation-delay:3s;}
+      @keyframes sp-load-progress{0%{width:0%;}60%{width:70%;}90%{width:90%;}100%{width:100%;}}
+      @keyframes sp-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+      #splash .sp-chars-wrap{display:inline-flex;gap:0.35em;transition:gap 1.2s ease;}
+      #splash .sp-chars-wrap.gathered{gap:0;}
+      #splash .sp-char{display:inline-block;color:var(--marble);transition:color 1.2s ease 0.4s;}
+      #splash .sp-chars-wrap.gathered .sp-char{color:#2D3350;}
+      #splash .sp-dot{display:inline-block;color:var(--marble);transition:color 1.2s ease 0.4s;opacity:0;transition:color 1.2s ease 0.4s,opacity 0.6s ease 1s;}
+      #splash .sp-chars-wrap.gathered .sp-dot{color:#FFBD43;opacity:1;}
+      @keyframes sp-fade-in{from{opacity:0;}to{opacity:1;}}
+      @keyframes sp-fade-up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+      @keyframes sp-fade-down{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+      #splash .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--athenian-gold);opacity:0;animation:sp-float-particle linear infinite;z-index:3;}
+      @keyframes sp-float-particle{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:0.6;}90%{opacity:0.2;}100%{transform:translateY(-80vh) translateX(var(--drift));opacity:0;}}
+    </style>
+    <div id="splash" style="position:fixed;inset:0;z-index:9999;background:var(--agora-stone,#1a1714);overflow:hidden;transition:background 1.5s ease;">
+      <div class="bg-layer"></div>
+      <div class="vignette"></div>
+      <div class="columns"><div class="col"></div><div class="col"></div><div class="col"></div><div class="col"></div></div>
+      <div id="sp-particles"></div>
+      <div class="sp-main">
+        <div class="epigraph">Ἡ ἀλήθεια ἐν τῷ λόγῳ — Truth lives in argument</div>
+        <div class="divider-top"><div class="line"></div><div class="diamond"></div><div class="line right"></div></div>
+        <div class="logo-v"><svg viewBox="0 0 120 100" style="width:1em;height:0.83em;vertical-align:baseline;fill:url(#gold-grad);filter:drop-shadow(0 0 40px rgba(201,168,76,0.35));">
+          <defs><linearGradient id="gold-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0c96a"/><stop offset="40%" stop-color="#c9a84c"/><stop offset="100%" stop-color="#8a6a20"/></linearGradient></defs>
+          <!-- M shape as balance scale: left pan arm, center peak, right pan arm -->
+          <polygon points="60,8 56,16 64,16" fill="url(#gold-grad)"/><!-- fulcrum triangle -->
+          <rect x="58" y="16" width="4" height="12" fill="url(#gold-grad)"/><!-- center pillar -->
+          <rect x="12" y="26" width="96" height="3" rx="1" fill="url(#gold-grad)"/><!-- beam -->
+          <!-- left chain & pan -->
+          <line x1="18" y1="29" x2="10" y2="62" stroke="url(#gold-grad)" stroke-width="2.5"/>
+          <line x1="18" y1="29" x2="26" y2="62" stroke="url(#gold-grad)" stroke-width="2.5"/>
+          <path d="M6,62 Q18,78 30,62" stroke="url(#gold-grad)" stroke-width="2.5" fill="none"/>
+          <!-- right chain & pan -->
+          <line x1="102" y1="29" x2="94" y2="62" stroke="url(#gold-grad)" stroke-width="2.5"/>
+          <line x1="102" y1="29" x2="110" y2="62" stroke="url(#gold-grad)" stroke-width="2.5"/>
+          <path d="M90,62 Q102,78 114,62" stroke="url(#gold-grad)" stroke-width="2.5" fill="none"/>
+          <!-- center pillar down -->
+          <rect x="58" y="28" width="4" height="50" fill="url(#gold-grad)"/>
+          <rect x="46" y="78" width="28" height="3" rx="1" fill="url(#gold-grad)"/><!-- base -->
+          <polygon points="52,78 60,68 68,78" fill="url(#gold-grad)"/><!-- base triangle -->
+        </svg></div>
+        <div class="wordmark-wrap"><span id="sp-typed" class="wordmark"></span><span id="sp-cursor" class="wordmark-cursor"></span></div>
+        <div class="subtitle">The Agora of Modern Debate</div>
+        <div class="divider-bottom"><div class="line"></div><div class="omega">Ω</div><div class="line right"></div></div>
+        <div class="quote-block">
+          <div class="quote-text">"I know that I know nothing."</div>
+          <div class="quote-attr">— Socrates</div>
+        </div>
       </div>
-      <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
+      <div class="loader-wrap"><div class="loader-bar"></div></div>
     </div>
     <script>
-      // 타이핑 애니메이션
+      // 황금 파티클 생성
       (function(){
-        var el = document.getElementById('splash-typed');
-        var cursor = document.getElementById('splash-cursor');
-        var splash = document.getElementById('splash');
+        var c = document.getElementById('sp-particles');
+        if (!c) return;
+        for (var i = 0; i < 18; i++) {
+          var p = document.createElement('div');
+          p.className = 'particle';
+          var x = Math.random() * 100;
+          var dur = 6 + Math.random() * 10;
+          var delay = 2 + Math.random() * 8;
+          var drift = (Math.random() - 0.5) * 60;
+          p.style.cssText = 'left:' + x + 'vw;bottom:' + (Math.random()*20) + 'vh;--drift:' + drift + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's;width:' + (1+Math.random()*2) + 'px;height:' + (1+Math.random()*2) + 'px;opacity:0;';
+          c.appendChild(p);
+        }
+      })();
+      // 워드마크 타이핑 애니메이션
+      (function(){
+        var el = document.getElementById('sp-typed');
+        var cursor = document.getElementById('sp-cursor');
         if (!el) return;
-        var typeSpeed = 80, deleteSpeed = 40;
-        var currentText = '';
+        var typeSpeed = 120, deleteSpeed = 60;
+        var current = '';
 
-        function render(text, color) { el.innerHTML = '<span style="color:' + color + '">' + text + '</span>'; }
-        function typeText(text, color, cb) {
+        function render(t) { el.textContent = t; }
+        function renderSpaced(t) {
+          // 글자 사이 공백 삽입 (letter-spacing 대신 실제 공백)
+          el.textContent = t.split('').join(' ');
+        }
+        function type(text, spaced, cb) {
           var i = 0;
           (function t() {
-            if (i < text.length) { currentText += text[i++]; render(currentText, color); setTimeout(t, typeSpeed); }
+            if (i < text.length) { current += text[i++]; if (spaced) renderSpaced(current); else render(current); setTimeout(t, typeSpeed); }
             else if (cb) cb();
           })();
         }
-        function deleteAll(color, cb) {
+        function deleteAll(spaced, cb) {
           (function d() {
-            if (currentText.length > 0) { currentText = currentText.slice(0, -1); render(currentText, color); setTimeout(d, deleteSpeed); }
+            if (current.length > 0) { current = current.slice(0, -1); if (spaced) renderSpaced(current); else render(current); setTimeout(d, deleteSpeed); }
             else if (cb) cb();
           })();
         }
-        function deleteChars(n, color, cb) {
+        function deleteChars(n, spaced, cb) {
           var count = 0;
           (function d() {
-            if (count < n && currentText.length > 0) { currentText = currentText.slice(0, -1); render(currentText, color); count++; setTimeout(d, deleteSpeed); }
+            if (count < n && current.length > 0) { current = current.slice(0, -1); if (spaced) renderSpaced(current); else render(current); count++; setTimeout(d, deleteSpeed); }
             else if (cb) cb();
           })();
         }
         function pause(ms, cb) { setTimeout(cb, ms); }
 
-        // 0.5초 커서 깜빡임 → 시퀀스 시작
-        pause(500, function() {
-          // Phase 1: 회색 타이핑
-          typeText('AI 논쟁 판결 플랫폼', 'rgba(255,255,255,0.4)', function() {
-            pause(800, function() {
-              deleteAll('rgba(255,255,255,0.4)', function() {
+        // 워드마크 fade-up 후 시작 (animation-delay: 1.5s + 1s fade)
+        setTimeout(function() {
+          // Phase 1: MORAGORA 타이핑
+          type('MORAGORA', false, function() {
+            pause(700, function() {
+              // Phase 2: 전부 지우기
+              deleteAll(false, function() {
                 pause(300, function() {
-                  // Phase 2: 금색 모라고라?
-                  cursor.style.background = '#D4AF37';
-                  typeText('모라고라?', '#D4AF37', function() {
-                    pause(600, function() {
-                      deleteChars(1, '#D4AF37', function() {
-                        pause(200, function() {
-                          // Phase 3: 모라고라 + 금색 점 → 배경 서서히 베이지로
-                          el.innerHTML = '<span style="color:#D4AF37;transition:color 1.2s ease;">' + currentText + '</span><span style="color:#D4AF37;">.</span>';
+                  // Phase 3: 모 라 고 라 ? 타이핑 (한글, Pretendard, 띄어쓰기)
+                  el.style.fontFamily = "'Pretendard Variable',Pretendard,sans-serif";
+                  el.style.letterSpacing = '0';
+                  el.style.transition = 'letter-spacing 0.8s ease, color 1.2s ease';
+                  type('\uBAA8\uB77C\uACE0\uB77C?', true, function() {
+                    pause(800, function() {
+                      // Phase 4: ? 만 지우기
+                      deleteChars(1, true, function() {
+                        pause(800, function() {
+                          // Phase 5: 개별 span으로 전환 → gap 줄이며 모이기 + 색상 전환
                           cursor.style.display = 'none';
-                          // 서서히 전환
-                          pause(300, function() {
-                            splash.style.background = '#F3F1EC';
-                            var textSpan = el.querySelector('span');
-                            if (textSpan) textSpan.style.color = '#1B2A4A';
+                          var chars = '\uBAA8\uB77C\uACE0\uB77C';
+                          var html = '<span class="sp-chars-wrap" id="sp-gather">';
+                          for (var j = 0; j < chars.length; j++) {
+                            html += '<span class="sp-char">' + chars[j] + '</span>';
+                          }
+                          html += '<span class="sp-dot">.</span></span>';
+                          el.innerHTML = html;
+                          el.style.letterSpacing = '0';
+                          // 다음 프레임에서 gathered 클래스 추가 → transition 시작
+                          requestAnimationFrame(function() {
+                            requestAnimationFrame(function() {
+                              document.getElementById('sp-gather').classList.add('gathered');
+                              // 배경을 베이지로 전환 + 어두운 레이어 숨기기
+                              var splashEl = document.getElementById('splash');
+                              splashEl.style.background = '#F3F1EC';
+                              splashEl.querySelector('.bg-layer').style.transition = 'opacity 1.5s ease';
+                              splashEl.querySelector('.bg-layer').style.opacity = '0';
+                              splashEl.querySelector('.vignette').style.transition = 'opacity 1.5s ease';
+                              splashEl.querySelector('.vignette').style.opacity = '0';
+                              splashEl.querySelector('.columns').style.transition = 'opacity 1.5s ease';
+                              splashEl.querySelector('.columns').style.opacity = '0';
+                              splashEl.querySelector('.sp-main').querySelectorAll('.epigraph,.divider-top,.logo-v,.subtitle,.divider-bottom,.quote-block').forEach(function(e) {
+                                e.style.transition = 'opacity 1.5s ease';
+                                e.style.opacity = '0';
+                              });
+                            });
                           });
                         });
                       });
@@ -107,7 +228,7 @@
               });
             });
           });
-        });
+        }, 2500);
       })();
     </script>
     <div id="root"></div>
@@ -124,7 +245,7 @@
 
       // 스플래시 제거 함수 (최소 5초 보장)
       var splashStart = Date.now();
-      var splashMinMs = 7000;
+      var splashMinMs = 10000;
       window.__removeSplash = function() {
         var elapsed = Date.now() - splashStart;
         var delay = Math.max(0, splashMinMs - elapsed);
