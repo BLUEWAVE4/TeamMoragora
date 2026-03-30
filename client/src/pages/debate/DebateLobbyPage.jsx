@@ -144,10 +144,11 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
   const opponentAvatarUrl = resolveAvatar(room.opponent?.avatar_url, room.opponent_id, room.opponent?.gender);
-  const avatarA = creatorSide === 'A' ? creatorAvatarUrl : (room.opponent ? opponentAvatarUrl : null);
-  const avatarB = creatorSide === 'A' ? (room.opponent ? opponentAvatarUrl : null) : creatorAvatarUrl;
-  const nameA = creatorSide === 'A' ? creatorName : opponentName;
-  const nameB = creatorSide === 'A' ? opponentName : creatorName;
+  // 소켓 데이터가 있으면 DB fallback 사용하지 않음 (사이드 변경 시 복사 방지)
+  const avatarA = hasLive ? null : (creatorSide === 'A' ? creatorAvatarUrl : (room.opponent ? opponentAvatarUrl : null));
+  const avatarB = hasLive ? null : (creatorSide === 'A' ? (room.opponent ? opponentAvatarUrl : null) : creatorAvatarUrl);
+  const nameA = hasLive ? null : (creatorSide === 'A' ? creatorName : opponentName);
+  const nameB = hasLive ? null : (creatorSide === 'A' ? opponentName : creatorName);
 
   return (
     <div className={`rounded-xl pb-5 mb-1 transition-all ${
@@ -383,13 +384,15 @@ export default function DebateLobbyPage() {
         const live = liveParticipants[hotRoom.id];
         const liveA = live?.A || [];
         const liveB = live?.B || [];
+        const hasLive = liveA.length > 0 || liveB.length > 0;
+        // 소켓 데이터가 있으면 DB fallback 사용하지 않음 (사이드 변경 시 복사 방지)
         const creatorSide = hotRoom.creator_side || 'A';
         const creatorAvatar = resolveAvatar(hotRoom.creator?.avatar_url, hotRoom.creator_id, hotRoom.creator?.gender);
         const opponentAvatar = resolveAvatar(hotRoom.opponent?.avatar_url, hotRoom.opponent_id, hotRoom.opponent?.gender);
-        const avatarA = creatorSide === 'A' ? creatorAvatar : (hotRoom.opponent ? opponentAvatar : null);
-        const avatarB = creatorSide === 'A' ? (hotRoom.opponent ? opponentAvatar : null) : creatorAvatar;
-        const nameA = creatorSide === 'A' ? (hotRoom.creator?.nickname || '방장') : (hotRoom.opponent?.nickname || null);
-        const nameB = creatorSide === 'A' ? (hotRoom.opponent?.nickname || null) : (hotRoom.creator?.nickname || '방장');
+        const avatarA = hasLive ? null : (creatorSide === 'A' ? creatorAvatar : (hotRoom.opponent ? opponentAvatar : null));
+        const avatarB = hasLive ? null : (creatorSide === 'A' ? (hotRoom.opponent ? opponentAvatar : null) : creatorAvatar);
+        const nameA = hasLive ? null : (creatorSide === 'A' ? (hotRoom.creator?.nickname || '방장') : (hotRoom.opponent?.nickname || null));
+        const nameB = hasLive ? null : (creatorSide === 'A' ? (hotRoom.opponent?.nickname || null) : (hotRoom.creator?.nickname || '방장'));
         return (
         <section className="px-5 mb-6">
           <div
