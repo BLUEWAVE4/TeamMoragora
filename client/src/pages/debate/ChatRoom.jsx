@@ -208,6 +208,14 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     load();
   }, [debateId, user]);
 
+  // chatting 상태면 gameStarted 강제 보장
+  useEffect(() => {
+    if (debate?.status === 'chatting' && !gameStarted) {
+      setGameStarted(true);
+      if (debate.chat_deadline) setChatDeadline(debate.chat_deadline);
+    }
+  }, [debate?.status, debate?.chat_deadline, gameStarted]);
+
   // ===== 기존 메시지 로드 =====
   useEffect(() => {
     if (!debateId) return;
@@ -948,7 +956,7 @@ const handleVote = (agree) => {
       </AnimatePresence>
 
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
-      {!loading && !gameStarted && (
+      {!loading && !gameStarted && debate?.status !== 'chatting' && (
         <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: '#0f1829' }}>
           {/* 상단 토스트 알림 (대기실) — 레이아웃 영향 없도록 absolute */}
           <AnimatePresence>
