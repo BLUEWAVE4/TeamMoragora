@@ -384,6 +384,7 @@ export async function getDailyVerdicts(req, res, next) {
 // ===== 명예의 전당 — 종합 점수 기반 랭킹 =====
 export async function getHallOfFame(req, res, next) {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const search = req.query.q || null;
 
@@ -443,7 +444,10 @@ export async function getHallOfFame(req, res, next) {
 
     scored.sort((a, b) => b._hallScore - a._hallScore);
 
-    res.json(scored.slice(0, limit));
+    const from = (page - 1) * limit;
+    const pageData = scored.slice(from, from + limit);
+    const hasNext = from + limit < scored.length;
+    res.json({ data: pageData, page, hasNext });
   } catch (err) {
     next(err);
   }

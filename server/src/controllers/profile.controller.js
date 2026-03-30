@@ -198,16 +198,22 @@ export async function getMyAnalysis(req, res, next) {
   } catch (err) { next(err); }
 }
 
-export async function getRanking(_req, res, next) {
+export async function getRanking(req, res, next) {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const from = (page - 1) * limit;
+
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, tier')
       .order('total_score', { ascending: false })
-      .limit(PROFILE_HISTORY_LIMIT);
+      .range(from, from + limit);
 
     if (error) throw error;
-    res.json(data);
+    const hasNext = (data || []).length > limit;
+    const pageData = hasNext ? data.slice(0, limit) : data;
+    res.json({ data: pageData || [], page, hasNext });
   } catch (err) {
     next(err);
   }
