@@ -392,7 +392,10 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       if (chat_deadline) setChatDeadline(chat_deadline);
       sessionStorage.setItem(`chat_session_${debateId}`, JSON.stringify({ side: mySide || null, deadline: chat_deadline }));
       // DB 업데이트 보장 — 소켓 핸들러의 DB 업데이트 실패 대비
-      api.post(`/chat/${debateId}/start`).catch(() => {});
+      api.post(`/chat/${debateId}/start`).catch(err => console.error('[game-start] REST fallback failed:', err?.response?.data || err.message));
+      // Supabase 직접 업데이트 (최종 폴백)
+      supabase.from('debates').update({ status: 'chatting', chat_deadline, chat_started_at: new Date().toISOString() }).eq('id', debateId)
+        .then(({ error }) => { if (error) console.error('[game-start] Supabase direct update failed:', error.message); else console.log('[game-start] Supabase direct update OK'); });
       // 대기실 참여 알림 제거 후 안내 메시지만 표시
       setMessages([{
         id: `sys-help-${Date.now()}`,
