@@ -788,12 +788,13 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => clearInterval(socraticTimerRef.current);
   }, [gameStarted, mySide, debate?.topic, messages.length]);
 
-  // 루브릭 점수 — 메시지 전송 시 호출
-  const updateRubricScore = useCallback(async () => {
+  // 루브릭 점수 — 메시지 전송 시 호출 (newMsg: 방금 전송한 텍스트)
+  const updateRubricScore = useCallback(async (newMsg) => {
     if (!gameStarted || !mySide || !debate?.topic) return;
-    const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
+    const myMsgs = messages.filter(m => m.user_id === user?.id && m.content).map(m => m.content);
+    if (newMsg) myMsgs.push(newMsg);
     if (myMsgs.length === 0) return;
-    const combined = myMsgs.map(m => m.content).join(' ');
+    const combined = myMsgs.join(' ');
     if (combined.trim().length < 10) return;
     try {
       const scores = await getRubricScore({
@@ -945,8 +946,8 @@ const handleVote = (agree) => {
     setSending(false);
     safeTimeout(() => setCooldown(false), COOLDOWN_MS);
     chatInputRef.current?.focus();
-    // 전송 성공 → 루브릭 점수 업데이트
-    updateRubricScore();
+    // 전송 성공 → 루브릭 점수 업데이트 (방금 전송한 텍스트 포함)
+    updateRubricScore(trimmed);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname, timeChangeRequest, updateRubricScore]);
 
