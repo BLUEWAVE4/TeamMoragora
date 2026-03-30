@@ -167,6 +167,11 @@ const [opponentLeft, setOpponentLeft] = useState(false);
     const load = async () => {
       try {
         const data = await getDebate(debateId);
+        if (!data || data.error) {
+          sessionStorage.setItem('roomAlert', '삭제되었거나 존재하지 않는 논쟁입니다.');
+          navigate('/debate/lobby');
+          return;
+        }
         setDebate(data);
         // 참여자 아바타 맵 구성 (기존 맵에 누적, 덮어쓰기 X)
         setAvatarMap(prev => {
@@ -202,8 +207,14 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         const myAvt = resolveAvatar(profile?.avatar_url, user.id, profile?.gender);
         setMyAvatarUrl(myAvt);
         setAvatarMap(prev => ({ ...prev, [user.id]: myAvt }));
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+      } catch (e) {
+        console.error(e);
+        if (e?.response?.status === 404) {
+          sessionStorage.setItem('roomAlert', '삭제되었거나 존재하지 않는 논쟁입니다.');
+          navigate('/debate/lobby');
+          return;
+        }
+      } finally { setLoading(false); }
     };
     load();
   }, [debateId, user]);
