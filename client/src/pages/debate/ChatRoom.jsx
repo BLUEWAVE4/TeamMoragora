@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
 import { socket } from '../../services/socket';
-import { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate, getSocraticFeedback, getRubricScore } from '../../services/api';
+import api, { getDebate, castCitizenVote, getCitizenVoteTally, deleteDebate, getSocraticFeedback, getRubricScore } from '../../services/api';
 import { resolveAvatar } from '../../utils/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import MoragoraModal from '../../components/common/MoragoraModal';
@@ -391,6 +391,8 @@ const [opponentLeft, setOpponentLeft] = useState(false);
       setGameStarted(true);
       if (chat_deadline) setChatDeadline(chat_deadline);
       sessionStorage.setItem(`chat_session_${debateId}`, JSON.stringify({ side: mySide || null, deadline: chat_deadline }));
+      // DB 업데이트 보장 — 소켓 핸들러의 DB 업데이트 실패 대비
+      api.post(`/chat/${debateId}/start`).catch(() => {});
       // 대기실 참여 알림 제거 후 안내 메시지만 표시
       setMessages([{
         id: `sys-help-${Date.now()}`,

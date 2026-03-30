@@ -172,18 +172,28 @@ export async function startChat(req, res, next) {
       throw new ConflictError('양측 참여자가 모두 있어야 채팅을 시작할 수 있습니다.');
     }
 
-    // 상태 검증 (both_joined 또는 arguing에서 chatting으로 전환)
-    if (debate.status !== 'both_joined' && debate.status !== 'arguing') {
+    // 이미 chatting이면 성공 반환
+    if (debate.status === 'chatting') {
+      return res.json({ chat_started_at: debate.chat_started_at, already_started: true });
+    }
+
+    // 상태 검증 (waiting, both_joined, arguing에서 chatting으로 전환)
+    if (!['waiting', 'both_joined', 'arguing'].includes(debate.status)) {
       throw new ConflictError('현재 상태에서는 채팅을 시작할 수 없습니다.');
     }
 
     // 원자적 상태 전환
-    const chatStartedAt = new Date().toISOString();
+    const now = new Date();
+    const CHAT_DURATION_MS = 15 * 60 * 1000;
+    const COUNTDOWN_BUFFER_MS = 7 * 1000;
+    const chatStartedAt = now.toISOString();
+    const chatDeadline = debate.chat_deadline || new Date(now.getTime() + CHAT_DURATION_MS + COUNTDOWN_BUFFER_MS).toISOString();
     const { data: updated, error: updateErr } = await supabaseAdmin
       .from('debates')
       .update({
         status: 'chatting',
         chat_started_at: chatStartedAt,
+        chat_deadline: chatDeadline,
       })
       .eq('id', debateId)
       .select('id')
@@ -194,7 +204,7 @@ export async function startChat(req, res, next) {
 
     res.json({
       chat_started_at: chatStartedAt,
-      time_limit: CHAT_TIME_LIMIT,
+      chat_deadline: chatDeadline,
     });
   } catch (err) {
     next(err);
