@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CategoryFilter from '../../components/home/CategoryFilter';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
+import { socket } from '../../services/socket';
 import { resolveAvatar } from '../../utils/avatar';
 import { useAuth } from '../../store/AuthContext';
 import MoragoraModal from '../../components/common/MoragoraModal';
@@ -309,6 +310,18 @@ export default function DebateLobbyPage() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadData]);
+
+  // 소켓: game-start 시 즉시 rooms 갱신
+  useEffect(() => {
+    const handleGameStart = () => loadData(true);
+    socket.on('game-start', handleGameStart);
+    // 로비의 모든 방에 소켓 join (game-start 수신용)
+    rooms.forEach(r => socket.emit('join-room', r.id));
+    return () => {
+      socket.off('game-start', handleGameStart);
+      rooms.forEach(r => socket.emit('leave-room', r.id));
+    };
+  }, [rooms, loadData]);
 
   const lastElementRef = useCallback((node) => {
     if (loading) return;
