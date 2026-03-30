@@ -421,8 +421,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
                         style={{ borderColor: j.borderColor || j.color }} />
                     ))}
-                    {totalVotes > 0 && (totalVotes >= 1 || voteA >= voteB) && (
-                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                    {totalVotes > 0 && voteA >= voteB && (
+                      <div className="w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center">
                         <HiUserGroup className="text-gold text-[12px]" />
                       </div>
                     )}
@@ -452,8 +452,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
                         style={{ borderColor: j.borderColor || j.color }} />
                     ))}
-                    {totalVotes > 0 && (totalVotes >= 1 || voteB > voteA) && (
-                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                    {totalVotes > 0 && voteB >= voteA && (
+                      <div className="w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center">
                         <HiUserGroup className="text-gold text-[12px]" />
                       </div>
                     )}
@@ -966,7 +966,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 <h3 className="text-[14px] font-sans font-bold text-primary">시민 투표 현황</h3>
                 <span className="text-xs text-primary/40 font-medium">{statusText}</span>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 mb-4">
                 <button
                   onClick={() => !voteDisabled && handleVote('A')}
                   disabled={voteDisabled && myVote !== 'A'}

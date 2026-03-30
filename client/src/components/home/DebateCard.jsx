@@ -179,19 +179,14 @@ function DebateCard({ feed, initialVote, initialLiked }) {
     } catch (err) { setLiked(prevLiked); setLikeCount(prevCount); } finally { setIsLiking(false); }
   };
 
-  const handleDetailClick = async () => {
+  const handleDetailClick = () => {
     const debateId = feed?.debate_id || debateData?.id;
     if (!debateId) return;
     const viewKey = `viewed_${debateId}`;
-    const alreadyViewed = sessionStorage.getItem(viewKey);
-    if (!alreadyViewed) {
+    if (!sessionStorage.getItem(viewKey)) {
       sessionStorage.setItem(viewKey, 'true');
       setViewCount(prev => prev + 1);
-      try {
-        await incrementDebateView(debateId);
-      } catch (e) {
-        sessionStorage.removeItem(viewKey);
-      }
+      incrementDebateView(debateId).catch(() => sessionStorage.removeItem(viewKey));
     }
     navigate(`/moragora/${debateId}`, {
       state: { userVote: myVote, agreeText: optionAText, disagreeText: optionBText }
