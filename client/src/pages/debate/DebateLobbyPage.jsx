@@ -29,7 +29,8 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
 
   const pad = (n) => String(Math.floor(n)).padStart(2, '0');
 
-  if (status === 'chatting' && chatDeadline) {
+  // chatDeadline이 존재하면 status와 무관하게 타이머 표시 (DB status 지연 대응)
+  if (chatDeadline) {
     const remaining = Math.max(0, new Date(chatDeadline).getTime() - now);
     const min = (remaining / 60000) % 60;
     const sec = (remaining / 1000) % 60;
