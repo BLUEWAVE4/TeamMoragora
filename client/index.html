@@ -124,7 +124,7 @@
 
       // 스플래시 제거 함수 (최소 5초 보장)
       var splashStart = Date.now();
-      var splashMinMs = 10000;
+      var splashMinMs = 6000;
       window.__removeSplash = function() {
         var elapsed = Date.now() - splashStart;
         var delay = Math.max(0, splashMinMs - elapsed);
