@@ -37,39 +37,41 @@
   </head>
   <body>
     <!-- PWA 스플래시 화면 -->
-    <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-      <img src="/icon-192.png" alt="" style="width:80px;height:80px;border-radius:20px;" />
+    <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:background 1.2s ease;">
+      <img id="splash-icon" src="/icon-192.png" alt="" style="width:80px;height:80px;border-radius:20px;" />
       <div style="height:30px;display:flex;align-items:center;">
-        <span id="splash-typed" style="color:#D4AF37;font-size:22px;font-weight:900;letter-spacing:-0.5px;"></span><span id="splash-cursor" style="display:inline-block;width:2px;height:22px;background:#D4AF37;margin-left:2px;animation:blink 0.7s step-end infinite;"></span>
+        <span id="splash-typed" style="font-size:22px;font-weight:900;letter-spacing:-0.5px;"></span><span id="splash-cursor" style="display:inline-block;width:2px;height:22px;background:rgba(255,255,255,0.4);margin-left:2px;animation:blink 0.7s step-end infinite;"></span>
       </div>
       <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
     </div>
     <script>
-      // 타이핑 애니메이션 — 순차 실행
+      // 타이핑 애니메이션
       (function(){
         var el = document.getElementById('splash-typed');
         var cursor = document.getElementById('splash-cursor');
+        var splash = document.getElementById('splash');
         if (!el) return;
         var typeSpeed = 80, deleteSpeed = 40;
+        var currentText = '';
 
-        function typeText(text, cb) {
+        function render(text, color) { el.innerHTML = '<span style="color:' + color + '">' + text + '</span>'; }
+        function typeText(text, color, cb) {
           var i = 0;
           (function t() {
-            if (i < text.length) { el.textContent += text[i++]; setTimeout(t, typeSpeed); }
+            if (i < text.length) { currentText += text[i++]; render(currentText, color); setTimeout(t, typeSpeed); }
             else if (cb) cb();
           })();
         }
-        function deleteAll(cb) {
+        function deleteAll(color, cb) {
           (function d() {
-            var cur = el.textContent;
-            if (cur.length > 0) { el.textContent = cur.slice(0, -1); setTimeout(d, deleteSpeed); }
+            if (currentText.length > 0) { currentText = currentText.slice(0, -1); render(currentText, color); setTimeout(d, deleteSpeed); }
             else if (cb) cb();
           })();
         }
-        function deleteChars(n, cb) {
+        function deleteChars(n, color, cb) {
           var count = 0;
           (function d() {
-            if (count < n && el.textContent.length > 0) { el.textContent = el.textContent.slice(0, -1); count++; setTimeout(d, deleteSpeed); }
+            if (count < n && currentText.length > 0) { currentText = currentText.slice(0, -1); render(currentText, color); count++; setTimeout(d, deleteSpeed); }
             else if (cb) cb();
           })();
         }
@@ -77,16 +79,25 @@
 
         // 0.5초 커서 깜빡임 → 시퀀스 시작
         pause(500, function() {
-          typeText('AI 논쟁 판결 플랫폼', function() {
+          // Phase 1: 회색 타이핑
+          typeText('AI 논쟁 판결 플랫폼', 'rgba(255,255,255,0.4)', function() {
             pause(800, function() {
-              deleteAll(function() {
+              deleteAll('rgba(255,255,255,0.4)', function() {
                 pause(300, function() {
-                  typeText('모라고라?', function() {
+                  // Phase 2: 금색 모라고라?
+                  cursor.style.background = '#D4AF37';
+                  typeText('모라고라?', '#D4AF37', function() {
                     pause(600, function() {
-                      deleteChars(1, function() {
+                      deleteChars(1, '#D4AF37', function() {
                         pause(200, function() {
-                          typeText('.', function() {
-                            if (cursor) cursor.style.display = 'none';
+                          // Phase 3: 모라고라 + 금색 점 → 배경 서서히 베이지로
+                          el.innerHTML = '<span style="color:#D4AF37;transition:color 1.2s ease;">' + currentText + '</span><span style="color:#D4AF37;">.</span>';
+                          cursor.style.display = 'none';
+                          // 서서히 전환
+                          pause(300, function() {
+                            splash.style.background = '#F3F1EC';
+                            var textSpan = el.querySelector('span');
+                            if (textSpan) textSpan.style.color = '#1B2A4A';
                           });
                         });
                       });
