@@ -9,6 +9,14 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('[ErrorBoundary]', error, errorInfo);
+    // 동적 import 실패 (chunk 깨짐) → 자동 새로고침 (1회만)
+    if (error?.message?.includes('Failed to fetch dynamically imported module') || error?.message?.includes('Loading chunk')) {
+      const key = 'chunk_reload';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+      }
+    }
   }
 
   handleReset = () => {
@@ -24,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
             페이지를 새로고침하거나 아래 버튼을 눌러주세요.
           </p>
           <button
-            onClick={this.handleReset}
+            onClick={() => window.location.reload()}
             className="px-6 py-2.5 bg-primary text-gold rounded-xl font-bold text-sm"
           >
             다시 시도
