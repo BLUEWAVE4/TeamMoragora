@@ -254,12 +254,12 @@ function DebateCard({ feed }) {
                 <motion.div initial={{ width: 0 }} animate={{ width: `${agreePercent}%` }} className="absolute inset-y-0 left-0 bg-emerald-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
                     isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
                     myVote === 'A' ? 'bg-emerald-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
                   }`}>{isCompleted || timerExpired ? '마감' : 'A측'}</span>
-                  <span className={`text-[13px] font-bold ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
+                  <span className={`text-[13px] font-bold truncate ${myVote === 'A' ? 'text-emerald-600' : 'text-[#1B2A4A]/70'}`}>{optionAText || "찬성"}</span>
                 </div>
                 {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">
@@ -282,12 +282,12 @@ function DebateCard({ feed }) {
                 <motion.div initial={{ width: 0 }} animate={{ width: `${disagreePercent}%` }} className="absolute inset-y-0 left-0 bg-red-500/8" />
               )}
               <div className="relative h-full px-3.5 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
                     isCompleted || timerExpired ? 'bg-[#1B2A4A]/10 text-[#1B2A4A]/45' :
                     myVote === 'B' ? 'bg-red-500 text-white' : 'bg-[#1B2A4A]/8 text-[#1B2A4A]/50'
                   }`}>{isCompleted || timerExpired ? '마감' : 'B측'}</span>
-                  <span className={`text-[13px] font-bold ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
+                  <span className={`text-[13px] font-bold truncate ${myVote === 'B' ? 'text-red-500' : 'text-[#1B2A4A]/70'}`}>{optionBText || "반대"}</span>
                 </div>
                 {(myVote || isCompleted || isParticipant) && (
                   <div className="flex items-center gap-2">

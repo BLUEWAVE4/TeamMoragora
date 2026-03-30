@@ -330,7 +330,7 @@ export async function getDailyVerdicts(req, res, next) {
     // debates 테이블에서 daily 모드 직접 조회 (verdict 유무 관계없이)
     const { data: debates, error: debateErr } = await supabaseAdmin
       .from('debates')
-      .select('id, topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, created_at, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
+      .select('id, topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, vote_duration, created_at, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
       .eq('mode', 'daily')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -368,6 +368,7 @@ export async function getDailyVerdicts(req, res, next) {
           con_side: d.con_side,
           mode: d.mode,
           vote_deadline: d.vote_deadline,
+          vote_duration: d.vote_duration,
           created_at: d.created_at,
           creator: d.creator,
         },
