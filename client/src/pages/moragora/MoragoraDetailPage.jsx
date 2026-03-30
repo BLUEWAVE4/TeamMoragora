@@ -73,7 +73,7 @@ export default function MoragoraDetailPage() {
     );
   }
 
-  if (!verdict) {
+  if (!verdict && !debate) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAF5] gap-4">
         <p className="text-gray-400 text-base">판결 데이터를 찾을 수 없습니다.</p>
@@ -122,7 +122,14 @@ export default function MoragoraDetailPage() {
 
         {/* 콘텐츠 */}
         <div className="px-5 -mt-5 pb-6">
-          <VerdictContent verdictData={verdict} topic={topic} />
+          {verdict ? (
+            <VerdictContent verdictData={verdict} topic={topic} />
+          ) : (
+            <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+              <p className="text-[15px] font-bold text-[#1B2A4A]/70">AI 판결 대기 중</p>
+              <p className="text-[12px] text-[#1B2A4A]/40 mt-1">시민 투표가 진행 중입니다</p>
+            </div>
+          )}
           <div className="space-y-2 mt-5">
             {/* 별점 평가 — 생성자/참여자만 */}
             {user && debate && (user.id === debate.creator_id || user.id === debate.opponent_id) && (
