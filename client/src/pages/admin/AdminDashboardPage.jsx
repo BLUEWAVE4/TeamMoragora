@@ -31,7 +31,7 @@ function StatCard({ icon: Icon, label, value, sub, color = '#6366f1', onClick })
 
 function AICard({ model, data }) {
   const colors = { 'gpt-4o': '#1B2A4A', 'gemini-2.5-flash': '#4285F4', 'claude-sonnet': '#D97706' };
-  const names = { 'gpt-4o': 'Judge G (GPT)', 'gemini-2.5-flash': 'Judge M (Gemini)', 'claude-sonnet': 'Judge C (Claude)' };
+  const names = { 'gpt-4.1': 'GPT-4.1', 'gpt-4o': 'GPT-4o', 'gemini-2.5-flash': 'Gemini 2.5 Flash', 'claude-sonnet': 'Claude Sonnet 4', 'grok-3-mini': 'Grok-3-Mini' };
   const color = colors[model] || '#6366f1';
   const t = data.wins.A + data.wins.B + (data.wins.draw || 0);
   return (
