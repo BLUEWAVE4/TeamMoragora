@@ -956,7 +956,7 @@ const handleVote = (agree) => {
       </AnimatePresence>
 
       {/* ━━━━━ 대기 오버레이 (3v3 준비방) ━━━━━ */}
-      {!loading && !gameStarted && debate?.status !== 'chatting' && (
+      {!loading && !gameStarted && debate && debate.status === 'waiting' && (
         <div className="absolute inset-0 z-30 overflow-y-auto" style={{ backgroundColor: '#0f1829' }}>
           {/* 상단 토스트 알림 (대기실) — 레이아웃 영향 없도록 absolute */}
           <AnimatePresence>
