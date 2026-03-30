@@ -301,14 +301,27 @@ function DebateCard({ feed, initialVote, initialLiked }) {
               </div>
             </button>
           </div>
-          {/* 투표 상태 + 타이머 */}
+          {/* 투표 진행 바: [상태 텍스트][게이지바][숫자 타이머] */}
           {hasTimer && (
-            <div className="pt-2 flex items-center justify-between">
-              <span className="text-[9px] font-bold text-[#1B2A4A]/30 tracking-wider">
+            <div className="pt-2 flex items-center gap-2">
+              <span className="text-[9px] font-bold text-[#1B2A4A]/30 tracking-wider flex-shrink-0 whitespace-nowrap">
                 {timerExpired ? '투표 마감' : '투표 진행 중'}
               </span>
+              <div className="flex-1 h-1 bg-[#1B2A4A]/8 rounded-full overflow-hidden">
+                {timerExpired ? (
+                  <div className="h-full w-full bg-[#1B2A4A]/10 rounded-full" />
+                ) : (
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(timeLeft?.progressRatio ?? 1) * 100}%`,
+                      backgroundColor: barColor,
+                    }}
+                  />
+                )}
+              </div>
               <span
-                className="text-[9px] font-bold tabular-nums"
+                className="text-[9px] font-bold flex-shrink-0 tabular-nums"
                 style={{ color: timerExpired ? 'rgba(27,42,74,0.3)' : barColor }}
               >
                 {(timeLeft?.label ?? '00:00:00').slice(0, 5)}
