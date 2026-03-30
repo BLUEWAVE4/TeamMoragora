@@ -558,7 +558,7 @@ socket.on('kick-cancelled', ({ reason }) => {
 });
 // 참여자 입장 — 상단 토스트로 표시 (A측 green, B측 red)
 socket.on('participant-joined', ({ message, side }) => {
-  const toastType = side === 'A' ? 'side-a' : side === 'B' ? 'side-b' : 'info';
+  const toastType = side === 'A' ? 'side-a' : side === 'B' ? 'side-b' : 'citizen';
   showToast(message, toastType);
   setLobbyMessages(prev => [...prev, { id: `lobby-sys-join-${Date.now()}`, type: 'system', text: message, timestamp: Date.now(), side }]);
 });
@@ -996,12 +996,14 @@ const handleVote = (agree) => {
                   toast.type === 'warning' ? 'bg-amber-500/20 border-b border-amber-500/30'
                   : toast.type === 'side-a' ? 'bg-emerald-500/20 border-b border-emerald-500/30'
                   : toast.type === 'side-b' ? 'bg-red-500/20 border-b border-red-500/30'
+                  : toast.type === 'citizen' ? 'bg-[#D4AF37]/20 border-b border-[#D4AF37]/30'
                   : 'bg-emerald-500/20 border-b border-emerald-500/30'
                 }`}>
                 <span className={`text-[11px] font-black ${
                   toast.type === 'warning' ? 'text-amber-400'
                   : toast.type === 'side-a' ? 'text-emerald-400'
                   : toast.type === 'side-b' ? 'text-red-400'
+                  : toast.type === 'citizen' ? 'text-[#D4AF37]'
                   : 'text-emerald-400'
                 }`}>
                   {toast.message}
