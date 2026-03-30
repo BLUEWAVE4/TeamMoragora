@@ -283,7 +283,8 @@ export function initializeSocket(io) {
     // ===== 게임 시작 =====
     socket.on('start-game', async ({ debateId }) => {
       const now = new Date();
-      const chat_deadline = new Date(now.getTime() + CHAT_DURATION_MS).toISOString();
+      const COUNTDOWN_BUFFER_MS = 7 * 1000; // 3초 카운트다운 + 4초 시작 연출
+      const chat_deadline = new Date(now.getTime() + CHAT_DURATION_MS + COUNTDOWN_BUFFER_MS).toISOString();
       const chat_started_at = now.toISOString();
 
       try {
