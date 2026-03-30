@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.png" alt="모라고라 아이콘" width="120" />
+  <img src="client/public/icon.png" alt="모라고라 아이콘" width="120" />
 </p>
 
 # 모라고라 (Moragora)
