@@ -39,9 +39,8 @@
     <!-- PWA 스플래시 화면 -->
     <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
       <img src="/icon-192.png" alt="" style="width:80px;height:80px;border-radius:20px;" />
-      <div style="color:#D4AF37;font-size:22px;font-weight:900;letter-spacing:-0.5px;">모라고라<span style="color:#D4AF37;">.</span></div>
-      <div id="splash-text" style="color:rgba(255,255,255,0.4);font-size:12px;font-weight:600;height:18px;display:flex;align-items:center;">
-        <span id="splash-typed"></span><span id="splash-cursor" style="display:inline-block;width:2px;height:14px;background:rgba(255,255,255,0.5);margin-left:1px;animation:blink 0.7s step-end infinite;"></span>
+      <div style="height:30px;display:flex;align-items:center;">
+        <span id="splash-typed" style="color:#D4AF37;font-size:22px;font-weight:900;letter-spacing:-0.5px;"></span><span id="splash-cursor" style="display:inline-block;width:2px;height:22px;background:#D4AF37;margin-left:2px;animation:blink 0.7s step-end infinite;"></span>
       </div>
       <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
     </div>
@@ -52,10 +51,10 @@
         if (!el) return;
         var phases = [
           { text: 'AI 논쟁 판결 플랫폼', type: true, pause: 800 },
-          { text: 'AI 논쟁 판결 플랫폼', type: false, pause: 200 },
+          { text: 'AI 논쟁 판결 플랫폼', type: false, pause: 300 },
           { text: '모라고라?', type: true, pause: 600 },
-          { text: '?', type: false, pause: 300 },
-          { text: '', type: false, pause: 9999 },
+          { text: '?', type: false, pause: 200 },
+          { text: '.', type: true, pause: 9999 },
         ];
         var current = '';
         var phaseIdx = 0;
@@ -68,31 +67,31 @@
           var phase = phases[phaseIdx];
 
           if (phase.type) {
-            // 타이핑
-            if (charIdx <= phase.text.length) {
-              current = phase.text.slice(0, charIdx);
+            // 타이핑 (current에 이어붙이기)
+            if (charIdx < phase.text.length) {
+              current += phase.text[charIdx];
               el.textContent = current;
               charIdx++;
               setTimeout(tick, speed);
             } else {
-              // 타이핑 완료 → 대기
+              // 타이핑 완료
+              if (phase.pause >= 9999) {
+                // 최종 상태 → 커서 숨김
+                var cursor = document.getElementById('splash-cursor');
+                if (cursor) cursor.style.display = 'none';
+                return;
+              }
               setTimeout(function() { phaseIdx++; charIdx = 0; tick(); }, phase.pause);
             }
           } else {
-            // 지우기
-            if (phase.text === '') {
-              // 지울 것 없음 → 최종 상태 유지
-              el.textContent = current;
-              return;
-            }
-            // 뒤에서부터 phase.text 길이만큼 지우기
+            // 지우기: 뒤에서부터 phase.text 길이만큼
             var target = current.length - phase.text.length;
             if (current.length > target) {
               current = current.slice(0, -1);
               el.textContent = current;
               setTimeout(tick, deleteSpeed);
             } else {
-              setTimeout(function() { phaseIdx++; charIdx = current.length; tick(); }, phase.pause);
+              setTimeout(function() { phaseIdx++; charIdx = 0; tick(); }, phase.pause);
             }
           }
         }
