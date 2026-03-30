@@ -8,12 +8,13 @@ import { resolveAvatar, getAvatarUrl, buildAvatarUrl, buildAvatarExternalUrl, DE
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Gavel, FileText, Scale, Crown, ChevronRight, LogOut, Edit3,
-  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X, Shield
+  Trophy, History, MessageSquarePlus, ArrowRight, BarChart3, Trash2, X, Shield, BookOpen
 } from 'lucide-react';
 import VerdictContent from '../../components/verdict/VerdictContent';
 import FeedbackModal from '../../components/modals/FeedbackModal';
 import TierModal from '../../components/modals/TierModal';
 import MoragoraModal from '../../components/common/MoragoraModal';
+import OnboardingModal, { resetOnboarding } from '../../components/common/OnboardingModal';
 import { formatDate } from '../../utils/dateFormatter';
 import useModalState from '../../hooks/useModalState';
 
@@ -324,6 +325,7 @@ export default function ProfilePage() {
   const [newNickname, setNewNickname] = useState('');
   const { modalState, showModal, closeModal } = useModalState();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(5);
   const [isListEditing, setIsListEditing] = useState(false);
   const [selectedVerdict, setSelectedVerdict] = useState(null);
@@ -719,6 +721,16 @@ const [showInfo, setShowInfo] = useState(false);
                 <BarChart3 size={22} className="text-[#007AFF]" />
               </div>
               <span className="text-[17px] font-bold text-black dark:text-white">나의 논리 프로필 분석</span>
+            </div>
+            <ChevronRight size={20} className="text-[#C7C7CC] dark:text-white/20" />
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.98 }} onClick={() => { resetOnboarding(); setIsOnboardingOpen(true); }}
+            className="w-full bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+                <BookOpen size={22} className="text-[#D4AF37]" />
+              </div>
+              <span className="text-[17px] font-bold text-black dark:text-white">온보딩 다시보기</span>
             </div>
             <ChevronRight size={20} className="text-[#C7C7CC] dark:text-white/20" />
           </motion.button>
@@ -1228,6 +1240,7 @@ const [showInfo, setShowInfo] = useState(false);
       )}
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      <OnboardingModal isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} />
 
       {/* ─── 회원탈퇴 모달 ──────────────────────────────────── */}
       <AnimatePresence>

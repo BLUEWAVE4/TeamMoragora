@@ -327,17 +327,54 @@ export async function getDailyVerdicts(req, res, next) {
   try {
     const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
 
-    // DB 레벨에서 daily 모드 필터링
-    const { data, error } = await supabaseAdmin
-      .from('verdicts')
-      .select('*, debate:debates!inner(topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
-      .eq('debate.mode', 'daily')
+    // debates 테이블에서 daily 모드 직접 조회 (verdict 유무 관계없이)
+    const { data: debates, error: debateErr } = await supabaseAdmin
+      .from('debates')
+      .select('id, topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, created_at, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
+      .eq('mode', 'daily')
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+    if (debateErr) throw debateErr;
+    if (!debates || debates.length === 0) return res.json([]);
 
-    res.json(data || []);
+    // 해당 debate들의 verdict 조회
+    const debateIds = debates.map(d => d.id);
+    const { data: verdicts } = await supabaseAdmin
+      .from('verdicts')
+      .select('*')
+      .in('debate_id', debateIds);
+
+    const verdictMap = {};
+    (verdicts || []).forEach(v => { verdictMap[v.debate_id] = v; });
+
+    // TodayDebate 컴포넌트가 기대하는 구조로 매핑
+    const result = debates.map(d => {
+      const v = verdictMap[d.id];
+      return {
+        debate_id: d.id,
+        citizen_score_a: v?.citizen_score_a ?? 0,
+        citizen_score_b: v?.citizen_score_b ?? 0,
+        created_at: v?.created_at ?? d.created_at,
+        ...(v || {}),
+        debate: {
+          topic: d.topic,
+          description: d.description,
+          category: d.category,
+          status: d.status,
+          creator_id: d.creator_id,
+          opponent_id: d.opponent_id,
+          pro_side: d.pro_side,
+          con_side: d.con_side,
+          mode: d.mode,
+          vote_deadline: d.vote_deadline,
+          created_at: d.created_at,
+          creator: d.creator,
+        },
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -449,22 +486,16 @@ export async function getVerdictFeed(req, res, next) {
       return res.json({ data: enriched, page, limit, total: count, hasNext: to < count - 1 });
     }
 
-    // 검색 없으면 DB 페이지네이션 직접 사용
-    let countQuery = supabaseAdmin
-      .from('verdicts')
-      .select('*, debate:debates!inner(mode, category)', { count: 'exact', head: true })
-      .not('debate.mode', 'in', '("daily","chat")');
-    if (category) countQuery = countQuery.eq('debate.category', category);
-
-    const [{ data, error }, { count }] = await Promise.all([
-      query.range(from, to),
-      countQuery,
-    ]);
-
+    // 검색 없으면 limit+1 패턴으로 hasNext 판단 (count 쿼리 제거)
+    const { data, error } = await query.range(from, to + 1);
     if (error) throw error;
 
-    const enriched = await enrichWithCounts(data || []);
-    res.json({ data: enriched, page, limit, total: count || 0, hasNext: to < (count || 0) - 1 });
+    const rows = data || [];
+    const hasNext = rows.length > limit;
+    const pageData = hasNext ? rows.slice(0, limit) : rows;
+
+    const enriched = await enrichWithCounts(pageData);
+    res.json({ data: enriched, page, limit, hasNext });
   } catch (err) {
     next(err);
   }

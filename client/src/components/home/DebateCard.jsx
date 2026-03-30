@@ -202,8 +202,8 @@ function DebateCard({ feed }) {
         {/* 프로필 헤더 */}
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0 border-2"
-            style={{ borderColor: TIER_COLORS[debateData?.creator?.tier] || TIER_COLORS['시민'] }}
+            className={`w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0 ${debateData?.creator?.tier && debateData.creator.tier !== '시민' ? 'border-2' : ''}`}
+            style={debateData?.creator?.tier && debateData.creator.tier !== '시민' ? { borderColor: TIER_COLORS[debateData.creator.tier] } : {}}
           >
             <img
               src={resolveAvatar(debateData?.creator?.avatar_url, debateData?.creator_id, debateData?.creator?.gender)}
@@ -352,7 +352,7 @@ function DebateCard({ feed }) {
               </>);
             })()}
           </div>
-          <button onClick={handleDetailClick} className="text-[12px] font-bold text-[#1B2A4A]/40 active:scale-95 transition-all">
+          <button onClick={handleDetailClick} className="text-[12px] font-bold text-[#1B2A4A] active:scale-95 transition-all">
             상세보기
           </button>
         </div>

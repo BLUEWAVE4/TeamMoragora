@@ -5,6 +5,7 @@ import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
 import DebateCard from '../components/home/DebateCard';
+import OnboardingModal, { isOnboardingDone } from '../components/common/OnboardingModal';
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
@@ -102,8 +103,10 @@ export default function HomePage() {
     init();
   }, []);
 
-  // 카테고리 또는 검색어 변경 시 새로 로드
+  // 카테고리 또는 검색어 변경 시 새로 로드 (마운트 시 스킵 — init()이 처리)
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
     loadFeeds(filter, false, searchQuery || null);
   }, [filter, searchQuery, loadFeeds]);
 
@@ -140,15 +143,38 @@ export default function HomePage() {
     });
   };
 
-  // 로딩 완료 시 스플래시 제거
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // 로딩 완료 시 스플래시 제거 → 스플래시 완전 제거 후 온보딩 표시
   useEffect(() => {
-    if (!loading) window.__removeSplash?.();
+    if (!loading) {
+      window.__removeSplash?.();
+      if (!isOnboardingDone()) {
+        // 스플래시 DOM 제거 감지 후 온보딩 표시
+        const checkSplash = setInterval(() => {
+          if (!document.getElementById('splash')) {
+            clearInterval(checkSplash);
+            setTimeout(() => setShowOnboarding(true), 400);
+          }
+        }, 300);
+        return () => clearInterval(checkSplash);
+      }
+    }
   }, [loading]);
 
-  if (loading) return null; // 스플래시가 보이므로 별도 로딩 UI 불필요
+  // 스플래시가 있으면 숨기고, 없으면 로딩 스피너 표시
+  if (loading) {
+    if (document.getElementById('splash')) return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F3F1EC]">
+        <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
+      <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
       <TodayDebate items={dailyItems} />
       <main className="flex flex-col mt-6 px-5">
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />

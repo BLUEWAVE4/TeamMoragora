@@ -46,14 +46,16 @@
       #splash .columns{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
       #splash .col{position:absolute;bottom:0;width:3px;background:linear-gradient(to top,rgba(201,168,76,0.25),transparent);opacity:0;animation:sp-col-rise 2.4s ease-out forwards;}
       #splash .col::before{content:'';position:absolute;top:0;left:-5px;width:13px;height:8px;background:rgba(201,168,76,0.3);border-radius:1px;}
-      #splash .col:nth-child(1){left:8%;height:55vh;animation-delay:0.1s;}
-      #splash .col:nth-child(2){left:15%;height:40vh;animation-delay:0.2s;}
-      #splash .col:nth-child(3){right:15%;height:40vh;animation-delay:0.2s;}
-      #splash .col:nth-child(4){right:8%;height:55vh;animation-delay:0.1s;}
+      #splash .col:nth-child(1){left:8%;height:90vh;animation-delay:0.1s;}
+      #splash .col:nth-child(2){left:15%;height:75vh;animation-delay:0.2s;}
+      #splash .col:nth-child(3){right:15%;height:75vh;animation-delay:0.2s;}
+      #splash .col:nth-child(4){right:8%;height:90vh;animation-delay:0.1s;}
       @keyframes sp-col-rise{from{opacity:0;transform:scaleY(0);transform-origin:bottom;}to{opacity:1;transform:scaleY(1);transform-origin:bottom;}}
-      #splash .sp-main{position:relative;z-index:10;width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}
-      #splash .epigraph{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(0.7rem,1.2vw,0.9rem);color:var(--marble-dim);letter-spacing:0.18em;text-transform:uppercase;opacity:0;transform:translateY(-12px);animation:sp-fade-down 1s ease forwards;animation-delay:0.6s;margin-bottom:2.4rem;}
-      #splash .divider-top{display:flex;align-items:center;gap:1rem;opacity:0;animation:sp-fade-in 0.8s ease forwards;animation-delay:0.9s;margin-bottom:2rem;}
+      #splash .sp-main{position:relative;z-index:10;width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;padding-top:12vh;}
+      #splash .epigraph{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(0.7rem,1.2vw,0.9rem);color:var(--marble-dim);letter-spacing:0.18em;text-transform:uppercase;opacity:0;transform:translateY(-12px);animation:sp-fade-down 1s ease forwards;animation-delay:0.6s;margin-bottom:1.2rem;text-align:center;line-height:1.8;padding-left:0.18em;}
+      #splash .ep-br{display:block;}#splash .ep-dash{display:none;}
+      @media(min-width:500px){#splash .ep-br{display:none;}#splash .ep-dash{display:inline;}}
+      #splash .divider-top{display:flex;align-items:center;justify-content:center;gap:1rem;opacity:0;animation:sp-fade-in 0.8s ease forwards;animation-delay:0.9s;margin-bottom:2rem;}
       #splash .divider-top .line{width:clamp(60px,8vw,120px);height:1px;background:linear-gradient(to right,transparent,var(--athenian-gold));}
       #splash .divider-top .line.right{background:linear-gradient(to left,transparent,var(--athenian-gold));}
       #splash .divider-top .diamond{width:6px;height:6px;background:var(--athenian-gold);transform:rotate(45deg);}
@@ -65,21 +67,19 @@
       #splash .divider-bottom .line{width:clamp(60px,8vw,120px);height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.5));}
       #splash .divider-bottom .line.right{background:linear-gradient(to left,transparent,rgba(201,168,76,0.5));}
       #splash .divider-bottom .omega{font-family:'Cinzel',serif;font-size:0.75rem;color:var(--athenian-gold);opacity:0.7;}
-      #splash .wordmark-wrap{display:flex;align-items:center;opacity:0;transform:translateY(8px);animation:sp-fade-up 1s ease forwards;animation-delay:1.5s;min-height:clamp(2.4rem,5.5vw,4.2rem);}
+      #splash .wordmark-wrap{display:flex;align-items:center;min-height:clamp(2.4rem,5.5vw,4.2rem);}
       #splash .wordmark-cursor{display:inline-block;width:3px;height:clamp(2rem,4.5vw,3.4rem);background:var(--athenian-gold);margin-left:2px;animation:sp-blink 0.7s step-end infinite;}
-      #splash .quote-block{position:absolute;bottom:clamp(2rem,5vh,4rem);text-align:center;opacity:0;animation:sp-fade-up 1.2s ease forwards;animation-delay:2.5s;}
+      #splash .quote-block{position:fixed;bottom:clamp(1.5rem,4vh,3rem);left:0;right:0;text-align:center;z-index:11;opacity:0;animation:sp-fade-up 1.2s ease forwards;animation-delay:2.5s;}
       #splash .quote-text{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(0.8rem,1.3vw,1rem);color:rgba(160,152,136,0.7);letter-spacing:0.05em;line-height:1.6;}
       #splash .quote-attr{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.25em;color:rgba(201,168,76,0.45);margin-top:0.5rem;text-transform:uppercase;}
       #splash .loader-wrap{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,0.04);overflow:hidden;opacity:0;animation:sp-fade-in 0.5s ease forwards;animation-delay:2.8s;}
       #splash .loader-bar{height:100%;width:0%;background:linear-gradient(to right,var(--hemlock-red),var(--athenian-gold));animation:sp-load-progress 2.5s ease-in-out forwards;animation-delay:3s;}
       @keyframes sp-load-progress{0%{width:0%;}60%{width:70%;}90%{width:90%;}100%{width:100%;}}
       @keyframes sp-blink{0%,100%{opacity:1;}50%{opacity:0;}}
-      #splash .sp-chars-wrap{display:inline-flex;gap:0.35em;transition:gap 1.2s ease;}
-      #splash .sp-chars-wrap.gathered{gap:0;}
-      #splash .sp-char{display:inline-block;color:var(--marble);transition:color 1.2s ease 0.4s;}
-      #splash .sp-chars-wrap.gathered .sp-char{color:#2D3350;}
-      #splash .sp-dot{display:inline-block;color:var(--marble);transition:color 1.2s ease 0.4s;opacity:0;transition:color 1.2s ease 0.4s,opacity 0.6s ease 1s;}
-      #splash .sp-chars-wrap.gathered .sp-dot{color:#FFBD43;opacity:1;}
+      #splash .sp-char{display:inline;color:var(--marble);transition:color 1.2s ease;}
+      #splash .sp-char.sp-gathered{color:#2D3350;}
+      #splash .sp-dot{display:inline;color:var(--marble);transition:color 1.2s ease;}
+      #splash .sp-dot.sp-gathered{color:#FFBD43;}
       @keyframes sp-fade-in{from{opacity:0;}to{opacity:1;}}
       @keyframes sp-fade-up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
       @keyframes sp-fade-down{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
@@ -92,7 +92,7 @@
       <div class="columns"><div class="col"></div><div class="col"></div><div class="col"></div><div class="col"></div></div>
       <div id="sp-particles"></div>
       <div class="sp-main">
-        <div class="epigraph">Ἡ ἀλήθεια ἐν τῷ λόγῳ — Truth lives in argument</div>
+        <div class="epigraph">&nbsp;&nbsp;&nbsp;&nbsp;Ἡ ἀλήθεια ἐν τῷ λόγῳ <span class="ep-dash">— </span><br class="ep-br">Truth lives in argument</div>
         <div class="divider-top"><div class="line"></div><div class="diamond"></div><div class="line right"></div></div>
         <div class="logo-v"><svg viewBox="0 0 120 100" style="width:1em;height:0.83em;vertical-align:baseline;fill:url(#gold-grad);filter:drop-shadow(0 0 40px rgba(201,168,76,0.35));">
           <defs><linearGradient id="gold-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0c96a"/><stop offset="40%" stop-color="#c9a84c"/><stop offset="100%" stop-color="#8a6a20"/></linearGradient></defs>
@@ -116,10 +116,10 @@
         <div class="wordmark-wrap"><span id="sp-typed" class="wordmark"></span><span id="sp-cursor" class="wordmark-cursor"></span></div>
         <div class="subtitle">The Agora of Modern Debate</div>
         <div class="divider-bottom"><div class="line"></div><div class="omega">Ω</div><div class="line right"></div></div>
-        <div class="quote-block">
-          <div class="quote-text">"I know that I know nothing."</div>
-          <div class="quote-attr">— Socrates</div>
-        </div>
+      </div>
+      <div class="quote-block">
+        <div class="quote-text">"I know that I know nothing."</div>
+        <div class="quote-attr">— Socrates</div>
       </div>
       <div class="loader-wrap"><div class="loader-bar"></div></div>
     </div>
@@ -174,61 +174,42 @@
         }
         function pause(ms, cb) { setTimeout(cb, ms); }
 
-        // 워드마크 fade-up 후 시작 (animation-delay: 1.5s + 1s fade)
-        setTimeout(function() {
-          // Phase 1: MORAGORA 타이핑
-          type('MORAGORA', false, function() {
-            pause(700, function() {
-              // Phase 2: 전부 지우기
-              deleteAll(false, function() {
-                pause(300, function() {
-                  // Phase 3: 모 라 고 라 ? 타이핑 (한글, Pretendard, 띄어쓰기)
-                  el.style.fontFamily = "'Pretendard Variable',Pretendard,sans-serif";
-                  el.style.letterSpacing = '0';
-                  el.style.transition = 'letter-spacing 0.8s ease, color 1.2s ease';
-                  type('\uBAA8\uB77C\uACE0\uB77C?', true, function() {
-                    pause(800, function() {
-                      // Phase 4: ? 만 지우기
-                      deleteChars(1, true, function() {
-                        pause(800, function() {
-                          // Phase 5: 개별 span으로 전환 → gap 줄이며 모이기 + 색상 전환
-                          cursor.style.display = 'none';
-                          var chars = '\uBAA8\uB77C\uACE0\uB77C';
-                          var html = '<span class="sp-chars-wrap" id="sp-gather">';
-                          for (var j = 0; j < chars.length; j++) {
-                            html += '<span class="sp-char">' + chars[j] + '</span>';
-                          }
-                          html += '<span class="sp-dot">.</span></span>';
-                          el.innerHTML = html;
-                          el.style.letterSpacing = '0';
-                          // 다음 프레임에서 gathered 클래스 추가 → transition 시작
-                          requestAnimationFrame(function() {
-                            requestAnimationFrame(function() {
-                              document.getElementById('sp-gather').classList.add('gathered');
-                              // 배경을 베이지로 전환 + 어두운 레이어 숨기기
-                              var splashEl = document.getElementById('splash');
-                              splashEl.style.background = '#F3F1EC';
-                              splashEl.querySelector('.bg-layer').style.transition = 'opacity 1.5s ease';
-                              splashEl.querySelector('.bg-layer').style.opacity = '0';
-                              splashEl.querySelector('.vignette').style.transition = 'opacity 1.5s ease';
-                              splashEl.querySelector('.vignette').style.opacity = '0';
-                              splashEl.querySelector('.columns').style.transition = 'opacity 1.5s ease';
-                              splashEl.querySelector('.columns').style.opacity = '0';
-                              splashEl.querySelector('.sp-main').querySelectorAll('.epigraph,.divider-top,.logo-v,.subtitle,.divider-bottom,.quote-block').forEach(function(e) {
-                                e.style.transition = 'opacity 1.5s ease';
-                                e.style.opacity = '0';
-                              });
-                            });
-                          });
-                        });
-                      });
-                    });
-                  });
+        // Phase 1: 모라고라? 즉시 표시 (공백 없이)
+        el.style.fontFamily = "'Pretendard Variable',Pretendard,sans-serif";
+        el.style.letterSpacing = '-0.5px';
+        current = '\uBAA8\uB77C\uACE0\uB77C?';
+        render(current);
+
+        // Phase 2: 2.5초 후 ? 지우기
+        pause(2500, function() {
+          deleteChars(1, false, function() {
+            pause(400, function() {
+              // Phase 3: . 타이핑
+              current += '.';
+              el.innerHTML = '<span class="sp-char">\uBAA8\uB77C\uACE0\uB77C</span><span class="sp-dot">.</span>';
+              cursor.style.display = 'none';
+              // Phase 4: 색상 전환 + 배경 전환
+              pause(300, function() {
+                el.querySelector('.sp-char').classList.add('sp-gathered');
+                el.querySelector('.sp-dot').classList.add('sp-gathered');
+                var splashEl = document.getElementById('splash');
+                splashEl.style.background = '#F3F1EC';
+                splashEl.querySelector('.bg-layer').style.transition = 'opacity 1.5s ease';
+                splashEl.querySelector('.bg-layer').style.opacity = '0';
+                splashEl.querySelector('.vignette').style.transition = 'opacity 1.5s ease';
+                splashEl.querySelector('.vignette').style.opacity = '0';
+                splashEl.querySelector('.columns').style.transition = 'opacity 1.5s ease';
+                splashEl.querySelector('.columns').style.opacity = '0';
+                splashEl.querySelector('.sp-main').querySelectorAll('.epigraph,.divider-top,.logo-v,.subtitle,.divider-bottom').forEach(function(e) {
+                  e.style.transition = 'opacity 1.5s ease';
+                  e.style.opacity = '0';
                 });
+                var qb = splashEl.querySelector('.quote-block');
+                if (qb) { qb.style.transition = 'opacity 1.5s ease'; qb.style.opacity = '0'; }
               });
             });
           });
-        }, 2500);
+        });
       })();
     </script>
     <div id="root"></div>
@@ -245,7 +226,7 @@
 
       // 스플래시 제거 함수 (최소 5초 보장)
       var splashStart = Date.now();
-      var splashMinMs = 10000;
+      var splashMinMs = 5000;
       window.__removeSplash = function() {
         var elapsed = Date.now() - splashStart;
         var delay = Math.max(0, splashMinMs - elapsed);
