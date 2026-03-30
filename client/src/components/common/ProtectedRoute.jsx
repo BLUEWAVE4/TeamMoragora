@@ -14,8 +14,9 @@ export default function ProtectedRoute() {
   }
 
   if (!user) {
-    // 로그인 후 원래 페이지로 돌아오기 위해 현재 경로 저장
-    sessionStorage.setItem('redirectAfterLogin', location.pathname);
+    // 마이페이지에서 로그인 시 홈으로 이동 (다른 페이지는 원래 경로로 복귀)
+    const redirectPath = location.pathname === '/profile' ? '/' : location.pathname;
+    sessionStorage.setItem('redirectAfterLogin', redirectPath);
     return <Navigate to="/login" replace />;
   }
 
