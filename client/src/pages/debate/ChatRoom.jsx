@@ -775,28 +775,21 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => clearInterval(socraticTimerRef.current);
   }, [gameStarted, mySide, debate?.topic, messages.length]);
 
-  // 루브릭 점수 — 1분마다 내 발언 수집 → 채점
-  const rubricTimerRef = useRef(null);
-  const rubricMsgCountRef = useRef(0);
-  useEffect(() => {
+  // 루브릭 점수 — 메시지 전송 시 호출
+  const updateRubricScore = useCallback(async () => {
     if (!gameStarted || !mySide || !debate?.topic) return;
-    clearInterval(rubricTimerRef.current);
-    rubricTimerRef.current = setInterval(async () => {
-      const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
-      if (myMsgs.length === 0 || myMsgs.length === rubricMsgCountRef.current) return;
-      rubricMsgCountRef.current = myMsgs.length;
-      const combined = myMsgs.map(m => m.content).join(' ');
-      if (combined.trim().length < 10) return;
-      try {
-        const scores = await getRubricScore({
-          topic: debate.topic, content: combined, side: mySide,
-          proSide: debate.pro_side, conSide: debate.con_side,
-        });
-        if (scores && typeof scores.total === 'number') setRubricScores(scores);
-      } catch {}
-    }, 60 * 1000);
-    return () => clearInterval(rubricTimerRef.current);
-  }, [gameStarted, mySide, debate?.topic, messages.length]);
+    const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
+    if (myMsgs.length === 0) return;
+    const combined = myMsgs.map(m => m.content).join(' ');
+    if (combined.trim().length < 10) return;
+    try {
+      const scores = await getRubricScore({
+        topic: debate.topic, content: combined, side: mySide,
+        proSide: debate.pro_side, conSide: debate.con_side,
+      });
+      if (scores && typeof scores.total === 'number') setRubricScores(scores);
+    } catch {}
+  }, [gameStarted, mySide, debate?.topic, messages, user?.id]);
 
   // 카운트업 애니메이션
   useEffect(() => {
@@ -939,8 +932,10 @@ const handleVote = (agree) => {
     setSending(false);
     safeTimeout(() => setCooldown(false), COOLDOWN_MS);
     chatInputRef.current?.focus();
+    // 전송 성공 → 루브릭 점수 업데이트
+    updateRubricScore();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname, timeChangeRequest]);
+  }, [text, sending, cooldown, chatEnded, mySide, msgCount, debateId, user, myNickname, timeChangeRequest, updateRubricScore]);
 
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
   const scrollToBottom = () => { msgEndRef.current?.scrollIntoView({ behavior: 'smooth' }); setShowNewMsgBtn(false); };
