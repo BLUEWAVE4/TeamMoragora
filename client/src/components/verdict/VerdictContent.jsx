@@ -321,8 +321,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const argB = verdictData.arguments?.B || null;
   const rebuttalA = verdictData.arguments?.rebuttalA || null;
   const rebuttalB = verdictData.arguments?.rebuttalB || null;
-  const nicknameA = verdictData.arguments?.nicknameA || null;
-  const nicknameB = verdictData.arguments?.nicknameB || null;
+  // 현재 닉네임 우선 사용 (프로필에서 변경된 경우 반영)
+  const creatorSide = debateData.creator_side || 'A';
+  const currentCreatorNick = debateData.creator?.nickname || null;
+  const currentOpponentNick = debateData.opponent?.nickname || null;
+  const nicknameA = creatorSide === 'A' ? (currentCreatorNick || verdictData.arguments?.nicknameA) : (currentOpponentNick || verdictData.arguments?.nicknameA);
+  const nicknameB = creatorSide === 'A' ? (currentOpponentNick || verdictData.arguments?.nicknameB) : (currentCreatorNick || verdictData.arguments?.nicknameB);
   const userIdA = verdictData.arguments?.userIdA || null;
   const rawUserIdB = verdictData.arguments?.userIdB || null;
   const userIdB = userIdA === rawUserIdB ? null : rawUserIdB;
