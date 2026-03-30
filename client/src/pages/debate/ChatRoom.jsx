@@ -1614,63 +1614,33 @@ const handleVote = (agree) => {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    const totalP = (participants.A?.length || 0) + (participants.B?.length || 0);
-                    if (totalP <= 2) {
-                      // 1:1 → 확인 모달
-                      setKickConfirm({ userId: actionTarget.userId, nickname: actionTarget.nickname });
-                      setActionTarget(null);
-                    } else {
-                      socket.emit('request-kick', { debateId, userId: user.id, targetId: actionTarget.userId, targetNickname: actionTarget.nickname });
-                      setActionTarget(null);
-                    }
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 active:scale-[0.98] transition-all"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                    <line x1="17" y1="11" x2="22" y2="11"/>
-                  </svg>
-                  <span className="text-red-400 text-[13px] font-black">강퇴</span>
-                </button>
-                <button
-                  disabled={!!reportedUsers[actionTarget.userId]}
-                  onClick={async () => {
-                    if (reportedUsers[actionTarget.userId]) return;
-                    const targetUserId = actionTarget.userId;
-                    setReportLoading(true);
-                    setActionTarget(null);
-                    setReportedUsers(prev => ({ ...prev, [targetUserId]: true }));
-                    try {
-                      const targetMsgs = messages.filter(m => m.user_id === targetUserId && m.type !== 'system' && m.type !== 'vote').map(m => m.content).join('\n');
-                      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/${debateId}/report`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reporterId: user.id, targetId: targetUserId, messages: targetMsgs }),
-                      });
-                      const result = await res.json();
-                      setReportResult(result);
-                    } catch {
-                      setReportResult({ safe: false, reason: '신고 처리 중 오류가 발생했습니다.' });
-                    } finally {
-                      setReportLoading(false);
-                    }
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border active:scale-[0.98] transition-all ${
-                    reportedUsers[actionTarget.userId]
-                      ? 'bg-white/5 border-white/10 opacity-40 cursor-not-allowed'
-                      : 'bg-amber-500/10 border-amber-500/20'
-                  }`}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={reportedUsers[actionTarget.userId] ? '#666' : '#f59e0b'} strokeWidth="2" strokeLinecap="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                  <span className={`text-[13px] font-black ${reportedUsers[actionTarget.userId] ? 'text-white/30' : 'text-amber-400'}`}>
-                    {reportedUsers[actionTarget.userId] ? '이미 신고됨' : '신고 (AI 분석)'}
-                  </span>
-                </button>
+                {/* 강퇴: 1:1이면 생성자만, 다인원이면 누구나 */}
+                {(() => {
+                  const totalP = (participants.A?.length || 0) + (participants.B?.length || 0);
+                  const isOneOnOne = totalP <= 2;
+                  const canKick = isOneOnOne ? (user?.id === debate?.creator_id) : true;
+                  if (!canKick) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        if (isOneOnOne) {
+                          setKickConfirm({ userId: actionTarget.userId, nickname: actionTarget.nickname });
+                          setActionTarget(null);
+                        } else {
+                          socket.emit('request-kick', { debateId, userId: user.id, targetId: actionTarget.userId, targetNickname: actionTarget.nickname });
+                          setActionTarget(null);
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 active:scale-[0.98] transition-all"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <line x1="17" y1="11" x2="22" y2="11"/>
+                      </svg>
+                      <span className="text-red-400 text-[13px] font-black">강퇴</span>
+                    </button>
+                  );
+                })()}
               </div>
               <button onClick={() => setActionTarget(null)}
                 className="w-full mt-3 py-3 rounded-xl text-white/30 text-[13px] font-bold bg-white/5 active:scale-[0.98] transition-all">
