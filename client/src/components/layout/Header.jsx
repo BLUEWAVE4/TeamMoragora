@@ -13,6 +13,7 @@ import {
   deleteNotification,
   deleteAllNotifications,
 } from '../../services/api';
+import { trackEvent } from '../../services/analytics';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
 // --- 아이콘 컴포넌트 정의 ---
@@ -195,6 +196,7 @@ export default function Header() {
   }, []);
 
   const handleInstallClick = async () => {
+    trackEvent('pwa_install', { method: deferredPrompt ? 'native_prompt' : 'manual_guide' });
     if (deferredPrompt) {
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;

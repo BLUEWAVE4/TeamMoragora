@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback, getMyFeedbacks } from '../../services/api';
+import { trackEvent } from '../../services/analytics';
 import MoragoraModal from '../common/MoragoraModal';
 import useModalState from '../../hooks/useModalState';
 import useThemeStore from '../../store/useThemeStore';
@@ -172,6 +173,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
         additional: additional || null,
       });
       setSubmitted(true);
+      trackEvent('feedback_submit', { avgScore: (Object.values(ratings).reduce((a, b) => a + b, 0) / 5).toFixed(1) });
     } catch (err) {
       showModal('제출에 실패했습니다', '잠시 후 다시 시도해주세요.');
     } finally {

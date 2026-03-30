@@ -302,6 +302,7 @@ export default function JudgingPage() {
       fireConfetti();
       confettiFiredRef.current = true;
       trackEvent('verdict_view', { debateId });
+      trackEvent('debate_complete', { debateId });
     }
   }, [isAllDone]);
   useEffect(() => {
@@ -668,6 +669,7 @@ export default function JudgingPage() {
                   navigator.clipboard.writeText(shareText).then(() => {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
+                    trackEvent('verdict_share', { debateId, method: 'clipboard' });
                   });
                 }}
                 className={`w-full mt-5 py-4 rounded-xl font-sans font-bold text-base uppercase tracking-wider border-2 shadow-md active:scale-95 transition-all duration-300 ${

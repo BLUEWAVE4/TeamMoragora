@@ -116,6 +116,20 @@ export async function getDashboardStats(req, res, next) {
     const tierDist = {};
     (tierData || []).forEach(p => { tierDist[p.tier] = (tierDist[p.tier] || 0) + 1; });
 
+    // 공유 이벤트 수 (verdict_share + invite_share)
+    const [
+      { count: verdictShareCount },
+      { count: inviteShareCount },
+    ] = await Promise.all([
+      supabaseAdmin.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'verdict_share'),
+      supabaseAdmin.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'invite_share'),
+    ]);
+
+    // 완료율 (completed / 전체 논쟁)
+    const completionRate = (totalDebates || 0) > 0
+      ? Math.round((completedCount || 0) / totalDebates * 1000) / 10
+      : 0;
+
     res.json({
       dau,
       totalUsers: totalUsers || 0,
@@ -132,6 +146,8 @@ export async function getDashboardStats(req, res, next) {
       ratingDist,
       feedbackCount: feedbacks?.length || 0,
       feedbackDist,
+      completionRate,
+      shareCount: (verdictShareCount || 0) + (inviteShareCount || 0),
       debateByMode: { duo: duoCount || 0, solo: soloCount || 0, daily: dailyCount || 0, chat: chatCount || 0 },
       debateByStatus: { waiting: waitingCount || 0, arguing: arguingCount || 0, voting: votingCount || 0, completed: completedCount || 0 },
       tierDist,

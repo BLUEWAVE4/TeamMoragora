@@ -15,6 +15,7 @@ import { timeAgo } from "../../utils/dateFormatter";
 import MoragoraModal from '../common/MoragoraModal';
 import ChatLogViewer from './ChatLogViewer';
 import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally, getMyProfile, getProfileById } from "../../services/api";
+import { trackEvent } from "../../services/analytics";
 import { socket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
 
@@ -238,6 +239,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
       else setLiveVoteB(v => (v ?? 0) + 1);
       try {
         await castVote(debateId, side);
+        trackEvent('citizen_vote', { debateId, side });
       } catch (err) {
         setMyVote(prevVote);
         setLiveVoteA(prevA);

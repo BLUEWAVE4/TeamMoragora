@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDebate, getDebateByInviteCode, joinByInvite, getArguments } from '../../services/api'
+import { trackEvent } from '../../services/analytics'
 import { useAuth } from '../../store/AuthContext'
 import { ShieldBan } from 'lucide-react'
 import MoragoraModal from '../../components/common/MoragoraModal'
-import useModalState from '../../hooks/useModalState'
 
 const INVITE_TIMEOUT = 300
 
@@ -49,7 +49,9 @@ export default function InvitePage() {
   const [opponentWriting, setOpponentWriting] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INVITE_TIMEOUT)
   const [isCreator, setIsCreator] = useState(null)
-  const { modalState, showModal, closeModal } = useModalState()
+  const [modalState, setModalState] = useState({ isOpen: false, title: '', description: '', type: 'info' })
+  const showModal = (title, description, type = 'info') => setModalState({ isOpen: true, title, description, type })
+  const closeModal = () => setModalState({ isOpen: false, title: '', description: '', type: 'info' })
 
   const shareOrigin = import.meta.env.VITE_CLIENT_URL || window.location.origin
   const shareUrl = `${shareOrigin}/invite/${inviteCode}`
@@ -69,7 +71,7 @@ export default function InvitePage() {
             sessionStorage.setItem(`debate_invite_${inviteCode}`, JSON.stringify(debateData))
           } else if (debateData.opponent_id === user.id) {
             // B측: 이미 참여한 논쟁 → 현재 상태에 맞는 페이지로 바로 이동
-            navigate(getDebateRoute(debateData), { replace: true })
+            navigate(getDebateRoute(debateData.id, debateData.status), { replace: true })
             return
           } else {
             // B측: 소환장 UI 표시 (참여 버튼 클릭 시 joinByInvite 실행)
@@ -171,7 +173,7 @@ if (debate?.opponent_id === user.id) {
       if (status === 409 || msg.includes('이미 상대방')) {
         setError('이미 다른 사용자가 참여한 논쟁입니다.')
       } else if (status === 400 && msg.includes('본인')) {
-        navigate(getDebateRoute(debate))
+        navigate(getDebateRoute(debate.id, debate.status))
       } else {
         showModal('참여 처리 중 오류가 발생했습니다', '잠시 후 다시 시도해주세요.', 'error')
       }
@@ -184,6 +186,7 @@ if (debate?.opponent_id === user.id) {
     navigator.clipboard.writeText(shareUrl).then(() => {
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 2000)
+      trackEvent('invite_share', { debateId: debate?.id, method: 'clipboard' })
     })
   }
 
@@ -199,6 +202,7 @@ if (debate?.opponent_id === user.id) {
         },
         buttons: [{ title: '논쟁 참여하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
       })
+      trackEvent('invite_share', { debateId: debate?.id, method: 'kakao' })
     } else {
       handleCopy()
       showModal('링크가 복사되었습니다', '카카오톡 공유가 불가하여\n초대 링크가 클립보드에 복사되었습니다.')
@@ -410,7 +414,7 @@ if (debate?.opponent_id === user.id) {
         {/* 푸터 - 상태 버튼 */}
         <div className="bg-[#F5F0E8] px-5 py-4 border-t border-[#1B2A4A]/10">
 <button
-  onClick={() => isOpponentJoined && navigate(getDebateRoute(debate))}
+  onClick={() => isOpponentJoined && navigate(getDebateRoute(debate?.id, debate?.status))}
   disabled={!isOpponentJoined}
   className={`w-full h-[52px] font-black text-[15px] rounded-xl transition-all duration-500 flex items-center justify-center gap-2 ${
     isOpponentJoined
