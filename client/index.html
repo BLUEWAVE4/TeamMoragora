@@ -45,19 +45,17 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // React 렌더링 완료 후 스플래시 제거
-      var observer = new MutationObserver(function() {
-        if (document.getElementById('root').children.length > 0) {
-          var splash = document.getElementById('splash');
-          if (splash) {
-            splash.style.transition = 'opacity 0.3s ease-out';
-            splash.style.opacity = '0';
-            setTimeout(function() { splash.remove(); }, 300);
-          }
-          observer.disconnect();
+      // 스플래시 제거 함수 (HomePage에서 데이터 로딩 완료 시 호출)
+      window.__removeSplash = function() {
+        var splash = document.getElementById('splash');
+        if (splash) {
+          splash.style.transition = 'opacity 0.3s ease-out';
+          splash.style.opacity = '0';
+          setTimeout(function() { splash.remove(); }, 300);
         }
-      });
-      observer.observe(document.getElementById('root'), { childList: true });
+      };
+      // 안전장치: 10초 후 강제 제거 (로딩 실패 시)
+      setTimeout(function() { window.__removeSplash(); }, 10000);
     </script>
   </body>
 </html>

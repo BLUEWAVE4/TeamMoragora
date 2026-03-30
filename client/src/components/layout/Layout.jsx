@@ -1,10 +1,16 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import TabBar from './TabBar';
 import AnalyticsConsent from '../common/AnalyticsConsent';
 
 export default function Layout() {
+  const location = useLocation();
+  // 홈 이외 페이지 직접 접속 시 스플래시 제거
+  useEffect(() => {
+    if (location.pathname !== '/') window.__removeSplash?.();
+  }, []);
+
   return (
     <div className="app-container max-w-md mx-auto min-h-screen bg-[#F8F9FA] relative shadow-x" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* 상태바 영역 흰색 배경 */}
