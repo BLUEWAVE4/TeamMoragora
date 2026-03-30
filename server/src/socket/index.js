@@ -146,6 +146,13 @@ export function initializeSocket(io) {
         prev.socketIds = new Set([socket.id]);
         prev.nickname = nickname;
         if (avatarUrl) prev.avatarUrl = avatarUrl;
+        // 유예 중 재접속 → 타이머 클리어 + 복구
+        if (prev._disconnectedAt) {
+          console.log(`[복귀] ${nickname}(${userId}) 유예 중 재접속 — 복구`);
+          if (prev._graceTimer) clearTimeout(prev._graceTimer);
+          delete prev._disconnectedAt;
+          delete prev._graceTimer;
+        }
       } else {
         roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now(), _gameStarted: !!isReconnect && !!side };
       }
@@ -611,7 +618,7 @@ export function initializeSocket(io) {
       }
     });
 
-    // ===== 소켓 끊김 =====
+    // ===== 소켓 끊김 (5분 유예) =====
     socket.on('disconnect', () => {
       for (const debateId of Object.keys(roomParticipants)) {
         const room = roomParticipants[debateId];
@@ -628,32 +635,43 @@ export function initializeSocket(io) {
 
           const leftNickname = p.nickname;
           const hadSide = p.side;
-          delete roomParticipants[debateId][userId];
-          io.to(debateId).emit('presence-sync', buildSlots(debateId));
 
-          if (!hadSide) {
-            console.log(`[퇴장] 관전자 ${leftNickname}(${userId}) 퇴장 — 알림 없음`);
-            break;
-          }
+          // 사이드 선택한 참여자: 5분 유예 (즉시 삭제 안 함)
+          if (hadSide) {
+            p._disconnectedAt = Date.now();
+            console.log(`[이탈] ${leftNickname}(${userId}) 연결 끊김 — 5분 유예 시작`);
+            io.to(debateId).emit('opponent-left', { userId, nickname: leftNickname });
 
-          io.to(debateId).emit('opponent-left', { userId, nickname: leftNickname });
-          console.log(`[이탈] ${leftNickname}(${userId}) 이탈 감지 — 2분 후 복귀 없으면 종료`);
+            const capturedDebateId = debateId;
+            const capturedUserId = userId;
 
-          const capturedDebateId = debateId;
-          const capturedUserId = userId;
+            // 기존 유예 타이머가 있으면 정리
+            if (p._graceTimer) clearTimeout(p._graceTimer);
 
-          setTimeout(async () => {
-            const stillGone = !roomParticipants[capturedDebateId]?.[capturedUserId];
-            console.log(`[이탈] 2분 경과 — 복귀 여부: ${stillGone ? '미복귀' : '복귀'}`);
-            if (stillGone) {
+            p._graceTimer = setTimeout(async () => {
+              const current = roomParticipants[capturedDebateId]?.[capturedUserId];
+              // 재접속했으면 (_disconnectedAt 클리어됨) 무시
+              if (!current || !current._disconnectedAt) return;
+
+              console.log(`[이탈] 5분 경과 — ${leftNickname}(${capturedUserId}) 미복귀 → 삭제`);
+              delete roomParticipants[capturedDebateId][capturedUserId];
+              io.to(capturedDebateId).emit('presence-sync', buildSlots(capturedDebateId));
+
               try {
                 const { data: debate } = await supabaseAdmin
-                  .from('debates').select('status, mode').eq('id', capturedDebateId).single();
-                console.log(`[이탈] DB status: ${debate?.status}, mode: ${debate?.mode}`);
+                  .from('debates').select('status, mode, creator_id').eq('id', capturedDebateId).single();
 
-                const shouldEnd = debate?.status === 'chatting'
-                  || (debate?.mode === 'chat' && ['waiting', 'both_joined'].includes(debate?.status));
+                // 로비 대기 중 방장 이탈 → 방 삭제
+                if (debate && capturedUserId === debate.creator_id && ['waiting', 'both_joined'].includes(debate.status)) {
+                  await supabaseAdmin.from('debates').delete().eq('id', capturedDebateId);
+                  io.to(capturedDebateId).emit('chat-cancelled', { reason: '방장이 퇴장하여 논쟁이 삭제되었습니다.' });
+                  cleanupDebateRoom(capturedDebateId);
+                  console.log(`[이탈] 방장 미복귀 → 방 삭제 (${capturedDebateId})`);
+                  return;
+                }
 
+                // chatting 중 이탈 → 판결 처리
+                const shouldEnd = debate?.status === 'chatting';
                 if (shouldEnd) {
                   const { count } = await supabaseAdmin.from('chat_messages').select('id', { count: 'exact', head: true }).eq('debate_id', capturedDebateId);
                   if (!count || count === 0) {
@@ -661,19 +679,21 @@ export function initializeSocket(io) {
                     io.to(capturedDebateId).emit('chat-cancelled', { reason: '이 논쟁은 진행이 취소되었습니다.' });
                     console.log(`[이탈] ${capturedDebateId} 메시지 없음 → 취소 삭제`);
                   } else {
-                    await supabaseAdmin
-                      .from('debates').update({ status: 'judging' })
-                      .eq('id', capturedDebateId);
+                    await supabaseAdmin.from('debates').update({ status: 'judging' }).eq('id', capturedDebateId);
                     io.to(capturedDebateId).emit('chat-auto-ended', { reason: '상대방 이탈로 논쟁이 종료되었습니다.' });
                     const { triggerJudgment } = await import('../services/judgmentTrigger.service.js');
-                    triggerJudgment(capturedDebateId).catch(err =>
-                      console.error('[이탈] 판결 실패:', err.message));
-                    console.log(`[이탈] ${capturedDebateId} 자동 종료 완료 (이전 status: ${debate?.status})`);
+                    triggerJudgment(capturedDebateId).catch(err => console.error('[이탈] 판결 실패:', err.message));
+                    console.log(`[이탈] ${capturedDebateId} 자동 종료 (chatting → judging)`);
                   }
                 }
               } catch (err) { console.error('[이탈] 에러:', err.message); }
-            }
-          }, 2 * 60 * 1000);
+            }, 5 * 60 * 1000);
+          } else {
+            // 사이드 미선택 (관전자) → 즉시 삭제
+            delete roomParticipants[debateId][userId];
+            io.to(debateId).emit('presence-sync', buildSlots(debateId));
+            console.log(`[퇴장] 관전자 ${leftNickname}(${userId}) 퇴장`);
+          }
 
           break;
         }
