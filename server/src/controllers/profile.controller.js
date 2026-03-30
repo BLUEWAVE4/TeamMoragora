@@ -111,11 +111,23 @@ export async function getMyProfile(req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, nickname, avatar_url, gender, age, tier, wins, losses, draws, total_score')
+      .select('id, nickname, avatar_url, gender, age, tier, wins, losses, draws, total_score, is_onboarding_done')
       .eq('id', req.user.id)
       .single();
     if (error) throw error;
     res.json(data);
+  } catch (err) { next(err); }
+}
+
+// 온보딩 완료 처리
+export async function completeOnboarding(req, res, next) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ is_onboarding_done: true })
+      .eq('id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
   } catch (err) { next(err); }
 }
 

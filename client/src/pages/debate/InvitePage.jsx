@@ -387,26 +387,19 @@ if (debate?.opponent_id === user.id) {
           </div>
 
           {/* 초대 링크 */}
-          <div className="px-5 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-gray-400 font-medium w-16 shrink-0">초대 링크</span>
-              <span className="text-[12px] text-gray-400 font-mono truncate">{shareUrl}</span>
-            </div>
-          </div>
-
           {/* 공유 버튼 */}
           <div className="px-5 pb-5 flex flex-col gap-3">
             <button
               onClick={handleKakaoShare}
               className="w-full h-[52px] bg-[#FEE500] text-[#3c1e1e] font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer"
             >
-              카카오톡으로 소환장 발송
+              카카오톡 공유
             </button>
             <button
               onClick={handleCopy}
               className={`w-full h-[52px] bg-white border-2 border-[#1B2A4A]/15 font-black text-[15px] rounded-xl active:scale-[0.98] transition-all cursor-pointer ${isCopied ? 'text-[#D4AF37]' : 'text-[#1B2A4A]'}`}
             >
-              {isCopied ? '복사 완료!' : '링크 복사'}
+              {isCopied ? '복사 완료!' : '링크 공유'}
             </button>
           </div>
         </div>

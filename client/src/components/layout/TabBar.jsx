@@ -20,21 +20,7 @@ const LiveIcon = ({ active }) => (
   <Swords size={24} strokeWidth={active ? 2.8 : 2} className="transition-all duration-200" />
 );
 
-const PlusIcon = ({ active, pulse, isDark }) => {
-  // 진행중 논쟁 있으면 말풍선(진행중) 아이콘
-  if (pulse) {
-    const cls = isDark ? 'animate-stroke-pulse-dark' : 'animate-stroke-pulse';
-    return (
-      <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
-        <rect x="4" y="4" width="34" height="34" rx="10" ry="10"
-          fill="none" strokeWidth="1.8" className={cls} />
-        {/* 느낌표 */}
-        <line x1="21" y1="14" x2="21" y2="23" strokeWidth="2.5" strokeLinecap="round" className={cls} />
-        <circle cx="21" cy="27" r="1.5" className={cls} fill="currentColor" />
-      </svg>
-    );
-  }
-
+const PlusIcon = ({ active, isDark }) => {
   const color = isDark ? '#D4AF37' : '#1B2A4A';
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" className="transition-all duration-300">
@@ -306,7 +292,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
   const menuItems = [
     { to: '/', icon: (active) => <HomeIcon active={active} /> },
     { to: '/debate/lobby', icon: (active) => <LiveIcon active={active} /> },
-    { isButton: true, icon: (active, pulse) => <PlusIcon active={active} pulse={pulse} isDark={isDark} /> },
+    { isButton: true, icon: (active) => <PlusIcon active={active} isDark={isDark} /> },
     { to: '/moragora', icon: (active) => <HallIcon active={active} /> },
     { to: '/profile', icon: (active) => <UserIcon active={active} /> }
   ];
@@ -565,7 +551,7 @@ const [showNewDebateWarningModal, setShowNewDebateWarningModal] = useState(false
                   className={`relative flex-1 flex justify-center items-center h-full transition-all duration-200
                     ${isCreateActive ? 'text-black scale-110' : 'text-gray-800 active:scale-90'}`}
                 >
-                  {item.icon(isCreateActive, hasNewActivity && !isCreateActive)}
+                  {item.icon(isCreateActive)}
                 </button>
               );
             }

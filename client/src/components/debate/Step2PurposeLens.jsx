@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "../common/Button";
 import { HelpCircle, Check } from "lucide-react";
+import { getGuideStep } from "../common/OnboardingModal";
 
 export default function Step2PurposeLens({
   purpose, setPurpose,
@@ -223,15 +224,21 @@ export default function Step2PurposeLens({
 
       {/* ── 하단 버튼 ── */}
       <div className="flex gap-3">
-        <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
-        <Button
-         onClick={handleNext}
-         className="w-full"
-         autoFocus
-        >
-        {/* 🔥 조건부 텍스트 적용 */}
-         {isLastStep ? "방 생성 및 입장" : "다음"}
-        </Button>
+        <div className="flex-1">
+          <Button variant="accent" onClick={prevStep} className="w-full">이전</Button>
+        </div>
+        <div className="relative flex-1">
+          {getGuideStep() && (
+            <>
+              <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
+              <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
+              <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
+            </>
+          )}
+          <Button onClick={handleNext} className="w-full" autoFocus>
+            {isLastStep ? "방 생성 및 입장" : "다음"}
+          </Button>
+        </div>
       </div>
 
       {/* PURPOSE HELP MODAL */}

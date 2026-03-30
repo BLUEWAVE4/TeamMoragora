@@ -131,6 +131,7 @@ export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
 // ===== 프로필 (Profiles) =====
 export const getMyProfile = () => api.get('/profiles/me');
 export const updateMyProfile = (data) => api.patch('/profiles/me', data);
+export const completeOnboarding = () => api.patch('/profiles/me/onboarding');
 export const getMyDebates = () => api.get('/profiles/me/debates');
 export const getMyAnalysis = () => api.get('/profiles/me/analysis');
 export const getProfileById = (userId) => api.get(`/profiles/${userId}`);

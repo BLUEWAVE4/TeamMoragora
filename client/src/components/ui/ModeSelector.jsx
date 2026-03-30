@@ -1,10 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { ChevronUp } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
+import { getGuideStep, advanceGuide } from "../common/OnboardingModal";
 
 function ModeSelector({ onStart }) {
 
   const [selectedIdx, setSelectedIdx] = useState(1);
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (getGuideStep() === 'mode') setShowGuide(true);
+  }, []);
   // const [showRandomModal, setShowRandomModal] = useState(false);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
 
@@ -198,13 +206,40 @@ function ModeSelector({ onStart }) {
 
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 flex justify-center px-4 z-30">
-        <Button
-          className="w-full max-w-[260px]"
-          onClick={handleGameStart}
-        >
-          게임 시작
-        </Button>
+      <div className="fixed bottom-20 left-0 right-0 flex flex-col items-center px-4 z-30">
+        {showGuide && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="relative mb-5 pointer-events-none"
+          >
+            <div className="bg-[#1B2A4A] rounded-2xl px-5 py-3 shadow-2xl border border-[#D4AF37]/30">
+              <p className="text-[14px] font-black text-white text-center whitespace-nowrap">
+                1vs1을 선택하고 시작!
+              </p>
+            </div>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#1B2A4A] rotate-45 border-r border-b border-[#D4AF37]/30" />
+          </motion.div>
+        )}
+        <div className="relative w-full max-w-[260px]">
+          {showGuide && (
+            <>
+              <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] opacity-75 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
+              <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
+              <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.06);}}`}</style>
+            </>
+          )}
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (showGuide) { setShowGuide(false); advanceGuide('topic'); }
+              handleGameStart();
+            }}
+          >
+            게임 시작
+          </Button>
+        </div>
       </div>
 
       {/* <Modal
