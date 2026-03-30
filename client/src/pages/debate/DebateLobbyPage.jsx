@@ -9,6 +9,14 @@ import { resolveAvatar } from '../../utils/avatar';
 import { useAuth } from '../../store/AuthContext';
 import MoragoraModal from '../../components/common/MoragoraModal';
 
+const TIER_COLORS = {
+  '시민': '#8E8E93',
+  '배심원': '#007AFF',
+  '변호사': '#AF52DE',
+  '판사': '#FF9500',
+  '대법관': '#FF3B30',
+};
+
 // ===== 실시간 경과/남은 시간 표시 =====
 function LiveTimer({ createdAt, chatDeadline, status }) {
   const [now, setNow] = useState(Date.now());
@@ -26,23 +34,15 @@ function LiveTimer({ createdAt, chatDeadline, status }) {
     const sec = (remaining / 1000) % 60;
     const isUrgent = remaining <= 60000;
     return (
-      <div className="flex flex-col items-center">
-        <span className={`text-[18px] font-black tabular-nums leading-none ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#D4AF37]'}`}>
-          {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
-        </span>
-        <span className="text-[9px] text-gray-400 dark:text-white/40 font-bold mt-0.5">남은 시간</span>
-      </div>
+      <span className={`text-[11px] font-bold tabular-nums ${isUrgent ? 'text-red-500 animate-pulse' : 'text-[#D4AF37]'}`}>
+        {remaining <= 0 ? '종료' : `${pad(min)}:${pad(sec)}`}
+      </span>
     );
   }
 
-  const elapsed = Math.max(0, now - new Date(createdAt).getTime());
-  const min = (elapsed / 60000) % 60;
-  const sec = (elapsed / 1000) % 60;
-  const hr = elapsed / 3600000;
-  if (hr >= 1) return <span className="text-gray-400 dark:text-white/40 font-bold text-[11px]">{Math.floor(hr)}시간 대기</span>;
   return (
     <span className="text-gray-400 dark:text-white/40 font-bold text-[11px] tabular-nums">
-      {pad(min)}:{pad(sec)} 대기
+      00:00
     </span>
   );
 }
@@ -142,77 +142,73 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
   };
   const sc = statusConfig[room.status] || statusConfig.waiting;
 
+  const opponentAvatarUrl = resolveAvatar(room.opponent?.avatar_url, room.opponent_id, room.opponent?.gender);
+  const avatarA = creatorSide === 'A' ? creatorAvatarUrl : (room.opponent ? opponentAvatarUrl : null);
+  const avatarB = creatorSide === 'A' ? (room.opponent ? opponentAvatarUrl : null) : creatorAvatarUrl;
+  const nameA = creatorSide === 'A' ? creatorName : opponentName;
+  const nameB = creatorSide === 'A' ? opponentName : creatorName;
+
   return (
     <div className={`rounded-xl pb-5 mb-1 transition-all ${
       isKicked
         ? 'bg-gray-100 dark:bg-gray-800 opacity-60 cursor-not-allowed'
         : 'bg-white dark:bg-white/[0.04]'
     }`}>
-      {/* 프로필 헤더 */}
-      <div className="px-4 pt-4 pb-3 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 shrink-0">
-          <img src={creatorAvatarUrl} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className="text-[13px] font-bold text-[#1B2A4A] dark:text-white truncate block">{creatorName}</span>
-          <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold">{room.creator?.tier || '시민'}</span>
-        </div>
-        <button onClick={() => !isKicked && onCardClick(room)} className="w-11 h-11 rounded-full flex items-center justify-center text-[#D4AF37] active:bg-[#D4AF37]/10 active:scale-90 transition-all shrink-0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 6 15 12 9 18"/></svg>
-        </button>
-      </div>
-
-      <div className="mx-4 border-t border-gray-100 dark:border-white/[0.06]" />
-
-      <div className="px-4 pt-3">
-        <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white mb-3 leading-snug break-keep">{room.topic}</h3>
-
-        <div className="flex items-center gap-2 mb-4">
-          {room.purpose && <span className="text-[11px] font-bold text-[#1B2A4A]/40 dark:text-white/40 bg-[#1B2A4A]/5 dark:bg-white/10 px-2 py-1 rounded-full">{room.purpose}</span>}
-          {room.lens && room.lens !== '미선택' && <span className="text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">{room.lens}</span>}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 px-4">
-        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#F9FBF9]/70 dark:bg-white/[0.03] border border-emerald-50 dark:border-emerald-500/20">
-          <div className="text-[9px] font-black text-emerald-700/40 dark:text-emerald-400 text-center mb-0.5">A측</div>
-          {[0, 1, 2].map(i => {
-            const p = hasLive ? liveA[i] : (i === 0 ? { nickname: sideAName } : null);
-            return <ParticipantSlot key={`a-${i}`} name={p?.nickname || null} color="emerald" isEmpty={!p?.nickname} />;
+      {/* 3v3 아바타 헤더 */}
+      <div className="flex items-start justify-center gap-3 pt-5 pb-3 px-5">
+        <div className="flex-1 flex justify-end gap-1.5">
+          {[2, 1, 0].map(i => {
+            const p = liveA[i];
+            const fallback = i === 0 ? avatarA : null;
+            const hasAvatar = p?.avatarUrl || fallback;
+            if (!hasAvatar && room.status === 'chatting') return null;
+            return (
+              <div key={`a-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
+                <div className={`w-9 h-9 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 ${hasAvatar ? 'border-2 border-emerald-500/40' : 'border border-dashed border-emerald-500/20'}`}>
+                  {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                </div>
+                <span className="text-[8px] text-emerald-500/70 dark:text-emerald-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameA || '') : '')}</span>
+              </div>
+            );
           })}
         </div>
-        <span className="text-[10px] font-black text-gray-200 dark:text-white/15">VS</span>
-        <div className="flex-1 flex flex-col gap-1 p-2.5 rounded-xl bg-[#FDF9F9]/70 dark:bg-white/[0.03] border border-red-50 dark:border-red-500/20">
-          <div className="text-[9px] font-black text-red-600/40 dark:text-red-400 text-center mb-0.5">B측</div>
+        <span className="text-gray-300 dark:text-white/20 text-[11px] font-black shrink-0 pt-3">VS</span>
+        <div className="flex-1 flex justify-start gap-1.5">
           {[0, 1, 2].map(i => {
-            const p = hasLive ? liveB[i] : (i === 0 ? { nickname: sideBName } : null);
-            return <ParticipantSlot key={`b-${i}`} name={p?.nickname || null} color="red" isEmpty={!p?.nickname} />;
+            const p = liveB[i];
+            const fallback = i === 0 ? avatarB : null;
+            const hasAvatar = p?.avatarUrl || fallback;
+            if (!hasAvatar && room.status === 'chatting') return null;
+            return (
+              <div key={`b-${i}`} className="flex flex-col items-center gap-0.5 w-[42px]">
+                <div className={`w-9 h-9 rounded-full overflow-hidden bg-[#1B2A4A]/5 dark:bg-white/10 ${hasAvatar ? 'border-2 border-red-500/40' : 'border border-dashed border-red-500/20'}`}>
+                  {hasAvatar && <img src={p?.avatarUrl || fallback} alt="" className="w-full h-full object-cover" />}
+                </div>
+                <span className="text-[8px] text-red-500/70 dark:text-red-400/70 font-bold truncate w-full text-center h-3">{p?.nickname || (i === 0 ? (nameB || '') : '')}</span>
+              </div>
+            );
           })}
         </div>
       </div>
 
-      {/* 참여자 아바타 (생성자 제외) */}
-      {(() => {
-        const others = [...liveA, ...liveB, ...(liveSlots?.citizen || [])]
-          .filter(p => p.userId !== room.creator_id);
-        return others.length > 0 ? (
-          <div className="mt-3 flex items-center gap-1">
-            <div className="flex -space-x-1.5">
-              {others.slice(0, 6).map((p, i) => (
-                <div key={p.userId || i} className="w-6 h-6 rounded-full overflow-hidden border-2 border-white bg-gray-100" style={{ zIndex: 6 - i }}>
-                  <img src={p.avatarUrl || DEFAULT_AVATAR_ICON} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-              {others.length > 6 && (
-                <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                  <span className="text-[8px] text-gray-400 font-black">+{others.length - 6}</span>
-                </div>
-              )}
-            </div>
-            <span className="text-[10px] text-gray-400 font-bold ml-1">{others.length}명 참여 중</span>
+      {/* 주제 */}
+      <div className="px-4 pb-3">
+        <h3 className="text-[17px] font-black text-[#1B2A4A] dark:text-white leading-snug break-keep text-center">{room.topic}</h3>
+
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {room.purpose && <span className="text-[10px] font-bold text-[#1B2A4A]/50 dark:text-white/50 bg-[#1B2A4A]/8 dark:bg-white/10 px-2 py-0.5 rounded">{room.purpose}</span>}
+          {room.lens && room.lens !== '미선택' && <span className="text-[10px] font-bold text-[#D4AF37] bg-[#D4AF37]/15 px-2 py-0.5 rounded">{room.lens}</span>}
+        </div>
+
+        {/* A측 입장 | 대기중/타이머 | B측 입장 */}
+        <div className="flex items-center justify-center">
+          <span className="flex-1 text-[11px] text-emerald-400 font-bold truncate">{room.pro_side || 'A측'}</span>
+          <div className="shrink-0 mx-2">
+            <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
           </div>
-        ) : null;
-      })()}
+          <span className="flex-1 text-[11px] text-red-400 font-bold truncate text-right">{room.con_side || 'B측'}</span>
+        </div>
+      </div>
 
       {room.status === 'chatting' && room.chat_deadline && (
         <ChatProgressBar chatDeadline={room.chat_deadline} proSide={room.pro_side} conSide={room.con_side} />
@@ -227,9 +223,15 @@ function LobbyDebateCard({ room, onCardClick, isKicked, liveSlots }) {
         </div>
       )}
 
-      {/* 하단: 타이머 */}
-      <div className="px-4 pt-3 flex justify-end">
-        <LiveTimer createdAt={room.created_at} chatDeadline={room.chat_deadline} status={room.status} />
+      {/* 하단: 시민 참여 + 입장하기 */}
+      <div className="mx-4 border-t border-gray-100 dark:border-white/[0.06]" />
+      <div className="px-4 pt-3 flex items-center justify-between">
+        <span className="text-[11px] text-gray-400 dark:text-white/30 font-bold">
+          시민 {liveSlots?.citizen?.length || 0}명 참여중
+        </span>
+        <button onClick={() => !isKicked && onCardClick(room)} className="text-[#D4AF37] text-[12px] font-black active:scale-95 transition-all">
+          {room.status === 'chatting' ? '관전하기' : '입장하기'}
+        </button>
       </div>
     </div>
   );
@@ -381,8 +383,13 @@ export default function DebateLobbyPage() {
             onClick={() => !kickedDebates.includes(hotRoom.id) && handleCardClick(hotRoom)}
             className="bg-gradient-to-br from-[#1B2A4A] to-[#0f1829] rounded-2xl overflow-hidden shadow-xl cursor-pointer active:scale-[0.99] transition-all"
           >
+            {/* 실시간 인기 논쟁 라벨 */}
+            <div className="px-5 pt-4 pb-1 text-center">
+              <span className="text-[12px] font-black text-[#D4AF37]">실시간 인기 논쟁</span>
+            </div>
+
             {/* 상단 아바타 구도 (3v3) — 먼저 들어온 사람이 VS 가까이 */}
-            <div className="flex items-start justify-center gap-3 pt-5 pb-3 px-5">
+            <div className="flex items-start justify-center gap-3 pt-2 pb-3 px-5">
               <div className="flex-1 flex justify-end gap-1.5">
                 {[2, 1, 0].map(i => {
                   const p = liveA[i];
@@ -420,28 +427,34 @@ export default function DebateLobbyPage() {
 
             {/* 논제 */}
             <div className="px-5 pb-3 text-center">
-              <h2 className="text-white text-[17px] font-black leading-snug break-keep mb-2">
+              <h2 className="text-white text-[17px] font-black leading-snug break-keep">
                 "{hotRoom.topic}"
               </h2>
             </div>
 
-            {/* A측 입장 | 뱃지 | B측 입장 */}
+            {/* 뱃지 */}
+            <div className="px-5 pb-2 flex items-center justify-center gap-1.5">
+              {hotRoom.purpose && <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
+              {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[10px] px-2 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
+            </div>
+
+            {/* A측 입장 | 대기중/타이머 | B측 입장 */}
             <div className="px-5 pb-4 flex items-center">
               <span className="flex-1 text-[11px] text-emerald-400 font-bold truncate">{hotRoom.pro_side || 'A측'}</span>
-              <div className="flex items-center gap-1.5 shrink-0 mx-2">
-                {hotRoom.purpose && <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-bold">{hotRoom.purpose}</span>}
-                {hotRoom.lens && hotRoom.lens !== '미선택' && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] font-bold">{hotRoom.lens}</span>}
+              <div className="shrink-0 mx-2">
+                <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status={hotRoom.status} />
               </div>
               <span className="flex-1 text-[11px] text-red-400 font-bold truncate text-right">{hotRoom.con_side || 'B측'}</span>
             </div>
 
-            {/* 하단 바: 입장하기 왼쪽, 시간 오른쪽 */}
+            {/* 하단 바: 시민 참여 + 입장하기 */}
             <div className="bg-white/5 px-5 py-3 flex items-center justify-between">
-              <span className="text-[#D4AF37] text-[12px] font-black flex items-center gap-1">
-                {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+              <span className="text-[11px] text-white/30 font-bold">
+                시민 {live?.citizen?.length || 0}명 참여중
               </span>
-              <LiveTimer createdAt={hotRoom.created_at} chatDeadline={hotRoom.chat_deadline} status={hotRoom.status} />
+              <span className="text-[#D4AF37] text-[12px] font-black">
+                {hotRoom?.status === 'chatting' ? '관전하기' : '입장하기'}
+              </span>
             </div>
           </div>
         </section>
@@ -460,7 +473,7 @@ export default function DebateLobbyPage() {
 
       {/* 리스트 */}
       <main className="flex flex-col px-5">
-        <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
+        <CategoryFilter filter={filter} setFilter={setFilter} />
         <section className="mt-4 flex flex-col">
           <AnimatePresence mode="popLayout">
             {processedRooms.map((room, index) => {

@@ -267,7 +267,7 @@ export async function listChatRooms(_req, res, next) {
   try {
     const { data, error } = await supabaseAdmin
       .from('debates')
-      .select('id, topic, pro_side, con_side, category, status, creator_id, opponent_id, chat_deadline, created_at, creator:profiles!creator_id(nickname, avatar_url, gender, tier)')
+      .select('id, topic, pro_side, con_side, category, status, creator_id, opponent_id, creator_side, chat_deadline, purpose, lens, created_at, creator:profiles!creator_id(nickname, avatar_url, gender, tier), opponent:profiles!opponent_id(nickname, avatar_url, gender, tier)')
       .eq('mode', 'chat')
       .in('status', ['waiting', 'chatting'])
       .order('created_at', { ascending: false });

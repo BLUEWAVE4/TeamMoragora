@@ -36,36 +36,38 @@ export default function CategoryFilter({ filter, setFilter, sortBy, setSortBy })
         </div>
       </div>
 
-      {/* 구분선 */}
-      <div className="w-px h-5 bg-[#1B2A4A]/10 flex-shrink-0" />
-
-      {/* 정렬 드롭다운 */}
-      <div className="relative flex-shrink-0">
-        <button
-          onClick={() => setShowSort(!showSort)}
-          className="text-[14px] font-bold text-[#1B2A4A]/60 whitespace-nowrap px-2"
-        >
-          {sortBy} ▾
-        </button>
-        {showSort && (
-          <>
-            <div className="fixed inset-0 z-[99]" onClick={() => setShowSort(false)} />
-            <div className="absolute right-0 top-8 w-28 bg-white shadow-xl rounded-xl p-1 z-[100] border border-[#1B2A4A]/8">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => { setSortBy(opt); setShowSort(false); }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-[14px] font-bold transition-all ${
-                    sortBy === opt ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 active:text-[#1B2A4A]/60'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {/* 정렬 드롭다운 (sortBy/setSortBy가 있을 때만) */}
+      {sortBy && setSortBy && (
+        <>
+          <div className="w-px h-5 bg-[#1B2A4A]/10 flex-shrink-0" />
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setShowSort(!showSort)}
+              className="text-[14px] font-bold text-[#1B2A4A]/60 whitespace-nowrap px-2"
+            >
+              {sortBy} ▾
+            </button>
+            {showSort && (
+              <>
+                <div className="fixed inset-0 z-[99]" onClick={() => setShowSort(false)} />
+                <div className="absolute right-0 top-8 w-28 bg-white shadow-xl rounded-xl p-1 z-[100] border border-[#1B2A4A]/8">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => { setSortBy(opt); setShowSort(false); }}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-[14px] font-bold transition-all ${
+                        sortBy === opt ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-[#1B2A4A]/40 active:text-[#1B2A4A]/60'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -377,7 +377,7 @@ export default function TodayDebate({ items = [] }) {
 
       {/* 인디케이터 dots */}
       {validItems.length > 1 && (
-        <div className="flex justify-center gap-1.5 -mt-5">
+        <div className="flex justify-center gap-1.5 mt-3">
           {validItems.map((_, i) => (
             <button
               key={i}
