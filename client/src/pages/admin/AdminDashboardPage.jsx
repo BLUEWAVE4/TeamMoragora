@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAdminStats, getAdminAI, getAdminTrends, getAdminAnalytics } from '../../services/api';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
-import { ArrowLeft, Users, Gavel, MessageSquare, ThumbsUp, Shield, Star, TrendingUp, Eye, Zap, X, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Users, Gavel, MessageSquare, ThumbsUp, Shield, Star, TrendingUp, Eye, Zap, X, ChevronRight, Share2, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
@@ -187,6 +187,8 @@ export default function AdminDashboardPage() {
                 )})} />
               <StatCard icon={Eye} label="오늘 페이지뷰" value={stats.todayPageViews} color="#8b5cf6" />
               <StatCard icon={MessageSquare} label="시민 의견" value={stats.totalComments} color="#06b6d4" sub="총 댓글" />
+              <StatCard icon={CheckCircle} label="판결 완주율" value={`${stats.completionRate || 0}%`} color="#059669" sub="생성 대비 완료" />
+              <StatCard icon={Share2} label="공유 수" value={stats.shareCount || 0} color="#8b5cf6" sub="판결+초대 공유" />
             </div>
           </div>
         )}
