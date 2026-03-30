@@ -10,7 +10,7 @@ export const AI_MAX_TOKENS_CLAUDE = 2048;
 // 판결 가중치
 export const VERDICT_AI_WEIGHT = 0.75;
 export const VERDICT_CITIZEN_WEIGHT = 0.25;
-export const CITIZEN_VOTE_THRESHOLD = 30;
+export const CITIZEN_VOTE_THRESHOLD = 1;
 
 // 글자수 제한
 export const ARGUMENT_MIN_LENGTH = 10;

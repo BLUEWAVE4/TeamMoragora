@@ -415,8 +415,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
                         style={{ borderColor: j.borderColor || j.color }} />
                     ))}
-                    {totalVotes > 0 && (totalVotes >= 30 || voteA >= voteB) && (
-                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 30 ? 'opacity-100' : 'opacity-30'}`}>
+                    {totalVotes > 0 && (totalVotes >= 1 || voteA >= voteB) && (
+                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 1 ? 'opacity-100' : 'opacity-30'}`}>
                         <HiUserGroup className="text-gold text-[12px]" />
                       </div>
                     )}
@@ -446,8 +446,8 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                       <img key={i} src={j.avatar} alt={j.name} className="w-6 h-6 rounded-full border-2"
                         style={{ borderColor: j.borderColor || j.color }} />
                     ))}
-                    {totalVotes > 0 && (totalVotes >= 30 || voteB > voteA) && (
-                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 30 ? 'opacity-100' : 'opacity-30'}`}>
+                    {totalVotes > 0 && (totalVotes >= 1 || voteB > voteA) && (
+                      <div className={`w-6 h-6 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center transition-opacity duration-500 ${totalVotes >= 1 ? 'opacity-100' : 'opacity-30'}`}>
                         <HiUserGroup className="text-gold text-[12px]" />
                       </div>
                     )}
@@ -943,7 +943,7 @@ function VerdictContentInner({ verdictData, topic }, ref) {
         const pctB = percentB;
 
         let statusText = '';
-        if (displayTotal > 0) statusText = displayTotal >= 30 ? `${displayTotal.toLocaleString()}명 참여` : `${displayTotal}/30명 참여`;
+        if (displayTotal > 0) statusText = displayTotal >= 1 ? `${displayTotal.toLocaleString()}명 참여` : `${displayTotal}/1명 참여`;
         else if (canVote) statusText = '투표 진행 중';
         else if (isCompletedStatus || deadlinePassed) statusText = '투표 마감';
         else statusText = '투표 대기';
@@ -1027,16 +1027,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                           >
                             <p className="text-[12px] text-primary/70 leading-[1.6] break-words text-left">{c.content}</p>
                           </div>
-                          <button
-                            aria-label="좋아요"
-                            onClick={() => handleToggleLike(c.id)}
-                            className="w-11 h-11 flex items-center justify-center gap-0.5 transition-colors shrink-0"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill={c.is_liked ? '#E63946' : 'none'} stroke={c.is_liked ? '#E63946' : 'currentColor'} strokeWidth="2" className={c.is_liked ? '' : 'text-primary/30'}>
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                            {c.likes_count > 0 && <span className="text-[9px] text-primary/30">{c.likes_count}</span>}
-                          </button>
                           {c._confirmDelete && (
                             <div className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center" onClick={() => setComments(prev => prev.map(x => x.id === c.id ? { ...x, _confirmDelete: false } : x))}>
                               <div className="bg-white rounded-2xl p-5 w-[280px] text-center shadow-xl" onClick={e => e.stopPropagation()}>
