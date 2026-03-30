@@ -35,8 +35,8 @@ npm-debug.log*
 # Testing
 coverage/
 
-# Docs (산출물 / 내부 문서)
-doc/
+# Docs (HTML 원본은 제외, PDF만 추적)
+doc/*.html
 
 # Agents
 agents/
