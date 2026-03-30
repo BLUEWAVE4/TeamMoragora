@@ -235,6 +235,10 @@ const [opponentLeft, setOpponentLeft] = useState(false);
         .from('chat_messages').select('id, debate_id, user_id, nickname, content, side, created_at').eq('debate_id', debateId).order('created_at', { ascending: true });
       if (data) {
         setMessages(data);
+        // 메시지가 있으면 게임이 이미 진행 중 → gameStarted 강제
+        if (data.length > 0 && !gameStarted) {
+          setGameStarted(true);
+        }
         const mine = data.filter(m => m.user_id === user?.id).length;
         setMsgCount(mine);
         const countMap = {};
