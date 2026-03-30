@@ -115,6 +115,26 @@ export async function getMyVote(req, res, next) {
   }
 }
 
+// 배치 투표 상태 조회 (여러 debate 한 번에)
+export async function getMyVotesBatch(req, res, next) {
+  try {
+    const { debateIds } = req.body;
+    if (!Array.isArray(debateIds) || debateIds.length === 0) return res.json({});
+    const ids = debateIds.slice(0, 50); // 최대 50개 제한
+
+    const { data, error } = await supabaseAdmin
+      .from('votes')
+      .select('debate_id, voted_side')
+      .eq('user_id', req.user.id)
+      .in('debate_id', ids);
+
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(v => { map[v.debate_id] = v.voted_side; });
+    res.json(map);
+  } catch (err) { next(err); }
+}
+
 // 투표 취소
 export async function cancelVote(req, res, next) {
   try {

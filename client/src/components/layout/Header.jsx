@@ -251,8 +251,17 @@ export default function Header() {
       } catch {}
     };
     fetchCount();
-    const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
+    let interval = setInterval(fetchCount, 30000);
+    // 탭이 백그라운드일 때 폴링 중지
+    const handleVisibility = () => {
+      clearInterval(interval);
+      if (document.visibilityState === 'visible') {
+        fetchCount();
+        interval = setInterval(fetchCount, 30000);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', handleVisibility); };
   }, [user]);
 
   useEffect(() => {

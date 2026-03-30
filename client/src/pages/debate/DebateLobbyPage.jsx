@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import CategoryFilter from '../../components/home/CategoryFilter';
+import QuoteLoader from '../../components/common/QuoteLoader';
 import { getAllPublicDebates, incrementDebateView } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { socket } from '../../services/socket';
@@ -269,6 +270,8 @@ export default function DebateLobbyPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [liveParticipants, setLiveParticipants] = useState({}); // { debateId: { A: [...], B: [...] } }
 
+  const LOBBY_CACHE_KEY = 'lobby_cache';
+
   const loadData = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -285,7 +288,6 @@ export default function DebateLobbyPage() {
         if (status === 'chatting') return true;
         if (status === 'waiting') {
           if ((now - new Date(r.created_at).getTime()) < STALE_MS) return true;
-          // 30분 초과해도 참여자가 있으면 유지
           const live = partRes?.[r.id];
           const hasParticipants = live && ((live.A?.length || 0) + (live.B?.length || 0) + (live.citizen?.length || 0)) > 0;
           return hasParticipants;
@@ -293,10 +295,24 @@ export default function DebateLobbyPage() {
         return false;
       });
       setRooms(lobbyRooms);
+      sessionStorage.setItem(LOBBY_CACHE_KEY, JSON.stringify({ rooms: lobbyRooms, participants: partRes || {}, ts: Date.now() }));
     } catch (err) { console.error(err); } finally { if (!silent) setLoading(false); }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // 캐시 즉시 표시 → 백그라운드 갱신
+    let hasCached = false;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(LOBBY_CACHE_KEY));
+      if (cached?.ts) {
+        setRooms(cached.rooms || []);
+        setLiveParticipants(cached.participants || {});
+        setLoading(false);
+        hasCached = true;
+      }
+    } catch {}
+    if (hasCached) loadData(true); else loadData();
+  }, [loadData]);
 
   // 5초 폴링
   useEffect(() => {
@@ -372,11 +388,7 @@ export default function DebateLobbyPage() {
 
   const processedRooms = filteredRooms.slice(0, visibleCount);
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <QuoteLoader />;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] dark:bg-[#0f1829] pb-32 pt-4">

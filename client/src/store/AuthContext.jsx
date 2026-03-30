@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthToken(session?.access_token || null);
       setUser(session?.user ?? null);
-      if (session?.user) { fetchRole(); useProfileStore.getState().fetchProfile(); }
+      if (session?.user) { Promise.all([fetchRole(), useProfileStore.getState().fetchProfile()]); }
       setLoading(false);
     });
 
@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
       (event, session) => {
         setAuthToken(session?.access_token || null);
         setUser(session?.user ?? null);
-        if (session?.user) { fetchRole(); useProfileStore.getState().fetchProfile(); }
+        if (session?.user) { Promise.all([fetchRole(), useProfileStore.getState().fetchProfile()]); }
         else { setIsAdmin(false); useProfileStore.getState().reset(); }
 
         // OAuth 로그인 완료 후 저장된 리다이렉트 경로로 이동

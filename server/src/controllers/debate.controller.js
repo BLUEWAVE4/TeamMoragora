@@ -357,3 +357,23 @@ export async function getMyLikeStatus(req, res, next) {
     res.json({ liked: !!data });
   } catch (err) { next(err); }
 }
+
+// 배치 좋아요 상태 조회
+export async function getMyLikesBatch(req, res, next) {
+  try {
+    const { debateIds } = req.body;
+    if (!Array.isArray(debateIds) || debateIds.length === 0) return res.json({});
+    const ids = debateIds.slice(0, 50);
+
+    const { data, error } = await supabaseAdmin
+      .from('debate_likes')
+      .select('debate_id')
+      .eq('user_id', req.user.id)
+      .in('debate_id', ids);
+
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(l => { map[l.debate_id] = true; });
+    res.json(map);
+  } catch (err) { next(err); }
+}
