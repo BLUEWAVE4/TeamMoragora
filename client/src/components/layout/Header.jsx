@@ -143,6 +143,21 @@ const SEARCH_CONFIG = {
   '/profile': { placeholder: '최근 논쟁 기록 검색' },
 };
 
+// PWA 설치 안내 아이콘
+const DownloadIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
+
+// OS 감지
+function getDeviceOS() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+  if (/android/i.test(ua)) return 'android';
+  return 'desktop';
+}
+
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,6 +171,36 @@ export default function Header() {
   const lastScrollY = useRef(0);
 
   const [showNotif, setShowNotif] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [activeTab, setActiveTab] = useState(getDeviceOS() === 'ios' ? 'ios' : 'android');
+
+  // PWA standalone 모드면 설치 버튼 숨김
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  // Android: beforeinstallprompt 이벤트 캡처
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  // 설치 완료 시 모달 닫기
+  useEffect(() => {
+    const handler = () => { setShowInstall(false); setDeferredPrompt(null); };
+    window.addEventListener('appinstalled', handler);
+    return () => window.removeEventListener('appinstalled', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    } else {
+      setShowInstall(true);
+    }
+  };
   const [notifications, setNotifications] = useState([]);
   const unreadCount = useNotifStore(s => s.unreadCount);
   const setUnreadCount = useNotifStore(s => s.setUnreadCount);
@@ -261,6 +306,11 @@ export default function Header() {
               <BellIcon active={unreadCount > 0} />
               {unreadCount > 0 && <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-[#FF3B30] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </button>
+            {!isStandalone && (
+              <button aria-label="앱 설치" onClick={handleInstallClick} className="w-11 h-11 flex items-center justify-center text-[#2D3350]/50 rounded-full">
+                <DownloadIcon />
+              </button>
+            )}
             <button aria-label="다크모드 전환" onClick={toggleTheme} className="w-11 h-11 flex items-center justify-center rounded-full">
               {isDark ? <Sun size={20} strokeWidth={2} className="text-[#D4AF37]" /> : <Moon size={20} strokeWidth={2} className="text-[#2D3350]/50" />}
             </button>
@@ -312,6 +362,91 @@ export default function Header() {
                 )}
               </div>
               <div className="w-full flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing"><div className={`w-10 h-1.5 rounded-full ${isDark ? 'bg-white/20' : 'bg-gray-300/80'}`} /></div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* PWA 설치 안내 모달 */}
+      <AnimatePresence>
+        {showInstall && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInstall(false)} className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-[2px]" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed z-[301] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] rounded-2xl overflow-hidden shadow-2xl"
+              style={{ background: isDark ? '#1a1a2e' : '#fff' }}
+            >
+              {/* 헤더 */}
+              <div className="bg-[#1B2A4A] px-6 py-5 text-center">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-xl overflow-hidden bg-white/10">
+                  <img src="/icon-192.png" alt="모라고라" className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-white text-[16px] font-black">모라고라 앱 설치</h3>
+                <p className="text-white/50 text-[12px] mt-1">홈 화면에서 바로 실행하세요</p>
+              </div>
+
+              {/* OS별 안내 - 토글 */}
+              <div className="px-5 pt-4 pb-2">
+                <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 mb-4">
+                  <button
+                    onClick={() => setActiveTab('android')}
+                    className={`flex-1 py-2 text-[13px] font-bold transition-colors ${
+                      activeTab === 'android' || activeTab === 'android'
+                        ? 'bg-[#1B2A4A] text-white'
+                        : (isDark ? 'bg-white/5 text-white/40' : 'bg-gray-50 text-gray-400')
+                    }`}
+                  >Android</button>
+                  <button
+                    onClick={() => setActiveTab('ios')}
+                    className={`flex-1 py-2 text-[13px] font-bold transition-colors ${
+                      activeTab === 'ios'
+                        ? 'bg-[#1B2A4A] text-white'
+                        : (isDark ? 'bg-white/5 text-white/40' : 'bg-gray-50 text-gray-400')
+                    }`}
+                  >iOS</button>
+                </div>
+
+                {(activeTab === 'android' || activeTab === 'android') ? (
+                  <div className="space-y-3 pb-4">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">1</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Chrome 브라우저 우측 상단 <span className="font-black">⋮</span> 메뉴 탭</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">2</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-black">"앱 설치"</span> 또는 <span className="font-black">"홈 화면에 추가"</span> 선택</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">3</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-black">"설치"</span> 확인</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pb-4">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">1</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-black">Safari</span> 브라우저에서 접속 (Chrome 불가)</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">2</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>하단 <span className="font-black">공유 버튼</span> (□↑) 탭</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-white text-[12px] font-black flex items-center justify-center shrink-0">3</span>
+                      <p className={`text-[13px] ${isDark ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-black">"홈 화면에 추가"</span> 선택</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 닫기 */}
+              <div className="px-5 pb-5">
+                <button onClick={() => setShowInstall(false)} className="w-full py-2.5 rounded-xl bg-[#1B2A4A] text-white text-[14px] font-bold active:scale-95 transition-transform">
+                  확인
+                </button>
+              </div>
             </motion.div>
           </>
         )}
