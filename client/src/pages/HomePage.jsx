@@ -154,11 +154,7 @@ export default function HomePage() {
 
 
   const getProcessedFeeds = () => {
-    let result = [...feeds].filter(feed => {
-      const debateData = feed.debate || feed || {};
-      if (debateData.mode === 'chat') return true;
-      return !!debateData.vote_duration;
-    });
+    let result = [...feeds];
 
     return result.sort((a, b) => {
       const aData = a.debate || {};
