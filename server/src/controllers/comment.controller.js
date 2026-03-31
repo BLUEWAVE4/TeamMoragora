@@ -5,7 +5,9 @@ import { createNotifications } from '../services/notification.service.js';
 export async function getComments(req, res, next) {
   try {
     const { debateId } = req.params;
+    const userId = req.user?.id;
 
+    // 댓글 + 좋아요 정보를 1~2번 왕복으로 조회
     const { data, error } = await supabaseAdmin
       .from('comments')
       .select('*, user:profiles!user_id(id, nickname, avatar_url, tier, gender)')
@@ -14,27 +16,23 @@ export async function getComments(req, res, next) {
 
     if (error) throw error;
 
-    // 좋아요 수 + 로그인 사용자의 좋아요 여부 확인
-    const userId = req.user?.id;
     if (data.length > 0) {
       const commentIds = data.map(c => c.id);
-      const { data: allLikes } = await supabaseAdmin
+
+      // 좋아요 수 + 내 좋아요 여부를 한 번에 조회
+      const likesQuery = supabaseAdmin
         .from('comment_likes')
-        .select('comment_id')
+        .select('comment_id, user_id')
         .in('comment_id', commentIds);
 
-      const likeCounts = {};
-      (allLikes || []).forEach(l => { likeCounts[l.comment_id] = (likeCounts[l.comment_id] || 0) + 1; });
+      const { data: allLikes } = await likesQuery;
 
-      let likedSet = new Set();
-      if (userId) {
-        const { data: myLikes } = await supabaseAdmin
-          .from('comment_likes')
-          .select('comment_id')
-          .eq('user_id', userId)
-          .in('comment_id', commentIds);
-        likedSet = new Set((myLikes || []).map(l => l.comment_id));
-      }
+      const likeCounts = {};
+      const likedSet = new Set();
+      (allLikes || []).forEach(l => {
+        likeCounts[l.comment_id] = (likeCounts[l.comment_id] || 0) + 1;
+        if (userId && l.user_id === userId) likedSet.add(l.comment_id);
+      });
 
       data.forEach(c => {
         c.is_liked = likedSet.has(c.id);
@@ -120,7 +118,6 @@ export async function toggleLike(req, res, next) {
   try {
     const { commentId } = req.params;
 
-    // 기존 좋아요 확인 (comment_likes UNIQUE 제약으로 1인 1회 보장)
     const { data: existing } = await supabaseAdmin
       .from('comment_likes')
       .select('id')
@@ -129,22 +126,25 @@ export async function toggleLike(req, res, next) {
       .maybeSingle();
 
     if (existing) {
-      // 좋아요 취소
-      await supabaseAdmin.from('comment_likes').delete().eq('id', existing.id);
-      const { data: cur } = await supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single();
+      // 좋아요 취소 + 카운트 감소 병렬
+      const [, { data: cur }] = await Promise.all([
+        supabaseAdmin.from('comment_likes').delete().eq('id', existing.id),
+        supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single(),
+      ]);
       if (cur) {
         await supabaseAdmin.from('comments').update({ likes_count: Math.max((cur.likes_count || 0) - 1, 0) }).eq('id', commentId);
       }
       res.json({ liked: false });
     } else {
-      // 좋아요 추가
-      const { error: insertErr } = await supabaseAdmin.from('comment_likes').insert({ comment_id: commentId, user_id: req.user.id });
+      // 좋아요 추가 + 카운트 조회 병렬
+      const [{ error: insertErr }, { data: cur }] = await Promise.all([
+        supabaseAdmin.from('comment_likes').insert({ comment_id: commentId, user_id: req.user.id }),
+        supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single(),
+      ]);
       if (insertErr) {
-        // UNIQUE 제약 위반 시 이미 좋아요한 상태
         if (insertErr.code === '23505') return res.json({ liked: true });
         throw insertErr;
       }
-      const { data: cur } = await supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single();
       if (cur) {
         await supabaseAdmin.from('comments').update({ likes_count: (cur.likes_count || 0) + 1 }).eq('id', commentId);
       }

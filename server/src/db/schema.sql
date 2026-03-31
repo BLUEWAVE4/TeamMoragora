@@ -153,6 +153,8 @@ CREATE TABLE comments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS idx_comments_debate_id ON comments(debate_id);
+
 -- 10. comment_likes (TIER 2)
 CREATE TABLE comment_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -161,6 +163,8 @@ CREATE TABLE comment_likes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (comment_id, user_id)
 );
+CREATE INDEX IF NOT EXISTS idx_comment_likes_comment_id ON comment_likes(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_likes_user_id ON comment_likes(user_id);
 
 -- 11. debate_likes (논쟁 좋아요)
 CREATE TABLE debate_likes (
