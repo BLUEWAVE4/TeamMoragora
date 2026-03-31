@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { throttle } from '../utils/perf';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { getVerdictFeed, getDailyVerdicts, getMyVotesBatch, getMyLikesBatch } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import TodayDebate from '../components/home/TodayDebate';
@@ -12,6 +12,7 @@ import QuoteLoader from '../components/common/QuoteLoader';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [filter, setFilter] = useState('전체');
@@ -122,6 +123,13 @@ export default function HomePage() {
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ feeds: freshFeeds, daily: freshDaily, hasNext: freshHasNext, myVotes: freshVotes, myLikes: freshLikes }));
     };
     init();
+
+    // 탭 복귀 시 백그라운드 갱신
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') init();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // 카테고리 또는 검색어 변경 시 새로 로드 (마운트 시 스킵 — init()이 처리)
