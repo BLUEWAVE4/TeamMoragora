@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { runParallelJudgment } from './ai/judgment.service.js';
+import { grantDebateXP } from './xp.service.js';
 import { env } from '../config/env.js';
 import { createNotifications } from './notification.service.js';
 import { buildChatUserPrompt } from './ai/prompts.js';
@@ -43,6 +44,13 @@ async function applyResult(debateId, verdictId) {
       wp ? supabaseAdmin.from('profiles').update({ wins: (wp.wins || 0) + 1 }).eq('id', winnerId) : null,
       lp ? supabaseAdmin.from('profiles').update({ losses: (lp.losses || 0) + 1 }).eq('id', loserId) : null,
     ]);
+  }
+
+  // XP 로그 기록
+  try {
+    await grantDebateXP(debateId, debate.creator_id, debate.opponent_id, verdict.winner_side);
+  } catch (e) {
+    console.error('[applyResult] XP 로그 기록 실패:', e.message);
   }
 }
 
