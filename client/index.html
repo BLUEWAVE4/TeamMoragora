@@ -87,7 +87,7 @@
       #splash .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--athenian-gold);opacity:0;animation:sp-float-particle linear infinite;z-index:3;}
       @keyframes sp-float-particle{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:0.6;}90%{opacity:0.2;}100%{transform:translateY(-80vh) translateX(var(--drift));opacity:0;}}
     </style>
-    <!-- 스플래시: 매 새로고침마다 표시 -->
+    <script>if(sessionStorage.getItem('splash_seen')){document.write('<style>#splash{display:none!important}</style>');}</script>
     <div id="splash" style="position:fixed;inset:0;z-index:9999;background:var(--agora-stone,#1a1714);overflow:hidden;transition:background 1.5s ease;">
       <div class="bg-layer"></div>
       <div class="vignette"></div>
@@ -228,7 +228,7 @@
           if (splash) {
             splash.style.transition = 'opacity 0.4s ease-out';
             splash.style.opacity = '0';
-
+            sessionStorage.setItem('splash_seen', '1');
             setTimeout(function() { splash.remove(); }, 400);
           }
         }, delay);
