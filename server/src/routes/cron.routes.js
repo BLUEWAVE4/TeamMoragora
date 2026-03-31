@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createDailyDebate } from '../services/dailyDebate.service.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { env } from '../config/env.js';
+import { finalizeVerdict } from '../services/verdict.service.js';
 
 // cron 시크릿 검증 미들웨어
 function verifyCronSecret(req, res, next) {
@@ -80,7 +81,13 @@ router.post('/cleanup-stale', verifyCronSecret, async (req, res) => {
       const voteDuration = d.vote_duration ?? 1;
       const deadline = new Date(new Date(d.created_at).getTime() + voteDuration * 24 * 60 * 60 * 1000);
       if (now > deadline) {
-        await supabaseAdmin.from('debates').update({ status: 'completed' }).eq('id', d.id);
+        try {
+          await finalizeVerdict(d.id);
+        } catch (e) {
+          console.error(`[Cron] finalizeVerdict 실패 (${d.id}):`, e.message);
+          // verdict가 없는 경우 등 fallback: 상태만 변경
+          await supabaseAdmin.from('debates').update({ status: 'completed' }).eq('id', d.id);
+        }
         completedCount++;
       }
     }

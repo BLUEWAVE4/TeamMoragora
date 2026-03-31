@@ -51,6 +51,7 @@ lessons-learned.md
 
 # Presentation / Internal
 presentation*.html
+/*.html
 role.md
 
 # Misc

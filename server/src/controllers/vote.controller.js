@@ -184,11 +184,29 @@ export async function cancelVote(req, res, next) {
 // 마감된 투표 일괄 확정 (cron 또는 수동 호출용)
 export async function finalizeExpiredVotes(_req, res, next) {
   try {
-    const { data: expired } = await supabaseAdmin
+    // vote_deadline이 지난 논쟁 + vote_deadline이 null인 오래된 논쟁 모두 처리
+    const now = new Date().toISOString();
+    const { data: expiredByDeadline } = await supabaseAdmin
       .from('debates')
       .select('id')
       .eq('status', 'voting')
-      .lt('vote_deadline', new Date().toISOString());
+      .not('vote_deadline', 'is', null)
+      .lt('vote_deadline', now);
+
+    const { data: noDeadline } = await supabaseAdmin
+      .from('debates')
+      .select('id, created_at, vote_duration')
+      .eq('status', 'voting')
+      .is('vote_deadline', null);
+
+    // vote_deadline이 null인 경우 created_at + vote_duration으로 판단
+    const expiredNoDeadline = (noDeadline || []).filter(d => {
+      const duration = d.vote_duration ?? 1;
+      const deadline = new Date(new Date(d.created_at).getTime() + duration * 86400000);
+      return new Date() > deadline;
+    });
+
+    const expired = [...(expiredByDeadline || []), ...expiredNoDeadline];
 
     const results = [];
     for (const debate of (expired || [])) {
