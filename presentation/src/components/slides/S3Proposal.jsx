@@ -1,13 +1,23 @@
 import { useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Slide from '../Slide'
 import Footer from '../Footer'
 import { initCountUps } from '../../utils/animations'
 import '../../styles/slide3.css'
 
-export default function S3Proposal({ active }) {
+const TOTAL_STEPS = 3 // step0: 카드, step1~3: 결론 흐름
+const ease = [0.16, 1, 0.3, 1]
+
+const conclusions = [
+  { main: '한국 사회는 갈등으로 가득하다', sub: '(5대 사회갈등 심각 인식 — 74%)' },
+  { main: '그 갈등은 감정을 건드린다', sub: '(사회갈등 접할 때 부정적 감정 — 81%)' },
+  { main: '그래도 사람들은 대화하고 싶다', sub: '(다른 의견과 대화할 의향 — 70%)' },
+]
+
+
+export default function S3Proposal({ active, stepIndex }) {
   const ref = useRef(null)
   const countInitRef = useRef(false)
-
   useEffect(() => {
     if (active && !countInitRef.current) {
       countInitRef.current = true
@@ -20,19 +30,43 @@ export default function S3Proposal({ active }) {
     <Slide id="s3" active={active}>
       <div className="s-wrap" ref={ref}>
         <div className="next-hint">02 원인 분석 →</div>
+
         <div className="header">
           <span className="page-num">01</span>
           <span className="header-title">제안 배경</span>
         </div>
 
-        <div className="source-header">
-          <span className="source-main">대통령 직속 국민통합위원회<br />2025 사회갈등 국민인식조사</span><br />
-          <span className="source-sub">(한국갤럽, 7,000명 대상)</span>
-        </div>
+        {/* 출처 헤더 — step1에서 fade out */}
+        <motion.div
+          className="s3-step0"
+          animate={{
+            opacity: (!active || stepIndex >= 1) ? 0 : 1,
+            y: stepIndex >= 1 ? -30 : 0,
+          }}
+          transition={{ duration: active ? 0.6 : 0, ease }}
+          style={{ pointerEvents: stepIndex >= 1 ? 'none' : 'auto' }}
+        >
+          <div className="source-header">
+            <span className="source-main">대통령 직속 국민통합위원회<br />2025 사회갈등 국민인식조사</span><br />
+            <span className="source-sub">(한국갤럽, 7,000명 대상)</span>
+          </div>
+        </motion.div>
 
+        {/* 카드 3열 — 각 카드 개별 제어 */}
         <div className="cards">
           {/* ① 5대 갈등 */}
-          <div className="card">
+          <motion.div
+            className="card"
+            animate={{
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 1 ? 0.3 : 0,
+              y: !active ? 24 : 0,
+            }}
+            transition={{
+              duration: 0.6,
+              delay: active && stepIndex === 0 ? 0.8 : 0,
+              ease,
+            }}
+          >
             <div className="card-graphic">
               <div className="illust" style={{ overflow: 'hidden', borderRadius: '8px', justifyContent: 'flex-end' }}>
                 <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -58,14 +92,29 @@ export default function S3Proposal({ active }) {
                 </div>
               </div>
             </div>
-            <div className="card-text">
+            <motion.div
+              className="card-text"
+              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              transition={{ duration: 0.4, ease }}
+            >
               <div className="stat-num gold" data-count="74" data-suffix="%" />
               <div className="stat-label">5대 사회갈등 심각 인식</div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* ② 부정적 감정 */}
-          <div className="card">
+          <motion.div
+            className="card"
+            animate={{
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 2 ? 0.3 : 0,
+              y: !active ? 24 : 0,
+            }}
+            transition={{
+              duration: 0.6,
+              delay: active && stepIndex === 0 ? 2.0 : 0,
+              ease,
+            }}
+          >
             <div className="card-graphic">
               <div className="illust" style={{ overflow: 'hidden', borderRadius: '8px', justifyContent: 'flex-end' }}>
                 <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -119,15 +168,30 @@ export default function S3Proposal({ active }) {
                 </div>
               </div>
             </div>
-            <div className="card-text">
+            <motion.div
+              className="card-text"
+              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              transition={{ duration: 0.4, ease }}
+            >
               <div className="stat-num amber" data-count="81" data-suffix="%" />
               <div className="stat-label">"부정적 감정을 느낀다"</div>
               <div className="stat-label"><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>사회갈등을 접할 때</span></div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* ③ 대화 의향 */}
-          <div className="card">
+          <motion.div
+            className="card"
+            animate={{
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 3 ? 0.3 : 0,
+              y: !active ? 24 : 0,
+            }}
+            transition={{
+              duration: 0.6,
+              delay: active && stepIndex === 0 ? 3.2 : 0,
+              ease,
+            }}
+          >
             <div className="card-graphic">
               <div className="illust">
                 <svg viewBox="0 0 160 110" width="100%" height="100%">
@@ -146,11 +210,34 @@ export default function S3Proposal({ active }) {
                 </svg>
               </div>
             </div>
-            <div className="card-text">
+            <motion.div
+              className="card-text"
+              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              transition={{ duration: 0.4, ease }}
+            >
               <div className="stat-num red" data-count="70" data-suffix="%" />
               <div className="stat-label">다른 의견과 대화할 의향<br /><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>소통의 여지 충분</span></div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* step1~3: 결론 흐름 — 중앙 텍스트 + 해당 카드 잔상 */}
+        <div className="s3-conclusion">
+          <AnimatePresence mode="wait">
+            {stepIndex >= 1 && stepIndex <= 3 && (
+              <motion.div
+                className="s3-flow-item"
+                key={stepIndex}
+                initial={{ opacity: 0, x: 80 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -80 }}
+                transition={{ duration: 0.5, ease }}
+              >
+                <div className="s3-flow-main">{conclusions[stepIndex - 1].main}</div>
+                <div className="s3-flow-sub">{conclusions[stepIndex - 1].sub}</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <Footer />
@@ -158,3 +245,5 @@ export default function S3Proposal({ active }) {
     </Slide>
   )
 }
+
+S3Proposal.stepCount = TOTAL_STEPS

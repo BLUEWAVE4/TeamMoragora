@@ -1,43 +1,28 @@
 import { useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Slide from '../Slide'
 import Footer from '../Footer'
 import { initCountUps } from '../../utils/animations'
 import '../../styles/slide4.css'
 
-const TOTAL_STEPS = 4 // bridge + 3 cards
+const TOTAL_STEPS = 3 // step0: 브릿지, step1: 카드1, step2: 카드2
 
-export default function S4Analysis({ active, stepIndex, advanceStep }) {
+const ease = [0.16, 1, 0.3, 1]
+
+export default function S4Analysis({ active, stepIndex }) {
   const ref = useRef(null)
 
-  // 슬라이드별 스텝 수 등록
   useEffect(() => {
-    // navigator에 스텝 수를 알리기 위해 DOM 속성 사용
     if (ref.current) {
       ref.current.closest('.slide')?.setAttribute('data-steps', TOTAL_STEPS)
     }
   }, [])
 
-  // 카운트업 초기화
   useEffect(() => {
     if (active && ref.current) {
       initCountUps(ref.current, 800)
     }
   }, [active])
-
-  const collapsed = stepIndex >= 1
-
-  const stepStyle = (idx) => ({
-    opacity: stepIndex > idx ? 1 : 0,
-    transform: stepIndex > idx ? 'translateY(0)' : 'translateY(24px)',
-    transition: 'opacity 0.5s ease, transform 0.5s ease',
-    pointerEvents: stepIndex > idx ? 'auto' : 'none',
-  })
-
-  const bridgeStyle = {
-    opacity: stepIndex >= 1 ? 1 : 0,
-    transition: 'opacity 0.5s ease',
-    pointerEvents: stepIndex >= 1 ? 'auto' : 'none',
-  }
 
   return (
     <Slide id="s4" active={active}>
@@ -49,70 +34,54 @@ export default function S4Analysis({ active, stepIndex, advanceStep }) {
           <span className="header-title">원인 분석</span>
         </div>
 
-        {/* 중앙 텍스트 → 스텝1에서 좌측 축소 이동 */}
-        <div className={`source-header${collapsed ? ' collapsed' : ''}`} id="s4-source">
-          <span className="source-main">한국 사회는 갈등으로 가득하다</span><br />
-          <span className="source-sub">(5대 사회갈등 심각 인식 — 74%)</span>
-        </div>
+        {/* step0: 브릿지 — 중앙 텍스트, step1+에서 위로 축소 이동 */}
+        <motion.div
+          className="s4-cause-row"
+          animate={{
+            top: stepIndex >= 1 ? '18%' : '50%',
+            x: '-50%',
+            y: '-50%',
+            scale: stepIndex >= 1 ? 0.65 : 1,
+          }}
+          transition={{ duration: 0.8, ease }}
+        >
+          <div className="source-header" id="s4-source">
+            <span className="source-main">그런데 왜 대화가 안 되는가?</span>
+          </div>
+        </motion.div>
 
-        {/* 스텝1: 수평 화살표 + 우측 텍스트 */}
-        <div className="s4-bridge" style={bridgeStyle}>
-          <div className="s4-arrow">
-            <svg width="160" height="60" viewBox="0 0 160 60">
-              <line x1="0" y1="30" x2="120" y2="30" stroke="var(--gold)" strokeWidth="2" strokeDasharray="6 4">
-                <animate attributeName="stroke-dashoffset" values="0;-20" dur="1.5s" repeatCount="indefinite" />
-              </line>
-              <polygon points="115,12 155,30 115,48" fill="var(--gold)" opacity="0.7" />
-            </svg>
-          </div>
-          <div className="s4-bridge-right">
-            <span className="source-main">그 갈등은<br />논쟁으로 이어진다</span>
-          </div>
-        </div>
-
-        {/* 스텝2~4: 카드 영역 */}
-        <div className="cards">
-          <div className="card" style={stepStyle(1)}>
-            <div className="card-graphic">
-              <div className="illust" style={{ overflow: 'hidden', borderRadius: '8px' }}>
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: "'Noto Serif KR',serif", fontSize: '1.2rem', color: 'var(--marble-dim)', opacity: 0.3 }}>그래픽 1</span>
-                </div>
-              </div>
-            </div>
-            <div className="card-text">
-              <div className="stat-num gold" data-count="0" data-suffix="%" />
-              <div className="stat-label">내용 1</div>
-            </div>
-          </div>
-
-          <div className="card" style={stepStyle(2)}>
-            <div className="card-graphic">
-              <div className="illust" style={{ overflow: 'hidden', borderRadius: '8px' }}>
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: "'Noto Serif KR',serif", fontSize: '1.2rem', color: 'var(--marble-dim)', opacity: 0.3 }}>그래픽 2</span>
-                </div>
-              </div>
-            </div>
-            <div className="card-text">
-              <div className="stat-num amber" data-count="0" data-suffix="%" />
-              <div className="stat-label">내용 2</div>
-            </div>
-          </div>
-
-          <div className="card" style={stepStyle(3)}>
-            <div className="card-graphic">
-              <div className="illust">
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: "'Noto Serif KR',serif", fontSize: '1.2rem', color: 'var(--marble-dim)', opacity: 0.3 }}>그래픽 3</span>
-                </div>
-              </div>
-            </div>
-            <div className="card-text">
-              <div className="stat-num red" data-count="0" data-suffix="%" />
-              <div className="stat-label">내용 3</div>
-            </div>
-          </div>
+        {/* step1~2: 카드 영역 — 2열 */}
+        <div className="cards s4-two-col">
+          {[
+            {
+              tag: '중재자의 부재',
+              icon: '⚖️',
+              title: '판단해줄 제3자가 없다',
+              desc: '감정이 앞서는 익명 소통 구조에서\n객관적으로 판단해줄\n중립적 중재자가 존재하지 않는다',
+            },
+            {
+              tag: '서비스의 부재',
+              icon: '🔧',
+              title: '실행할 방법이 없다',
+              desc: '대화 의향은 70%이지만\n감정을 배제하고 논거만으로\n소통할 수 있는 플랫폼이 없다',
+            },
+          ].map((card, idx) => (
+            <motion.div
+              className="card"
+              key={idx}
+              animate={{
+                opacity: stepIndex > idx ? 1 : 0,
+                y: stepIndex > idx ? 0 : 30,
+              }}
+              transition={{ duration: 0.6, ease }}
+              style={{ pointerEvents: stepIndex > idx ? 'auto' : 'none' }}
+            >
+              <span className="card-tag">{card.tag}</span>
+              <div className="card-icon">{card.icon}</div>
+              <div className="card-title">{card.title}</div>
+              <div className="card-desc">{card.desc}</div>
+            </motion.div>
+          ))}
         </div>
 
         <Footer />

@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigator } from './hooks/useNavigator'
 import Background from './components/Background'
 import SlideCounter from './components/SlideCounter'
@@ -21,14 +20,10 @@ const slides = [
 export default function App() {
   const { current, total, stepIndex, registerSteps } = useNavigator(slides.length)
 
-  // 각 슬라이드의 stepCount 등록
-  useEffect(() => {
-    slides.forEach((Comp, idx) => {
-      if (Comp.stepCount) {
-        registerSteps(idx, Comp.stepCount)
-      }
-    })
-  }, [registerSteps])
+  // 각 슬라이드의 stepCount 즉시 등록 (ref 기반이라 렌더 중 호출 가능)
+  slides.forEach((Comp, idx) => {
+    registerSteps(idx, Comp.stepCount || 0)
+  })
 
   return (
     <>
