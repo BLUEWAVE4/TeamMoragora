@@ -1,0 +1,130 @@
+/* 슬라이드 4: 원인 분석 */
+#s4 .s-wrap {
+  width: 100%; height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  align-content: center;
+  padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
+}
+
+/* 헤더 */
+#s4 .header {
+  display: flex; align-items: center; gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(201,168,76,0.18);
+  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
+}
+#s4 .page-num {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 600;
+  color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+}
+#s4 .header-title {
+  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
+  -webkit-background-clip: text; background-clip: text;
+}
+
+/* 출처: 초기에 화면 중앙, 스텝1에서 좌측 이동 */
+#s4 .source-header {
+  text-align: center;
+  opacity: 0; animation: fade-in 0.8s ease forwards 0.6s;
+  z-index: 5;
+  transition: transform 0.8s cubic-bezier(0.16,1,0.3,1);
+  transform: translateY(30vh);
+  grid-column: 1 / -1;
+}
+#s4 .source-header.collapsed {
+  transform: translateY(22vh) scale(0.55);
+  text-align: center;
+}
+#s4 .source-main {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
+}
+#s4 .source-sub {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  color: rgba(201,168,76,0.35); letter-spacing: 0.06em;
+}
+
+/* bridge: 화살표 + 하단 텍스트 (중앙 정렬) */
+#s4 .s4-bridge {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(1rem, 2vh, 2rem);
+  z-index: 5;
+}
+#s4 .s4-bridge.step {
+  animation: none !important;
+}
+#s4 .s4-arrow {
+  flex-shrink: 0;
+}
+#s4 .s4-bridge-right {
+  text-align: center;
+}
+#s4 .s4-bridge-right .source-main {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+}
+
+/* 다음 페이지 힌트 */
+#s4 .next-hint {
+  position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
+  font-family: 'Noto Serif KR', serif; font-size: clamp(0.8rem,1.4vw,1.1rem);
+  color: rgba(201,168,76,0.4); letter-spacing: 0.05em;
+  opacity: 0; animation: fade-in 1s ease forwards 3s;
+}
+
+/* 카드 3열 그리드 */
+#s4 .cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.5rem, 1vw, 1rem); align-items: start;
+  margin-left: 200px; margin-right: 200px;
+}
+#s4 .card {
+  display: flex; flex-direction: column; align-items: center;
+  position: relative;
+}
+/* .step 카드는 JS가 제어 — CSS 애니메이션 없음 */
+#s4 .card.step {
+  opacity: 0; transform: translateY(24px);
+  animation: none !important;
+}
+#s4 .card-graphic { display: flex; flex-direction: column; align-items: center; flex: 1; }
+#s4 .card-text { display: flex; flex-direction: column; align-items: center; text-align: center; }
+#s4 .card::after {
+  content: ''; position: absolute; right: 0; top: 15%; bottom: 15%; width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.12), transparent);
+}
+#s4 .card:last-child::after { display: none; }
+
+/* 일러스트 */
+#s4 .illust {
+  width: clamp(240px, 33vw, 360px); height: clamp(240px, 33vw, 360px);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 0; margin-bottom: clamp(0.5rem, 1vh, 1rem);
+}
+
+/* 막대 차트 bar-row */
+#s4 .bar-row { opacity: 0; animation: fade-up 0.5s ease forwards; animation-delay: var(--delay, 1s); }
+
+/* 통계 숫자 */
+#s4 .stat-num {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 900;
+  font-size: clamp(3rem, 7vw, 5rem); line-height: 1; letter-spacing: -0.02em;
+  margin-bottom: 0.6rem; min-height: clamp(3rem, 7vw, 5rem); margin-top: 15px;
+}
+#s4 .stat-num.gold  { color: var(--gold-bright); text-shadow: 0 0 15px rgba(240,201,106,0.15); }
+#s4 .stat-num.amber { color: #e8a838;            text-shadow: 0 0 15px rgba(232,168,56,0.15); }
+#s4 .stat-num.red   { color: #d94040;            text-shadow: 0 0 15px rgba(217,64,64,0.15); }
+
+#s4 .stat-label {
+  font-family: 'Noto Serif KR', serif; font-weight: 400;
+  font-size: clamp(1rem, 1.8vw, 1.3rem); color: var(--marble-dim);
+  text-align: center; line-height: 1.6; letter-spacing: 0.03em;
+}

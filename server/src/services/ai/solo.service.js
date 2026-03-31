@@ -1,5 +1,5 @@
 // Solo 모드: AI 반대 주장 생성 서비스
-// GPT-4o-mini 사용 (비용 절감)
+// GPT-5-mini 사용 (비용 절감)
 
 import { openai } from '../../config/ai.js';
 import { buildCounterArgumentPrompt } from './prompts.js';
@@ -14,9 +14,9 @@ export async function generateCounterArgument({ topic, category, sideA_argument,
     : '당신은 논쟁에서 반대 측 반박을 작성하는 AI입니다. A측 주장의 허점을 논리적으로 반박하고 B측 입장을 보강합니다. 반드시 JSON 형식으로만 응답하세요.';
 
   const parsed = await callAI(
-    'GPT-4o-mini (Solo)',
+    'GPT-4.1-mini (Solo)',
     () => openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [
         { role: 'system', content: systemMsg },
         { role: 'user', content: prompt },
