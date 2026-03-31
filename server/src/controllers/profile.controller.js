@@ -207,6 +207,7 @@ export async function getRanking(req, res, next) {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, nickname, avatar_url, gender, wins, losses, draws, total_score, tier')
+      .neq('id', '00000000-0000-0000-0000-000000000000')
       .order('total_score', { ascending: false })
       .range(from, from + limit);
 

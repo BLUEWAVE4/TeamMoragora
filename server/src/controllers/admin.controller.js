@@ -320,11 +320,44 @@ export async function getAnalytics(req, res, next) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => ({ name, count, ratio: Math.round(count / (allEvents.length || 1) * 1000) / 10 }));
 
+    // 이탈 위치: 세션별 마지막 방문 페이지
+    let allPVFull = [];
+    offset = 0;
+    while (true) {
+      const { data } = await supabaseAdmin
+        .from('page_views')
+        .select('path, session_id, created_at')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + batchSize - 1);
+      if (!data || data.length === 0) break;
+      allPVFull = allPVFull.concat(data);
+      if (data.length < batchSize) break;
+      offset += batchSize;
+    }
+
+    const sessionLastPage = {};
+    allPVFull.forEach(pv => {
+      if (!pv.session_id) return;
+      if (!sessionLastPage[pv.session_id] || new Date(pv.created_at) > new Date(sessionLastPage[pv.session_id].created_at)) {
+        sessionLastPage[pv.session_id] = pv;
+      }
+    });
+    const exitCounts = {};
+    Object.values(sessionLastPage).forEach(pv => {
+      exitCounts[pv.path] = (exitCounts[pv.path] || 0) + 1;
+    });
+    const totalSessions = Object.keys(sessionLastPage).length || 1;
+    const exitPages = Object.entries(exitCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([path, count]) => ({ path, count, ratio: Math.round(count / totalSessions * 1000) / 10 }));
+
     res.json({
       totalPageViews: totalPageViews || 0,
       uniqueSessions,
       topPages,
       eventDist,
+      exitPages,
       totalEvents: totalEvents || 0,
     });
   } catch (err) { next(err); }

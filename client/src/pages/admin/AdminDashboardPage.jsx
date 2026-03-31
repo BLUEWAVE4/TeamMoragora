@@ -273,12 +273,49 @@ export default function AdminDashboardPage() {
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-[12px] font-bold text-gray-400 mb-3">이벤트 유형 분포</p>
               <div className="space-y-2">
-                {analytics.eventDist?.map((e, i) => (
-                  <div key={i} className="flex items-center justify-between text-[12px]">
-                    <span className="text-[#1B2A4A] font-medium">{e.name} <span className="text-gray-400">{{ verdict_view: '(판결 열람)', debate_create: '(논쟁 생성)', vote_cast: '(투표)', comment_create: '(댓글 작성)', share: '(공유)' }[e.name] || ''}</span></span>
-                    <span className="text-gray-400">{e.count}건 ({e.ratio}%)</span>
-                  </div>
-                ))}
+                {analytics.eventDist?.map((e, i) => {
+                  const eventLabels = {
+                    citizen_vote: '시민 투표',
+                    pwa_install: 'PWA 설치',
+                    invite_share: '초대 공유',
+                    debate_complete: '논쟁 완료',
+                    verdict_view: '판결 열람',
+                    debate_create: '논쟁 생성',
+                    vote_cast: '투표 참여',
+                    comment_create: '댓글 작성',
+                    share: '외부 공유',
+                    page_view: '페이지 조회',
+                    login: '로그인',
+                    signup: '회원가입',
+                  };
+                  return (
+                    <div key={i} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#1B2A4A] font-medium">{eventLabels[e.name] || e.name}</span>
+                      <span className="text-gray-400">{e.count}건 ({e.ratio}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-[12px] font-bold text-gray-400 mb-3">이탈 위치 (마지막 방문 페이지)</p>
+              <div className="space-y-2">
+                {analytics.exitPages?.length > 0 ? analytics.exitPages.map((p, i) => {
+                  const pageLabels = {
+                    '/': '홈',
+                    '/ranking': '랭킹',
+                    '/profile': '프로필',
+                    '/create': '논쟁 생성',
+                    '/login': '로그인',
+                  };
+                  const label = pageLabels[p.path] || (p.path?.startsWith('/moragora/') ? '판결 상세' : p.path);
+                  return (
+                    <div key={i} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#1B2A4A] font-medium">{label} <span className="text-gray-300">{p.path}</span></span>
+                      <span className="text-gray-400">{p.count}건 ({p.ratio}%)</span>
+                    </div>
+                  );
+                }) : <p className="text-[11px] text-gray-300">데이터 없음</p>}
               </div>
             </div>
           </div>
