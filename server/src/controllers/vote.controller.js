@@ -140,14 +140,21 @@ export async function cancelVote(req, res, next) {
   try {
     const { debateId } = req.params;
 
-    // 1. 투표 가능 상태인지 확인
+    // 1. 투표 가능 상태인지 확인 (castVote와 동일한 로직)
     const { data: debate } = await supabaseAdmin
       .from('debates')
-      .select('status')
+      .select('status, vote_deadline, vote_duration, created_at')
       .eq('id', debateId)
       .single();
 
-    if (!debate || debate.status !== 'voting') {
+    if (!debate) {
+      return res.status(400).json({ error: '논쟁을 찾을 수 없습니다.' });
+    }
+
+    const hasActiveTimer = debate.vote_duration && debate.created_at &&
+      new Date(new Date(debate.created_at).getTime() + debate.vote_duration * 86400000) > new Date();
+
+    if (debate.status !== 'voting' && !hasActiveTimer) {
       return res.status(400).json({ error: '투표 기간이 아닙니다.' });
     }
 

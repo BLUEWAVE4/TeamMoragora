@@ -5,6 +5,16 @@ import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView, getMy
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolveAvatar } from '../../utils/avatar';
 import { timeAgo } from '../../utils/dateFormatter';
+import { createAvatar } from '@dicebear/core';
+import { avataaars } from '@dicebear/collection';
+
+const SOCRATES_AVATAR = createAvatar(avataaars, {
+  top: ['sides'], hairColor: ['e8e1e1'], skinColor: ['ffdbb4'],
+  facialHair: ['beardMajestic'], facialHairColor: ['e8e1e1'], facialHairProbability: 100,
+  eyes: ['default'], eyebrows: ['unibrowNatural'],
+  clothing: ['shirtVNeck'], clothesColor: ['929598'], accessoriesProbability: 0,
+  mouth: ['serious'],
+}).toDataUri();
 import LoginPromptModal from '../common/LoginPromptModal';
 import MoragoraModal from '../common/MoragoraModal';
 import CommentBottomSheet from '../common/CommentBottomSheet';
@@ -19,12 +29,13 @@ const TIER_COLORS = {
   '대법관': '#FF3B30',
 };
 
-function useVoteCountdown(createdAt, voteDuration) {
+function useVoteCountdown(createdAt, voteDuration, voteDeadline) {
   const [timeLeft, setTimeLeft] = useState(null);
   useEffect(() => {
     if (!createdAt || !voteDuration) return;
     const totalMs = Number(voteDuration) * 24 * 60 * 60 * 1000;
-    const deadline = new Date(new Date(createdAt).getTime() + totalMs);
+    // vote_deadline이 있으면 그걸 사용, 없으면 created_at + duration fallback
+    const deadline = voteDeadline ? new Date(voteDeadline) : new Date(new Date(createdAt).getTime() + totalMs);
     const pad = (n) => String(n).padStart(2, '0');
     const update = () => {
       const diff = deadline.getTime() - Date.now();
@@ -37,7 +48,7 @@ function useVoteCountdown(createdAt, voteDuration) {
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [createdAt, voteDuration]);
+  }, [createdAt, voteDuration, voteDeadline]);
   return timeLeft;
 }
 
@@ -51,7 +62,7 @@ function DebateCard({ feed, initialVote, initialLiked }) {
   const isVotingStatus = debateStatus === 'voting';
 
   const voteDuration = debateData?.vote_duration ?? null;
-  const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration);
+  const timeLeft = useVoteCountdown(debateData?.created_at, voteDuration, debateData?.vote_deadline);
   const hasTimer = !!voteDuration;
   const timerExpired = timeLeft?.expired === true;
   // 타이머가 있고 아직 안 만료되면 투표 가능 (status와 무관)
@@ -120,8 +131,8 @@ function DebateCard({ feed, initialVote, initialLiked }) {
 
   const purposeMap = { 'compete': '경쟁', 'fun': '재미', 'resolve': '해결', 'learn': '학습' };
   const lensMap = { 'general': '종합', 'logic': '논리', 'emotion': '감정', 'practical': '실용', 'ethics': '윤리', 'creative': '자유' };
-  const purpose = purposeMap[debateData?.purpose] || '';
-  const lens = lensMap[debateData?.lens] || '';
+  const purpose = purposeMap[debateData?.purpose] || debateData?.purpose || '';
+  const lens = lensMap[debateData?.lens] || debateData?.lens || '';
 
   const categoryMap = {
     'WORK': '직장', 'DAILY': '일상', 'SOCIETY': '사회', 'ROMANCE': '연애', 'LOVE': '연애',
@@ -197,42 +208,50 @@ function DebateCard({ feed, initialVote, initialLiked }) {
     <>
       <div className="w-full font-sans pb-5 mb-1 bg-white/70 rounded-xl">
 
-        {/* 프로필 헤더 */}
-        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0 ${debateData?.creator?.tier && debateData.creator.tier !== '시민' ? 'border-2' : ''}`}
-            style={debateData?.creator?.tier && debateData.creator.tier !== '시민' ? { borderColor: TIER_COLORS[debateData.creator.tier] } : {}}
-          >
-            <img
-              src={resolveAvatar(debateData?.creator?.avatar_url, debateData?.creator_id, debateData?.creator?.gender)}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+        {/* VS 헤더 (중앙 정렬 + 좌측 카테고리) */}
+        <div className="px-4 pt-4 pb-2 flex items-center gap-3 relative">
+          <div className="flex items-center justify-center gap-3 w-full">
+          {/* A측 아바타 + 닉네임 */}
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`w-9 h-9 rounded-full overflow-hidden bg-[#1B2A4A]/5 flex-shrink-0 ${debateData?.creator?.tier && debateData.creator.tier !== '시민' ? 'border-2' : ''}`}
+              style={debateData?.creator?.tier && debateData.creator.tier !== '시민' ? { borderColor: TIER_COLORS[debateData.creator.tier] } : {}}
+            >
+              <img src={resolveAvatar(debateData?.creator?.avatar_url, debateData?.creator_id, debateData?.creator?.gender)} alt="" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-[12px] font-bold text-[#1B2A4A] truncate max-w-[80px]">{creatorNickname}</span>
           </div>
-          <div className="flex-1 min-w-0 leading-tight">
-            <span className="text-[13px] font-bold text-[#1B2A4A] truncate block">{creatorNickname}</span>
-            <span className={`text-[10px] font-bold ${isDark ? 'text-white/40' : 'text-[#1B2A4A]/40'}`}>{timeAgo(feed.created_at)}</span>
+
+          <span className="text-[11px] font-black text-[#1B2A4A]/30">VS</span>
+
+          {/* B측 아바타 + 닉네임 */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-bold text-[#1B2A4A] truncate max-w-[80px]">
+              {debateData?.mode === 'solo' ? '소크라테스 AI' : (debateData?.opponent?.nickname || (debateData?.opponent_id ? '익명' : '대기 중'))}
+            </span>
+            <div
+              className={`w-9 h-9 rounded-full overflow-hidden flex-shrink-0 ${debateData?.mode === 'solo' ? 'border-2 ring-2 ring-[#D4AF37]/20' : (debateData?.opponent?.tier && debateData.opponent.tier !== '시민' ? 'border-2' : '')} bg-[#1B2A4A]/5`}
+              style={debateData?.mode === 'solo'
+                ? { borderColor: '#D4AF37', background: '#1B2A4A' }
+                : (debateData?.opponent?.tier && debateData.opponent.tier !== '시민' ? { borderColor: TIER_COLORS[debateData.opponent.tier] } : {})}
+            >
+              <img
+                src={debateData?.mode === 'solo' ? SOCRATES_AVATAR : resolveAvatar(debateData?.opponent?.avatar_url, debateData?.opponent_id, debateData?.opponent?.gender)}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
-          <span className="text-[12px] px-2 py-1 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/60 font-bold flex-shrink-0">{categoryName}</span>
+          </div>
         </div>
 
         <div className="mx-4 border-b border-[#1B2A4A]/5" />
 
-        {/* 주제 */}
+        {/* 주제 (가운데 정렬) */}
         <div className="px-4 pt-3 pb-1">
-          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight">{topic}</h3>
+          <h3 className="text-[19px] font-sans font-black text-[#1B2A4A] leading-[1.45] break-keep tracking-tight text-center">"{topic}"</h3>
         </div>
 
-        {/* 목적 + 기준 + 실시간 뱃지 */}
-        <div className="px-4 pb-2 flex items-center gap-1 flex-wrap">
-          {purpose && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1B2A4A]/8 text-[#1B2A4A]/50 font-bold">{purpose}</span>}
-          {lens && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/10 text-[#D4AF37] font-bold">{lens}</span>}
-          {debateData?.mode === 'chat' && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-500 text-[10px] font-bold">
-              실시간
-            </span>
-          )}
-        </div>
 
         {/* 투표 섹션 */}
         <div className="pl-[26px] pr-4 pb-4 pt-1">

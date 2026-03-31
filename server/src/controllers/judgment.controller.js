@@ -330,7 +330,7 @@ export async function getDailyVerdicts(req, res, next) {
     // debates 테이블에서 daily 모드 직접 조회 (verdict 유무 관계없이)
     const { data: debates, error: debateErr } = await supabaseAdmin
       .from('debates')
-      .select('id, topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, vote_duration, created_at, creator:profiles!creator_id(nickname, tier, gender, avatar_url)')
+      .select('id, topic, description, category, status, creator_id, opponent_id, pro_side, con_side, mode, vote_deadline, vote_duration, created_at, creator:profiles!creator_id(nickname, tier, gender, avatar_url), opponent:profiles!opponent_id(nickname, tier, gender, avatar_url)')
       .eq('mode', 'daily')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -391,7 +391,7 @@ export async function getHallOfFame(req, res, next) {
     // verdicts + debate + 좋아요/댓글/조회수
     const { data: rawData, error } = await supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .select('*, debate:debates!debate_id(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, pro_side, con_side, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url), opponent:profiles!opponent_id(nickname, tier, gender, avatar_url))')
       .order('created_at', { ascending: false })
       .limit(VERDICT_FETCH_LIMIT);
 
@@ -465,7 +465,7 @@ export async function getVerdictFeed(req, res, next) {
     // DB 레벨에서 mode 필터 + 카테고리 필터 (inner join)
     let query = supabaseAdmin
       .from('verdicts')
-      .select('*, debate:debates!inner(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, vote_duration, created_at, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url))')
+      .select('*, debate:debates!inner(id, topic, category, status, creator_id, opponent_id, mode, vote_deadline, vote_duration, created_at, pro_side, con_side, purpose, lens, view_count, creator:profiles!creator_id(nickname, tier, gender, avatar_url), opponent:profiles!opponent_id(nickname, tier, gender, avatar_url))')
       .not('debate.mode', 'in', '("daily","chat")')
       .order('created_at', { ascending: false });
 
