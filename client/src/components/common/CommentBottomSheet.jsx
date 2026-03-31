@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../store/AuthContext';
 import useThemeStore from '../../store/useThemeStore';
-import { getComments, createComment, toggleCommentLike, deleteComment, getProfileById } from '../../services/api';
+import { getComments, createComment, deleteComment, getProfileById } from '../../services/api';
 import useProfileStore from '../../store/useProfileStore';
 import { resolveAvatar } from '../../utils/avatar';
 import { supabase } from '../../services/supabase';
@@ -27,7 +27,6 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
   const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [likingSet, setLikingSet] = useState(new Set());
   const [deleteTarget, setDeleteTarget] = useState(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
@@ -62,8 +61,6 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
         const mapped = (data || []).map(c => ({
           ...c,
           profiles: c.user || c.profiles,
-          _liked: c.is_liked ?? false,
-          _likeCount: c.like_count ?? c.likes_count ?? 0,
         }));
         setComments(mapped);
         onCountChange?.(mapped.length);
@@ -87,14 +84,14 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
         getProfileById(newC.user_id).then((profile) => {
           setComments(prev => {
             if (prev.some(c => c.id === newC.id)) return prev;
-            const added = [...prev, { ...newC, profiles: profile || { nickname: '익명' }, _liked: false, _likeCount: 0 }];
+            const added = [...prev, { ...newC, profiles: profile || { nickname: '익명' } }];
             onCountChange?.(added.length);
             return added;
           });
         }).catch(() => {
           setComments(prev => {
             if (prev.some(c => c.id === newC.id)) return prev;
-            const added = [...prev, { ...newC, profiles: { nickname: '익명' }, _liked: false, _likeCount: 0 }];
+            const added = [...prev, { ...newC, profiles: { nickname: '익명' } }];
             onCountChange?.(added.length);
             return added;
           });
@@ -126,26 +123,12 @@ function CommentBottomSheet({ isOpen, onClose, debateId, onCountChange, sideUser
     }
   }, [comments.length]);
 
-  const handleToggleLike = async (commentId) => {
-    if (!user || likingSet.has(commentId)) return;
-    setLikingSet(prev => new Set(prev).add(commentId));
-    const prevComments = comments;
-    setComments(prev => prev.map(c =>
-      c.id === commentId
-        ? { ...c, _liked: !c._liked, _likeCount: Math.max((c._likeCount || 0) + (c._liked ? -1 : 1), 0) }
-        : c
-    ));
-    try { await toggleCommentLike(commentId); }
-    catch { setComments(prevComments); }
-    finally { setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; }); }
-  };
-
   const handleSend = async () => {
     if (!user || !commentText.trim() || isSending) return;
     setIsSending(true);
     try {
       const data = await createComment(debateId, commentText.trim());
-      setComments(prev => [...prev, { ...data, profiles: data.user, _liked: false, _likeCount: 0 }]);
+      setComments(prev => [...prev, { ...data, profiles: data.user }]);
       setCommentText('');
       onCountChange?.(comments.length + 1);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }));

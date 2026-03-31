@@ -16,30 +16,6 @@ export async function getComments(req, res, next) {
 
     if (error) throw error;
 
-    if (data.length > 0) {
-      const commentIds = data.map(c => c.id);
-
-      // 좋아요 수 + 내 좋아요 여부를 한 번에 조회
-      const likesQuery = supabaseAdmin
-        .from('comment_likes')
-        .select('comment_id, user_id')
-        .in('comment_id', commentIds);
-
-      const { data: allLikes } = await likesQuery;
-
-      const likeCounts = {};
-      const likedSet = new Set();
-      (allLikes || []).forEach(l => {
-        likeCounts[l.comment_id] = (likeCounts[l.comment_id] || 0) + 1;
-        if (userId && l.user_id === userId) likedSet.add(l.comment_id);
-      });
-
-      data.forEach(c => {
-        c.is_liked = likedSet.has(c.id);
-        c.like_count = likeCounts[c.id] || 0;
-      });
-    }
-
     res.json(data);
   } catch (err) {
     next(err);
@@ -70,7 +46,6 @@ export async function createComment(req, res, next) {
     ]);
 
     if (error) throw error;
-    data.is_liked = false;
     if (debate) {
       const recipients = [debate.creator_id, debate.opponent_id]
         .filter(uid => uid && uid !== req.user.id);
@@ -113,44 +88,3 @@ export async function deleteComment(req, res, next) {
   }
 }
 
-// ===== 좋아요 토글 =====
-export async function toggleLike(req, res, next) {
-  try {
-    const { commentId } = req.params;
-
-    const { data: existing } = await supabaseAdmin
-      .from('comment_likes')
-      .select('id')
-      .eq('comment_id', commentId)
-      .eq('user_id', req.user.id)
-      .maybeSingle();
-
-    if (existing) {
-      // 좋아요 취소 + 카운트 감소 병렬
-      const [, { data: cur }] = await Promise.all([
-        supabaseAdmin.from('comment_likes').delete().eq('id', existing.id),
-        supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single(),
-      ]);
-      if (cur) {
-        await supabaseAdmin.from('comments').update({ likes_count: Math.max((cur.likes_count || 0) - 1, 0) }).eq('id', commentId);
-      }
-      res.json({ liked: false });
-    } else {
-      // 좋아요 추가 + 카운트 조회 병렬
-      const [{ error: insertErr }, { data: cur }] = await Promise.all([
-        supabaseAdmin.from('comment_likes').insert({ comment_id: commentId, user_id: req.user.id }),
-        supabaseAdmin.from('comments').select('likes_count').eq('id', commentId).single(),
-      ]);
-      if (insertErr) {
-        if (insertErr.code === '23505') return res.json({ liked: true });
-        throw insertErr;
-      }
-      if (cur) {
-        await supabaseAdmin.from('comments').update({ likes_count: (cur.likes_count || 0) + 1 }).eq('id', commentId);
-      }
-      res.json({ liked: true });
-    }
-  } catch (err) {
-    next(err);
-  }
-}

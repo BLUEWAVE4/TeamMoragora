@@ -125,7 +125,7 @@ export const cancelVote = (debateId) => api.delete(`/votes/${debateId}`);
 export const getComments = (debateId) => api.get(`/comments/${debateId}`);
 export const createComment = (debateId, content) => api.post(`/comments/${debateId}`, { content });
 export const deleteComment = (commentId) => api.delete(`/comments/${commentId}`);
-export const toggleCommentLike = (commentId) => api.post(`/comments/${commentId}/like`);
+
 
 export const toggleDebateLike = (id) => api.post(`/debates/${id}/like`);
 export const getMyLikesBatch = (debateIds) => api.post('/debates/batch/likes', { debateIds });

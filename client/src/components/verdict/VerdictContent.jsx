@@ -14,7 +14,7 @@ import useModalState from "../../hooks/useModalState";
 import { timeAgo } from "../../utils/dateFormatter";
 import MoragoraModal from '../common/MoragoraModal';
 import ChatLogViewer from './ChatLogViewer';
-import { getComments, createComment, deleteComment, toggleCommentLike, castVote, getMyVote, cancelVote, getVoteTally, getMyProfile, getProfileById } from "../../services/api";
+import { getComments, createComment, deleteComment, castVote, getMyVote, cancelVote, getVoteTally, getMyProfile, getProfileById } from "../../services/api";
 import { trackEvent } from "../../services/analytics";
 import { socket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
@@ -249,25 +249,6 @@ function VerdictContentInner({ verdictData, topic }, ref) {
     }
     setIsVoting(false);
   }, [user, isVoting, myVote, liveVoteA, liveVoteB, debateId]);
-
-  const [likingSet, setLikingSet] = useState(new Set());
-  const handleToggleLike = useCallback(async (commentId) => {
-    if (!user || likingSet.has(commentId)) return;
-    setLikingSet(prev => new Set(prev).add(commentId));
-    const prevComments = comments;
-    setComments(prev => prev.map(c =>
-      c.id === commentId
-        ? { ...c, is_liked: !c.is_liked, likes_count: Math.max((c.likes_count || 0) + (c.is_liked ? -1 : 1), 0) }
-        : c
-    ));
-    try {
-      await toggleCommentLike(commentId);
-    } catch (_) {
-      setComments(prevComments);
-    } finally {
-      setLikingSet(prev => { const s = new Set(prev); s.delete(commentId); return s; });
-    }
-  }, [user, likingSet, comments]);
 
   if (!verdictData) return null;
 
