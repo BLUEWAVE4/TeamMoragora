@@ -32,7 +32,7 @@ export default function DebateCreatePage() {
   const [purpose,  setPurpose]  = useState("");
   const [lens,     setLens]     = useState("");
   const [category, setCategory] = useState("");
-  const [time,     setTime]     = useState("");
+  const [time,     setTime]     = useState("1");
 
   const [showBackModal, setShowBackModal] = useState(false);
   const [aiLoading,     setAiLoading]     = useState(false);

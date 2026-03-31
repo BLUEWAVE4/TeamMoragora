@@ -21,7 +21,7 @@ export default function Step3CategoryTime({
   const isChat = mode === 'chat';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorTime, setErrorTime] = useState("");
-  const [timerType, setTimerType] = useState(isChat ? "none" : "none");
+  const [timerType, setTimerType] = useState(isChat ? "none" : "limit");
 
   const timeOptions = [
     { value: "1", label: "1일" },

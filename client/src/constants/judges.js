@@ -34,6 +34,7 @@ export const AI_JUDGES = {
 export const MODEL_MAP = {
   'gpt-4o': 'gpt',
   'gpt-4.1': 'gpt',
+  'gpt-5.2': 'gpt',
   'o3': 'gpt',
   'gemini-2.5-flash': 'gemini',
   'gemini-2.0-flash': 'gemini',
