@@ -34,7 +34,7 @@
 #s1 .divider-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; }
 #s1 .subtitle {
   font-family: 'Noto Serif KR', serif; font-weight: 300;
-  font-size: clamp(0.9rem, 2.2vw, 1.3rem); color: var(--marble-dim);
+  font-size: clamp(1.35rem, 3.3vw, 1.95rem); color: var(--marble-dim);
   letter-spacing: 0.05em; line-height: 1.7; max-width: 32rem;
   opacity: 0; animation: fade-up 0.9s ease forwards 1.4s;
 }
@@ -45,15 +45,16 @@
 }
 #s1 .tag {
   padding: 0.3rem 0.75rem; border: 1px solid rgba(201,168,76,0.2); border-radius: 2px;
-  font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.2em;
+  font-family: 'Cinzel', serif; font-size: 1.125rem; letter-spacing: 0.2em;
   color: rgba(201,168,76,0.5); text-transform: uppercase; background: rgba(201,168,76,0.04);
 }
-#s1 .s-footer {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  padding: clamp(1.5rem, 3vh, 2rem) clamp(3rem, 8vw, 7rem);
+#s1 .s1-team {
+  position: absolute;
+  bottom: clamp(5rem, 8vh, 6.5rem);
+  left: clamp(3rem, 8vw, 6rem); right: clamp(3rem, 8vw, 6rem);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem;
   opacity: 0; animation: fade-in 1s ease forwards 2s;
 }
-#s1 .team { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
 #s1 .team-label {
   font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.25em;
   color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3rem;

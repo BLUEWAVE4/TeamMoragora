@@ -5,6 +5,7 @@ import S1Title from './components/slides/S1Title'
 import S2Toc from './components/slides/S2Toc'
 import S3Proposal from './components/slides/S3Proposal'
 import S4Analysis from './components/slides/S4Analysis'
+import S4bNeed from './components/slides/S4bNeed'
 import S5Strategy from './components/slides/S5Strategy'
 import S6Structure from './components/slides/S6Structure'
 import S7Demo from './components/slides/S7Demo'
@@ -13,7 +14,7 @@ import S9Effects from './components/slides/S9Effects'
 import S10Team from './components/slides/S10Team'
 
 const slides = [
-  S1Title, S2Toc, S3Proposal, S4Analysis, S5Strategy,
+  S1Title, S2Toc, S3Proposal, S4Analysis, S4bNeed, S5Strategy,
   S6Structure, S7Demo, S8TechStack, S9Effects, S10Team,
 ]
 

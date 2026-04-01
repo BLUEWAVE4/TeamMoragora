@@ -65,7 +65,7 @@ html, body {
 
 /* ── 슬라이드 번호 ── */
 #slide-counter {
-  position: fixed; bottom: 1.5rem; right: 2rem; z-index: 100;
+  position: fixed; bottom: clamp(1.5rem, 3vh, 2.5rem); right: clamp(3rem, 8vw, 6rem); z-index: 100;
   font-family: 'Cinzel', serif; font-size: 1rem;
   letter-spacing: 0.15em; color: rgba(160,152,136,0.35);
 }
