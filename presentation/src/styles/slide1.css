@@ -11,7 +11,7 @@
 }
 #s1 .pre-tag-line { width: 32px; height: 1px; background: var(--gold); opacity: 0.5; }
 #s1 .pre-tag-text {
-  font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.3em;
+  font-family: 'Cinzel', sans-serif; font-size: 0.65rem; letter-spacing: 0.3em;
   color: rgba(201,168,76,0.6); text-transform: uppercase;
 }
 #s1 .title {
@@ -33,7 +33,7 @@
 #s1 .divider-line { width: 40px; height: 1px; background: linear-gradient(to right, var(--gold), transparent); }
 #s1 .divider-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; }
 #s1 .subtitle {
-  font-family: 'Noto Serif KR', serif; font-weight: 300;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
   font-size: clamp(1.35rem, 3.3vw, 1.95rem); color: var(--marble-dim);
   letter-spacing: 0.05em; line-height: 1.7; max-width: 32rem;
   opacity: 0; animation: fade-up 0.9s ease forwards 1.4s;
@@ -45,7 +45,7 @@
 }
 #s1 .tag {
   padding: 0.3rem 0.75rem; border: 1px solid rgba(201,168,76,0.2); border-radius: 2px;
-  font-family: 'Cinzel', serif; font-size: 1.125rem; letter-spacing: 0.2em;
+  font-family: 'Cinzel', sans-serif; font-size: 1.125rem; letter-spacing: 0.2em;
   color: rgba(201,168,76,0.5); text-transform: uppercase; background: rgba(201,168,76,0.04);
 }
 #s1 .s1-team {
@@ -56,11 +56,11 @@
   opacity: 0; animation: fade-in 1s ease forwards 2s;
 }
 #s1 .team-label {
-  font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.25em;
+  font-family: 'Cinzel', sans-serif; font-size: 0.55rem; letter-spacing: 0.25em;
   color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3rem;
 }
 #s1 .team-names { display: flex; gap: 1.2rem; }
 #s1 .team-name {
-  font-family: 'Noto Serif KR', serif; font-weight: 400;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 400;
   font-size: clamp(0.75rem, 1.4vw, 0.95rem); color: var(--text-mid); letter-spacing: 0.08em;
 }

@@ -16,12 +16,12 @@
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s4 .page-num {
-  font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 600;
+  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
   color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
   padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
 }
 #s4 .header-title {
-  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
   -webkit-background-clip: text; background-clip: text;
@@ -30,7 +30,7 @@
 /* 다음 페이지 힌트 */
 #s4 .next-hint {
   position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
-  font-family: 'Noto Serif KR', serif; font-size: clamp(0.8rem,1.4vw,1.1rem);
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(0.8rem,1.4vw,1.1rem);
   color: rgba(201,168,76,0.4); letter-spacing: 0.05em;
   opacity: 0; animation: fade-in 1s ease forwards 3s;
 }
@@ -69,7 +69,7 @@
 
 /* 이미지 카드 라벨 */
 #s4 .s4-img-label {
-  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(0.84rem, 1.32vw, 1.08rem);
   color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
   text-align: center;
@@ -85,7 +85,7 @@
   text-align: center;
 }
 #s4 .source-main {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'Noto Sans KR', sans-serif;
   font-size: clamp(3.6rem, 7.5vw, 6rem);
   color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
   white-space: nowrap;
@@ -131,7 +131,7 @@
 
 /* 카드 제목 */
 #s4 .card-title {
-  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(1.2rem, 2vw, 1.6rem);
   color: rgba(201,168,76,0.75); letter-spacing: 0.03em;
   margin-bottom: 1rem; text-align: center;

@@ -1,20 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-/**
- * 슬라이드 네비게이션 + 서브스텝 관리 훅
- *
- * 각 슬라이드 컴포넌트는 totalSteps prop으로 자기 서브스텝 수를 등록하고,
- * stepIndex를 받아 현재 몇 번째 스텝까지 보여줄지 결정한다.
- */
 export function useNavigator(totalSlides) {
   const [current, setCurrent] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
-  const stepCountsRef = useRef({}) // slideIdx → totalSteps
+  const stepCountsRef = useRef({})
+  const stateRef = useRef({ current: 0, stepIndex: 0 })
+
+  // 최신 state를 ref에 동기화
+  stateRef.current = { current, stepIndex }
 
   // 슬라이드별 스텝 수 등록
-  const registerSteps = useCallback((slideIdx, count) => {
+  const registerSteps = (slideIdx, count) => {
     stepCountsRef.current[slideIdx] = count
-  }, [])
+  }
 
   const goTo = useCallback((idx) => {
     setStepIndex(0)
@@ -22,23 +20,26 @@ export function useNavigator(totalSlides) {
   }, [])
 
   const next = useCallback(() => {
-    const totalSteps = stepCountsRef.current[current] || 0
-    if (stepIndex < totalSteps) {
-      setStepIndex(prev => prev + 1)
-    } else if (current < totalSlides - 1) {
-      goTo(current + 1)
+    const { current: cur, stepIndex: si } = stateRef.current
+    const totalSteps = stepCountsRef.current[cur] || 0
+    if (si < totalSteps) {
+      setStepIndex(si + 1)
+    } else if (cur < totalSlides - 1) {
+      setStepIndex(0)
+      setCurrent(cur + 1)
     }
-  }, [current, stepIndex, totalSlides, goTo])
+  }, [totalSlides])
 
   const prev = useCallback(() => {
-    if (stepIndex > 0) {
-      setStepIndex(prev => prev - 1)
-    } else if (current > 0) {
-      goTo(current - 1)
+    const { current: cur, stepIndex: si } = stateRef.current
+    if (si > 0) {
+      setStepIndex(si - 1)
+    } else if (cur > 0) {
+      setStepIndex(0)
+      setCurrent(cur - 1)
     }
-  }, [current, stepIndex, goTo])
+  }, [])
 
-  // 키보드 & 클릭 이벤트
   useEffect(() => {
     const handleKey = (e) => {
       if (e.code === 'Space' || e.key === 'ArrowRight' || e.key === 'ArrowDown') {

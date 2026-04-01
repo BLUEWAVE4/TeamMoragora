@@ -1,19 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createAvatar } from '@dicebear/core'
+import { avataaars } from '@dicebear/collection'
 import Slide from '../Slide'
 import Footer from '../Footer'
 import '../../styles/slide4b.css'
 
-const TOTAL_STEPS = 4 // step0: AI큰원형+공간, step1: 3개분리+모바일, step2: AI관점, step3: 뉴스레터, step4: 서비스 필요성
+const aiAvatars = [
+  { name: 'GPT', seed: 'JudgeGPT', skinColor: ['ffdbb4'], top: ['shortCurly'], hairColor: ['724133'], facialHairProbability: 0, clothing: ['shirtCrewNeck'], clothesColor: ['3c4f5c'], accessoriesProbability: 0, eyes: ['default'], eyebrows: ['defaultNatural'], mouth: ['twinkle'] },
+  { name: 'Gemini', seed: 'JudgeGemini', skinColor: ['d08b5b'], top: ['dreads01'], hairColor: ['2c1b18'], facialHair: ['beardLight'], facialHairProbability: 100, facialHairColor: ['2c1b18'], clothing: ['collarAndSweater'], clothesColor: ['25557c'], accessories: ['round'], accessoriesProbability: 100, accessoriesColor: ['000000'], eyes: ['squint'], eyebrows: ['raisedExcited'], mouth: ['twinkle'] },
+  { name: 'Claude', seed: 'JudgeClaude', skinColor: ['edb98a'], top: ['bigHair'], hairColor: ['c93305'], facialHairProbability: 0, clothing: ['hoodie'], clothesColor: ['e6e6e6'], eyes: ['happy'], eyebrows: ['upDown'], mouth: ['smile'] },
+]
+
+const TOTAL_STEPS = 3 // step0: AI큰원형+공간, step1: 3개분리+모바일, step2: AI관점, step3: 뉴스레터
 const ease = [0.16, 1, 0.3, 1]
 
 const stats = [
-  { title: 'AI 긍정 인식 상승 추세', source: 'Stanford AI Index 2025 / Ipsos', text: '26개국 중 18개국에서 AI가 단점보다 장점이 많다는 응답 증가. 글로벌 AI 긍정 비율 52% → 55% (2022→2024)' },
-  { title: 'AI 사용·기대감 상승', source: 'Google / Ipsos, 2025', text: '전 국가에서 AI 사용률 전년 대비 증가. AI 잠재력 기대감(57%)이 우려(43%)를 처음으로 앞질렀다.' },
-  { title: 'AI vs 인간 신뢰도 비교', source: 'Ipsos AI Monitor 2024', text: 'AI가 편견 없이 공정할 것이라는 신뢰도 54%, 인간 신뢰도 45%보다 높음. 32개국 중 29개국에서 인간이 더 차별적이라고 응답.' },
-  { title: '신뢰도의 명암', source: 'Stanford AI Index 2025', text: 'AI 기업의 개인 데이터 보호 신뢰도 50% → 47% 하락. AI 편견·차별 없다는 믿음도 감소 추세.' },
-  { title: '국가별 격차: 아시아 vs 서구권', source: 'Ipsos 2025', text: '인도네시아(78%), 태국(74%)은 AI 긍정적 반면, 미국(37%), 프랑스(31%)는 부정적. 아시아 정부 AI 규제 신뢰도 70~81%.' },
-  { title: '한국 특이점: 신뢰 투자 양극화', source: 'Aitimes', text: '한국 조직 26%가 AI 신뢰도 최고 등급, 30%는 최하 등급. 높은 데이터 준비도에도 신기술 신뢰성 투자에는 소극적.' },
+  { title: 'AI 긍정 인식 상승 추세', source: 'Stanford AI Index 2025 / Ipsos', text: '26개국 중 18개국에서 AI가 단점보다 장점이 많다는 응답 증가. 글로벌 AI 긍정 비율 52% → 55% (2022→2024). 전 세계 인구의 약 2/3가 AI가 향후 3~5년 내 일상에 큰 영향을 미칠 것이라 답변 (+6%p).' },
+  { title: 'AI 사용·기대감 상승', source: 'Google / Ipsos, 2025', text: '전 국가에서 AI 사용률 전년 대비 증가. 신흥시장 +11%p, 아시아태평양 +10%p, 유럽·미국 각 +8~9%p. AI 잠재력 기대감(57%)이 우려(43%)를 처음으로 앞질렀다.' },
+  { title: 'AI vs 인간 신뢰도 비교', source: 'Ipsos AI Monitor 2024', text: 'AI가 편견 없이 공정하게 행동할 것이라는 신뢰도 54%, 사람 신뢰 45%보다 높음. 32개국 중 29개국에서 AI보다 인간이 차별할 가능성이 더 높다고 응답.' },
 ]
 
 const ticker = [
@@ -21,8 +26,7 @@ const ticker = [
   { label: 'AI가 삶 변화시킬 것', value: '67%', sub: '+6%p, 2022→2024', src: 'Ipsos AI Monitor' },
   { label: 'AI 사용 흥미 > 불안', value: '57% vs 43%', sub: '', src: 'Google/Ipsos 2025' },
   { label: 'AI 공정성 신뢰', value: '54%', sub: '인간 45%보다 높음', src: 'Ipsos 2024' },
-  { label: '개인정보 신뢰도', value: '47%', sub: '↓ 전년 50%', src: 'Stanford AI Index 2025' },
-  { label: '한국 AI 신뢰 고급', value: '26%', sub: 'vs 최하 30%', src: '국내 AI 신뢰지수' },
+  { label: 'AI 차별 가능성', value: '29/32개국', sub: '인간이 더 차별적', src: 'Ipsos 2024' },
 ]
 
 export default function S4bNeed({ active, stepIndex }) {
@@ -34,9 +38,25 @@ export default function S4bNeed({ active, stepIndex }) {
     return () => clearInterval(id)
   }, [active, stepIndex])
 
-  useEffect(() => { if (!active) setStatIdx(0) }, [active])
+  const [showAvatar, setShowAvatar] = useState(false)
 
-  const showCards = stepIndex <= 3
+  useEffect(() => {
+    if (stepIndex === 2) {
+      const timer = setTimeout(() => setShowAvatar(true), 1500)
+      return () => clearTimeout(timer)
+    } else if (stepIndex < 2) {
+      setShowAvatar(false)
+    }
+  }, [stepIndex])
+
+  useEffect(() => { if (!active) { setStatIdx(0); setShowAvatar(false) } }, [active])
+
+  const avatarUris = useMemo(() => aiAvatars.map(a => {
+    const { name, ...opts } = a
+    return createAvatar(avataaars, opts).toDataUri()
+  }), [])
+
+  const showCards = active && stepIndex <= 3
 
   return (
     <Slide id="s4b" active={active}>
@@ -107,16 +127,16 @@ export default function S4bNeed({ active, stepIndex }) {
                         </svg>
                       </motion.div>
 
-                      {/* 3개 작은 원형: 이동 완료 후 등장 */}
+                      {/* 3개 작은 원형: 이동 완료 후 등장 (step2에서 아바타) */}
                       <div className="s4b-ai-triple">
                         {[
-                          { name: 'GPT', c: 'rgba(255,255,255,0.15)', y: -1 },
-                          { name: 'Gemini', c: 'rgba(66,133,244,0.3)', y: 0 },
-                          { name: 'Claude', c: 'rgba(217,119,67,0.4)', y: 1 },
+                          { name: 'GPT', c: 'rgba(255,255,255,0.35)', y: -1 },
+                          { name: 'Gemini', c: 'rgba(66,133,244,0.5)', y: 0 },
+                          { name: 'Claude', c: 'rgba(217,119,67,0.6)', y: 1 },
                         ].map((ai, idx) => (
                           <motion.div
                             key={ai.name}
-                            className="s4b-ai-circle"
+                            className={`s4b-ai-circle${showAvatar ? ' has-avatar' : ''}`}
                             style={{ '--c': ai.c }}
                             initial={{ opacity: 0, y: 0, scale: 0.5 }}
                             animate={{
@@ -125,31 +145,35 @@ export default function S4bNeed({ active, stepIndex }) {
                               scale: stepIndex >= 1 ? 1 : 0.5,
                             }}
                             transition={{ duration: 1, delay: 1.8 + idx * 0.25, ease }}
-                          >{ai.name}</motion.div>
+                          >
+                            {showAvatar ? (
+                              <img className="s4b-avatar-img" src={avatarUris[idx]} alt={ai.name} />
+                            ) : ai.name}
+                          </motion.div>
                         ))}
                       </div>
 
                       {/* step2: 관점 설명 (원형 우측에 나란히) */}
                       <AnimatePresence>
-                        {stepIndex === 2 && (
+                        {stepIndex >= 2 && stepIndex <= 3 && (
                           <motion.div
                             className="s4b-persp-inline"
                             initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
+                            animate={{ opacity: 1, x: 80 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.8, delay: 0.5, ease }}
                           >
                             <div className="s4b-persp-item">
-                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>체계적 분석</span>
-                              <div className="s4b-persp-desc">데이터·논리 구조 중시, 핵심 논점을 빠짐없이 정리</div>
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(0,0,0,0.3)' }}>통찰의 조율자</span>
+                              <div className="s4b-persp-desc">데이터·논리 구조 중시,<br />핵심 논점을 빠짐없이 정리</div>
                             </div>
                             <div className="s4b-persp-item">
-                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(66,133,244,0.3)' }}>창의적 통찰</span>
-                              <div className="s4b-persp-desc">숨겨진 전제·맥락 조명, 비유와 예시로 풀어냄</div>
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(66,133,244,0.3)' }}>논리의 심판자</span>
+                              <div className="s4b-persp-desc">숨겨진 전제·맥락 조명,<br />비유와 예시로 풀어냄</div>
                             </div>
                             <div className="s4b-persp-item">
-                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(217,119,67,0.4)' }}>공정한 중재</span>
-                              <div className="s4b-persp-desc">양측 맥락 이해, 패배 측에도 건설적 피드백 제공</div>
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(217,119,67,0.4)' }}>균형의 현자</span>
+                              <div className="s4b-persp-desc">양측 맥락 이해,<br />패배 측에도 건설적 피드백 제공</div>
                             </div>
                           </motion.div>
                         )}
@@ -158,16 +182,16 @@ export default function S4bNeed({ active, stepIndex }) {
 
                     {/* 하단 텍스트: step1~2 */}
                     <AnimatePresence>
-                      {(stepIndex === 1 || stepIndex === 2) && (
+                      {stepIndex >= 1 && stepIndex <= 3 && (
                         <motion.div
                           className="s4b-ai-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          animate={{ opacity: 1, y: 20 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 2.8, ease }}
                         >
                           서로 다른 관점의 <strong>3개 AI</strong>가<br />
-                          독립적으로 분석 · 판결하여<br />
+                          독립적으로 분석 · 판결하여
                           편향 없는 <strong>공정한 중재</strong>를 제공
                         </motion.div>
                       )}
@@ -179,7 +203,7 @@ export default function S4bNeed({ active, stepIndex }) {
 
               {/* ── 중앙 + 기호 ── */}
               <AnimatePresence>
-                {stepIndex <= 1 && (
+                {stepIndex <= 3 && (
                   <motion.div
                     className="s4b-plus"
                     initial={{ opacity: 0.5 }}
@@ -289,7 +313,7 @@ export default function S4bNeed({ active, stepIndex }) {
                         <motion.div
                           className="s4b-mobile-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: -80 }}
+                          animate={{ opacity: 1, y: -45 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 3.5, ease }}
                         >
@@ -315,7 +339,7 @@ export default function S4bNeed({ active, stepIndex }) {
                   >
                     <div className="s4b-nl-header">
                       글로벌 AI 신뢰도·인식 통계 2024~2025
-                      <span className="s4b-nl-sub">AI 공정성 신뢰 54% (Ipsos, n=23,685) · 에이전틱 AI 투자 한국 4% (IBM, n=2,375)</span>
+                      <span className="s4b-nl-sub">AI 공정성 신뢰 54% (Ipsos, n=23,685)</span>
                     </div>
                     <div className="s4b-nl-slot">
                       <AnimatePresence mode="wait">
@@ -353,43 +377,6 @@ export default function S4bNeed({ active, stepIndex }) {
             </>
           )}
 
-          {/* step4: 서비스 필요성 내용 */}
-          <AnimatePresence>
-            {stepIndex === 4 && (
-              <motion.div
-                className="s4b-content"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.7, delay: 0.2, ease }}
-              >
-                <div className="s4b-headline">
-                  논쟁을 감정이 아닌 <em>논리</em>로,<br />
-                  판단을 한 사람이 아닌 <em>다수</em>로
-                </div>
-                <div className="s4b-points">
-                  <div className="s4b-point">
-                    <span className="s4b-point-num">1</span>
-                    <div className="s4b-point-text">
-                      <strong>이성적 중재자</strong>가 감정적 대립을 논거 중심으로 정리
-                    </div>
-                  </div>
-                  <div className="s4b-point">
-                    <span className="s4b-point-num">2</span>
-                    <div className="s4b-point-text">
-                      <strong>누구나 참여할 수 있는 공간</strong>에서 일상의 논쟁을 해결
-                    </div>
-                  </div>
-                  <div className="s4b-point">
-                    <span className="s4b-point-num">3</span>
-                    <div className="s4b-point-text">
-                      <strong>복수의 심판</strong>으로 편향 없는 공정한 판결
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <Footer />

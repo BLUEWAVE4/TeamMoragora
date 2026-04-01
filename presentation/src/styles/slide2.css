@@ -12,12 +12,12 @@
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s2 .page-num {
-  font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 600;
+  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
   color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
   padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
 }
 #s2 .header-title {
-  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
   -webkit-background-clip: text; background-clip: text;
@@ -56,11 +56,11 @@
 #s2 .toc-item[data-i="11"] { animation-delay: 1.56s; }
 @keyframes s2-item-in { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
 #s2 .item-num {
-  font-family: 'Cinzel', serif; font-size: clamp(1rem, 1.8vw, 1.2rem); font-weight: 600;
+  font-family: 'Cinzel', sans-serif; font-size: clamp(1rem, 1.8vw, 1.2rem); font-weight: 600;
   color: rgba(201,168,76,0.5); min-width: 3.5rem; flex-shrink: 0;
 }
 #s2 .item-title {
-  font-family: 'Noto Serif KR', serif; font-weight: 400;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 400;
   font-size: clamp(1.3rem, 2.4vw, 1.6rem); color: var(--marble-dim); flex-shrink: 0;
 }
 #s2 .item-gap { flex: 1; margin: 0 0.8rem; }
@@ -69,6 +69,6 @@
   border-top: 2px solid rgba(201,168,76,0.3); flex-shrink: 0; margin-right: 0.8rem;
 }
 #s2 .item-page {
-  font-family: 'Cinzel', serif; font-size: 1rem;
+  font-family: 'Cinzel', sans-serif; font-size: 1rem;
   color: rgba(201,168,76,0.45); flex-shrink: 0; min-width: 2rem; text-align: right;
 }

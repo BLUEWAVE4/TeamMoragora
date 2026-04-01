@@ -12,19 +12,19 @@
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s7 .page-num {
-  font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 600;
+  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
   color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
   padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
 }
 #s7 .header-title {
-  font-family: 'Noto Serif KR', serif; font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
   -webkit-background-clip: text; background-clip: text; letter-spacing: 0.05em;
 }
 #s7 .placeholder {
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Serif KR', serif; font-size: 1.5rem;
+  font-family: 'Noto Sans KR', sans-serif; font-size: 1.5rem;
   color: rgba(160,152,136,0.2);
   opacity: 0; animation: fade-in 0.8s ease forwards 0.8s;
 }
