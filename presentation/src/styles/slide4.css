@@ -2,7 +2,7 @@
 #s4 .s-wrap {
   width: 100%; height: 100vh;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
   align-content: center;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
@@ -27,24 +27,6 @@
   -webkit-background-clip: text; background-clip: text;
 }
 
-/* 브릿지 텍스트: absolute 중앙 — framer-motion 제어 */
-#s4 .s4-cause-row {
-  position: absolute;
-  left: 50%;
-  z-index: 5;
-}
-#s4 .source-header {
-  text-align: center;
-  opacity: 0; animation: fade-in 0.8s ease forwards 0.6s;
-  transform-origin: center center;
-}
-#s4 .source-main {
-  font-family: 'Noto Serif KR', serif;
-  font-size: clamp(2.4rem, 5vw, 4rem);
-  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
 /* 다음 페이지 힌트 */
 #s4 .next-hint {
   position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
@@ -53,25 +35,80 @@
   opacity: 0; animation: fade-in 1s ease forwards 3s;
 }
 
-/* 카드 2열 그리드 */
-#s4 .cards.s4-two-col {
+/* 중앙 영역 */
+#s4 .s4-center {
+  position: relative;
+  display: flex;
+  align-items: center; justify-content: center;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 좌우 배경 이미지 */
+#s4 .s4-bg-left,
+#s4 .s4-bg-right {
   position: absolute;
-  bottom: clamp(4rem, 8vh, 6rem);
-  left: clamp(3rem, 8vw, 6rem);
-  right: clamp(3rem, 8vw, 6rem);
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: clamp(2rem, 4vw, 4rem);
-  align-items: start;
-  max-width: 900px;
-  margin: 0 auto;
+  top: 50%;
+  width: 30%;
+  height: 90%;
+  display: flex; flex-direction: column;
+  pointer-events: none;
+  z-index: 0;
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(201,168,76,0.06);
+  overflow: hidden;
+}
+#s4 .s4-bg-left { left: 2%; }
+#s4 .s4-bg-right { right: 2%; }
+#s4 .s4-bg-left img,
+#s4 .s4-bg-right img {
+  width: 100%; flex: 1;
+  object-fit: cover;
+}
+
+/* 이미지 카드 라벨 */
+#s4 .s4-img-label {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 600;
+  font-size: clamp(0.7rem, 1.1vw, 0.9rem);
+  color: rgba(201,168,76,0.7); letter-spacing: 0.04em;
+  text-align: center;
+  padding: 0.5rem 0;
+  background: rgba(50,45,38,0.9);
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+  flex-shrink: 0;
+}
+
+/* 브릿지 텍스트 */
+#s4 .s4-bridge {
+  position: absolute;
+  text-align: center;
+}
+#s4 .source-main {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* 중앙 카드 */
+#s4 .s4-center-card {
+  position: absolute;
+  display: flex; flex-direction: column;
+  align-items: stretch;
+  gap: 0.8rem;
+  width: clamp(320px, 35vw, 480px);
+}
+#s4 .s4-table-card {
+  padding: clamp(0.8rem, 1.5vh, 1.2rem) clamp(1rem, 2vw, 1.5rem);
 }
 #s4 .card {
   display: flex; flex-direction: column; align-items: center;
   position: relative;
-  padding: clamp(1.5rem, 3vh, 2.5rem) clamp(1rem, 2vw, 2rem);
-  border: 1px solid rgba(201,168,76,0.08);
+  padding: clamp(1.2rem, 2vh, 2rem) clamp(1.5rem, 2.5vw, 2rem);
+  border: 1px solid rgba(201,168,76,0.12);
   border-radius: 12px;
-  background: rgba(201,168,76,0.02);
+  background: rgba(201,168,76,0.03);
 }
 
 /* 카드 태그 */
@@ -95,7 +132,7 @@
 #s4 .card-title {
   font-family: 'Noto Serif KR', serif; font-weight: 700;
   font-size: clamp(1.2rem, 2vw, 1.6rem);
-  color: var(--marble); letter-spacing: 0.03em;
+  color: rgba(201,168,76,0.75); letter-spacing: 0.03em;
   margin-bottom: 1rem; text-align: center;
 }
 
@@ -106,4 +143,29 @@
   color: rgba(230,225,215,0.45); line-height: 1.8;
   text-align: center; white-space: pre-line;
   letter-spacing: 0.02em;
+}
+
+/* 비교 테이블 */
+#s4 .s4-compare-table {
+  margin-top: 1.2rem;
+  border-collapse: collapse;
+  width: 100%;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.85rem);
+}
+#s4 .s4-compare-table th {
+  color: rgba(201,168,76,0.7); font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  letter-spacing: 0.04em;
+}
+#s4 .s4-compare-table td {
+  color: rgba(230,225,215,0.45); font-weight: 300;
+  padding: 0.35rem 0.8rem;
+  border-bottom: 1px solid rgba(201,168,76,0.06);
+  text-align: center;
+}
+#s4 .s4-compare-table .row-label {
+  color: rgba(201,168,76,0.5); font-weight: 500;
+  text-align: left;
 }

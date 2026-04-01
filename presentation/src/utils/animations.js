@@ -18,6 +18,7 @@ export function initCountUps(containerEl, delay = 800) {
   containerEl.querySelectorAll('[data-count]').forEach((el, idx) => {
     const target = parseInt(el.dataset.count)
     const suffix = el.dataset.suffix || ''
-    setTimeout(() => countUp(el, target, suffix, 1800), delay + idx * 400)
+    const elDelay = el.dataset.delay ? parseInt(el.dataset.delay) : delay + idx * 400
+    setTimeout(() => countUp(el, target, suffix, 1800), elDelay)
   })
 }

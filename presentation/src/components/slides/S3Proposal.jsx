@@ -11,7 +11,7 @@ const ease = [0.16, 1, 0.3, 1]
 const conclusions = [
   { main: '한국 사회는 갈등으로 가득하다', sub: '(5대 사회갈등 심각 인식 — 74%)' },
   { main: '그 갈등은 감정을 건드린다', sub: '(사회갈등 접할 때 부정적 감정 — 81%)' },
-  { main: '그래도 사람들은 대화하고 싶다', sub: '(다른 의견과 대화할 의향 — 70%)' },
+  { main: '그래도 사람들은 대화하고 싶어한다', sub: '(다른 의견과 대화할 의향 — 70%)' },
 ]
 
 
@@ -58,11 +58,12 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 1 ? 0.3 : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 1 ? [0, 0, 0.35, 0.35, 0] : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
-              duration: 0.6,
+              duration: stepIndex === 1 ? 5 : 0.6,
+              times: stepIndex === 1 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
               delay: active && stepIndex === 0 ? 0.8 : 0,
               ease,
             }}
@@ -97,7 +98,7 @@ export default function S3Proposal({ active, stepIndex }) {
               animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
               transition={{ duration: 0.4, ease }}
             >
-              <div className="stat-num gold" data-count="74" data-suffix="%" />
+              <div className="stat-num gold" data-count="74" data-suffix="%" data-delay="1000" />
               <div className="stat-label">5대 사회갈등 심각 인식</div>
             </motion.div>
           </motion.div>
@@ -106,11 +107,12 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 2 ? 0.3 : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 2 ? [0, 0, 0.35, 0.35, 0] : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
-              duration: 0.6,
+              duration: stepIndex === 2 ? 5 : 0.6,
+              times: stepIndex === 2 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
               delay: active && stepIndex === 0 ? 2.0 : 0,
               ease,
             }}
@@ -173,7 +175,7 @@ export default function S3Proposal({ active, stepIndex }) {
               animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
               transition={{ duration: 0.4, ease }}
             >
-              <div className="stat-num amber" data-count="81" data-suffix="%" />
+              <div className="stat-num amber" data-count="81" data-suffix="%" data-delay="2200" />
               <div className="stat-label">"부정적 감정을 느낀다"</div>
               <div className="stat-label"><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>사회갈등을 접할 때</span></div>
             </motion.div>
@@ -183,11 +185,12 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 3 ? 0.3 : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 3 ? [0, 0, 0.35, 0.35, 0] : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
-              duration: 0.6,
+              duration: stepIndex === 3 ? 5 : 0.6,
+              times: stepIndex === 3 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
               delay: active && stepIndex === 0 ? 3.2 : 0,
               ease,
             }}
@@ -215,7 +218,7 @@ export default function S3Proposal({ active, stepIndex }) {
               animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
               transition={{ duration: 0.4, ease }}
             >
-              <div className="stat-num red" data-count="70" data-suffix="%" />
+              <div className="stat-num red" data-count="70" data-suffix="%" data-delay="3400" />
               <div className="stat-label">다른 의견과 대화할 의향<br /><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>소통의 여지 충분</span></div>
             </motion.div>
           </motion.div>
