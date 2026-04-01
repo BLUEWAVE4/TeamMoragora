@@ -50,8 +50,10 @@ body {
   min-width: 280px;
 }
 
-/* ===== 가로 모드 안내 ===== */
-@media (orientation: landscape) and (max-height: 500px) {
+/* ===== 가로 모드 안내 =====
+   키보드/카카오 인앱 주소창으로 높이가 줄어들 때 오작동 방지:
+   aspect-ratio 기반 감지 (실제 가로 회전 시에만 폭>높이 비율 충족) */
+@media (orientation: landscape) and (max-height: 500px) and (min-aspect-ratio: 4/3) {
   body::after {
     content: '세로 모드로 회전해주세요';
     position: fixed;
@@ -131,6 +133,24 @@ input, textarea, select {
 /* opacity 변형 텍스트 — [#1B2A4A]/XX */
 .dark [class*="text-\[#1B2A4A\]\/"] { color: rgba(224,221,213,0.85); }
 .dark .text-primary { color: #e0ddd5; }
+/* primary opacity 변형 — color-mix 미지원 브라우저 fallback */
+.dark .text-primary\/20 { color: rgba(224,221,213,0.2); }
+.dark .text-primary\/25 { color: rgba(224,221,213,0.25); }
+.dark .text-primary\/30 { color: rgba(224,221,213,0.3); }
+.dark .text-primary\/35 { color: rgba(224,221,213,0.35); }
+.dark .text-primary\/40 { color: rgba(224,221,213,0.4); }
+.dark .text-primary\/50 { color: rgba(224,221,213,0.5); }
+.dark .text-primary\/60 { color: rgba(224,221,213,0.6); }
+.dark .text-primary\/70 { color: rgba(224,221,213,0.7); }
+.dark .text-primary\/80 { color: rgba(224,221,213,0.8); }
+.dark .text-primary\/90 { color: rgba(224,221,213,0.9); }
+/* primary bg opacity 변형 */
+.dark .bg-primary\/5 { background-color: rgba(224,221,213,0.05); }
+.dark .bg-primary\/10 { background-color: rgba(224,221,213,0.08); }
+.dark .bg-primary\/\[0\.03\] { background-color: rgba(224,221,213,0.03); }
+/* primary border opacity 변형 */
+.dark .border-primary\/10 { border-color: rgba(224,221,213,0.1); }
+.dark .border-primary\/15 { border-color: rgba(224,221,213,0.15); }
 
 /* 헤더 검색창 */
 .dark .bg-gray-100\/80 { background-color: rgba(224,221,213,0.06); }
@@ -264,7 +284,10 @@ input, textarea, select {
 .dark .bg-gold-light { background-color: #2a2510; }
 .dark .text-gold { color: #D4AF37; }
 .dark .border-gold { border-color: #D4AF37; }
-.dark [class*="border-gold\/"] { border-color: rgba(212,175,55,0.3); }
+.dark [class*="border-gold\/"] { border-color: rgba(212,175,55,0.25); }
+/* 판결 카드 등 극히 낮은 opacity 테두리 보정 */
+.dark .border-gold\/10 { border-color: rgba(212,175,55,0.18); }
+.dark .border-gold\/15 { border-color: rgba(212,175,55,0.22); }
 .dark [class*="bg-gold\/"] { background-color: rgba(212,175,55,0.1); }
 .dark [class*="shadow-gold\/"] { --tw-shadow-color: rgba(212,175,55,0.1); }
 
@@ -277,6 +300,18 @@ input, textarea, select {
 
 /* 바텀시트/모달 배경 */
 .dark .bg-gradient-to-b.from-\[\#F5F0E8\] { background: linear-gradient(to bottom, #14202e, #1a2332); }
+
+/* ===== 그라디언트 폴백 (Samsung Internet / 구형 WebView 대응) ===== */
+/* Tailwind v4의 linear-gradient(to bottom in oklab, ...) + @property 변수 체인이
+   구형 브라우저에서 작동 안 함 → solid background-color fallback 제공 */
+.bg-gradient-to-b.from-surface { background-color: #F5F0E8; }
+.bg-gradient-to-b.from-surface.to-surface-alt { background-color: #F8F4ED; }
+.dark .bg-gradient-to-b.from-surface { background-color: #14202e; }
+.dark .bg-gradient-to-b.from-surface.to-surface-alt { background-color: #172738; }
+
+/* 스코어보드 그라디언트 폴백 */
+.bg-gradient-to-b.from-\[\#1B2A4A\] { background-color: #1B2A4A; }
+.bg-gradient-to-b.from-\[\#1B2A4A\].to-\[\#0f1a2e\] { background-color: #152237; }
 
 /* ===== 전역 스크롤바 숨김 (PC에서도 스크롤바 UI 안 보이게) ===== */
 *::-webkit-scrollbar {

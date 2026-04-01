@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { Features } from 'lightningcss';
 
 export default defineConfig({
   plugins: [
@@ -81,7 +82,27 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom'],
   },
+  css: {
+    transformer: 'lightningcss',
+    lightningcss: {
+      // Samsung Internet 13+, Chrome 70+ (카카오톡 인앱 WebView 호환)
+      targets: {
+        chrome: (70 << 16),
+        samsung: (13 << 16),
+        safari: (13 << 16),
+        firefox: (80 << 16),
+      },
+      include:
+        Features.ColorFunction |
+        Features.Colors |
+        Features.P3Colors |
+        Features.LabColors |
+        Features.OklabColors |
+        Features.Nesting,
+    },
+  },
   build: {
+    cssMinify: 'lightningcss',
     rollupOptions: {
       output: {
         manualChunks: {

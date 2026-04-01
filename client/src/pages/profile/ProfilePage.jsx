@@ -228,7 +228,7 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
             transition={{ duration: 0.25 }}
             onClick={onClose}
             className="fixed inset-0 backdrop-blur-md"
-            style={{ backgroundColor: 'rgba(0,0,0,0.45)', zIndex }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.55)', zIndex }}
           />
           <div
             className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none"
@@ -257,10 +257,10 @@ function BottomSheet({ isOpen, onClose, children, maxHeight = '80vh', bgColor = 
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
-                  className="absolute right-4 top-8 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.12)' }}
                 >
-                  <X size={16} strokeWidth={2.5} style={{ color: 'rgba(0,0,0,0.45)' }} />
+                  <X size={16} strokeWidth={2.5} style={{ color: 'rgba(0,0,0,0.55)' }} />
                 </button>
               </div>
               {children}

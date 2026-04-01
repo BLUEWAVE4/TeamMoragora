@@ -18,6 +18,7 @@ import { getComments, createComment, deleteComment, castVote, getMyVote, cancelV
 import { trackEvent } from "../../services/analytics";
 import { socket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
+import useThemeStore from "../../store/useThemeStore";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
@@ -69,6 +70,7 @@ const CRITERION_COLORS = {
 
 function VerdictContentInner({ verdictData, topic }, ref) {
   const { user } = useAuth();
+  const isDark = useThemeStore(s => s.isDark);
   const [activeJudge, setActiveJudge] = useState(0);
   const [chartMode, setChartMode] = useState('auto');
   const [animated, setAnimated] = useState(false);
@@ -490,11 +492,16 @@ function VerdictContentInner({ verdictData, topic }, ref) {
             const rScale = chart.scales.r;
             const cx = rScale.xCenter;
             const cy = rScale.yCenter;
-            const bands = [
-              { from: 0, to: 5, color: 'rgba(27, 42, 74, 0.06)' },
-              { from: 5, to: 10, color: 'rgba(212, 175, 55, 0.04)' },
-              { from: 10, to: 15, color: 'rgba(27, 42, 74, 0.06)' },
-              { from: 15, to: 20, color: 'rgba(212, 175, 55, 0.04)' },
+            const bands = isDark ? [
+              { from: 0, to: 5, color: 'rgba(224,221,213,0.04)' },
+              { from: 5, to: 10, color: 'rgba(212,175,55,0.03)' },
+              { from: 10, to: 15, color: 'rgba(224,221,213,0.04)' },
+              { from: 15, to: 20, color: 'rgba(212,175,55,0.03)' },
+            ] : [
+              { from: 0, to: 5, color: 'rgba(27,42,74,0.06)' },
+              { from: 5, to: 10, color: 'rgba(212,175,55,0.04)' },
+              { from: 10, to: 15, color: 'rgba(27,42,74,0.06)' },
+              { from: 15, to: 20, color: 'rgba(212,175,55,0.04)' },
             ];
             bands.reverse().forEach(({ from, to, color }) => {
               const outerR = rScale.getDistanceFromCenterForValue(to);
@@ -552,21 +559,21 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                 stepSize: 5,
                 display: true,
                 backdropColor: 'transparent',
-                color: 'rgba(27, 42, 74, 0.25)',
+                color: isDark ? 'rgba(224,221,213,0.35)' : 'rgba(27,42,74,0.25)',
                 font: { size: 9 },
               },
-              grid: { color: 'rgba(27, 42, 74, 0.06)', circular: true },
-              angleLines: { color: 'rgba(27, 42, 74, 0.06)' },
+              grid: { color: isDark ? 'rgba(224,221,213,0.1)' : 'rgba(27,42,74,0.06)', circular: true },
+              angleLines: { color: isDark ? 'rgba(224,221,213,0.1)' : 'rgba(27,42,74,0.06)' },
               pointLabels: {
                 font: { size: 12, weight: '600', family: 'Pretendard Variable, sans-serif' },
-                color: '#1B2A4A',
+                color: isDark ? 'rgba(224,221,213,0.85)' : '#1B2A4A',
                 padding: 14,
               },
             },
           },
           plugins: {
             tooltip: {
-              backgroundColor: '#1B2A4A',
+              backgroundColor: isDark ? '#2a3f6a' : '#1B2A4A',
               titleFont: { size: 11, weight: 'bold' },
               bodyFont: { size: 12 },
               padding: 10,
@@ -726,12 +733,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
                           <div
                             key={i}
                             className={`text-[13px] leading-[1.8] p-3 rounded-xl transition-all ${isHighlighted ? 'border-l-[3px]' : 'border-l-[3px] border-l-transparent'}`}
-                            style={isHighlighted ? { borderLeftColor: colors.border, backgroundColor: colors.bg } : { backgroundColor: 'rgba(27,42,74,0.02)' }}
+                            style={isHighlighted ? { borderLeftColor: colors.border, backgroundColor: colors.bg } : { backgroundColor: isDark ? 'rgba(224,221,213,0.03)' : 'rgba(27,42,74,0.02)' }}
                           >
                             <span className="flex items-center gap-1.5 mb-1">
                               <span
                                 className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                style={isHighlighted ? { color: colors.border, backgroundColor: `${colors.border}15` } : { color: 'rgba(27,42,74,0.35)' }}
+                                style={isHighlighted ? { color: colors.border, backgroundColor: `${colors.border}15` } : { color: isDark ? 'rgba(224,221,213,0.45)' : 'rgba(27,42,74,0.35)' }}
                               >
                                 {DETAIL_LABELS[sec.criterion] || sec.criterion}
                               </span>

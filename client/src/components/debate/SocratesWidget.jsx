@@ -261,12 +261,12 @@ export default function SocratesWidget({ topic, round, side, proSide, conSide, a
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: [0, -15, 120], opacity: [1, 1, 0], scale: [1, 1.03, 0.85] }}
           transition={{ exit: { duration: 0.7, times: [0, 0.3, 1], ease: 'easeIn' }, type: 'spring', damping: 22, stiffness: 280 }}
-          className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
+          className="fixed bottom-16 left-0 right-0 z-40 px-4 max-w-md mx-auto"
         >
           <button
             onClick={handleClick}
             disabled={feedbackLoading}
-            className={`w-full bg-[#1B2A4A]/80 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 border border-[#D4AF37]/15 transition-transform ${
+            className={`w-full bg-[#1B2A4A]/80 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 border border-[#D4AF37]/15 transition-transform overflow-hidden ${
               !feedbackLoading && !isBusy ? 'active:scale-[0.95] cursor-pointer' : ''
             }`}
           >
