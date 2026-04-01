@@ -16,7 +16,7 @@ export async function generateCounterArgument({ topic, category, sideA_argument,
   const parsed = await callAI(
     'GPT-4.1-mini (Solo)',
     () => openai.chat.completions.create({
-      model: 'gpt-5-mini',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemMsg },
         { role: 'user', content: prompt },

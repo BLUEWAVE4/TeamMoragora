@@ -138,12 +138,12 @@ export function filterByDictionary(content) {
   return { blocked: false };
 }
 
-// ===== Stage 2: AI 콘텐츠 필터 (gpt-5.4-nano) =====
+// ===== Stage 2: AI 콘텐츠 필터 (gpt-4o-mini) =====
 export async function filterByAI(content) {
   try {
     const prompt = buildContentFilterPrompt(content);
     const response = await openai.chat.completions.create({
-      model: 'gpt-5.4-nano',
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: 0.1,
@@ -155,12 +155,12 @@ export async function filterByAI(content) {
   }
 }
 
-// ===== Stage 3: AI 게이트키퍼 (주제 적합성, gpt-5.4-nano) =====
+// ===== Stage 3: AI 게이트키퍼 (주제 적합성, gpt-4o-mini) =====
 export async function filterByGatekeeper(content, topic) {
   try {
     const prompt = buildGatekeeperPrompt(content, topic);
     const response = await openai.chat.completions.create({
-      model: 'gpt-5.4-nano',
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: 0.1,

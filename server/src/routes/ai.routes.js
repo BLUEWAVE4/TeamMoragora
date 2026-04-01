@@ -21,7 +21,7 @@ router.post('/generate-sides', async (req, res) => {
       'GPT-4o (generate-sides)',
       () => openai.chat.completions.create({
 
-        model: 'gpt-5.4-nano',
+        model: 'gpt-4o-mini',
 
         messages: [
           {
@@ -150,9 +150,9 @@ router.post('/socratic-feedback', requireAuth, async (req, res) => {
     const userSideText = side === 'A' ? safe(proSide) : safe(conSide);
 
     const result = await callAI(
-      'gpt-5.4-nano (소크라테스)',
+      'gpt-4o-mini (소크라테스)',
       () => openai.chat.completions.create({
-        model: 'gpt-5.4-nano',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'developer', content: `너는 논쟁 코치 소크라테스다. 사용자가 "${userSideText}" 입장으로 주장을 작성 중이다.
 사용자가 작성한 내용을 읽고, 그 내용에서 부족한 부분을 짚어 보강 조언 1개를 해라.
@@ -186,7 +186,7 @@ router.post('/socratic-feedback', requireAuth, async (req, res) => {
   }
 });
 
-// ===== 실시간 루브릭 점수 (gpt-5.4-nano) =====
+// ===== 실시간 루브릭 점수 (gpt-4o-mini) =====
 router.post('/rubric-score', requireAuth, async (req, res) => {
   const { topic, content, side, proSide, conSide } = req.body;
 
@@ -199,9 +199,9 @@ router.post('/rubric-score', requireAuth, async (req, res) => {
     const userSideText = side === 'A' ? safe(proSide) : safe(conSide);
 
     const result = await callAI(
-      'gpt-5.4-nano (루브릭)',
+      'gpt-4o-mini (루브릭)',
       () => openai.chat.completions.create({
-        model: 'gpt-5.4-nano',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: `논쟁 주장을 5개 항목으로 채점하라. 각 항목 0~20점. json으로 응답.
 항목: logic(논리성), evidence(근거), persuasion(설득력), rebuttal(반박대비), structure(구성력)

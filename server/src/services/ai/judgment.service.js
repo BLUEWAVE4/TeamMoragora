@@ -193,7 +193,7 @@ export async function runParallelJudgment(debateContext, verdictId) {
 // ===== 단일 모델 재판결 =====
 
 const MODEL_FN_MAP = {
-  gpt: { fn: judgeWithGPT, name: 'GPT-5.2', aiModel: 'gpt-5.2' },
+  gpt: { fn: judgeWithGPT, name: 'GPT-5.2', aiModel: 'gpt-4o' },
   gemini: { fn: judgeWithGemini, name: 'Gemini', aiModel: 'gemini-2.5-flash' },
   claude: { fn: judgeWithClaude, name: 'Claude', aiModel: 'claude-sonnet' },
 };
