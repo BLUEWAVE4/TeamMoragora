@@ -22,7 +22,6 @@ export async function generateCounterArgument({ topic, category, sideA_argument,
         { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },
-      temperature: AI_TEMPERATURE_SOLO,
     }),
     (res) => res.choices[0].message.content,
   );

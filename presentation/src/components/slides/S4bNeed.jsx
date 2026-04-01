@@ -4,7 +4,7 @@ import Slide from '../Slide'
 import Footer from '../Footer'
 import '../../styles/slide4b.css'
 
-const TOTAL_STEPS = 3 // step0: AI큰원형+공간, step1: 3개분리+텍스트, step2: 뉴스레터, step3: 서비스 필요성
+const TOTAL_STEPS = 4 // step0: AI큰원형+공간, step1: 3개분리+모바일, step2: AI관점, step3: 뉴스레터, step4: 서비스 필요성
 const ease = [0.16, 1, 0.3, 1]
 
 const stats = [
@@ -29,14 +29,14 @@ export default function S4bNeed({ active, stepIndex }) {
   const [statIdx, setStatIdx] = useState(0)
 
   useEffect(() => {
-    if (!active || stepIndex !== 2) return
+    if (!active || stepIndex !== 3) return
     const id = setInterval(() => setStatIdx(p => (p + 1) % stats.length), 8000)
     return () => clearInterval(id)
   }, [active, stepIndex])
 
   useEffect(() => { if (!active) setStatIdx(0) }, [active])
 
-  const showCards = stepIndex <= 2
+  const showCards = stepIndex <= 3
 
   return (
     <Slide id="s4b" active={active}>
@@ -57,7 +57,7 @@ export default function S4bNeed({ active, stepIndex }) {
                 className="s4b-bg-left"
                 style={{ top: '50%', y: '-50%', opacity: 0.7 }}
                 animate={{
-                  x: stepIndex === 2 ? 'calc(50vw - 160%)' : 'calc(50vw - 130%)',
+                  x: 'calc(50vw - 130%)',
                 }}
                 transition={{ duration: 0.7, ease }}
               >
@@ -67,10 +67,13 @@ export default function S4bNeed({ active, stepIndex }) {
                     {/* AI 원형: step0 큰 1개 → step1 이동 후 축소 → 3개 분리 */}
                     <motion.div
                       className="s4b-ai-circles-wrap"
-                      animate={{ y: stepIndex >= 1 ? -60 : 0 }}
+                      animate={{
+                        y: stepIndex >= 1 ? -60 : 0,
+                        x: stepIndex >= 2 ? -80 : 0,
+                      }}
                       transition={{ duration: 1.2, ease }}
                     >
-                      {/* 큰 원형: 이동 후 축소 */}
+                      {/* 큰 원형: 얼굴 + 눈 깜빡임 */}
                       <motion.div
                         className="s4b-ai-big-circle"
                         initial={{ opacity: 0, scale: 0.5 }}
@@ -82,7 +85,27 @@ export default function S4bNeed({ active, stepIndex }) {
                           opacity: { duration: 0.8, delay: stepIndex >= 1 ? 1.2 : 0, ease },
                           scale: { duration: 0.8, delay: stepIndex >= 1 ? 1.2 : 0, ease },
                         }}
-                      >AI</motion.div>
+                      >
+                        <svg viewBox="0 0 200 240" width="100%" height="100%">
+                          {/* AI 라벨 (원 위) */}
+                          <text x="100" y="45" textAnchor="middle" fontFamily="'Cinzel',serif" fontSize="48" fontWeight="700" fill="rgba(201,168,76,0.75)" letterSpacing="0.15em">AI</text>
+
+                          {/* 원형 테두리 */}
+                          <circle cx="100" cy="150" r="70" fill="rgba(201,168,76,0.05)" stroke="rgba(201,168,76,0.4)" strokeWidth="2" />
+
+                          {/* 눈 그룹 (좌우 배회 + 깜빡임) */}
+                          <g className="s4b-eyes-group">
+                            {/* 왼쪽 눈 */}
+                            <g style={{ transformOrigin: '80px 145px' }} className="s4b-eye">
+                              <rect x="68" y="130" width="24" height="30" rx="8" fill="rgba(201,168,76,0.5)" />
+                            </g>
+                            {/* 오른쪽 눈 */}
+                            <g style={{ transformOrigin: '120px 145px' }} className="s4b-eye">
+                              <rect x="108" y="130" width="24" height="30" rx="8" fill="rgba(201,168,76,0.5)" />
+                            </g>
+                          </g>
+                        </svg>
+                      </motion.div>
 
                       {/* 3개 작은 원형: 이동 완료 후 등장 */}
                       <div className="s4b-ai-triple">
@@ -105,11 +128,37 @@ export default function S4bNeed({ active, stepIndex }) {
                           >{ai.name}</motion.div>
                         ))}
                       </div>
+
+                      {/* step2: 관점 설명 (원형 우측에 나란히) */}
+                      <AnimatePresence>
+                        {stepIndex === 2 && (
+                          <motion.div
+                            className="s4b-persp-inline"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8, delay: 0.5, ease }}
+                          >
+                            <div className="s4b-persp-item">
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>체계적 분석</span>
+                              <div className="s4b-persp-desc">데이터·논리 구조 중시, 핵심 논점을 빠짐없이 정리</div>
+                            </div>
+                            <div className="s4b-persp-item">
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(66,133,244,0.3)' }}>창의적 통찰</span>
+                              <div className="s4b-persp-desc">숨겨진 전제·맥락 조명, 비유와 예시로 풀어냄</div>
+                            </div>
+                            <div className="s4b-persp-item">
+                              <span className="s4b-persp-badge" style={{ borderColor: 'rgba(217,119,67,0.4)' }}>공정한 중재</span>
+                              <div className="s4b-persp-desc">양측 맥락 이해, 패배 측에도 건설적 피드백 제공</div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
 
-                    {/* 하단 텍스트: step1+에서만 */}
+                    {/* 하단 텍스트: step1~2 */}
                     <AnimatePresence>
-                      {stepIndex >= 1 && (
+                      {(stepIndex === 1 || stepIndex === 2) && (
                         <motion.div
                           className="s4b-ai-desc"
                           initial={{ opacity: 0, y: 15 }}
@@ -123,6 +172,7 @@ export default function S4bNeed({ active, stepIndex }) {
                         </motion.div>
                       )}
                     </AnimatePresence>
+
                   </div>
                 </div>
               </motion.div>
@@ -145,7 +195,7 @@ export default function S4bNeed({ active, stepIndex }) {
                 className="s4b-bg-right"
                 style={{ top: '50%', y: '-50%', opacity: 0.7 }}
                 animate={{
-                  x: stepIndex === 2 ? 'calc(-50vw + 160%)' : 'calc(-50vw + 130%)',
+                  x: 'calc(-50vw + 130%)',
                 }}
                 transition={{ duration: 0.7, ease }}
               >
@@ -252,9 +302,10 @@ export default function S4bNeed({ active, stepIndex }) {
                 </div>
               </motion.div>
 
-              {/* ── step2: 뉴스레터 패널 ── */}
+
+              {/* ── step3: 뉴스레터 패널 ── */}
               <AnimatePresence>
-                {stepIndex === 2 && (
+                {stepIndex === 3 && (
                   <motion.div
                     className="s4b-newsletter"
                     initial={{ opacity: 0, x: -60 }}
@@ -302,9 +353,9 @@ export default function S4bNeed({ active, stepIndex }) {
             </>
           )}
 
-          {/* step3: 서비스 필요성 내용 */}
+          {/* step4: 서비스 필요성 내용 */}
           <AnimatePresence>
-            {stepIndex === 3 && (
+            {stepIndex === 4 && (
               <motion.div
                 className="s4b-content"
                 initial={{ opacity: 0, y: 30 }}

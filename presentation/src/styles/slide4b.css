@@ -228,21 +228,60 @@
 #s4b .s4b-ai-circles-wrap {
   position: relative;
   display: flex; align-items: center; justify-content: center;
+  flex-direction: row;
   min-height: clamp(180px, 25vh, 260px);
   margin-bottom: clamp(2rem, 8vh, 4rem);
 }
 
 /* 큰 AI 원형 (step0) */
+/* AI 둥실둥실 떠있는 애니메이션 */
+#s4b .s4b-ai-big-circle svg {
+  animation: s4b-float 4s ease-in-out infinite;
+}
+@keyframes s4b-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* 눈 깜빡임 (불규칙 2번) */
+#s4b .s4b-eye {
+  animation: s4b-blink 4s ease-in-out infinite;
+}
+@keyframes s4b-blink {
+  0%, 100% { transform: scaleY(1); }
+  /* 1번째 깜빡임 */
+  7% { transform: scaleY(0.08); }
+  10% { transform: scaleY(1); }
+  /* 2번째 깜빡임 (가끔) */
+  14% { transform: scaleY(0.08); }
+  17% { transform: scaleY(1); }
+  /* 한참 뒤 1번만 깜빡임 */
+  55% { transform: scaleY(1); }
+  58% { transform: scaleY(0.08); }
+  61% { transform: scaleY(1); }
+}
+
+/* 눈 전체 좌우 배회 (깜빡임 구간에서 멈춤) */
+#s4b .s4b-eyes-group {
+  animation: s4b-look 8s ease-in-out infinite;
+}
+@keyframes s4b-look {
+  0%   { transform: translateX(0); }
+  10%  { transform: translateX(0); }
+  20%  { transform: translateX(7px); }
+  35%  { transform: translateX(7px); }
+  45%  { transform: translateX(0); }
+  55%  { transform: translateX(0); }
+  65%  { transform: translateX(-7px); }
+  80%  { transform: translateX(-7px); }
+  90%  { transform: translateX(0); }
+  100% { transform: translateX(0); }
+}
+
 #s4b .s4b-ai-big-circle {
-  width: clamp(100px, 10vw, 140px); height: clamp(100px, 10vw, 140px);
-  border-radius: 50%;
-  border: 2px solid rgba(201,168,76,0.4);
-  background: rgba(201,168,76,0.05);
+  width: clamp(240px, 24vw, 320px); height: clamp(280px, 28vw, 360px);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif; font-size: clamp(1.4rem, 2.5vw, 2rem);
-  font-weight: 700; color: rgba(201,168,76,0.75);
-  letter-spacing: 0.1em;
-  box-shadow: 0 0 30px rgba(201,168,76,0.1);
+  position: absolute;
   position: absolute;
 }
 
@@ -387,6 +426,49 @@
 #s4b .s4b-ticker-item strong {
   font-weight: 600; color: rgba(201,168,76,0.7);
 }
+/* ── AI 관점 설명 (원형 우측, step2) ── */
+#s4b .s4b-persp-inline {
+  position: absolute;
+  left: 55%; top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column;
+  gap: clamp(0.3rem, 0.6vh, 0.5rem);
+  width: clamp(140px, 12vw, 180px);
+}
+#s4b .s4b-persp-list {
+  display: flex; flex-direction: column;
+  gap: clamp(0.6rem, 1vh, 0.8rem);
+}
+#s4b .s4b-persp-item {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  padding: clamp(0.6rem, 1vh, 0.8rem) clamp(0.8rem, 1.2vw, 1rem);
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 8px;
+  background: rgba(201,168,76,0.02);
+}
+#s4b .s4b-persp-badge {
+  display: inline-block;
+  width: fit-content;
+  font-family: 'Cinzel', serif; font-size: clamp(0.55rem, 0.8vw, 0.65rem);
+  font-weight: 600; color: rgba(201,168,76,0.7);
+  padding: 0.15rem 0.5rem;
+  border: 1.5px solid;
+  border-radius: 12px;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.15rem;
+}
+#s4b .s4b-persp-name {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 600;
+  font-size: clamp(0.65rem, 0.95vw, 0.8rem);
+  color: rgba(201,168,76,0.85);
+}
+#s4b .s4b-persp-desc {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
+  font-size: clamp(0.55rem, 0.8vw, 0.68rem);
+  color: rgba(230,225,215,0.6);
+  line-height: 1.6;
+}
+
 @keyframes s4b-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
