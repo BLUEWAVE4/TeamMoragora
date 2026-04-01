@@ -355,6 +355,7 @@ export async function getDailyVerdicts(req, res, next) {
         debate_id: d.id,
         citizen_score_a: v?.citizen_score_a ?? 0,
         citizen_score_b: v?.citizen_score_b ?? 0,
+        citizen_vote_count: v?.citizen_vote_count ?? 0,
         created_at: v?.created_at ?? d.created_at,
         ...(v || {}),
         debate: {
@@ -426,7 +427,7 @@ export async function getHallOfFame(req, res, next) {
     const scored = items.map(v => {
       const likes = likeMap[v.debate_id] || 0;
       const commentCount = commentMap[v.debate_id] || 0;
-      const voteCount = (v.citizen_score_a || 0) + (v.citizen_score_b || 0);
+      const voteCount = v.citizen_vote_count || 0;
       const viewCount = v.debate?.view_count || 0;
       const participationScore = likes * 3 + commentCount * 2 + voteCount + viewCount * 0.1;
       const aiScore = (v.ai_score_a || 0) + (v.ai_score_b || 0); // 0~200

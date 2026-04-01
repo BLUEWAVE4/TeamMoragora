@@ -27,14 +27,17 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item, initialVot
       setMyVote(res?.voted_side || null);
     }).catch(() => {});
   }, [debateId, user, initialVote]);
-  const [voteCounts, setVoteCounts] = useState({ A: item?.citizen_score_a ?? 0, B: item?.citizen_score_b ?? 0 });
+  // citizen_score_a/b는 퍼센트(0~100)이므로 citizen_vote_count로 실제 투표 수 역산
+  const citizenTotal = item?.citizen_vote_count ?? 0;
+  const scoreSum = (item?.citizen_score_a || 0) + (item?.citizen_score_b || 0) || 1;
+  const initA = citizenTotal > 0 ? Math.round(citizenTotal * (item?.citizen_score_a || 0) / scoreSum) : 0;
+  const initB = citizenTotal > 0 ? citizenTotal - initA : 0;
+  const [voteCounts, setVoteCounts] = useState({ A: initA, B: initB });
   const [isVoting, setIsVoting] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const [voteExpired, setVoteExpired] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { modalState, showModal, closeModal } = useModalState();
-
-  // 투표 수는 서버에서 citizen_score_a/b로 이미 내려옴 — 개별 fetch 제거
 
   // 타이머: vote_duration(일) 기반 카운트다운, 없으면 24시간 기본
   useEffect(() => {

@@ -87,9 +87,12 @@ function DebateCard({ feed, initialVote, initialLiked }) {
       setMyVote(res?.voted_side || null);
     }).catch(() => {});
   }, [feed?.debate_id, debateData?.id, user, initialVote]);
+  // citizen_score_a/b는 퍼센트(0~100)이므로 citizen_vote_count로 실제 투표 수 역산
+  const citizenTotal = feed?.citizen_vote_count ?? 0;
+  const scoreSum = (feed?.citizen_score_a || 0) + (feed?.citizen_score_b || 0) || 1;
   const [voteCounts, setVoteCounts] = useState({
-    agree: feed?.citizen_score_a ?? 0,
-    disagree: feed?.citizen_score_b ?? 0,
+    agree: citizenTotal > 0 ? Math.round(citizenTotal * (feed?.citizen_score_a || 0) / scoreSum) : 0,
+    disagree: citizenTotal > 0 ? citizenTotal - Math.round(citizenTotal * (feed?.citizen_score_a || 0) / scoreSum) : 0,
   });
   const [isVoting, setIsVoting] = useState(false);
 

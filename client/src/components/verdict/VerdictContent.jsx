@@ -287,8 +287,12 @@ function VerdictContentInner({ verdictData, topic }, ref) {
   const finalScoreA = verdictData.final_score_a || verdictData.score_a || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_a, 0) / judges.length) : 0);
   const finalScoreB = verdictData.final_score_b || verdictData.score_b || (judges.length > 0 ? Math.round(judges.reduce((s, j) => s + j.score_b, 0) / judges.length) : 0);
 
-  const voteA = liveVoteA !== null ? liveVoteA : (verdictData.citizen_score_a || 0);
-  const voteB = liveVoteB !== null ? liveVoteB : (verdictData.citizen_score_b || 0);
+  // citizen_score_a/b는 퍼센트(0~100)이므로 fallback 시 citizen_vote_count로 실제 투표 수 역산
+  const citizenTotal = verdictData.citizen_vote_count || 0;
+  const fallbackA = citizenTotal > 0 ? Math.round(citizenTotal * (verdictData.citizen_score_a || 0) / ((verdictData.citizen_score_a || 0) + (verdictData.citizen_score_b || 0) || 1)) : 0;
+  const fallbackB = citizenTotal > 0 ? citizenTotal - fallbackA : 0;
+  const voteA = liveVoteA !== null ? liveVoteA : fallbackA;
+  const voteB = liveVoteB !== null ? liveVoteB : fallbackB;
   const totalVotes = voteA + voteB;
   const percentA = totalVotes > 0 ? Math.round((voteA / totalVotes) * 100) : 50;
   const percentB = totalVotes > 0 ? 100 - percentA : 50;
