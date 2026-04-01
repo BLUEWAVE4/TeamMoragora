@@ -21,7 +21,7 @@ export function useNavigator(totalSlides) {
 
   const next = useCallback(() => {
     const { current: cur, stepIndex: si } = stateRef.current
-    const totalSteps = stepCountsRef.current[cur] || 0
+    const totalSteps = stepCountsRef.current[cur] ?? 0
     if (si < totalSteps) {
       setStepIndex(si + 1)
     } else if (cur < totalSlides - 1) {

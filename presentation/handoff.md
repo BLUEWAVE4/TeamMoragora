@@ -78,6 +78,28 @@
 - AI 칩 라벨: `0.55rem` → `0.7rem`
 - 비율 라벨/텍스트/범례: 각각 +0.12~0.15rem 확대
 
+### S6 서비스 구조 (3스텝: step0~2)
+- **step0 — 시스템 아키텍처**: 이미지 다이어그램 재현 (CSS 그리드)
+  - 좌→우 흐름: Users → Client → HTTP/WS → Server → API
+  - Client 열: 클라이언트 그룹 + 하단 범례 카드 (실선=요청/호출, 점선=이벤트/트리거)
+  - Server 열: 서버 그룹 + 하단 인프라 (Supabase, GitHub Actions) 점선 카드
+  - API 열: GPT-4o, Gemini 2.5 Flash, Claude Sonnet 4, Grok 3 Mini (fallback)
+  - 내부 카드 간 실선 화살표(▼), Store↔Services 점선 양방향 화살표
+  - 폴더명(태그) 위 / 파일명(`|` 구분) 아래, 중앙정렬
+- **step1 — 사용자 여정**: 6단계 카드 (논쟁생성→입론반론→AI판결→시민투표→최종판결→랭킹)
+- **step2 — 3가지 토론 모드**: Solo / Duo / Chat
+  - 상단: 모드 카드 (이름 + 설명)
+  - 하단: 각 모드별 세로 여정 타임라인 (dot + 연결선)
+
+### 서버 AI 모델명 수정
+- `gpt-5-mini` → `gpt-4o-mini` (solo.service.js)
+- `gpt-5.4-nano` → `gpt-4o-mini` (ai.routes.js, contentFilter.service.js)
+- `gpt-5.2` → `gpt-4o` (openai.service.js, judgment.service.js, dailyDebate.service.js)
+
+### 슬라이드 전환 깜빡임 전체 수정
+- App.jsx: 비활성 슬라이드에 마지막 stepIndex 유지 (fade-out 중 step0 깜빡임 방지)
+- useNavigator: stateRef 기반으로 stale closure 버그 수정
+
 ## 남은 작업 / 알려진 이슈
 - S5(해결 전략) 이후 슬라이드 page-num 업데이트 필요 (04→05 등)
 - 각 슬라이드 next-hint 텍스트 번호 정합성 확인 필요

@@ -27,9 +27,10 @@ export default function App() {
   const lastStepRef = useRef({})
   lastStepRef.current[current] = stepIndex
 
-  slides.forEach((Comp, idx) => {
-    registerSteps(idx, Comp.stepCount || 0)
-  })
+  // stepCount를 즉시 등록 (ref 기반이므로 렌더 중 호출 안전)
+  for (let i = 0; i < slides.length; i++) {
+    registerSteps(i, slides[i].stepCount || 0)
+  }
 
   return (
     <>

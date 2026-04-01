@@ -1,30 +1,394 @@
-/* 슬라이드 6: 플레이스홀더 */
-#s6 .s-wrap {
-  width: 100%; height: 100vh; display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-content: center;
+/* 슬라이드 6: 서비스 구조 */
+#s6 .s6-wrap {
+  width:100%; height:100vh; display:flex; flex-direction:column;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
-#s6 .header {
-  display: flex; align-items: center; gap: 1rem;
-  padding-bottom: 1.2rem; border-bottom: 1px solid rgba(201,168,76,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
-  opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
+#s6 .s6-header {
+  display:flex; align-items:center; gap:1rem;
+  padding-bottom:1.2rem; border-bottom:1px solid rgba(201,168,76,0.18);
+  margin-bottom:clamp(1.2rem, 2.5vh, 2rem);
 }
 #s6 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
-  color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+  font-family:'Cinzel',sans-serif; font-size:0.7rem; font-weight:600;
+  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
+  padding:0.2rem 0.5rem; border:1px solid rgba(201,168,76,0.25); border-radius:2px;
 }
 #s6 .header-title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
-  -webkit-background-clip: text; background-clip: text; letter-spacing: 0.05em;
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1.4rem,3.5vw,2.2rem); color:transparent;
+  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 50%,rgba(201,168,76,0.6));
+  -webkit-background-clip:text; background-clip:text; letter-spacing:0.05em;
 }
-#s6 .placeholder {
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Sans KR', sans-serif; font-size: 1.5rem;
-  color: rgba(160,152,136,0.2);
-  opacity: 0; animation: fade-in 0.8s ease forwards 0.8s;
+
+/* 본문 */
+#s6 .s6-body { flex:1; display:flex; flex-direction:column; min-height:0; }
+#s6 .s6-section-tag {
+  font-family:'Noto Sans KR',sans-serif; font-size:1.4rem; font-weight:600;
+  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
+  display:flex; align-items:center; gap:0.6rem;
+  margin-bottom:clamp(0.8rem,2vh,1.4rem);
+}
+#s6 .s6-section-tag::before {
+  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+}
+
+/* ========== step0: 아키텍처 (이미지 재현) ========== */
+#s6 .s6-arch {
+  flex:1; display:grid;
+  grid-template-columns: auto auto 1.3fr auto 1.3fr auto 0.8fr;
+  grid-template-rows: 1fr;
+  gap:0.6rem;
+  align-items:start;
+}
+
+/* 사용자 */
+#s6 .s6-user {
+  grid-column:1; grid-row:1; align-self:stretch;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:0.3rem; padding:0 0.3rem;
+}
+#s6 .s6-user-icon { font-size:2.2rem; opacity:0.6; }
+#s6 .s6-user-label {
+  font-family:'Noto Sans KR',sans-serif; font-size:0.8rem; font-weight:500;
+  color:rgba(230,225,215,0.5); text-align:center; white-space:nowrap;
+}
+
+/* 접속 화살표 */
+#s6 .s6-conn-h {
+  grid-column:2; grid-row:1; align-self:stretch;
+  display:flex; align-items:center; gap:0.2rem;
+  font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:500;
+  color:rgba(201,168,76,0.3); white-space:nowrap; padding:0 0.15rem;
+}
+#s6 .s6-conn-h::after {
+  content:''; width:0; height:0;
+  border-top:3px solid transparent;
+  border-bottom:3px solid transparent;
+  border-left:5px solid rgba(201,168,76,0.3);
+}
+
+/* 그룹 박스 (Client / Server) */
+#s6 .s6-group {
+  border:1px dashed rgba(201,168,76,0.15); border-radius:10px;
+  padding:clamp(0.5rem,1vh,0.8rem) clamp(0.5rem,0.8vw,0.8rem);
+  background:rgba(201,168,76,0.015);
+}
+/* Client 열: 클라이언트 + 범례 */
+#s6 .s6-client-col {
+  grid-column:3; grid-row:1;
+  display:flex; flex-direction:column; gap:0.5rem;
+}
+
+/* 서버 + 인프라 세로 열 */
+#s6 .s6-server-col {
+  grid-column:5; grid-row:1;
+  display:flex; flex-direction:column; gap:0.5rem;
+}
+
+#s6 .s6-group-title {
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.9rem,1.4vw,1.1rem); font-weight:600;
+  color:rgba(201,168,76,0.6); margin-bottom:0.5rem; letter-spacing:0.03em;
+  text-align:center;
+}
+
+/* 내부 row */
+#s6 .s6-inner-rows { display:flex; flex-direction:column; gap:0.7rem; position:relative; }
+
+/* 카드 간 세로 실선 + 화살표(▼) */
+#s6 .s6-irow-v,
+#s6 .s6-irow-pair {
+  position:relative;
+}
+#s6 .s6-inner-rows > .s6-irow-v:not(:last-child)::after,
+#s6 .s6-inner-rows > .s6-irow-pair:not(:last-child)::after {
+  content:''; position:absolute;
+  left:50%; bottom:-0.55rem; transform:translateX(-50%);
+  width:1px; height:0.45rem;
+  background:rgba(201,168,76,0.25);
+}
+/* 화살표 머리 (▼) */
+#s6 .s6-inner-rows > .s6-irow-v:not(:last-child)::before,
+#s6 .s6-inner-rows > .s6-irow-pair:not(:last-child)::before {
+  content:''; position:absolute;
+  left:50%; bottom:-0.7rem; transform:translateX(-50%);
+  width:0; height:0;
+  border-left:3px solid transparent;
+  border-right:3px solid transparent;
+  border-top:4px solid rgba(201,168,76,0.3);
+  z-index:1;
+}
+
+/* Store ↔ Services 가로 점선 + 양방향 화살표 */
+#s6 .s6-irow-pair {
+  display:flex; gap:0.4rem;
+}
+#s6 .s6-irow-pair > .s6-irow-v {
+  flex:1; min-width:0;
+}
+/* 가로 점선 */
+#s6 .s6-irow-pair::after {
+  content:''; position:absolute;
+  top:50%; left:calc(50% - 0.8rem);
+  width:1.6rem; height:0;
+  border-top:1px dashed rgba(201,168,76,0.3);
+  z-index:1;
+}
+/* ◀ 왼쪽 화살표 */
+#s6 .s6-irow-pair::before {
+  content:''; position:absolute;
+  top:50%; left:calc(50% - 0.85rem); transform:translateY(-50%);
+  width:0; height:0;
+  border-top:3px solid transparent;
+  border-bottom:3px solid transparent;
+  border-right:4px solid rgba(201,168,76,0.3);
+  z-index:2;
+}
+
+/* 세로 구조: 폴더명(위) + 파일명(아래), 중앙정렬 */
+#s6 .s6-irow-v {
+  display:flex; flex-direction:column; align-items:center;
+  gap:0.15rem;
+  padding:0.3rem 0.4rem; border-radius:4px;
+  background:rgba(100,140,200,0.06);
+  text-align:center;
+}
+#s6 .s6-irow-v.half { flex:1; }
+#s6 .s6-files {
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:300;
+  color:rgba(230,225,215,0.45); line-height:1.4;
+  letter-spacing:0.02em;
+}
+
+/* 태그 */
+#s6 .s6-tag {
+  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:600;
+  padding:0.15rem 0.45rem; border-radius:3px; flex-shrink:0; white-space:nowrap;
+}
+#s6 .s6-tag.blue   { background:rgba(100,140,200,0.18); color:rgba(140,180,240,0.85); }
+#s6 .s6-tag.purple { background:rgba(160,120,200,0.15); color:rgba(190,160,230,0.8); }
+#s6 .s6-tag.sky    { background:rgba(80,180,220,0.15); color:rgba(110,210,250,0.8); }
+
+/* HTTP / WS */
+#s6 .s6-proto {
+  grid-column:4; grid-row:1; align-self:stretch;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:0.3rem; padding:0 0.15rem;
+}
+#s6 .s6-proto-label {
+  font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:600;
+  color:rgba(201,168,76,0.35); letter-spacing:0.08em;
+  position:relative;
+}
+/* HTTP → 화살표 (실선) */
+#s6 .s6-proto-label::after {
+  content:''; display:inline-block; margin-left:0.3rem; vertical-align:middle;
+  width:0; height:0;
+  border-top:3px solid transparent;
+  border-bottom:3px solid transparent;
+  border-left:5px solid rgba(201,168,76,0.35);
+}
+/* WS → 화살표 (점선 느낌) */
+#s6 .s6-proto-label.ws { color:rgba(100,200,240,0.35); }
+#s6 .s6-proto-label.ws::after {
+  border-left-color:rgba(100,200,240,0.35);
+}
+#s6 .s6-proto-line {
+  width:0; flex:1; min-height:20px;
+  border-left:1px solid rgba(201,168,76,0.2);
+  position:relative;
+}
+/* 하단 점선 구간 (WS) */
+#s6 .s6-proto-line::after {
+  content:''; position:absolute;
+  left:-1px; bottom:0; width:0; height:50%;
+  border-left:1px dashed rgba(100,200,240,0.2);
+}
+
+/* → API 화살표 (실선 + 삼각형) */
+#s6 .s6-conn-api {
+  grid-column:6; grid-row:1; align-self:stretch;
+  display:flex; align-items:center; justify-content:center;
+  gap:0.15rem; padding:0 0.1rem;
+}
+#s6 .s6-conn-api::before {
+  content:''; width:clamp(12px,1.5vw,20px); height:1px;
+  background:rgba(201,168,76,0.25);
+}
+#s6 .s6-conn-api::after {
+  content:''; width:0; height:0;
+  border-top:4px solid transparent;
+  border-bottom:4px solid transparent;
+  border-left:6px solid rgba(201,168,76,0.3);
+}
+
+/* API 열 */
+#s6 .s6-api-col {
+  grid-column:7; grid-row:1;
+  display:flex; flex-direction:column; gap:0.4rem;
+  border:1px dashed rgba(201,168,76,0.15); border-radius:10px;
+  padding:clamp(0.5rem,1vh,0.8rem) clamp(0.5rem,0.8vw,0.8rem);
+  background:rgba(201,168,76,0.015);
+}
+#s6 .s6-api-head {
+  font-family:'Noto Sans KR',sans-serif; font-size:0.9rem; font-weight:600;
+  color:rgba(201,168,76,0.5); text-align:center; margin-bottom:0.3rem;
+}
+#s6 .s6-api-stack { display:flex; flex-direction:column; gap:0.25rem; }
+#s6 .s6-api {
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.7rem,1.1vw,0.9rem); font-weight:500;
+  padding:0.25rem 0.5rem; border-radius:4px;
+  border:1px solid rgba(201,168,76,0.15);
+  display:flex; align-items:center; justify-content:space-between;
+}
+#s6 .s6-api.gpt    { color:rgba(230,225,215,0.7); background:rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.12); }
+#s6 .s6-api.gemini { color:rgba(107,158,232,0.8); background:rgba(107,158,232,0.06); border-color:rgba(107,158,232,0.2); }
+#s6 .s6-api.claude { color:rgba(197,122,58,0.8); background:rgba(197,122,58,0.06); border-color:rgba(197,122,58,0.2); }
+#s6 .s6-api.grok   { color:rgba(160,152,136,0.5); background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.06); }
+#s6 .s6-fb {
+  font-size:0.45rem; font-weight:300; color:rgba(160,152,136,0.4);
+  border:1px solid rgba(160,152,136,0.12); border-radius:2px;
+  padding:0.04rem 0.2rem;
+}
+
+/* 서버 하단 인프라 (Supabase / GitHub Actions) */
+#s6 .s6-infra {
+  display:flex; flex-direction:column; gap:0.3rem;
+}
+#s6 .s6-infra-box {
+  border:1px dashed rgba(201,168,76,0.15); border-radius:6px;
+  padding:0.35rem 0.6rem; text-align:center;
+  background:rgba(201,168,76,0.015);
+}
+#s6 .s6-infra-title {
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(0.65rem,1vw,0.82rem);
+  font-weight:600; color:rgba(201,168,76,0.55); margin-bottom:0.1rem;
+}
+#s6 .s6-infra-desc {
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(0.5rem,0.8vw,0.65rem);
+  font-weight:300; color:rgba(230,225,215,0.4);
+}
+
+/* 범례 카드 */
+#s6 .s6-legend-card {
+  border:1px solid rgba(201,168,76,0.1); border-radius:8px;
+  padding:0.5rem 0.8rem;
+  background:rgba(201,168,76,0.02);
+  display:flex; flex-direction:column; gap:0.35rem;
+}
+#s6 .s6-legend-item {
+  display:flex; align-items:center; gap:0.5rem;
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:400;
+  color:rgba(230,225,215,0.45);
+}
+#s6 .s6-legend-line {
+  width:28px; height:0; flex-shrink:0; position:relative;
+}
+#s6 .s6-legend-line.solid {
+  border-top:1.5px solid rgba(201,168,76,0.4);
+}
+#s6 .s6-legend-line.dashed {
+  border-top:1.5px dashed rgba(201,168,76,0.4);
+}
+#s6 .s6-legend-line::after {
+  content:''; position:absolute;
+  right:-1px; top:50%; transform:translateY(-50%);
+  width:0; height:0;
+  border-top:3px solid transparent;
+  border-bottom:3px solid transparent;
+  border-left:5px solid rgba(201,168,76,0.4);
+}
+
+/* ========== step1: 사용자 여정 ========== */
+#s6 .s6-journey {
+  flex:1; display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:clamp(0.5rem,1vw,1rem);
+  align-items:start; align-content:center;
+}
+#s6 .s6-j-card {
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center; position:relative;
+  border:1px solid rgba(201,168,76,0.1); border-radius:10px;
+  padding:clamp(1rem,2vh,1.5rem) clamp(0.5rem,1vw,0.8rem);
+  background:rgba(201,168,76,0.02);
+}
+#s6 .s6-j-num {
+  font-family:'Cinzel',sans-serif; font-size:clamp(0.6rem,0.9vw,0.72rem);
+  font-weight:600; color:rgba(201,168,76,0.35); margin-bottom:0.4rem;
+}
+#s6 .s6-j-icon { font-size:clamp(1.8rem,3vw,2.4rem); margin-bottom:0.5rem; }
+#s6 .s6-j-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(0.9rem,1.4vw,1.1rem); color:var(--text);
+  margin-bottom:0.3rem;
+}
+#s6 .s6-j-desc {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.7rem,1vw,0.85rem); color:var(--marble-dim);
+  line-height:1.6; white-space:pre-line;
+}
+#s6 .s6-j-arrow {
+  position:absolute; right:clamp(-0.7rem,-1vw,-0.5rem); top:50%;
+  transform:translateY(-50%);
+  font-size:clamp(1rem,1.6vw,1.3rem); color:rgba(201,168,76,0.25);
+}
+
+/* ========== step2: 토론 모드 + 모드별 여정 ========== */
+#s6 .s6-modes-full {
+  flex:1; display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:clamp(1.2rem,2.5vw,2.5rem);
+  align-items:start;
+}
+#s6 .s6-mf-col { display:flex; flex-direction:column; }
+
+/* 상단 모드 카드 */
+#s6 .s6-mf-card {
+  border:1px solid rgba(201,168,76,0.15); border-radius:10px 10px 0 0;
+  padding:clamp(0.8rem,1.5vh,1.2rem) clamp(1rem,1.5vw,1.5rem);
+  background:rgba(201,168,76,0.04); text-align:center;
+}
+#s6 .s6-mf-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1.3rem,2.2vw,1.7rem); color:var(--gold-bright);
+  margin-bottom:0.15rem;
+}
+#s6 .s6-mf-sub {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.8rem,1.1vw,0.95rem); color:rgba(201,168,76,0.45);
+}
+
+/* 하단 여정 플로우 */
+#s6 .s6-mf-flow {
+  border:1px solid rgba(201,168,76,0.1); border-top:none;
+  border-radius:0 0 10px 10px;
+  padding:clamp(0.6rem,1.2vh,1rem) clamp(0.8rem,1.2vw,1.2rem);
+  background:rgba(201,168,76,0.015);
+  display:flex; flex-direction:column;
+}
+#s6 .s6-mf-step {
+  display:flex; align-items:center; gap:0.6rem;
+  padding:clamp(0.3rem,0.6vh,0.45rem) 0;
+  position:relative;
+}
+#s6 .s6-mf-step:not(:last-child)::after {
+  content:''; position:absolute;
+  left:5px; top:calc(50% + 8px);
+  width:1px; height:calc(100% - 4px);
+  background:linear-gradient(to bottom, rgba(201,168,76,0.2), rgba(201,168,76,0.08));
+}
+#s6 .s6-mf-dot {
+  width:11px; height:11px; border-radius:50%; flex-shrink:0;
+  border:1.5px solid rgba(201,168,76,0.3);
+  background:rgba(201,168,76,0.06);
+  position:relative; z-index:1;
+}
+#s6 .s6-mf-label {
+  font-family:'Noto Sans KR',sans-serif; font-weight:400;
+  font-size:clamp(0.75rem,1.1vw,0.92rem); color:rgba(230,225,215,0.6);
+  line-height:1.4;
 }
