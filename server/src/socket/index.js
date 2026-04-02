@@ -127,6 +127,21 @@ export function initializeSocket(io) {
       }
       if (!roomParticipants[debateId]) roomParticipants[debateId] = {};
       const isNewJoin = !roomParticipants[debateId][userId];
+
+      // DB에서 creator_side 조회하여 side 보정 (A/B 반전 버그 방지)
+      let correctedSide = side;
+      if (side === 'A' || side === 'B') {
+        try {
+          const { data: debate } = await supabaseAdmin.from('debates').select('creator_id, opponent_id, creator_side').eq('id', debateId).single();
+          if (debate) {
+            const creatorActualSide = debate.creator_side || 'A';
+            const opponentActualSide = creatorActualSide === 'A' ? 'B' : 'A';
+            if (userId === debate.creator_id) correctedSide = creatorActualSide;
+            else if (userId === debate.opponent_id) correctedSide = opponentActualSide;
+          }
+        } catch { }
+      }
+
       if (roomParticipants[debateId][userId]) {
         const prev = roomParticipants[debateId][userId];
         if (prev.socketIds) {
@@ -144,6 +159,10 @@ export function initializeSocket(io) {
         prev.socketIds = new Set([socket.id]);
         prev.nickname = nickname;
         if (avatarUrl) prev.avatarUrl = avatarUrl;
+        // 재연결 시 side도 DB 기준으로 보정 (기존 side 유지하되, 게임 중이면 DB 우선)
+        if (isReconnect && correctedSide && prev._gameStarted) {
+          prev.side = correctedSide;
+        }
         // 유예 중 재접속 → 타이머 클리어 + 복구
         if (prev._disconnectedAt) {
           console.log(`[복귀] ${nickname}(${userId}) 유예 중 재접속 — 복구`);
@@ -152,7 +171,7 @@ export function initializeSocket(io) {
           delete prev._graceTimer;
         }
       } else {
-        roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: side || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now(), _gameStarted: !!isReconnect && !!side };
+        roomParticipants[debateId][userId] = { userId, nickname, avatarUrl: avatarUrl || null, side: correctedSide || null, ready: false, socketIds: new Set([socket.id]), joinedAt: Date.now(), _gameStarted: !!isReconnect && !!correctedSide };
       }
       const slots = buildSlots(debateId);
       io.to(debateId).emit('presence-sync', slots);

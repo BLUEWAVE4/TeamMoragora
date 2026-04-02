@@ -35,7 +35,7 @@
 /* ========== step0: 아키텍처 (이미지 재현) ========== */
 #s6 .s6-arch {
   flex:1; display:grid;
-  grid-template-columns: auto auto 1.3fr auto 1.3fr auto 0.8fr;
+  grid-template-columns: auto auto 1.5fr 0fr 1.5fr 2rem 0.8fr;
   grid-template-rows: 1fr;
   gap:0.6rem;
   align-items:start;
@@ -43,8 +43,8 @@
 
 /* 사용자 */
 #s6 .s6-user {
-  grid-column:1; grid-row:1; align-self:stretch;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  grid-column:1; grid-row:1; align-self:start;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
   gap:0.3rem; padding:0 0.3rem;
 }
 #s6 .s6-user-icon { font-size:2.2rem; opacity:0.6; }
@@ -119,30 +119,37 @@
   z-index:1;
 }
 
-/* Store ↔ Services 가로 점선 + 양방향 화살표 */
+/* Components(pair-conn 직전) 아래 기본 화살표 제거 */
+#s6 .s6-inner-rows > .s6-irow-v:has(+ .s6-pair-conn)::after,
+#s6 .s6-inner-rows > .s6-irow-v:has(+ .s6-pair-conn)::before { content:none; }
+
+/* Store ↔ Services */
 #s6 .s6-irow-pair {
-  display:flex; gap:0.4rem;
+  display:flex; gap:1.2rem;
 }
 #s6 .s6-irow-pair > .s6-irow-v {
   flex:1; min-width:0;
 }
-/* 가로 점선 */
-#s6 .s6-irow-pair::after {
-  content:''; position:absolute;
-  top:50%; left:calc(50% - 0.8rem);
-  width:1.6rem; height:0;
-  border-top:1px dashed rgba(201,168,76,0.3);
-  z-index:1;
+/* pair 모든 pseudo 제거 */
+#s6 .s6-inner-rows > .s6-irow-pair::after,
+#s6 .s6-inner-rows > .s6-irow-pair::before,
+#s6 .s6-inner-rows > .s6-irow-pair:not(:last-child)::after,
+#s6 .s6-inner-rows > .s6-irow-pair:not(:last-child)::before {
+  content:none !important;
 }
-/* ◀ 왼쪽 화살표 */
-#s6 .s6-irow-pair::before {
-  content:''; position:absolute;
-  top:50%; left:calc(50% - 0.85rem); transform:translateY(-50%);
-  width:0; height:0;
-  border-top:3px solid transparent;
-  border-bottom:3px solid transparent;
-  border-right:4px solid rgba(201,168,76,0.3);
-  z-index:2;
+
+/* Components → Store/Services 커넥터 */
+#s6 .s6-pair-conn {
+  display:flex; gap:1.2rem; height:0.9rem;
+}
+#s6 .s6-pair-conn-left,
+#s6 .s6-pair-conn-right {
+  flex:1; display:block;
+}
+
+/* Hooks·Utils → Components 상향 커넥터 */
+#s6 .s6-hooks-conn {
+  display:flex; justify-content:center; height:0.9rem;
 }
 
 /* 세로 구조: 폴더명(위) + 파일명(아래), 중앙정렬 */
@@ -206,21 +213,13 @@
   border-left:1px dashed rgba(100,200,240,0.2);
 }
 
-/* → API 화살표 (실선 + 삼각형) */
+/* → API 엘보 커넥터 */
 #s6 .s6-conn-api {
   grid-column:6; grid-row:1; align-self:stretch;
-  display:flex; align-items:center; justify-content:center;
-  gap:0.15rem; padding:0 0.1rem;
+  display:flex; padding:0;
 }
-#s6 .s6-conn-api::before {
-  content:''; width:clamp(12px,1.5vw,20px); height:1px;
-  background:rgba(201,168,76,0.25);
-}
-#s6 .s6-conn-api::after {
-  content:''; width:0; height:0;
-  border-top:4px solid transparent;
-  border-bottom:4px solid transparent;
-  border-left:6px solid rgba(201,168,76,0.3);
+#s6 .s6-conn-api svg {
+  width:100%; height:100%;
 }
 
 /* API 열 */
@@ -302,10 +301,37 @@
   border-left:5px solid rgba(201,168,76,0.4);
 }
 
-/* ========== step1: 사용자 여정 ========== */
+/* ========== 모드 탭 (상단) ========== */
+#s6 .s6-mode-tabs {
+  display:grid; grid-template-columns:repeat(3, 1fr);
+  gap:clamp(0.6rem,1.2vw,1rem);
+  margin-bottom:clamp(0.8rem,1.5vh,1.2rem);
+}
+#s6 .s6-mode-tab {
+  border:1px solid rgba(201,168,76,0.1); border-radius:10px;
+  padding:clamp(0.6rem,1.2vh,1rem) clamp(0.8rem,1.2vw,1.2rem);
+  background:rgba(201,168,76,0.02); text-align:center;
+  opacity:0.4; transition:all 0.3s ease;
+}
+#s6 .s6-mode-tab.active {
+  opacity:1;
+  border-color:rgba(201,168,76,0.35);
+  background:rgba(201,168,76,0.06);
+}
+#s6 .s6-mode-tab-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1.1rem,1.8vw,1.4rem); color:var(--gold-bright);
+  margin-bottom:0.1rem;
+}
+#s6 .s6-mode-tab-sub {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.7rem,1vw,0.85rem); color:rgba(201,168,76,0.45);
+}
+
+/* ========== 사용자 여정 (하단) ========== */
 #s6 .s6-journey {
   flex:1; display:grid;
-  grid-template-columns:repeat(6, 1fr);
+  grid-template-columns:repeat(auto-fit, minmax(0, 1fr));
   gap:clamp(0.5rem,1vw,1rem);
   align-items:start; align-content:center;
 }

@@ -1,30 +1,147 @@
-/* 슬라이드 8: 플레이스홀더 */
-#s8 .s-wrap {
-  width: 100%; height: 100vh; display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-content: center;
+/* 슬라이드 8: 차별점 & 기술 스택 — 좌우 2열 */
+#s8 .s8-wrap {
+  width:100%; height:100vh; display:flex; flex-direction:column;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
-#s8 .header {
-  display: flex; align-items: center; gap: 1rem;
-  padding-bottom: 1.2rem; border-bottom: 1px solid rgba(201,168,76,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
-  opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
+#s8 .s8-header {
+  display:flex; align-items:center; gap:1rem;
+  padding-bottom:1.2rem; border-bottom:1px solid rgba(201,168,76,0.18);
+  margin-bottom:clamp(1rem, 2vh, 1.6rem);
 }
 #s8 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
-  color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+  font-family:'Cinzel',sans-serif; font-size:0.7rem; font-weight:600;
+  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
+  padding:0.2rem 0.5rem; border:1px solid rgba(201,168,76,0.25); border-radius:2px;
 }
 #s8 .header-title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
-  -webkit-background-clip: text; background-clip: text; letter-spacing: 0.05em;
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1.4rem,3.5vw,2.2rem); color:transparent;
+  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 50%,rgba(201,168,76,0.6));
+  -webkit-background-clip:text; background-clip:text; letter-spacing:0.05em;
 }
-#s8 .placeholder {
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Sans KR', sans-serif; font-size: 1.5rem;
-  color: rgba(160,152,136,0.2);
-  opacity: 0; animation: fade-in 0.8s ease forwards 0.8s;
+
+/* 본문 좌우 2열 */
+#s8 .s8-body {
+  flex:1; display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:clamp(2rem,4vw,3.5rem);
+  min-height:0; overflow:hidden;
 }
+
+/* 섹션 태그 */
+#s8 .s8-section-tag {
+  font-family:'Noto Sans KR',sans-serif; font-size:1.56rem; font-weight:600;
+  color:rgba(201,168,76,0.5); letter-spacing:0.12em;
+  display:flex; align-items:center; gap:0.6rem;
+  margin-bottom:clamp(0.5rem,1.2vh,0.9rem);
+}
+#s8 .s8-section-tag::before {
+  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+}
+
+/* ========== 좌측: 차별점 ========== */
+#s8 .s8-left {
+  display:flex; flex-direction:column; min-height:0;
+}
+#s8 .s8-diff-list {
+  flex:1; display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(4, auto);
+  gap:clamp(0.3rem,0.6vh,0.5rem); min-height:0; overflow:hidden;
+}
+#s8 .s8-diff-card {
+  display:flex; flex-direction:column;
+  border:1px solid rgba(201,168,76,0.1); border-radius:8px;
+  padding:clamp(0.15rem,0.3vh,0.25rem) clamp(0.5rem,0.8vw,0.7rem);
+  background:rgba(201,168,76,0.02);
+  opacity:0.1; transform:translateY(6px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+  min-height:0;
+}
+#s8 .s8-diff-card.lit {
+  opacity:1; transform:translateY(0);
+}
+#s8 .s8-diff-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:0.1rem;
+}
+#s8 .s8-diff-num {
+  font-family:'Cinzel',sans-serif; font-size:0.75rem;
+  font-weight:600; color:rgba(201,168,76,0.35);
+}
+#s8 .s8-diff-tag {
+  font-family:'Noto Sans KR',sans-serif; font-size:0.7rem; font-weight:600;
+  color:rgba(201,168,76,0.7); letter-spacing:0.06em;
+  padding:0.15rem 0.5rem; border-radius:3px;
+  background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.15);
+}
+#s8 .s8-diff-title {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1rem,1.8vw,1.2rem); color:var(--text);
+  margin-bottom:0.1rem; line-height:1.3;
+}
+#s8 .s8-diff-desc {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.85rem,1.4vw,1rem); color:var(--marble-dim);
+  line-height:1.5; white-space:pre-line;
+}
+
+/* ========== 우측: 기술 스택 ========== */
+#s8 .s8-right {
+  display:flex; flex-direction:column; min-height:0;
+}
+#s8 .s8-stack {
+  flex:1; display:flex; flex-direction:column;
+  gap:clamp(0.3rem,0.6vh,0.5rem); justify-content:center;
+  min-height:0; overflow:hidden;
+}
+#s8 .s8-stack-row {
+  display:grid; grid-template-columns: 80px 1fr;
+  gap:clamp(0.5rem,1vw,0.8rem); align-items:center;
+  border:1px solid rgba(201,168,76,0.08); border-radius:6px;
+  padding:clamp(0.35rem,0.7vh,0.55rem) clamp(0.5rem,1vw,0.8rem);
+  background:rgba(201,168,76,0.015);
+  animation: s8-row-in 0.5s ease both;
+}
+#s8 .s8-stack-row:nth-child(1) { animation-delay:0.15s; }
+#s8 .s8-stack-row:nth-child(2) { animation-delay:0.25s; }
+#s8 .s8-stack-row:nth-child(3) { animation-delay:0.35s; }
+#s8 .s8-stack-row:nth-child(4) { animation-delay:0.45s; }
+#s8 .s8-stack-row:nth-child(5) { animation-delay:0.55s; }
+#s8 .s8-stack-row:nth-child(6) { animation-delay:0.65s; }
+
+@keyframes s8-row-in {
+  from { opacity:0; transform:translateX(-10px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+/* 레이어 라벨 */
+#s8 .s8-layer-label {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(0.9rem,1.4vw,1.1rem); letter-spacing:0.05em;
+  white-space:nowrap;
+}
+#s8 .s8-stack-row.fe .s8-layer-label { color:rgba(100,180,240,0.85); }
+#s8 .s8-stack-row.be .s8-layer-label { color:rgba(120,220,160,0.85); }
+#s8 .s8-stack-row.db .s8-layer-label { color:rgba(180,140,220,0.85); }
+#s8 .s8-stack-row.ai .s8-layer-label { color:rgba(201,168,76,0.85); }
+#s8 .s8-stack-row.dp .s8-layer-label { color:rgba(240,160,120,0.85); }
+#s8 .s8-stack-row.ft .s8-layer-label { color:rgba(140,200,200,0.85); }
+
+/* 기술 칩 — 인라인 텍스트 */
+#s8 .s8-layer-items {
+  display:flex; flex-wrap:wrap; gap:clamp(0.25rem,0.5vw,0.4rem);
+}
+#s8 .s8-tech-chip {
+  font-family:'Noto Sans KR',sans-serif; font-weight:500;
+  font-size:clamp(0.8rem,1.2vw,0.95rem); color:rgba(230,225,215,0.75);
+  padding:clamp(0.3rem,0.5vh,0.45rem) clamp(0.5rem,0.8vw,0.7rem);
+  border:1px solid rgba(255,255,255,0.07); border-radius:4px;
+  background:rgba(255,255,255,0.025); white-space:nowrap;
+}
+
+/* AI 칩 특별 색상 */
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(1) { border-color:rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); }
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(2) { border-color:rgba(107,158,232,0.25); background:rgba(107,158,232,0.05); }
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(3) { border-color:rgba(197,122,58,0.25); background:rgba(197,122,58,0.05); }
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(4) { border-color:rgba(160,152,136,0.12); background:rgba(255,255,255,0.015); color:rgba(160,152,136,0.5); }

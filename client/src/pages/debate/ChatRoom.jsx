@@ -181,11 +181,20 @@ const [opponentLeft, setOpponentLeft] = useState(false);
           if (data.opponent) updated[data.opponent_id] = resolveAvatar(data.opponent.avatar_url, data.opponent_id, data.opponent.gender);
           return updated;
         });
-        // 당사자 side 복원 (모든 상태에서 공통)
+        // 당사자 side 복원 (게임 진행 중일 때만 강제 복원, 대기실에서는 서버 presence 우선)
         const creatorActualSide = data.creator_side || 'A';
         const opponentActualSide = creatorActualSide === 'A' ? 'B' : 'A';
-        if (data.creator_id === user.id) setMySide(creatorActualSide);
-        else if (data.opponent_id === user.id) setMySide(opponentActualSide);
+        if (data.status === 'chatting' || data.status === 'both_joined') {
+          // 게임 진행 중에는 DB 기준으로 side 강제 복원
+          if (data.creator_id === user.id) setMySide(creatorActualSide);
+          else if (data.opponent_id === user.id) setMySide(opponentActualSide);
+        } else if (data.status === 'waiting') {
+          // 대기실에서는 서버 presence-sync에서 side를 복원하므로
+          // DB에 명시적으로 참여자로 등록된 경우에만 side 설정
+          if (data.opponent_id === user.id) setMySide(opponentActualSide);
+          // 방장은 시민 선택도 가능하므로, 여기서 강제 설정하지 않음
+          // → presence-sync 이벤트에서 서버의 실제 side로 복원됨
+        }
 
         if (data.status === 'chatting' || data.status === 'both_joined') {
           setGameStarted(true);
@@ -354,6 +363,17 @@ const [opponentLeft, setOpponentLeft] = useState(false);
             return updated;
           });
         }
+
+        // 서버에서 내 side를 알려주면 mySide 동기화 (재연결/새로고침 복원)
+        if (user?.id) {
+          const meInA = (slots.A || []).find(p => p.userId === user.id);
+          const meInB = (slots.B || []).find(p => p.userId === user.id);
+          const meInC = (slots.citizen || []).find(p => p.userId === user.id);
+          if (meInA) setMySide('A');
+          else if (meInB) setMySide('B');
+          else if (meInC) setMySide(null);
+        }
+
         setParticipants(prev => {
           const serverA = Array.isArray(slots.A) ? slots.A : [];
           const serverB = Array.isArray(slots.B) ? slots.B : [];
@@ -903,14 +923,16 @@ const handleVote = (agree) => {
     }
     if (cmd === '/스킵' || cmd === '/skip') {
       setText('');
-      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
+      const currentSide = mySideRef.current;
+      if (!currentSide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       handleSkipTime();
       return;
     }
     if (cmd === '/시간추가' || cmd === '/+5') {
       setText('');
-      if (!mySide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
+      const currentSide = mySideRef.current;
+      if (!currentSide) { setMsgError('참여자만 사용할 수 있습니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       if (timeChangeRequest) { setMsgError('이미 투표가 진행 중입니다.'); safeTimeout(() => setMsgError(''), 2000); return; }
       handleExtendTime();
       return;
@@ -924,7 +946,7 @@ const handleVote = (agree) => {
     }
 
     // ===== 일반 메시지 =====
-    if (!mySide) return;
+    if (!mySide && !mySideRef.current) return;
     if (msgCount >= MAX_MSGS) { setMsgError(`발언권(${MAX_MSGS}개)을 모두 사용했습니다.`); return; }
 
     setSending(true);
@@ -933,7 +955,8 @@ const handleVote = (agree) => {
     stopTyping();
 
     const newCount = msgCount + 1;
-    const optimisticMsg = { id: `temp-${Date.now()}`, debate_id: debateId, user_id: user.id, nickname: myNickname, content: trimmed, side: mySide, created_at: new Date().toISOString() };
+    const activeSide = mySide || mySideRef.current;
+    const optimisticMsg = { id: `temp-${Date.now()}`, debate_id: debateId, user_id: user.id, nickname: myNickname, content: trimmed, side: activeSide, created_at: new Date().toISOString() };
     setMessages(prev => [...prev, optimisticMsg]);
     setMsgCount(newCount);
 
@@ -942,7 +965,7 @@ const handleVote = (agree) => {
       socket.emit('user-exhausted', { debateId, userId: user.id, nickname: myNickname });
     }
 
-    socket.emit('send-message', { debateId, userId: user.id, nickname: myNickname, content: trimmed, side: mySide });
+    socket.emit('send-message', { debateId, userId: user.id, nickname: myNickname, content: trimmed, side: activeSide });
     setSending(false);
     safeTimeout(() => setCooldown(false), COOLDOWN_MS);
     chatInputRef.current?.focus();

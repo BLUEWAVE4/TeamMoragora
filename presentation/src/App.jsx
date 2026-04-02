@@ -14,13 +14,12 @@ import S8TechStack from './components/slides/S8TechStack'
 import S9Effects from './components/slides/S9Effects'
 import S10Team from './components/slides/S10Team'
 
-const slides = [
-  S1Title, S2Toc, S3Proposal, S4Analysis, S4bNeed, S5Strategy,
-  S6Structure, S7Demo, S8TechStack, S9Effects, S10Team,
-]
-
 export default function App() {
-  const { current, total, stepIndex, registerSteps } = useNavigator(slides.length)
+  const slides = [
+    S1Title, S2Toc, S3Proposal, S4Analysis, S4bNeed, S5Strategy,
+    S6Structure, S7Demo, S8TechStack, S9Effects, S10Team,
+  ]
+  const { current, total, stepIndex, registerSteps, goTo } = useNavigator(slides.length)
 
   // 각 슬라이드가 마지막으로 보여준 stepIndex를 기억
   // → 전환 fade-out 중 step0로 깜빡이는 현상 방지
@@ -31,6 +30,11 @@ export default function App() {
   for (let i = 0; i < slides.length; i++) {
     registerSteps(i, slides[i].stepCount || 0)
   }
+
+  const slideLabels = [
+    'Title', 'TOC', '제안배경', '원인분석', '필요성', '해결전략',
+    '서비스구조', '기능시연', '차별점', '기대효과', '팀소개',
+  ]
 
   return (
     <>
@@ -43,6 +47,18 @@ export default function App() {
           stepIndex={idx === current ? stepIndex : (lastStepRef.current[idx] ?? 0)}
         />
       ))}
+      {/* 개발용 네비게이션 바 */}
+      <nav className="dev-nav">
+        {slideLabels.map((label, idx) => (
+          <button
+            key={idx}
+            className={`dev-nav-btn${idx === current ? ' active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); goTo(idx); }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
     </>
   )
 }

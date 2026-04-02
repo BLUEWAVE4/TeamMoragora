@@ -5,6 +5,7 @@ import { avataaars } from '@dicebear/collection'
 import Slide from '../Slide'
 import Footer from '../Footer'
 import '../../styles/slide4b.css'
+import s4bMobile from '../../assets/images/S4bNeed-mobile.webp'
 
 const aiAvatars = [
   { name: 'GPT', seed: 'JudgeGPT', skinColor: ['ffdbb4'], top: ['shortCurly'], hairColor: ['724133'], facialHairProbability: 0, clothing: ['shirtCrewNeck'], clothesColor: ['3c4f5c'], accessoriesProbability: 0, eyes: ['default'], eyebrows: ['defaultNatural'], mouth: ['twinkle'] },
@@ -299,7 +300,7 @@ export default function S4bNeed({ active, stepIndex }) {
                           <div className="s4b-mobile-device">
                             <div className="s4b-mobile-notch" />
                             <div className="s4b-mobile-screen">
-                              <img src={new URL('../../assets/images/S4bNeed-mobile.png', import.meta.url).href} alt="모라고라 스플래시" />
+                              <img src={s4bMobile} alt="모라고라 스플래시" />
                             </div>
                             <div className="s4b-mobile-home-bar" />
                           </div>

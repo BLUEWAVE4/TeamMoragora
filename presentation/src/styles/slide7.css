@@ -1,14 +1,14 @@
-/* 슬라이드 7: 플레이스홀더 */
+/* 슬라이드 7: 핵심 기능 시연 */
 #s7 .s-wrap {
   width: 100%; height: 100vh; display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
   align-content: center;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
 #s7 .header {
   display: flex; align-items: center; gap: 1rem;
   padding-bottom: 1.2rem; border-bottom: 1px solid rgba(201,168,76,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  margin-bottom: clamp(1rem, 3vh, 2rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s7 .page-num {
@@ -22,9 +22,89 @@
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
   -webkit-background-clip: text; background-clip: text; letter-spacing: 0.05em;
 }
-#s7 .placeholder {
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Sans KR', sans-serif; font-size: 1.5rem;
-  color: rgba(160,152,136,0.2);
-  opacity: 0; animation: fade-in 0.8s ease forwards 0.8s;
+
+/* 데모 영역 */
+#s7 .s7-demo-area {
+  display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; animation: fade-up 0.8s ease forwards 0.8s;
+}
+
+/* 모바일 폰 컨테이너 */
+#s7 .s7-phone {
+  position: relative;
+  width: clamp(200px, 22vw, 280px);
+  aspect-ratio: 280 / 560;
+}
+#s7 .s7-phone-svg {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 8px 40px rgba(201,168,76,0.12));
+}
+
+/* 화면 내부 오버레이 */
+#s7 .s7-screen {
+  position: absolute;
+  top: 5%;  left: 4.3%;
+  width: 91.4%; height: 90%;
+  display: flex; flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+#s7 .s7-screen-header {
+  padding: 1rem 0 0.6rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+}
+#s7 .s7-screen-logo {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(0.55rem, 1.2vw, 0.8rem);
+  font-weight: 700;
+  color: rgba(201,168,76,0.6);
+  letter-spacing: 0.2em;
+}
+#s7 .s7-screen-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: clamp(1rem, 2.5vh, 2rem);
+  padding: 1rem;
+}
+#s7 .s7-screen-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+  color: rgba(201,168,76,0.45);
+  text-align: center;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+}
+
+/* 데모 버튼 */
+#s7 .s7-demo-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: clamp(0.5rem, 1.2vh, 0.8rem) clamp(1rem, 2.5vw, 1.8rem);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.55rem, 1.1vw, 0.8rem);
+  font-weight: 700;
+  color: #1a1a18;
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  border: none; border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  white-space: nowrap;
+}
+#s7 .s7-demo-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 28px rgba(201,168,76,0.45);
+}
+#s7 .s7-demo-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+#s7 .s7-arrow {
+  font-size: 1.2em;
+  transition: transform 0.25s ease;
+}
+#s7 .s7-demo-btn:hover .s7-arrow {
+  transform: translate(2px, -2px);
 }

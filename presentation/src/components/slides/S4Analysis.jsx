@@ -4,6 +4,8 @@ import Slide from '../Slide'
 import Footer from '../Footer'
 import { initCountUps } from '../../utils/animations'
 import '../../styles/slide4.css'
+import s4Left from '../../assets/images/S4-left.webp'
+import s4Right from '../../assets/images/S4-right.webp'
 
 const TOTAL_STEPS = 5 // step0: 브릿지, step1: 이미지 모임, step2: 중재자의 부재, step3: 공간의 부재, step4: 테이블, step5: 이미지 모임+제목변경
 
@@ -66,7 +68,7 @@ export default function S4Analysis({ active, stepIndex }) {
                 transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
               >
                 <div className="s4-img-label">{stepIndex === 5 ? '중재자의 부재' : '더 로직 (KBS2, 2026.01~02)'}</div>
-                <img src={new URL('../../assets/images/s4-left.png', import.meta.url).href} alt="" />
+                <img src={s4Left} alt="" />
               </motion.div>
               <motion.div
                 key="bg-right"
@@ -80,7 +82,7 @@ export default function S4Analysis({ active, stepIndex }) {
                 transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
               >
                 <div className="s4-img-label">{stepIndex === 5 ? '공간의 부재' : '베팅 온 팩트 (Wavve, 2026.03~)'}</div>
-                <img src={new URL('../../assets/images/s4-right.png', import.meta.url).href} alt="" />
+                <img src={s4Right} alt="" />
               </motion.div>
             </>
           )}
