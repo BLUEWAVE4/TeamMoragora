@@ -47,7 +47,7 @@
 /* 파티클 */
 #s11 .sp-particles-wrap { position:absolute; inset:0; z-index:3; pointer-events:none; }
 #s11 .sp-particle {
-  position:absolute; border-radius:50%; background:var(--gold, #c9a84c);
+  position:absolute; border-radius:50%; background:var(--gold);
   opacity:0; animation:sp-float-particle linear infinite; z-index:3;
 }
 @keyframes sp-float-particle {

@@ -26,7 +26,7 @@
 #s2 .toc-3col {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: clamp(2rem, 4vw, 4rem);
-  align-items: start; align-self: center;
+  align-items: start; align-self: start;
 }
 
 /* 범주 섹션 */
@@ -36,19 +36,19 @@
 @keyframes s2-section-in { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
 #s2 .toc-section-header {
-  background: rgba(26,53,96,0.06); border-radius: 8px;
+  background: var(--navy-deep); border-radius: 8px;
   padding: clamp(0.8rem, 1.5vh, 1.2rem) clamp(1rem, 1.5vw, 1.5rem);
   margin-bottom: clamp(1rem, 2vh, 1.5rem);
   text-align: center;
 }
 #s2 .toc-section-label {
   font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-  font-weight: 700; color: #d4a017; letter-spacing: 0.15em;
+  font-weight: 700; color: var(--gold-light); letter-spacing: 0.15em;
   margin-bottom: 0.15rem;
 }
 #s2 .toc-section-sub {
   font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.4rem, 2.2vw, 1.8rem);
-  font-weight: 400; color: var(--text-dim); letter-spacing: 0.05em;
+  font-weight: 400; color: rgba(255,255,255,0.7); letter-spacing: 0.05em;
 }
 
 /* 항목 리스트 */
@@ -69,7 +69,7 @@
 
 #s2 .item-num {
   font-family: 'Cinzel', sans-serif; font-size: clamp(0.9rem, 1.3vw, 1.1rem);
-  font-weight: 600; color: #d4a017; min-width: 1.8rem; flex-shrink: 0;
+  font-weight: 600; color: var(--gold); min-width: 1.8rem; flex-shrink: 0;
 }
 #s2 .item-title {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 500;

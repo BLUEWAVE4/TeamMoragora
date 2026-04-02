@@ -1,70 +1,139 @@
-/* 슬라이드 1: 타이틀 */
-#s1 .s-content {
-  flex: 1; display: flex; flex-direction: column; justify-content: center;
-  padding: clamp(3rem, 8vw, 7rem);
-  padding-right: clamp(3rem, 20vw, 24rem);
+/* 슬라이드 1: 타이틀 — 중앙 배치 */
+
+/* ── 기둥 ── */
+#s1 .s1-columns { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+#s1 .s1-col {
+  position:absolute; bottom:0; width:3px;
+  background:linear-gradient(to top, rgba(26,53,96,0.3), transparent);
+  opacity:0; animation:s1-col-rise 2.4s ease-out forwards;
 }
-#s1 .pre-tag {
-  display: flex; align-items: center; gap: 0.8rem;
-  margin-bottom: 2rem;
-  opacity: 0; animation: fade-up 0.8s ease forwards 0.5s;
+#s1 .s1-col::before {
+  content:''; position:absolute; top:0; left:-5px; width:13px; height:8px;
+  background:rgba(26,53,96,0.2); border-radius:1px;
 }
-#s1 .pre-tag-line { width: 32px; height: 1px; background: var(--gold); opacity: 0.5; }
-#s1 .pre-tag-text {
-  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); letter-spacing: 0.3em;
-  color: var(--text); text-transform: uppercase;
+#s1 .s1-col:nth-child(1) { left:8%;  height:50vh; animation-delay:0.1s; }
+#s1 .s1-col:nth-child(2) { left:16%; height:38vh; animation-delay:0.3s; }
+#s1 .s1-col:nth-child(3) { right:16%; height:38vh; animation-delay:0.3s; }
+#s1 .s1-col:nth-child(4) { right:8%;  height:50vh; animation-delay:0.1s; }
+@keyframes s1-col-rise {
+  from { opacity:0; transform:scaleY(0); transform-origin:bottom; }
+  to   { opacity:1; transform:scaleY(1); transform-origin:bottom; }
 }
+
+/* ── 파티클 ── */
+#s1 .s1-particles { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+#s1 .s1-particle {
+  position:absolute; border-radius:50%;
+  background:#1a3560;
+  opacity:0; animation:s1-float linear infinite;
+}
+@keyframes s1-float {
+  0%   { transform:translateY(0) translateX(0); opacity:0; }
+  10%  { opacity:0.5; }
+  90%  { opacity:0.1; }
+  100% { transform:translateY(-85vh) translateX(var(--drift)); opacity:0; }
+}
+
+/* ── 중앙 콘텐츠 ── */
+#s1 .s1-center {
+  position:relative; z-index:2;
+  width:100%; height:100vh;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:0;
+  padding-bottom:clamp(4rem, 8vh, 6rem);
+}
+
+/* ── 상단 장식선 ── */
+#s1 .s1-deco-top {
+  display:flex; align-items:center; gap:16px;
+  margin-bottom:clamp(1.5rem, 3vh, 2.5rem);
+  opacity:0; animation:fade-in 0.8s ease forwards 0.3s;
+}
+#s1 .s1-deco-line {
+  width:clamp(60px, 12vw, 140px); height:1px;
+  background:linear-gradient(to right, transparent, var(--navy));
+}
+#s1 .s1-deco-line.right {
+  background:linear-gradient(to left, transparent, var(--navy));
+}
+#s1 .s1-deco-diamond {
+  width:7px; height:7px;
+  background:var(--gold); transform:rotate(45deg);
+}
+
+/* ── 타이틀 ── */
 #s1 .title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 900;
-  font-size: clamp(4.5rem, 13vw, 10rem); line-height: 0.95; letter-spacing: -0.02em;
-  color:var(--text);
-  
-  opacity: 0; transform: translateY(24px);
-  animation: fade-up 1s cubic-bezier(0.16,1,0.3,1) forwards 0.7s;
-  filter: drop-shadow(0 4px 40px rgba(26,53,96,0.2));
-  margin-bottom: 2rem;
+  font-family:'Noto Sans KR',sans-serif; font-weight:900;
+  font-size:clamp(5rem, 14vw, 11rem); line-height:1; letter-spacing:-0.02em;
+  color:var(--text); text-align:center;
+  opacity:0; transform:translateY(24px);
+  animation:fade-up 1s cubic-bezier(0.16,1,0.3,1) forwards 0.5s;
+  filter:drop-shadow(0 4px 40px rgba(26,53,96,0.15));
 }
 #s1 .title-dot {
-  color: #d4a017;
-  -webkit-text-fill-color: #d4a017;
+  color:var(--gold);
+  -webkit-text-fill-color:var(--gold);
 }
-#s1 .divider {
-  display: flex; align-items: center; gap: 1rem;
-  margin-bottom: 1.8rem;
-  opacity: 0; animation: fade-in 0.8s ease forwards 1.2s;
+
+/* ── 구분선 ── */
+#s1 .s1-divider {
+  display:flex; align-items:center; gap:clamp(0.8rem, 1.5vw, 1.2rem);
+  margin:clamp(1.2rem, 2.5vh, 2rem) 0;
+  opacity:0; animation:fade-in 0.8s ease forwards 1s;
 }
-#s1 .divider-line { width: 40px; height: 1px; background: linear-gradient(to right, var(--gold), transparent); }
-#s1 .divider-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; }
+#s1 .s1-div-line {
+  width:clamp(30px, 6vw, 50px); height:1px;
+  background:linear-gradient(to right, transparent, rgba(26,53,96,0.3));
+}
+#s1 .s1-div-line.right {
+  background:linear-gradient(to left, transparent, rgba(26,53,96,0.3));
+}
+#s1 .s1-div-dot {
+  width:5px; height:5px; background:var(--coral); border-radius:50%;
+}
+
+/* ── 서브타이틀 ── */
 #s1 .subtitle {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(2.4rem, 5.5vw, 3.6rem); color: var(--text);
-  letter-spacing: 0.05em; line-height: 1.2; max-width: 48rem;
-  opacity: 0; animation: fade-up 0.9s ease forwards 1.4s;
+  font-family:'Noto Sans KR',sans-serif; font-weight:500;
+  font-size:clamp(2rem, 4.5vw, 3rem); color:var(--text-mid);
+  letter-spacing:0.08em; text-align:center;
+  opacity:0; animation:fade-up 0.8s ease forwards 1.2s;
 }
-#s1 .subtitle-gold { color: #d4a017; }
-#s1 .subtitle strong { color: var(--text); font-weight: 700; }
-#s1 .tags {
-  display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 2.5rem;
-  opacity: 0; animation: fade-up 0.8s ease forwards 1.8s;
+#s1 .subtitle-gold { color:var(--gold); font-weight:700; }
+
+#s1 .subtitle-sub {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(2.4rem, 5.5vw, 3.6rem); color:var(--text);
+  letter-spacing:0.05em; text-align:center;
+  margin-top:clamp(0.3rem, 0.6vh, 0.5rem);
+  opacity:0; animation:fade-up 0.8s ease forwards 1.4s;
 }
-#s1 .tag {
-  padding: 0.3rem 0.75rem; border: 1px solid rgba(26,53,96,0.2); border-radius: 2px;
-  font-family: 'Cinzel', sans-serif; font-size: clamp(1.45rem, 3.5vw, 2.1rem); letter-spacing: 0.2em;
-  color: var(--text); text-transform: uppercase; background: rgba(26,53,96,0.04);
+
+/* ── 하단 장식선 ── */
+#s1 .s1-deco-bottom {
+  display:flex; align-items:center; gap:16px;
+  margin-top:clamp(1.5rem, 3vh, 2.5rem);
+  opacity:0; animation:fade-in 0.8s ease forwards 1.6s;
 }
+#s1 .s1-deco-omega {
+  font-family:'Cinzel',serif;
+  font-size:clamp(0.75rem, 1.3vw, 1rem);
+  color:rgba(42,74,122,0.5);
+  letter-spacing:0.1em;
+}
+
+/* ── 팀원 — 하단 중앙 ── */
 #s1 .s1-team {
-  position: absolute;
-  bottom: clamp(5rem, 8vh, 6.5rem);
-  left: clamp(3rem, 8vw, 6rem); right: clamp(3rem, 8vw, 6rem);
-  display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem;
-  opacity: 0; animation: fade-in 1s ease forwards 2s;
+  position:absolute; z-index:2;
+  bottom:clamp(5rem, 8vh, 6.5rem);
+  left:0; right:0;
+  display:flex; justify-content:center;
+  opacity:0; animation:fade-in 1s ease forwards 1.8s;
 }
-#s1 .team-label {
-  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); letter-spacing: 0.25em;
-  color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3rem;
-}
-#s1 .team-names { display: flex; gap: 1.2rem; }
+#s1 .team-names { display:flex; gap:clamp(1rem, 2.5vw, 2rem); }
 #s1 .team-name {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 400;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem); color: var(--text-mid); letter-spacing: 0.08em;
+  font-family:'Noto Sans KR',sans-serif; font-weight:400;
+  font-size:clamp(1.2rem, 2.5vw, 1.6rem); color:var(--text-dim);
+  letter-spacing:0.08em;
 }

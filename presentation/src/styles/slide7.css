@@ -4,24 +4,8 @@
   grid-template-rows: auto 1fr auto;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
-#s7 .header {
-  display: flex; align-items: center; gap: 1rem;
-  padding-bottom: 1.2rem; border-bottom: 1px solid rgba(26,53,96,0.18);
-  margin-bottom: clamp(1rem, 3vh, 2rem);
-  opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
-}
-#s7 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); font-weight: 600;
-  color: var(--text); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(26,53,96,0.25); border-radius: 2px;
-}
-#s7 .header-title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color:var(--text);
-   letter-spacing: 0.05em;
-}
 
-/* 본문 — 폰 + 카드 가로 배치 */
+/* 본문 — 폰+버튼 | 시연순서 가로 배치 */
 .s7-body {
   display: flex;
   align-items: center;
@@ -29,11 +13,17 @@
   gap: clamp(2rem, 5vw, 4rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.6s;
 }
+.s7-phone-col {
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: clamp(0.8rem, 1.5vh, 1.2rem);
+  flex-shrink: 0;
+}
 
 /* 모바일 폰 컨테이너 */
 #s7 .s7-phone {
   position: relative;
-  width: clamp(180px, 18vw, 240px);
+  width: clamp(260px, 28vw, 340px);
   aspect-ratio: 280 / 560;
   flex-shrink: 0;
 }
@@ -48,46 +38,117 @@
   top: 5%; left: 4.3%;
   width: 91.4%; height: 90%;
   display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
   border-radius: 8px;
   overflow: hidden;
 }
-#s7 .s7-screen-header {
-  padding: 1rem 0 0.6rem;
-  text-align: center;
-  border-bottom: 1px solid rgba(26,53,96,0.12);
+
+/* ── 스플래시 배경 ── */
+#s7 .s7-splash-bg {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, #2a2218 0%, #1a1714 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px);
 }
-#s7 .s7-screen-logo {
-  font-family: 'Cinzel', sans-serif;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.2em;
+#s7 .s7-splash-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.85) 100%);
 }
-#s7 .s7-screen-body {
-  flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: clamp(1rem, 2.5vh, 2rem);
-  padding: 1rem;
+
+/* 기둥 */
+#s7 .s7-splash-cols {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none !important; overflow: hidden;
 }
-#s7 .s7-screen-text {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text);
-  text-align: center;
-  line-height: 1.6;
-  letter-spacing: 0.03em;
+#s7 .s7-splash-col {
+  position: absolute; bottom: 0; width: 2px;
+  background: linear-gradient(to top, rgba(201,168,76,0.25), transparent);
+  opacity: 0; animation: s7-col-rise 2.4s ease-out forwards;
+}
+#s7 .s7-splash-col::before {
+  content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 5px;
+  background: rgba(201,168,76,0.3); border-radius: 1px;
+}
+#s7 .s7-splash-col:nth-child(1) { left: 8%; height: 45%; animation-delay: 0.1s; }
+#s7 .s7-splash-col:nth-child(2) { left: 18%; height: 32%; animation-delay: 0.3s; }
+#s7 .s7-splash-col:nth-child(3) { right: 18%; height: 32%; animation-delay: 0.3s; }
+#s7 .s7-splash-col:nth-child(4) { right: 8%; height: 45%; animation-delay: 0.1s; }
+@keyframes s7-col-rise {
+  from { opacity: 0; transform: scaleY(0); transform-origin: bottom; }
+  to   { opacity: 1; transform: scaleY(1); transform-origin: bottom; }
+}
+
+/* 파티클 */
+#s7 .s7-splash-particles {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden;
+}
+#s7 .s7-splash-particle {
+  position: absolute; border-radius: 50%; background: #c9a84c;
+  opacity: 0; animation: s7-float-particle linear infinite;
+  animation-play-state: running !important;
+}
+@keyframes s7-float-particle {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.15; }
+  100% { transform: translate(var(--drift), -500px); opacity: 0; }
+}
+
+/* 스플래시 콘텐츠 */
+#s7 .s7-splash-content {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+#s7 .s7-splash-title {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 900;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: #e8e0d0;
+  text-shadow: 0 2px 20px rgba(201,168,76,0.2);
+  letter-spacing: -0.02em;
+}
+#s7 .s7-splash-dot {
+  color: #c9a84c;
+}
+#s7 .s7-splash-sub {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
+  font-size: clamp(0.6rem, 1.5vw, 0.85rem);
+  color: #a09888; letter-spacing: 0.1em;
+}
+
+/* 장식선 */
+#s7 .s7-splash-divider {
+  display: flex; align-items: center; gap: 6px;
+  opacity: 0; animation: fade-in 0.8s ease forwards 0.9s;
+}
+#s7 .s7-splash-divider.bottom {
+  animation-delay: 1.5s;
+}
+#s7 .s7-splash-div-line {
+  width: 40px; height: 1px;
+  background: linear-gradient(to right, transparent, #c9a84c);
+}
+#s7 .s7-splash-div-line.right {
+  background: linear-gradient(to left, transparent, #c9a84c);
+}
+#s7 .s7-splash-diamond {
+  width: 4px; height: 4px; background: #c9a84c; transform: rotate(45deg);
+}
+#s7 .s7-splash-omega {
+  font-family: 'Cinzel', serif; font-size: 9px;
+  color: rgba(201,168,76,0.7);
 }
 
 /* 데모 버튼 */
 #s7 .s7-demo-btn {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: clamp(0.5rem, 1.2vh, 0.8rem) clamp(1rem, 2.5vw, 1.8rem);
+  position: relative; z-index: 10;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  cursor: pointer;
+  padding: clamp(0.35rem, 0.8vh, 0.55rem) clamp(0.7rem, 1.8vw, 1.2rem);
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-size: clamp(0.85rem, 1.8vw, 1.1rem);
   font-weight: 700;
-  color: #1a1a18;
-  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color: #fff;
+  background: linear-gradient(135deg, var(--navy-deep), var(--navy));
   border: none; border-radius: 6px;
   text-decoration: none;
   cursor: pointer;
@@ -110,75 +171,95 @@
   transform: translate(2px, -2px);
 }
 
-/* ===== 시연 순서 카드 ===== */
-.s7-steps-card {
-  background: rgba(26,53,96,0.03);
-  border: 1px solid rgba(26,53,96,0.12);
-  border-radius: 12px;
-  padding: clamp(1.2rem, 2.5vh, 2rem) clamp(1.2rem, 2vw, 2rem);
-  width: clamp(260px, 28vw, 380px);
-  flex-shrink: 0;
+/* ===== 시연 순서 ===== */
+.s7-steps-area {
+  display: flex; flex-direction: column;
+  gap: clamp(0.4rem, 0.8vh, 0.6rem);
+  flex: 1; min-width: 0;
+  justify-content: center;
 }
-.s7-steps-title {
+.s7-group {
+  display: flex; flex-direction: column;
+  gap: clamp(0.3rem, 0.5vh, 0.4rem);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.s7-group.lit {
+  opacity: 1;
+}
+.s7-group.passed {
+  opacity: 0.15;
+}
+/* 그룹 타이틀 금색 */
+.s7-group-title { color: var(--gold) !important; }
+.s7-group-header {
+  display: flex; align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.8rem);
+}
+.s7-group-tag {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(1rem, 1.8vw, 1.3rem);
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: 0.1em;
+  padding: 2px 10px;
+  background: var(--navy-dim);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.s7-group-title {
   font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
   color: var(--text);
-  letter-spacing: 0.08em;
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid rgba(26,53,96,0.12);
-  margin-bottom: 0.8rem;
 }
-.s7-steps-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.s7-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
 }
 
-/* 개별 스텝 */
-.s7-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.8rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-  opacity: 0;
-  animation: fade-up 0.5s ease forwards;
+/* 개별 스텝 카드 */
+.s7-step-card {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.3rem;
+  padding: clamp(0.8rem, 1.5vh, 1.2rem) clamp(0.6rem, 1vw, 1rem);
+  border: 1px solid rgba(26,53,96,0.08);
+  border-radius: 10px;
+  background: rgba(26,53,96,0.02);
+  text-align: center;
+  opacity: 0.2;
+  transition: opacity 0.5s ease, border-color 0.5s ease, background 0.5s ease;
 }
-.s7-step:hover {
+.s7-step-card.lit {
+  opacity: 1;
+  border-color: rgba(26,53,96,0.2);
   background: rgba(26,53,96,0.05);
 }
 .s7-step-num {
   font-family: 'Cinzel', sans-serif;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
   font-weight: 700;
-  color: var(--text);
-  border: 1px solid rgba(26,53,96,0.2);
-  border-radius: 3px;
-  padding: 0.15rem 0.4rem;
-  flex-shrink: 0;
-  min-width: 1.8em;
-  text-align: center;
-  margin-top: 0.1rem;
-}
-.s7-step-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  color: var(--navy);
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(26,53,96,0.25);
+  border-radius: 50%;
+  margin-bottom: 0.2rem;
 }
 .s7-step-title {
   font-family: 'Noto Sans KR', sans-serif;
-  font-weight: 600;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2.6vw, 1.8rem);
   color: var(--text);
 }
 .s7-step-desc {
   font-family: 'Noto Sans KR', sans-serif;
-  font-weight: 300;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text);
-  line-height: 1.5;
+  font-weight: 400;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--text-mid);
+  line-height: 1.4;
 }
 
 /* 반응형 */
@@ -187,7 +268,8 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-  .s7-steps-card {
-    width: 90%;
+  .s7-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
   }
 }

@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Slide from '../Slide'
-import Footer from '../Footer'
 import { initCountUps } from '../../utils/animations'
 import '../../styles/slide3.css'
 
-const TOTAL_STEPS = 0 // 스텝 없음 — 카드만 표시
+const TOTAL_STEPS = 1
 const ease = [0.16, 1, 0.3, 1]
 
 const conclusions = [
@@ -19,12 +18,12 @@ export default function S3Proposal({ active, stepIndex }) {
   const ref = useRef(null)
   const countInitRef = useRef(false)
   useEffect(() => {
-    if (active && !countInitRef.current) {
+    if (active && stepIndex === 0 && !countInitRef.current) {
       countInitRef.current = true
       initCountUps(ref.current, 800)
     }
     if (!active) countInitRef.current = false
-  }, [active])
+  }, [active, stepIndex])
 
   return (
     <Slide id="s3" active={active}>
@@ -34,19 +33,22 @@ export default function S3Proposal({ active, stepIndex }) {
           <span className="header-title">제안 배경</span>
         </div>
 
-        {/* 출처 헤더 — step1에서 fade out */}
-        {/* 카드 3열 — 각 카드 개별 제어 */}
-        <div className="cards">
+        {/* ── Step 0: 카드 3열 (기존) ── */}
+        <div
+          className="cards"
+          style={{
+            display: stepIndex === 0 ? 'grid' : 'none',
+          }}
+        >
           {/* ① 5대 갈등 */}
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 1 ? [0, 0, 0.35, 0.35, 0] : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
-              duration: stepIndex === 1 ? 5 : 0.6,
-              times: stepIndex === 1 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
+              duration: 0.6,
               delay: active && stepIndex === 0 ? 0.8 : 0,
               ease,
             }}
@@ -90,12 +92,11 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 2 ? [0, 0, 0.35, 0.35, 0] : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
-              duration: stepIndex === 2 ? 5 : 0.6,
-              times: stepIndex === 2 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
+              duration: 0.6,
               delay: active && stepIndex === 0 ? 2.0 : 0,
               ease,
             }}
@@ -168,12 +169,12 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: active ? 1 : 0,
-              y: active ? 0 : 24,
+              opacity: active && stepIndex === 0 ? 1 : 0,
+              y: active && stepIndex === 0 ? 0 : 24,
             }}
             transition={{
               duration: 0.6,
-              delay: active ? 3.2 : 0,
+              delay: active && stepIndex === 0 ? 3.2 : 0,
               ease,
             }}
           >
@@ -206,7 +207,30 @@ export default function S3Proposal({ active, stepIndex }) {
           </motion.div>
         </div>
 
-        <Footer />
+        {/* ── Step 1: YouTube 영상 ── */}
+        <motion.div
+          className="s3-video-wrap"
+          animate={{
+            opacity: !active ? 0 : stepIndex === 1 ? 1 : 0,
+          }}
+          transition={{ duration: 0.6, ease }}
+          style={{
+            display: stepIndex === 1 ? 'flex' : 'none',
+          }}
+        >
+          <div className="s3-video-container">
+            <iframe
+              src={active && stepIndex === 1
+                ? 'https://www.youtube.com/embed/bRqbEWhAC4g?rel=0'
+                : undefined}
+              title="사회갈등 영상"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </motion.div>
+
       </div>
     </Slide>
   )

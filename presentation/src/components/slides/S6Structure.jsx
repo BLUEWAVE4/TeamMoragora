@@ -1,6 +1,19 @@
+import { useState, useEffect, useRef } from 'react'
 import Slide from '../Slide'
-import Footer from '../Footer'
 import '../../styles/slide6.css'
+
+import img01 from '../../assets/images/5-01.webp'
+import img02 from '../../assets/images/5-02.webp'
+import img03 from '../../assets/images/5-03.webp'
+import img04 from '../../assets/images/5-04.webp'
+import img05 from '../../assets/images/5-05.webp'
+import img06 from '../../assets/images/5-06.webp'
+import img07 from '../../assets/images/5-07.webp'
+import img08 from '../../assets/images/5-08.webp'
+import img09 from '../../assets/images/5-09.webp'
+import img10 from '../../assets/images/5-10.webp'
+
+const SCREENSHOTS = [img01, img02, img03, img04, img05, img06, img07, img08, img09, img10]
 
 const MODES = [
   {
@@ -44,31 +57,37 @@ const MODES = [
 
 /* step0: 아키텍처  step1~3: 토론 모드 + 사용자 여정 */
 export default function S6Structure({ active, stepIndex = 0 }) {
+  const [slideIdx, setSlideIdx] = useState(0)
+  const timerRef = useRef(null)
+  const stepRef = useRef(stepIndex)
+  stepRef.current = stepIndex
+
+  // 슬라이드 진입 시 타이머 시작, 스텝 변경에 리셋하지 않음
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (active) {
+      setSlideIdx(0)
+      timerRef.current = setInterval(() => {
+        if (stepRef.current >= 1 && stepRef.current <= 3) {
+          setSlideIdx(prev => (prev + 1) % SCREENSHOTS.length)
+        }
+      }, 3000)
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [active])
+
   return (
     <Slide id="s6" active={active}>
-      <div className="s6-wrap">
-        <div className="s6-header">
-          <span className="page-num">04</span>
-          <span className="header-title">서비스 구조</span>
+      <div className="s-wrap s6-wrap">
+        <div className="header">
+          <span className="page-num">05</span>
+          <span className="header-title">{stepIndex === 0 ? '서비스 구조 (시스템 아키텍처)' : '서비스 구조'}</span>
         </div>
 
         {/* ── step 0: 아키텍처 (이미지 재현) ── */}
         {stepIndex === 0 && (
           <div className="s6-body">
-            <div className="s6-section-tag">시스템 아키텍처</div>
             <div className="s6-arch">
-
-              {/* 사용자 아이콘 */}
-              <div className="s6-user">
-                <div className="s6-user-icon">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <div className="s6-user-label">Users / Browser</div>
-              </div>
-              <div className="s6-conn-h">접속</div>
 
               {/* Client 열: 클라이언트 + 범례 */}
               <div className="s6-client-col">
@@ -163,25 +182,6 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                     </div>
                   </div>
                 </div>
-                {/* Server ↔ Supabase 양방향 */}
-                <div className="s6-infra-conn">
-                  <svg width="24" height="100%" viewBox="0 0 24 16">
-                    <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(100,200,140,0.35)" strokeWidth="1.2" />
-                    <polyline points="8,3 12,0 16,3" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.2" />
-                    <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.2" />
-                  </svg>
-                </div>
-                {/* 서버 하단 인프라 */}
-                <div className="s6-infra">
-                  <div className="s6-infra-box">
-                    <div className="s6-infra-title">Supabase</div>
-                    <div className="s6-infra-desc">Auth (OAuth · Kakao · Google) | PostgreSQL DB</div>
-                  </div>
-                  <div className="s6-infra-box">
-                    <div className="s6-infra-title">GitHub Actions</div>
-                    <div className="s6-infra-desc">daily-debate cron</div>
-                  </div>
-                </div>
               </div>
 
               {/* → API 엘보 커넥터 */}
@@ -193,13 +193,26 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               </div>
 
               {/* API 영역 */}
-              <div className="s6-api-col">
-                <div className="s6-api-head">API</div>
-                <div className="s6-api-stack">
-                  <div className="s6-api gpt">GPT-4o</div>
-                  <div className="s6-api gemini">Gemini 2.5 Flash</div>
-                  <div className="s6-api claude">Claude Sonnet 4</div>
-                  <div className="s6-api grok">Grok 3 Mini <span className="s6-fb">fallback</span></div>
+              <div className="s6-right-col">
+                <div className="s6-api-col">
+                  <div className="s6-api-head">API</div>
+                  <div className="s6-api-stack">
+                    <div className="s6-api gpt">GPT-4o</div>
+                    <div className="s6-api gemini">Gemini 2.5 Flash</div>
+                    <div className="s6-api claude">Claude Sonnet 4</div>
+                    <div className="s6-api grok">Grok 3 Mini <span className="s6-fb">fallback</span></div>
+                  </div>
+                </div>
+                {/* 인프라 (별도 카드) */}
+                <div className="s6-infra">
+                  <div className="s6-infra-box">
+                    <div className="s6-infra-title">Supabase</div>
+                    <div className="s6-infra-desc">Auth (OAuth · Kakao · Google) | PostgreSQL DB</div>
+                  </div>
+                  <div className="s6-infra-box">
+                    <div className="s6-infra-title">GitHub Actions</div>
+                    <div className="s6-infra-desc">daily-debate cron</div>
+                  </div>
                 </div>
               </div>
 
@@ -224,7 +237,14 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                     <rect x="105" y="542" width="70" height="4" rx="2" fill="rgba(26,53,96,0.2)" />
                   </svg>
                   <div className="s6-phone-screen">
-                    {/* 이미지 삽입 영역 */}
+                    {SCREENSHOTS.map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={`screen-${i + 1}`}
+                        className={`s6-slide-img${i === slideIdx ? ' active' : ''}`}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -259,7 +279,6 @@ export default function S6Structure({ active, stepIndex = 0 }) {
           </div>
         )}
 
-        <Footer delay={2} />
       </div>
     </Slide>
   )
