@@ -6,7 +6,7 @@
   position:absolute; inset:0;
   background:#1a1714; transition:background 1.5s ease;
 }
-#s11 .sp-scene.gathered { background:#2a2520; }
+#s11 .sp-scene.gathered { background:#1a1714; }
 
 /* gathered 시 메인 콘텐츠 페이드아웃 */
 #s11 .sp-scene .sp-main { transition:opacity 1.5s ease; }
@@ -28,12 +28,12 @@
 #s11 .sp-columns { position:absolute; inset:0; z-index:2; pointer-events:none; overflow:hidden; }
 #s11 .sp-col {
   position:absolute; bottom:0; width:3px;
-  background:linear-gradient(to top, rgba(26,53,96,0.25), transparent);
+  background:linear-gradient(to top, rgba(201,168,76,0.25), transparent);
   opacity:0; animation:sp-col-rise 2.4s ease-out forwards;
 }
 #s11 .sp-col::before {
   content:''; position:absolute; top:0; left:-5px; width:13px; height:8px;
-  background:rgba(26,53,96,0.3); border-radius:1px;
+  background:rgba(201,168,76,0.3); border-radius:1px;
 }
 #s11 .sp-col:nth-child(1) { left:8%; height:45vh; animation-delay:0.1s; }
 #s11 .sp-col:nth-child(2) { left:15%; height:35vh; animation-delay:0.2s; }
@@ -67,7 +67,7 @@
 /* 그리스어 비문 */
 #s11 .sp-epigraph {
   font-family:'EB Garamond','Cinzel',serif; font-style:italic;
-  font-size:14px; color:var(--text);
+  font-size:14px; color:#a09888;
   letter-spacing:0.18em; text-transform:uppercase; text-align:center; line-height:1.8;
   margin-bottom:19px;
   opacity:0; animation:sp-fade-down 1s ease forwards 0.6s;
@@ -84,13 +84,13 @@
 }
 #s11 .sp-div-line {
   width:120px; height:1px;
-  background:linear-gradient(to right, transparent, rgba(26,53,96,0.7));
+  background:linear-gradient(to right, transparent, #c9a84c);
 }
 #s11 .sp-div-line.right {
-  background:linear-gradient(to left, transparent, rgba(26,53,96,0.7));
+  background:linear-gradient(to left, transparent, #c9a84c);
 }
 #s11 .sp-diamond {
-  width:6px; height:6px; background:rgba(26,53,96,0.9); transform:rotate(45deg);
+  width:6px; height:6px; background:#c9a84c; transform:rotate(45deg);
 }
 
 /* SVG 로고 */
@@ -100,8 +100,8 @@
   animation:sp-logo-appear 1.2s cubic-bezier(0.16,1,0.3,1) forwards 1.1s;
 }
 @keyframes sp-logo-appear {
-  from { opacity:0; transform:scale(0.85); filter:drop-shadow(0 0 0px rgba(26,53,96,0)); }
-  to   { opacity:1; transform:scale(1); filter:drop-shadow(0 0 40px rgba(26,53,96,0.35)); }
+  from { opacity:0; transform:scale(0.85); filter:drop-shadow(0 0 0px rgba(201,168,76,0)); }
+  to   { opacity:1; transform:scale(1); filter:drop-shadow(0 0 40px rgba(201,168,76,0.35)); }
 }
 
 /* 워드마크 타이핑 */
@@ -112,8 +112,8 @@
 #s11 .sp-wordmark {
   font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif; font-weight:900;
   font-size:61px; letter-spacing:-0.5px;
-  color:var(--text);
-  text-shadow:0 2px 40px rgba(26,53,96,0.2);
+  color:#e8e0d0;
+  text-shadow:0 2px 40px rgba(201,168,76,0.2);
 }
 #s11 .sp-wm-text { transition:color 3s ease 1s; }
 #s11 .sp-wm-text.gathered { color:#2D3350; }
@@ -121,7 +121,7 @@
 #s11 .sp-wm-dot.gathered { color:#FFBD43; }
 #s11 .sp-wm-cursor {
   display:inline-block; width:3px; height:54px;
-  background:rgba(26,53,96,0.9); margin-left:2px;
+  background:#e8e0d0; margin-left:2px;
   animation:sp-blink 0.7s step-end infinite;
 }
 @keyframes sp-blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
@@ -129,7 +129,7 @@
 /* 영문 서브타이틀 */
 #s11 .sp-subtitle-en {
   font-family:'EB Garamond','Cinzel',serif;
-  font-size:16px; color:var(--text);
+  font-size:16px; color:#a09888;
   letter-spacing:0.22em; text-transform:uppercase;
   margin-top:13px;
   opacity:0; animation:fade-in 1s ease forwards 2s;
@@ -142,7 +142,7 @@
 }
 #s11 .sp-omega {
   font-family:'Cinzel',serif; font-size:12px;
-  color:var(--text);
+  color:rgba(201,168,76,0.7);
 }
 
 /* 감사합니다 */
@@ -157,19 +157,19 @@
 }
 #s11 .sp-thanks-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:72px; color:var(--text);
+  font-size:72px; color:#e8e0d0;
   letter-spacing:0.08em;
 }
 #s11 .sp-thanks-sub {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:24px; color:var(--text);
+  font-size:24px; color:#a09888;
   letter-spacing:0.05em; line-height:1.8;
   text-align:center;
 }
-#s11 .sp-thanks-sub strong { font-weight:600; color:var(--text); }
+#s11 .sp-thanks-sub strong { font-weight:600; color:#e8e0d0; }
 #s11 .sp-thanks-qna {
   font-family:'Cinzel',serif;
   font-size:29px; font-weight:700;
-  color:var(--text); letter-spacing:0.3em;
+  color:#c9a84c; letter-spacing:0.3em;
   margin-top:32px;
 }
