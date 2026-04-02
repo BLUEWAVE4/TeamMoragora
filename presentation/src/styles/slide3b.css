@@ -1,100 +1,200 @@
-/* 슬라이드 3b: 문제 정의 */
-#s3b .s3b-wrap {
-  width:100%; height:100vh; display:flex; flex-direction:column;
-  padding:48px 96px;
-}
-#s3b .header {
-  display:flex; align-items:center; gap:1rem;
-  padding-bottom:1.2rem; border-bottom:1px solid rgba(26,53,96,0.18);
-  margin-bottom:clamp(2rem, 5vh, 3.5rem);
-  opacity:0; animation:fade-up 0.8s ease forwards 0.4s;
-}
-#s3b .page-num {
-  color:rgba(26,53,96,0.5);
-  border:1px solid rgba(26,53,96,0.25);
-}
-#s3b .header-title {
-  font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  color:var(--text);
+/* ── S3b 문제 정의 ── */
+
+#s3b .s-wrap {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
+  gap: clamp(0.8rem, 1.5vh, 1.2rem);
 }
 
-/* 본문 좌우 + 화살표 */
+/* 스포트라이트 — Core 등장 시 주변 어둡게 */
+#s3b .s3b-spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: radial-gradient(ellipse 50% 40% at 50% 50%, transparent 0%, rgba(27,42,74,0.25) 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+#s3b .s3b-spotlight.visible { opacity: 1; }
+
+/* step 2+ 헤더/푸터 숨김 */
+#s3b .s3b-hide {
+  opacity: 0 !important;
+  transition: opacity 0.5s ease !important;
+  pointer-events: none;
+}
+
+/* ── 스테이지: body와 core가 겹치는 영역 ── */
+#s3b .s3b-stage {
+  position: relative;
+  z-index: 20;
+  min-height: 0;
+}
+
+/* ── 본문 (step 0~1) ── */
 #s3b .s3b-body {
-  flex:1; display:grid;
+  position: absolute;
+  inset: 0;
+  display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap:32px; align-items:start;
-  min-height:0;
+  gap: clamp(1.2rem, 2.5vw, 2rem);
+  align-items: stretch;
+  transition: opacity 0.5s ease;
+}
+#s3b .s3b-body.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* 열 조명 */
+/* ── Core Problem (step 2) ── */
+#s3b .s3b-core {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: clamp(0.8rem, 1.5vh, 1.2rem);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none;
+}
+#s3b .s3b-core.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#s3b .s3b-core-label {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(2.2rem, 3.8vw, 3rem);
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.25em;
+  transition: font-size 0.5s ease;
+}
+#s3b .s3b-core-label.solo {
+  font-size: clamp(4rem, 8vw, 6.5rem);
+}
+#s3b .s3b-core-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(7rem, 14vw, 11rem);
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.2;
+}
+#s3b .s3b-core-desc {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(3.2rem, 5.6vw, 4.4rem);
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* 타이핑 커서 */
+#s3b .s3b-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  background: var(--navy);
+  margin-left: 4px;
+  vertical-align: baseline;
+  animation: s3b-blink 0.7s step-end infinite;
+}
+@keyframes s3b-blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+/* ── step 제어 ── */
 #s3b .s3b-col {
-  opacity:0.12; transition:opacity 0.6s ease;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.6rem, 1.2vh, 1rem);
+  opacity: 0;
+  transition: opacity 0.6s ease;
 }
-#s3b .s3b-col.lit { opacity:1; }
+#s3b .s3b-col.visible { opacity: 1; }
+#s3b .s3b-col.dimmed { opacity: 0.15; }
 
-/* 열 라벨 */
+#s3b .s3b-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+#s3b .s3b-arrow.visible { opacity: 1; }
+
+#s3b .s3b-arrow svg {
+  width: clamp(5rem, 9vw, 7.5rem);
+  height: clamp(5rem, 9vw, 7.5rem);
+}
+
+
+/* ── 열 라벨 ── */
 #s3b .s3b-col-label {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(24px, 2.8vw, 32px); font-weight:700;
-  letter-spacing:0.08em; margin-bottom:16px;
-  padding-bottom:8px; border-bottom:2px solid;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(2.2rem, 3.6vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding-bottom: clamp(0.5rem, 1vh, 0.8rem);
+  border-bottom: 2px solid;
 }
 #s3b .s3b-col-label.as-is {
-  color:#c0392b; border-color:rgba(192,57,43,0.3);
+  color: var(--coral);
+  border-color: rgba(192,57,43,0.25);
 }
 #s3b .s3b-col-label.to-be {
-  color:var(--gold-bright); border-color:var(--text);
+  color: var(--teal);
+  border-color: rgba(26,138,122,0.25);
 }
 
-/* 카드 리스트 */
+/* ── 카드 리스트 ── */
+#s3b .s3b-spacer { flex: 1; }
+
 #s3b .s3b-card-list {
-  display:flex; flex-direction:column; gap:10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
+
+/* ── 카드 — 제목만 ── */
 #s3b .s3b-card {
-  display:flex; align-items:flex-start; gap:12px;
-  border:1px solid rgba(26,53,96,0.08); border-radius:8px;
-  padding:14px 16px;
-  background:rgba(26,53,96,0.02);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: clamp(0.3rem, 0.6vh, 0.5rem) clamp(1.5rem, 3vw, 2.5rem);
+  border-radius: 0;
+  border: 1px solid;
+  margin-top: -1px;
 }
+#s3b .s3b-card:first-child { border-radius: 0; margin-top: 0; }
+#s3b .s3b-card:last-child { border-radius: 0 0 12px 12px; }
+#s3b .s3b-card:hover { transform: translateY(-2px); }
 #s3b .s3b-card.as-is {
-  border-color:rgba(192,57,43,0.12);
-  background:rgba(192,57,43,0.03);
+  background: rgba(192,57,43,0.02);
+  border-color: rgba(192,57,43,0.10);
 }
 #s3b .s3b-card.to-be {
-  border-color:var(--text);
-  background:rgba(26,53,96,0.03);
-}
-#s3b .s3b-card-num {
-  font-family:'Cinzel',sans-serif; font-size:clamp(15px, 1.6vw, 20px); font-weight:600;
-  color:var(--text); flex-shrink:0; margin-top:2px;
-}
-#s3b .s3b-card-text {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(20px, 2.2vw, 28px); font-weight:500;
-  color:var(--text); line-height:1.5;
+  background: rgba(26,138,122,0.02);
+  border-color: rgba(26,138,122,0.10);
 }
 
-/* 화살표 */
-#s3b .s3b-arrow {
-  font-size:clamp(40px, 4vw, 56px); color:var(--text);
-  align-self:center;
-  opacity:0; transition:opacity 0.6s ease;
-}
-#s3b .s3b-arrow.lit { opacity:1; }
-
-/* 핵심 문제 */
-#s3b .s3b-core {
-  margin-top:20px;
-  border:2px solid rgba(26,53,96,0.15); border-radius:10px;
-  padding:20px 28px;
-  background:rgba(26,53,96,0.03);
-  opacity:0; transition:opacity 0.6s ease;
-}
-#s3b .s3b-core.lit { opacity:1; }
-#s3b .s3b-core-label {
-  font-family:'Cinzel',sans-serif; font-size:clamp(16px, 1.8vw, 22px); font-weight:700;
-  color:var(--gold-bright); letter-spacing:0.2em; text-transform:uppercase;
-  margin-bottom:10px;
-}
-#s3b .s3b-core-text {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(22px, 2.5vw, 30px); font-weight:600;
-  color:var(--text); line-height:1.7;
+/* 카드 제목 — 크게, 가운데 */
+#s3b .s3b-card-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(3.2rem, 5.5vw, 4.2rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  width: 100%;
+  text-align: center;
 }

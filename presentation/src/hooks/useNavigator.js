@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
+// 외부에서 클릭 네비 차단용 플래그
+export const navGuard = { skip: false }
+
 export function useNavigator(totalSlides) {
   const [current, setCurrent] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
   const stepCountsRef = useRef({})
   const stateRef = useRef({ current: 0, stepIndex: 0 })
 
-  // 최신 state를 ref에 동기화
-  stateRef.current = { current, stepIndex }
+  // ref는 next/prev/goTo에서 수동 동기화
 
   // 슬라이드별 스텝 수 등록
   const registerSteps = (slideIdx, count) => {
@@ -15,28 +17,42 @@ export function useNavigator(totalSlides) {
   }
 
   const goTo = useCallback((idx) => {
+    stateRef.current.current = idx
+    stateRef.current.stepIndex = 0
     setStepIndex(0)
     setCurrent(idx)
   }, [])
 
   const next = useCallback(() => {
-    const { current: cur, stepIndex: si } = stateRef.current
+    const cur = stateRef.current.current
+    const si = stateRef.current.stepIndex
     const totalSteps = stepCountsRef.current[cur] ?? 0
     if (si < totalSteps) {
-      setStepIndex(si + 1)
+      const newSi = si + 1
+      stateRef.current.stepIndex = newSi
+      setStepIndex(newSi)
     } else if (cur < totalSlides - 1) {
+      stateRef.current.current = cur + 1
+      stateRef.current.stepIndex = 0
       setStepIndex(0)
       setCurrent(cur + 1)
     }
   }, [totalSlides])
 
   const prev = useCallback(() => {
-    const { current: cur, stepIndex: si } = stateRef.current
+    const cur = stateRef.current.current
+    const si = stateRef.current.stepIndex
     if (si > 0) {
-      setStepIndex(si - 1)
+      const newSi = si - 1
+      stateRef.current.stepIndex = newSi
+      setStepIndex(newSi)
     } else if (cur > 0) {
-      setStepIndex(0)
-      setCurrent(cur - 1)
+      const newCur = cur - 1
+      const prevSteps = stepCountsRef.current[newCur] ?? 0
+      stateRef.current.current = newCur
+      stateRef.current.stepIndex = prevSteps
+      setCurrent(newCur)
+      setStepIndex(prevSteps)
     }
   }, [])
 
@@ -55,9 +71,12 @@ export function useNavigator(totalSlides) {
     }
 
     const handleClick = (e) => {
-      if (e.target.closest('button, a, input')) return
-      if (e.clientX > window.innerWidth / 2) next()
-      else prev()
+      if (navGuard.skip) { navGuard.skip = false; return }
+      if (e.target.closest('a, button, input, iframe, video, [role="button"]')) return
+      // 화면 양쪽 가장자리 10%만 클릭 네비게이션
+      const edge = window.innerWidth * 0.1
+      if (e.clientX <= edge) prev()
+      else if (e.clientX >= window.innerWidth - edge) next()
     }
 
     document.addEventListener('keydown', handleKey)

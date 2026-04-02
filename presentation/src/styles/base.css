@@ -1,17 +1,35 @@
 @import "tailwindcss";
 
-/* ── 변수 ── */
+/* ── 색상 팔레트 ── */
 :root {
+  /* 배경 */
   --bg: #f5f3ef;
-  --gold: #2a4a7a;
-  --gold-bright: #1a3560;
-  --gold-dim: rgba(26,53,96,0.08);
-  --red: #8b2e2e;
-  --red-bright: #c0392b;
+
+  /* 메인: 네이비 */
+  --navy: #2a4a7a;
+  --navy-deep: #1a3560;
+  --navy-dim: rgba(26,53,96,0.08);
+
+  /* 서브 1: 골드 (강조·하이라이트) */
+  --gold: #d4a017;
+  --gold-light: #e8b84a;
+  --gold-dim: rgba(212,160,23,0.10);
+
+  /* 서브 2: 코랄 (문제·경고) */
+  --coral: #c0392b;
+  --coral-deep: #8b2e2e;
+  --coral-dim: rgba(192,57,43,0.08);
+
+  /* 서브 3: 틸 (해결·긍정) */
+  --teal: #1a8a7a;
+  --teal-light: #2aaa96;
+  --teal-dim: rgba(26,138,122,0.08);
+
+  /* 텍스트 */
   --text: #1B2A4A;
-  --text-dim: #4a5670;
   --text-mid: #3a4a65;
-  --marble-dim: #5a6578;
+  --text-dim: #5a6a80;
+  --text-light: #8a95a5;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,12 +58,12 @@ html, body {
 }
 .left-bar {
   position: fixed; left: 0; top: 0; bottom: 0; width: 4px; z-index: 50;
-  background: linear-gradient(to bottom, transparent, var(--gold) 30%, var(--red) 60%, transparent);
+  background: linear-gradient(to bottom, transparent, var(--navy) 30%, var(--coral-deep) 60%, transparent);
   opacity: 0.5;
 }
 .bottom-bar {
   position: fixed; bottom: 0; left: 0; right: 0; height: 3px; z-index: 50;
-  background: linear-gradient(to right, var(--gold), rgba(26,53,96,0.15), transparent 70%);
+  background: linear-gradient(to right, var(--navy), rgba(26,53,96,0.15), transparent 70%);
 }
 
 /* ── 슬라이드 시스템 ── */
@@ -58,6 +76,7 @@ html, body {
 .slide.active {
   opacity: 1;
   pointer-events: auto;
+  z-index: 20;
 }
 .slide:not(.active) * {
   animation-play-state: paused !important;
@@ -82,18 +101,36 @@ html, body {
   color: var(--text); text-transform: uppercase;
 }
 
+/* ── 공용 헤더 (전 슬라이드 동일) ── */
+.header {
+  display: flex !important;
+  align-items: center !important;
+  gap: clamp(0.8rem, 1.5vw, 1.2rem) !important;
+  padding-bottom: clamp(0.6rem, 1vh, 0.8rem) !important;
+  border-bottom: 1px solid rgba(26,53,96,0.15) !important;
+  opacity: 0;
+  animation: fade-down 0.7s ease forwards 0.3s;
+}
+
 /* ── 전체 page-num 통일 ── */
 .page-num {
   font-family:'Cinzel',sans-serif !important;
-  font-size:14px !important;
+  font-size:15px !important;
   font-weight:600 !important;
   letter-spacing:0.1em !important;
   padding:3px 8px !important;
   border-radius:2px !important;
+  color: rgba(26,53,96,0.5) !important;
+  border: 1px solid rgba(26,53,96,0.25) !important;
 }
 
-/* ── 전체 header-title 크기 1.5배 ── */
-.header-title { font-size:53px !important; }
+/* ── 전체 header-title 통일 ── */
+.header-title {
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 77px !important;
+  color: var(--text) !important;
+}
 
 /* ── 개발용 네비 바 ── */
 .dev-nav {

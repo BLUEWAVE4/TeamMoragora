@@ -1,75 +1,140 @@
+import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import Slide from '../Slide'
-import Footer from '../Footer'
+import typingSfx from '../../assets/sounds/키보드 타이핑 소리.mp3'
 import '../../styles/slide3b.css'
 
 const asIs = [
-  '논쟁이 결론 없이 감정적 대립으로 확대',
-  '제3자 중재 없이 관계 피로도 증가',
-  '다수결 투표 — 감정·편향에 취약',
-  '댓글 기반 판단 — 구조적 한계',
-  '객관적 판결 서비스 부재',
+  { title: '중립적 판단자 부재' },
+  { title: '감정적 편향' },
+  { title: '다수결의 한계' },
 ]
 
 const toBe = [
-  'AI 3사가 독립 분석 → 논리적 판결문 제공',
-  '명확한 근거로 양측이 결과 수긍',
-  '게이미피케이션으로 건전한 논증 문화',
-  '랭킹 시스템으로 논리력 가시화',
-  '판결문 공개 → 논증 사례 학습',
+  { title: 'AI 3사 독립 분석·판결' },
+  { title: '근거 기반 판결문 제공' },
+  { title: 'AI + 시민 복합 판결' },
 ]
 
-const core = '객관적이고 논리적인 결론을 내려줄 신뢰할 수 있는 제3자(중재자)가 부재하여, 논쟁이 감정적 대립으로 확대되거나 결론 없이 지속되는 문제'
+function Card({ item, variant, index, active }) {
+  return (
+    <motion.div
+      className={`s3b-card ${variant}`}
+      initial={{ opacity: 0, x: -40 }}
+      animate={active ? { opacity: 1, x: 0 } : { opacity: 0, x: -40 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.1 + index * 0.12 }}
+    >
+      <span className="s3b-card-title">{item.title}</span>
+    </motion.div>
+  )
+}
+
+const CORE_TEXT = '객관적 중재자의 부재'
+const TYPE_SPEED = 100
 
 export default function S3bProblem({ active, stepIndex = 0 }) {
+  const [typed, setTyped] = useState('')
+  const [showCursor, setShowCursor] = useState(false)
+  const [showUnderline, setShowUnderline] = useState(false)
+  const audioRef = useRef(null)
+
+  useEffect(() => {
+    if (stepIndex < 3) { setTyped(''); setShowCursor(false); setShowUnderline(false); return }
+    setShowCursor(true)
+    setShowUnderline(false)
+
+    // 타이핑 효과음 재생
+    const audio = new Audio(typingSfx)
+    audio.volume = 0.4
+    audio.play().catch(() => {})
+    audioRef.current = audio
+
+    let i = 0
+    const timer = setInterval(() => {
+      i++
+      setTyped(CORE_TEXT.slice(0, i))
+      if (i >= CORE_TEXT.length) {
+        clearInterval(timer)
+        // 타이핑 끝나면 효과음 페이드아웃
+        if (audioRef.current) {
+          const fadeOut = setInterval(() => {
+            if (audioRef.current.volume > 0.05) {
+              audioRef.current.volume = Math.max(0, audioRef.current.volume - 0.05)
+            } else {
+              audioRef.current.pause()
+              clearInterval(fadeOut)
+            }
+          }, 50)
+        }
+        setTimeout(() => { setShowCursor(false); setShowUnderline(true) }, 600)
+      }
+    }, TYPE_SPEED)
+    return () => {
+      clearInterval(timer)
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    }
+  }, [stepIndex])
+
   return (
     <Slide id="s3b" active={active}>
-      <div className="s3b-wrap">
-        <div className="header">
+      {/* 스포트라이트 오버레이 — step 2부터 */}
+      <div className={`s3b-spotlight${stepIndex >= 2 ? ' visible' : ''}`} />
+
+      <div className="s-wrap">
+        {/* ── 헤더 ── */}
+        <div className={`header${stepIndex >= 2 ? ' s3b-hide' : ''}`}>
           <span className="page-num">02</span>
           <span className="header-title">문제 정의</span>
         </div>
 
-        <div className="s3b-body">
-          {/* As-Is */}
-          <div className={`s3b-col${stepIndex >= 0 ? ' lit' : ''}`}>
-            <div className="s3b-col-label as-is">As-Is · 현재 상태</div>
-            <div className="s3b-card-list">
-              {asIs.map((item, i) => (
-                <div className="s3b-card as-is" key={i}>
-                  <span className="s3b-card-num">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="s3b-card-text">{item}</span>
-                </div>
-              ))}
+        {/* ── 콘텐츠 영역: body와 core가 같은 자리에 겹침 ── */}
+        <div className="s3b-stage">
+          {/* As-Is → To-Be (step 0~1) */}
+          <div className={`s3b-body${stepIndex >= 2 ? ' hidden' : ''}`}>
+            <div className={`s3b-col${stepIndex >= 0 ? ' visible' : ''}${stepIndex >= 1 ? ' dimmed' : ''}`}>
+              <div className="s3b-col-label as-is">As-Is · 현재 상태</div>
+              <div className="s3b-card-list">
+                {asIs.map((item, i) => (
+                  <Card item={item} variant="as-is" index={i} key={i} active={active} />
+                ))}
+                <div className="s3b-spacer" />
+              </div>
+            </div>
+
+            <div className={`s3b-arrow${stepIndex >= 1 ? ' visible' : ''}`}>
+              <svg viewBox="0 0 80 80" fill="none">
+                <path d="M30 20 L50 40 L30 60" stroke="var(--navy)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+              </svg>
+            </div>
+
+            <div className={`s3b-col${stepIndex >= 1 ? ' visible' : ''}`}>
+              <div className="s3b-col-label to-be">To-Be · 목표 상태</div>
+              <div className="s3b-card-list">
+                {toBe.map((item, i) => (
+                  <Card item={item} variant="to-be" index={i} key={i} active={active} />
+                ))}
+                <div className="s3b-spacer" />
+              </div>
             </div>
           </div>
 
-          {/* 화살표 */}
-          <div className={`s3b-arrow${stepIndex >= 1 ? ' lit' : ''}`}>→</div>
-
-          {/* To-Be */}
-          <div className={`s3b-col${stepIndex >= 1 ? ' lit' : ''}`}>
-            <div className="s3b-col-label to-be">To-Be · 목표 상태</div>
-            <div className="s3b-card-list">
-              {toBe.map((item, i) => (
-                <div className="s3b-card to-be" key={i}>
-                  <span className="s3b-card-num">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="s3b-card-text">{item}</span>
-                </div>
-              ))}
-            </div>
+          {/* Core — step 2: 라벨만(크게), step 3: 라벨+타이핑 */}
+          <div className={`s3b-core${stepIndex >= 2 ? ' visible' : ''}`}>
+            <span className={`s3b-core-label${stepIndex === 2 ? ' solo' : ''}`}>핵심 문제</span>
+            {stepIndex >= 3 && (
+              <span className="s3b-core-title">
+                {typed}
+                {showCursor && <span className="s3b-cursor" />}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* 핵심 문제 */}
-        <div className={`s3b-core${stepIndex >= 2 ? ' lit' : ''}`}>
-          <div className="s3b-core-label">Core Problem</div>
-          <div className="s3b-core-text">{core}</div>
+        <div className={`s3b-footer-wrap${stepIndex >= 2 ? ' s3b-hide' : ''}`}>
         </div>
-
-        <Footer delay={2} />
       </div>
     </Slide>
   )
 }
 
-S3bProblem.stepCount = 2
+S3bProblem.stepCount = 3

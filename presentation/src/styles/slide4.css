@@ -1,171 +1,208 @@
-/* 슬라이드 4: 시장 분석 */
+/* ── S4 시장 분석 ── */
 #s4 .s-wrap {
   width: 100%; height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  align-content: center;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
 
-/* 헤더 */
-#s4 .header {
-  display: flex; align-items: center; gap: 1rem;
-  padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(26,53,96,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
-  opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
-}
-#s4 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); font-weight: 600;
-  color: var(--text); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(26,53,96,0.25); border-radius: 2px;
-}
-#s4 .header-title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color:var(--text);
-  
+#s4 .s4-content {
+  display: grid;
+  grid-template-columns: clamp(220px, 24vw, 320px) 1fr;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  min-height: 0;
 }
 
-/* 다음 페이지 힌트 */
-#s4 .next-hint {
-  position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text); letter-spacing: 0.05em;
-  opacity: 0; animation: fade-in-half 1s ease forwards 3s;
-}
-
-/* 중앙 영역 */
-#s4 .s4-center {
-  position: relative;
+/* ══════════════════════════
+   좌측: 카드 사이드바
+   ══════════════════════════ */
+#s4 .s4-sidebar {
   display: flex;
-  align-items: center; justify-content: center;
-  flex: 1;
-  overflow: hidden;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* 좌우 배경 이미지 */
-#s4 .s4-bg-left,
-#s4 .s4-bg-right {
-  position: absolute;
-  top: 50%;
-  width: 30%;
-  height: 90%;
-  display: flex; flex-direction: column;
-  pointer-events: none;
-  z-index: 0;
-  border: 1px solid rgba(26,53,96,0.15);
-  border-radius: 12px;
-  box-shadow: 0 0 30px rgba(26,53,96,0.06);
-  overflow: hidden;
+#s4 .s4-card {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.2rem, 0.4vh, 0.3rem);
+  padding: clamp(1rem, 2vh, 1.5rem) clamp(1rem, 2vw, 1.5rem);
+  border: none;
+  background: rgba(255,255,255,0.6);
+  opacity: 0;
+  transition: all 0.5s ease;
 }
-#s4 .s4-bg-left { left: 2%; }
-#s4 .s4-bg-right { right: 2%; }
-#s4 .s4-bg-left img,
-#s4 .s4-bg-right img {
-  width: 100%; flex: 1;
-  object-fit: cover;
+#s4 .s4-card:first-child { border-radius: 14px 14px 0 0; }
+#s4 .s4-card:last-child { border-radius: 0 0 14px 14px; }
+
+/* 등장 */
+#s4 .s4-card.lit { opacity: 1; }
+
+/* 포커스 */
+#s4 .s4-card.focus {
+  background: #fff;
+  box-shadow: none;
 }
 
-/* 이미지 카드 라벨 */
-#s4 .s4-img-label {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text); letter-spacing: 0.08em;
-  text-align: center;
-  padding: 0.5rem 0;
-  background: rgba(240,237,232,0.9);
-  border-bottom: 1px solid rgba(26,53,96,0.1);
-  flex-shrink: 0;
+/* 비포커스: 텍스트 숨김 */
+#s4 .s4-card.lit:not(.focus) {
+  opacity: 0.5;
+  background: rgba(255,255,255,0.3);
 }
+#s4 .s4-card.lit:not(.focus) .s4-card-sub,
+#s4 .s4-card.lit:not(.focus) .s4-card-source { opacity: 0; }
 
-/* 브릿지 텍스트 */
-#s4 .s4-bridge {
-  position: absolute;
-  text-align: center;
+#s4 .s4-card-num {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(1rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  color: var(--navy);
+  opacity: 0.3;
 }
-#s4 .source-main {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(3.6rem, 7.5vw, 6rem);
-  color: var(--text); letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-/* 중앙 카드 */
-#s4 .s4-center-card {
-  position: absolute;
-  display: flex; flex-direction: column;
-  align-items: stretch;
-  gap: 20px;
-  width: clamp(320px, 35vw, 480px);
-}
-
-#s4 .card {
-  display: flex; flex-direction: column; align-items: center;
-  position: relative;
-  padding: clamp(1.2rem, 2vh, 2rem) clamp(1.5rem, 2.5vw, 2rem);
-  border: 1px solid rgba(26,53,96,0.12);
-  border-radius: 12px;
-  background: rgba(26,53,96,0.03);
-}
-#s4 .card.s4-table-card {
-  padding: clamp(1.2rem, 2vh, 2rem) clamp(1.5rem, 2.5vw, 2rem);
-}
-
-/* 카드 태그 */
-#s4 .card-tag {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 600;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text); letter-spacing: 0.12em;
-  padding: 0.2rem 0.8rem;
-  border: 1px solid rgba(26,53,96,0.2); border-radius: 20px;
-  margin-bottom: 1.2rem;
-}
-
-/* 카드 아이콘 */
-#s4 .card-icon {
-  font-size: clamp(2.5rem, 4vw, 3.5rem);
-  margin-bottom: 1rem;
-  filter: grayscale(0.3);
-}
-
 /* 카드 제목 */
-#s4 .card-title {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.5rem, 3.6vw, 2.2rem);
-  color: var(--text); letter-spacing: 0.03em;
-  margin-bottom: 1rem; text-align: center;
+#s4 .s4-card-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 2.8vw, 2.3rem);
+  color: var(--navy-deep);
+  line-height: 1.3;
 }
 
 /* 카드 설명 */
-#s4 .card-desc {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
-  color: var(--text); line-height: 1.8;
-  text-align: center; white-space: pre-line;
-  letter-spacing: 0.02em;
+#s4 .s4-card-sub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.4;
+  transition: opacity 0.3s ease;
 }
 
-/* 비교 테이블 */
-#s4 .s4-compare-table {
-  margin-top: 0;
-  border-collapse: collapse;
-  width: 100%;
+/* 카드 출처 */
+#s4 .s4-card-source {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  color: var(--text-light);
+  margin-top: auto;
+  padding-top: 0.3rem;
+  transition: opacity 0.3s ease;
 }
-#s4 .s4-compare-table th {
-  color: var(--text); font-weight: 600;
-  padding: 0.2rem 0.8rem;
-  border-bottom: 1px solid rgba(26,53,96,0.15);
-  letter-spacing: 0.04em;
+
+/* 2번째 카드 (Problem) */
+#s4 .s4-card:nth-child(2) .s4-card-title { color: var(--coral-deep); }
+
+/* 3번째 카드 (Opportunity) */
+#s4 .s4-card:nth-child(3) .s4-card-title { color: var(--teal); }
+
+/* ══════════════════════════
+   우측: 시각화
+   ══════════════════════════ */
+#s4 .s4-viz {
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
 }
-#s4 .s4-compare-table td {
-  color: var(--text); font-weight: 300;
-  padding: 0.25rem 0.8rem;
-  border-bottom: 1px solid rgba(26,53,96,0.06);
+#s4 .s4-viz-inner {
+  width: 100%;
+  flex: 1;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  gap: clamp(1rem, 2vh, 1.5rem);
+  opacity: 0; transform: translateX(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#s4 .s4-viz-inner.visible { opacity: 1; transform: translateX(0); }
+
+/* Chart.js 래퍼 */
+#s4 .s4-chart-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  background: rgba(255,255,255,0.4);
+  border-radius: 16px;
+  padding: clamp(1rem, 2vh, 1.5rem);
+}
+
+/* 결론 배너 */
+#s4 .s4-viz-conclusion {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+  font-weight: 600;
+  color: var(--navy);
   text-align: center;
+  padding: clamp(0.6rem, 1vh, 0.8rem);
 }
-#s4 .s4-compare-table .row-label {
-  color: var(--text); font-weight: 500;
-  text-align: left;
+
+/* ── 도넛 레이아웃 (Step 2) ── */
+#s4 .s4-chart-donut-layout {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3rem, 6vw, 5rem);
+  background: rgba(255,255,255,0.4);
+  border-radius: 16px;
+  padding: clamp(1.5rem, 3vh, 2.5rem);
+}
+#s4 .s4-chart-donut {
+  position: relative;
+  width: clamp(200px, 26vw, 300px);
+  height: clamp(200px, 26vw, 300px);
+}
+#s4 .s4-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+#s4 .s4-donut-num {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(4rem, 7vw, 5.5rem);
+  font-weight: 800;
+  color: var(--teal);
+  line-height: 1;
+}
+#s4 .s4-donut-sub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+/* 도넛 우측 정보 */
+#s4 .s4-donut-info {
+  display: flex; flex-direction: column;
+  gap: clamp(0.8rem, 1.5vh, 1.2rem);
+  align-items: flex-start;
+}
+#s4 .s4-donut-row {
+  display: flex; align-items: center;
+  gap: clamp(0.6rem, 1.2vw, 1rem);
+}
+#s4 .s4-donut-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%; flex-shrink: 0;
+}
+#s4 .s4-donut-dot.teal { background: var(--teal); }
+#s4 .s4-donut-dot.dim { background: rgba(26,53,96,0.12); }
+#s4 .s4-donut-label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+  font-weight: 500;
+  color: var(--text-dim);
+}
+#s4 .s4-donut-val {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+#s4 .s4-donut-val.teal { color: var(--teal); }
+#s4 .s4-donut-vs {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  color: var(--text-light);
+  padding-left: 2rem;
 }

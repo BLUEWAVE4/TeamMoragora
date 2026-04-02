@@ -1,172 +1,204 @@
-import { useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Bar, Doughnut } from 'react-chartjs-2'
 import Slide from '../Slide'
 import Footer from '../Footer'
-import { initCountUps } from '../../utils/animations'
 import '../../styles/slide4.css'
-import s4Left from '../../assets/images/S4-left.webp'
-import s4Right from '../../assets/images/S4-right.webp'
 
-const TOTAL_STEPS = 5 // step0: 브릿지, step1: 이미지 모임, step2: 중재자의 부재, step3: 공간의 부재, step4: 테이블, step5: 이미지 모임+제목변경
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
 
-const ease = [0.16, 1, 0.3, 1]
-
-const cards = [
+const steps = [
   {
-    title: '기존 중재 방식의 한계',
-    desc: '심판 권한이 과도하거나, 감정·편향 투표에 의존\n→ 공정한 판결 구조 부재',
+    num: '01',
+    title: '시장이 존재한다',
+    sub: '논쟁이 일어나는 환경은 충분히 크다',
+    source: 'DataReportal 2025 / 국민통합위 2025 / KISA 2024',
   },
   {
-    title: '참여형 토론 플랫폼 부재',
-    desc: '대화 의향(70%)은 높지만,\nTV 프로그램은 일반인이 접근할 수 없는 구조',
+    num: '02',
+    title: '문제가 실제로 존재한다',
+    sub: '논쟁은 해결되지 않고 있다',
+    source: '방통위 2024 사이버폭력 실태조사',
+  },
+  {
+    num: '03',
+    title: '해결하면 사용할 가능성',
+    sub: 'AI 판결 서비스는 현실적으로 쓰일 수 있다',
+    source: 'Ipsos 2024 / 2025 사회문제 조사',
   },
 ]
 
+/* ── Chart.js 공통 ── */
+const font = { family: "'Noto Sans KR', sans-serif" }
+
+function VizMarket({ visible }) {
+  const data = {
+    labels: ['SNS 보급률 (94.7%)', '갈등 심각 인식 (95.9%)', '대화 의향 (70.4%)', '13세+ SNS 이용률 (89.3%)'],
+    datasets: [{
+      data: visible ? [94.7, 95.9, 70.4, 89.3] : [0, 0, 0, 0],
+      backgroundColor: ['#2a4a7a', '#c0392b', '#1a8a7a', '#1a3560'],
+      borderRadius: 10,
+      barPercentage: 0.7,
+      borderSkipped: false,
+    }],
+  }
+  const options = {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 1400, easing: 'easeOutQuart' },
+    layout: { padding: { right: 30, left: 10, top: 10, bottom: 10 } },
+    scales: {
+      x: {
+        max: 100, min: 0,
+        border: { display: false },
+        grid: { color: 'rgba(26,53,96,0.04)', drawTicks: false },
+        ticks: { font: { ...font, size: 18, weight: 700 }, color: '#5a6a80', callback: v => v + '%', stepSize: 25, padding: 10 },
+      },
+      y: {
+        border: { display: false },
+        grid: { display: false },
+        ticks: { font: { ...font, size: 20, weight: 700 }, color: '#1B2A4A', padding: 16 },
+      },
+    },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+  }
+  return (
+    <div className={`s4-viz-inner${visible ? ' visible' : ''}`}>
+      <div className="s4-chart-wrap"><Bar data={data} options={options} /></div>
+    </div>
+  )
+}
+
+function VizProblem({ visible }) {
+  const data = {
+    labels: ['악플 비율', '청소년 사이버폭력', '가해 동기: 보복', '성인 사이버폭력'],
+    datasets: [{
+      data: visible ? [59, 42.7, 40, 13.5] : [0, 0, 0, 0],
+      backgroundColor: ['#8b2e2e', '#c0392b', '#2a4a7a', '#8a95a5'],
+      borderRadius: 8,
+      barThickness: 36,
+      borderSkipped: false,
+    }],
+  }
+  const options = {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 1400, easing: 'easeOutQuart' },
+    layout: { padding: { right: 20 } },
+    scales: {
+      x: { max: 70, border: { display: false }, grid: { color: 'rgba(26,53,96,0.04)', drawTicks: false }, ticks: { font: { ...font, size: 15, weight: 500 }, color: '#8a95a5', callback: v => v + '%', padding: 8 } },
+      y: { border: { display: false }, grid: { display: false }, ticks: { font: { ...font, size: 18, weight: 700 }, color: '#1B2A4A', padding: 12 } },
+    },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+  }
+  return (
+    <div className={`s4-viz-inner${visible ? ' visible' : ''}`}>
+      <div className="s4-chart-wrap"><Bar data={data} options={options} /></div>
+    </div>
+  )
+}
+
+function VizOpportunity({ visible }) {
+  const data = {
+    labels: ['AI 공정성 신뢰', '인간 공정성 신뢰'],
+    datasets: [{
+      data: [54, 46],
+      backgroundColor: ['#1a8a7a', 'rgba(26,53,96,0.08)'],
+      hoverBackgroundColor: ['#2aaa96', 'rgba(26,53,96,0.12)'],
+      borderWidth: 0,
+      cutout: '72%',
+      spacing: 4,
+    }],
+  }
+  const options = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 1200, easing: 'easeOutQuart' },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+  }
+  return (
+    <div className={`s4-viz-inner${visible ? ' visible' : ''}`}>
+      <div className="s4-chart-donut-layout">
+        <div className="s4-chart-donut">
+          <Doughnut data={data} options={options} />
+          <div className="s4-donut-center">
+            <span className="s4-donut-num">54%</span>
+            <span className="s4-donut-sub">AI 신뢰</span>
+          </div>
+        </div>
+        <div className="s4-donut-info">
+          <div className="s4-donut-row">
+            <span className="s4-donut-dot teal" />
+            <div>
+              <div className="s4-donut-label">AI 공정성 신뢰</div>
+              <div className="s4-donut-val teal">54%</div>
+            </div>
+          </div>
+          <div className="s4-donut-vs">vs</div>
+          <div className="s4-donut-row">
+            <span className="s4-donut-dot dim" />
+            <div>
+              <div className="s4-donut-label">인간 공정성 신뢰</div>
+              <div className="s4-donut-val">45%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="s4-viz-conclusion">
+        온라인 논쟁 환경에서 객관적 판단을 제공하는 서비스에 대한 수요는 충분히 존재
+      </div>
+    </div>
+  )
+}
+
+const vizComponents = [VizMarket, VizProblem, VizOpportunity]
+const STEP_COUNT = 2
+
 export default function S4Analysis({ active, stepIndex }) {
-  const ref = useRef(null)
+  const [litCards, setLitCards] = useState(0)
 
   useEffect(() => {
-    if (ref.current) {
-      ref.current.closest('.slide')?.setAttribute('data-steps', TOTAL_STEPS)
-    }
-  }, [])
+    if (!active) { setLitCards(0); return }
+    const target = Math.min(stepIndex + 1, steps.length)
+    if (target <= litCards) return
+    let count = litCards
+    const timer = setInterval(() => {
+      count++
+      setLitCards(count)
+      if (count >= target) clearInterval(timer)
+    }, 300)
+    return () => clearInterval(timer)
+  }, [active, stepIndex])
 
-  useEffect(() => {
-    if (active && ref.current) {
-      initCountUps(ref.current, 800)
-    }
-  }, [active])
-
-  const currentCard = stepIndex >= 3 ? 1 : 0
-  const cardY = stepIndex === 2 ? '-30%' : stepIndex === 3 ? '30%' : '0%'
-  const isGather = stepIndex === 1 || stepIndex === 5
+  const VizComp = vizComponents[Math.min(stepIndex, vizComponents.length - 1)]
 
   return (
     <Slide id="s4" active={active}>
-      <div className="s-wrap" ref={ref}>
-        <div className="next-hint">03 서비스의 필요성 →</div>
-
+      <div className="s-wrap">
         <div className="header">
-          <span className="page-num">02</span>
+          <span className="page-num">03</span>
           <span className="header-title">시장 분석</span>
         </div>
 
-        {/* 중앙 영역 */}
-        <div className="s4-center">
-          {/* 좌우 이미지 카드 — step1~5 */}
-          {active && stepIndex >= 1 && stepIndex <= 5 && (
-            <>
-              <motion.div
-                key="bg-left"
-                className={`s4-bg-left ${isGather ? 's4-img-gather' : ''}`}
-                initial={{ opacity: 0, x: isGather ? 'calc(50vw - 130%)' : -30, y: '-50%' }}
-                animate={{
-                  opacity: isGather ? 0.7 : 0.4,
-                  x: isGather ? 'calc(50vw - 130%)' : 0,
-                  y: '-50%',
-                }}
-                transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
+        <div className="s4-content">
+          {/* 좌측: 카드 사이드바 */}
+          <div className="s4-sidebar">
+            {steps.map((s, i) => (
+              <div
+                className={`s4-card${i < litCards ? ' lit' : ''}${i === litCards - 1 ? ' focus' : ''}`}
+                key={i}
               >
-                <div className="s4-img-label">{stepIndex === 5 ? '중재 방식 한계' : '더 로직 (KBS2, 2026.01~02)'}</div>
-                <img src={s4Left} alt="" />
-              </motion.div>
-              <motion.div
-                key="bg-right"
-                className={`s4-bg-right ${isGather ? 's4-img-gather' : ''}`}
-                initial={{ opacity: 0, x: isGather ? 'calc(-50vw + 130%)' : 30, y: '-50%' }}
-                animate={{
-                  opacity: isGather ? 0.7 : 0.4,
-                  x: isGather ? 'calc(-50vw + 130%)' : 0,
-                  y: '-50%',
-                }}
-                transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
-              >
-                <div className="s4-img-label">{stepIndex === 5 ? '플랫폼 부재' : '베팅 온 팩트 (Wavve, 2026.03~)'}</div>
-                <img src={s4Right} alt="" />
-              </motion.div>
-            </>
-          )}
+                <span className="s4-card-num">{s.num}</span>
+                <span className="s4-card-title">{s.title}</span>
+                <span className="s4-card-sub">{s.sub}</span>
+                <span className="s4-card-source">{s.source}</span>
+              </div>
+            ))}
+          </div>
 
-          {/* step0: "그런데 왜?" */}
-          <AnimatePresence>
-            {active && stepIndex === 0 && (
-              <motion.div
-                className="s4-bridge"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.6, ease }}
-              >
-                <span className="source-main">경쟁 서비스 분석</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* step2~4: 중앙 카드 (step1,5에서 사라짐) */}
-          <AnimatePresence>
-            {stepIndex >= 2 && stepIndex <= 4 && (
-              <motion.div
-                className="s4-center-card"
-                initial={{ opacity: 0, y: cardY }}
-                animate={{ opacity: 1, y: cardY }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.7, ease }}
-              >
-                <div className={`card${stepIndex === 4 ? ' s4-table-card' : ''}`}>
-                  <AnimatePresence mode="wait">
-                    {stepIndex <= 3 ? (
-                      <motion.div
-                        key={currentCard}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4, ease }}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                      >
-                        <div className="card-title">{cards[currentCard].title}</div>
-                        <div className="card-desc">{cards[currentCard].desc}</div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="table"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4, ease }}
-                      >
-                        <table className="s4-compare-table">
-                          <thead>
-                            <tr>
-                              <th></th>
-                              <th>더 로직</th>
-                              <th>베팅 온 팩트</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="row-label">심판</td>
-                              <td>제작진 (논제 이탈 판정)</td>
-                              <td>일반인 투표 (설득력 판정)</td>
-                            </tr>
-                            <tr>
-                              <td className="row-label">승패 기준</td>
-                              <td>규칙 위반 누적</td>
-                              <td>여론 투표</td>
-                            </tr>
-                            <tr>
-                              <td className="row-label">핵심 문제</td>
-                              <td>심판 권한이 너무 강함</td>
-                              <td>감정·편향 투표에 취약</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* 우측: 시각화 */}
+          <div className="s4-viz">
+            <VizComp visible={active && litCards > 0} />
+          </div>
         </div>
 
         <Footer />
@@ -175,4 +207,4 @@ export default function S4Analysis({ active, stepIndex }) {
   )
 }
 
-S4Analysis.stepCount = TOTAL_STEPS
+S4Analysis.stepCount = STEP_COUNT

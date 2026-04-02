@@ -1,24 +1,8 @@
 /* 슬라이드 5: 해결 전략 */
 #s5 .s-wrap {
   width:100%; height:100vh; display:grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
-}
-#s5 .header {
-  display:flex; align-items:center; gap:1rem;
-  padding-bottom:1.2rem; border-bottom:1px solid rgba(26,53,96,0.18);
-  margin-bottom:clamp(2rem, 5vh, 3.5rem);
-  opacity:0; animation:fade-up 0.8s ease forwards 0.4s;
-}
-#s5 .page-num {
-  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
-  color:var(--text); letter-spacing:0.1em;
-  padding:0.2rem 0.5rem; border:1px solid rgba(26,53,96,0.25); border-radius:2px;
-}
-#s5 .header-title {
-  font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.4rem,3.5vw,2.2rem); color:var(--text);
-   letter-spacing:0.05em;
 }
 
 /* 본문 2열 — 1:1 */
@@ -29,14 +13,15 @@
 
 /* 좌측 */
 #s5 .strategy-left {
-  display:flex; flex-direction:column; gap:clamp(1.4rem,3vh,2.2rem);
-  opacity:0.15; transition: opacity 0.5s ease;
+  display:flex; flex-direction:column; gap:clamp(0.8rem,1.8vh,1.4rem);
+  opacity:0; transition: opacity 0.5s ease;
 }
+#s5 .strategy-left.dim { opacity:0.15; }
 #s5 .strategy-left.lit { opacity:1; }
 #s5 .strategy-tag {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.6rem, 3.8vw, 2.4rem); font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(2.2rem, 4.5vw, 3rem); font-weight:600;
   letter-spacing:0.12em;
-  color:var(--text);
+  color:var(--gold);
   display:flex; align-items:center; gap:0.6rem;
 }
 #s5 .strategy-tag::before {
@@ -44,12 +29,27 @@
 }
 #s5 .strategy-headline {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.5rem,3vw,2.1rem); color:var(--text); line-height:1.5;
+  font-size:clamp(2.6rem,5vw,3.6rem); color:var(--text); line-height:1.3;
 }
-#s5 .strategy-headline em { font-style:normal; color:var(--gold-bright); }
+#s5 .strategy-headline em {
+  font-style:normal; color:var(--navy-deep);
+  position:relative; display:inline-block;
+}
+#s5 .strategy-headline em::after {
+  content:''; position:absolute;
+  left:0; bottom:2px;
+  width:100%; height:3px;
+  background:var(--gold);
+  transform:scaleX(0); transform-origin:left;
+  animation: s5-underline 1s ease forwards 1.2s;
+}
+@keyframes s5-underline {
+  to { transform:scaleX(1); }
+}
+#s5 .strategy-desc strong { font-weight:700; color:var(--navy); }
 #s5 .strategy-desc {
-  font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(1.4rem, 3.4vw, 2rem); color:var(--marble-dim); line-height:1.85;
+  font-family:'Noto Sans KR',sans-serif; font-weight:500;
+  font-size:clamp(2rem, 4vw, 2.8rem); color:var(--text-dim); line-height:1.4;
 }
 
 /* 비율 바 */
@@ -58,13 +58,13 @@
   padding:0.7rem 1.2rem; border:1px solid rgba(26,53,96,0.18);
   border-radius:4px; background:rgba(26,53,96,0.04);
   margin-bottom:clamp(2.5rem, 5vh, 4rem);
-  opacity:0.15; transition: opacity 0.5s ease;
+  opacity:0; transition: opacity 0.5s ease;
 }
 #s5 .ratio-wrap.lit {
   opacity:1;
 }
 #s5 .ratio-label {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.4rem, 3.4vw, 2rem); font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(2rem, 4vw, 2.7rem); font-weight:600;
   letter-spacing:0.08em;
   color:var(--text); margin-bottom:0;
 }
@@ -96,20 +96,20 @@
 #s5 .ratio-legend { display:flex; gap:1.4rem; }
 #s5 .ratio-legend-item {
   display:flex; align-items:center; gap:0.4rem;
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--marble-dim);
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text-dim);
 }
 #s5 .legend-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-#s5 .legend-dot.ai  { background:var(--gold); }
+#s5 .legend-dot.ai  { background:var(--navy); }
 #s5 .legend-dot.cit { background:rgba(255,255,255,0.25); }
 
 /* 우측 플로우 */
 #s5 .strategy-right {
   display:flex; flex-direction:column; position:relative;
-  opacity:0.15; transition: opacity 0.5s ease;
+  opacity:0; transition: opacity 0.5s ease;
 }
 #s5 .strategy-right.lit { opacity:1; }
 #s5 .flow-title {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.6rem, 3.8vw, 2.4rem); font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(2.2rem, 4.5vw, 3rem); font-weight:600;
   letter-spacing:0.12em;
   color:var(--text);
   display:flex; align-items:center; gap:0.6rem;
@@ -118,40 +118,38 @@
 #s5 .flow-title::before {
   content:''; width:28px; height:1px; background:rgba(26,53,96,0.4); flex-shrink:0;
 }
-#s5 .flow { display:flex; flex-direction:column; }
-
-/* 플로우 스텝 — 기본 어둡게, .lit 시 밝게 */
-#s5 .flow-step {
-  display:grid; grid-template-columns: 36px 1fr; gap:0 1rem;
-  opacity:0.15;
+/* 플로우 카드 */
+#s5 .flow-cards {
+  display:flex; flex-direction:column;
+  gap:clamp(0.4rem, 0.8vh, 0.6rem);
+  flex:1;
+}
+#s5 .flow-card {
+  display:flex; align-items:center;
+  gap:clamp(0.6rem, 1vw, 1rem);
+  padding:clamp(0.6rem, 1vh, 0.9rem) clamp(0.8rem, 1.2vw, 1.2rem);
+  border:1px solid rgba(26,53,96,0.1);
+  border-radius:10px;
+  background:rgba(26,53,96,0.03);
+  opacity:0;
   transition: opacity 0.5s ease;
 }
-#s5 .flow-step.lit {
-  opacity:1;
-}
-
-#s5 .step-indicator { display:flex; flex-direction:column; align-items:center; }
-#s5 .step-circle {
-  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+#s5 .flow-card.lit { opacity:1; }
+#s5 .flow-card-num {
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
-  border:1px solid rgba(26,53,96,0.35); color:var(--gold);
-  background:rgba(26,53,96,0.06); position:relative; z-index:1;
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.2rem, 2.5vw, 1.6rem); font-weight:700;
+  border:2px solid rgba(26,53,96,0.3); color:var(--navy);
+  background:rgba(26,53,96,0.06);
 }
-#s5 .step-line {
-  width:1px; flex:1; min-height:14px;
-  background:linear-gradient(to bottom, rgba(26,53,96,0.25), rgba(26,53,96,0.08));
-  margin:2px 0;
+#s5 .flow-card-body { flex:1; }
+#s5 .flow-card-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(1.6rem, 3.2vw, 2.2rem); color:var(--text);
 }
-#s5 .flow-step:last-child .step-line { display:none; }
-#s5 .step-content { padding-bottom:clamp(0.9rem,2vh,1.4rem); padding-top:4px; }
-#s5 .step-name {
-  font-family:'Noto Sans KR',sans-serif; font-weight:600;
-  font-size:clamp(1.45rem, 3.5vw, 2.1rem); color:var(--text); margin-bottom:0.3rem;
-}
-#s5 .step-desc {
-  font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text-dim); line-height:1.65;
+#s5 .flow-card-desc {
+  font-family:'Noto Sans KR',sans-serif; font-weight:500;
+  font-size:clamp(1.3rem, 2.6vw, 1.8rem); color:var(--text-mid); line-height:1.5;
 }
 
 /* AI 칩 */
@@ -161,7 +159,7 @@
   padding:0.3rem 0.8rem; border-radius:4px;
   background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
 }
-#s5 .jchip.gpt { border-color:var(--text); background:rgba(0,0,0,0.4); }
+#s5 .jchip.gpt { border-color:rgba(26,53,96,0.25); background:rgba(26,53,96,0.06); }
 #s5 .jchip.gem { border-color:rgba(107,158,232,0.35); background:rgba(107,158,232,0.06); }
 #s5 .jchip.cla { border-color:rgba(197,122,58,0.35); background:rgba(197,122,58,0.06); }
 #s5 .jlabel {
@@ -170,8 +168,12 @@
 }
 
 /* 최종 판결 강조 */
-#s5 .flow-step.final .step-circle {
-  border-color:var(--gold); background:rgba(26,53,96,0.15);
+#s5 .flow-card.final {
+  border-color:rgba(26,53,96,0.25);
+  background:rgba(26,53,96,0.06);
+}
+#s5 .flow-card.final .flow-card-num {
+  border-color:var(--navy); background:rgba(26,53,96,0.15);
   box-shadow:0 0 12px rgba(26,53,96,0.2);
 }
-#s5 .flow-step.final .step-name { color:var(--gold-bright); }
+#s5 .flow-card.final .flow-card-name { color:var(--navy-deep); }
