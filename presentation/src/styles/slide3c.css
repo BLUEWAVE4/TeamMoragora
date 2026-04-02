@@ -1,0 +1,99 @@
+/* 슬라이드 3c: 시장 분석 — O/X 비교 */
+#s3c .s3c-wrap {
+  width:100%; height:100vh; display:flex; flex-direction:column;
+  padding:48px 96px;
+}
+#s3c .header {
+  display:flex; align-items:center; gap:1rem;
+  padding-bottom:1.2rem; border-bottom:1px solid rgba(26,53,96,0.18);
+  margin-bottom:clamp(2rem, 5vh, 3.5rem);
+  opacity:0; animation:fade-up 0.8s ease forwards 0.4s;
+}
+#s3c .page-num {
+  font-family:'Cinzel',sans-serif; font-weight:600;
+  color:var(--text); letter-spacing:0.1em;
+  padding:0.2rem 0.5rem; border:1px solid rgba(26,53,96,0.25); border-radius:2px;
+}
+#s3c .header-title {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  color:var(--text);
+}
+
+/* 본문 */
+#s3c .s3c-body {
+  flex:1; display:flex; flex-direction:column;
+  justify-content:center; gap:0;
+  min-height:0;
+}
+
+/* 그리드 행 */
+#s3c .s3c-grid {
+  display:grid;
+  grid-template-columns: 140px repeat(6, 1fr);
+  gap:0;
+}
+
+/* 헤더 행 */
+#s3c .s3c-grid.head {
+  border-bottom:2px solid rgba(26,53,96,0.2);
+  margin-bottom:4px;
+  opacity:0; animation:fade-up 0.6s ease forwards 0.5s;
+}
+#s3c .s3c-grid.head .s3c-cell {
+  padding:10px 8px;
+}
+
+/* 데이터 행 */
+#s3c .s3c-grid.row {
+  border-bottom:1px solid rgba(26,53,96,0.06);
+  opacity:0; animation:fade-up 0.5s ease forwards;
+}
+#s3c .s3c-grid.row:last-child { border-bottom:none; }
+
+/* 모라고라 강조 행 */
+#s3c .s3c-grid.hl {
+  background:rgba(26,53,96,0.06);
+  border-radius:6px;
+  border-bottom:none; margin-bottom:4px;
+}
+
+/* 셀 공통 */
+#s3c .s3c-cell {
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:16px; font-weight:400;
+  color:var(--text);
+  padding:14px 8px;
+  text-align:center;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* 코너 (빈칸) */
+#s3c .s3c-cell.corner { visibility:hidden; }
+
+/* 기능 헤더 */
+#s3c .s3c-cell.feat {
+  font-size:14px; font-weight:700;
+  color:var(--text); letter-spacing:0.02em;
+}
+
+/* 서비스명 */
+#s3c .s3c-cell.name {
+  font-weight:700; text-align:left; justify-content:flex-start;
+  font-size:16px;
+}
+#s3c .s3c-grid.hl .s3c-cell.name {
+  color:var(--gold-bright);
+}
+
+/* O / X 마크 */
+#s3c .s3c-cell.mark {
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:20px; font-weight:700;
+}
+#s3c .s3c-cell.mark.yes { color:var(--gold-bright); }
+#s3c .s3c-cell.mark.no { color:rgba(26,53,96,0.15); }
+
+/* 모라고라 행 O 강조 */
+#s3c .s3c-grid.hl .s3c-cell.mark.yes {
+  color:var(--gold-bright); font-size:22px;
+}

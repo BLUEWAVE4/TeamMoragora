@@ -44,8 +44,6 @@ export default function S4Analysis({ active, stepIndex }) {
   return (
     <Slide id="s4" active={active}>
       <div className="s-wrap" ref={ref}>
-        <div className="next-hint">03 서비스의 필요성 →</div>
-
         <div className="header">
           <span className="page-num">02</span>
           <span className="header-title">시장 분석</span>

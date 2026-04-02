@@ -29,8 +29,6 @@ export default function S3Proposal({ active, stepIndex }) {
   return (
     <Slide id="s3" active={active}>
       <div className="s-wrap" ref={ref}>
-        <div className="next-hint">03 시장 분석 →</div>
-
         <div className="header">
           <span className="page-num">01</span>
           <span className="header-title">제안 배경</span>
@@ -207,21 +205,6 @@ export default function S3Proposal({ active, stepIndex }) {
             </motion.div>
           </motion.div>
         </div>
-          <AnimatePresence mode="wait">
-            {stepIndex >= 1 && stepIndex <= 3 && (
-              <motion.div
-                className="s3-flow-item"
-                key={stepIndex}
-                initial={{ opacity: 0, x: 80 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -80 }}
-                transition={{ duration: 0.5, ease }}
-              >
-                <div className="s3-flow-main">{conclusions[stepIndex - 1].main}</div>
-                <div className="s3-flow-sub">{conclusions[stepIndex - 1].sub}</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
         <Footer />
       </div>

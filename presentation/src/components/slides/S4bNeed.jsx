@@ -62,8 +62,6 @@ export default function S4bNeed({ active, stepIndex }) {
   return (
     <Slide id="s4b" active={active}>
       <div className="s-wrap">
-        <div className="next-hint">04 해결 전략 →</div>
-
         <div className="header">
           <span className="page-num">03</span>
           <span className="header-title">서비스의 필요성</span>

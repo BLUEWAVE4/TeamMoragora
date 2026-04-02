@@ -4,7 +4,7 @@
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   align-content: center;
-  padding: clamp(1rem, 2.5vh, 1.5rem) clamp(3rem, 8vw, 6rem);
+  padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
   overflow: visible;
 }
 #s3 .s3-step0 { overflow: visible; }
@@ -17,7 +17,7 @@
   display: flex; align-items: center; gap: 1rem;
   padding-bottom: 1.2rem;
   border-bottom: 1px solid rgba(26,53,96,0.18);
-  margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
+  margin-bottom: clamp(2rem, 5vh, 3.5rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s3 .page-num {
