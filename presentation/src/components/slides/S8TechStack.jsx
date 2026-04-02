@@ -4,14 +4,14 @@ import Footer from '../Footer'
 import '../../styles/slide8.css'
 
 const diffs = [
-  { num: '01', title: '3사 AI 독립 병렬 판결', desc: 'GPT-4o · Gemini · Claude 독립 채점\n교차 검증으로 편향 구조적 제거', tag: '공정성' },
-  { num: '02', title: 'AI + 시민 복합 판결', desc: 'AI 75% + 시민 25% 결합\n하이브리드 판결 모델', tag: '균형' },
-  { num: '03', title: '5항목 정량 루브릭', desc: '논리·근거·설득·일관·표현\n각 0~20점 데이터 기반 판결', tag: '정량화' },
-  { num: '04', title: '3가지 게임 모드', desc: 'Solo(AI 코칭) · Duo(1v1)\nChat(실시간 3v3)', tag: '접근성' },
-  { num: '05', title: 'AI 토픽 파싱 + 위자드', desc: '진영·카테고리·렌즈 자동 생성\n소크라테스 코칭', tag: 'UX' },
-  { num: '06', title: '3단계 콘텐츠 방어', desc: '비속어 → AI 안전성 → 주제 적합성\n건전한 논쟁 환경 보장', tag: '안전' },
-  { num: '07', title: '실시간 WebSocket', desc: 'Socket.IO 채팅·로비·투표\n실시간 사용자 프레즌스', tag: '실시간' },
-  { num: '08', title: 'PWA 모바일 경험', desc: '앱 설치·오프라인 지원\nOG 메타태그 소셜 공유', tag: '모바일' },
+  { title: '3사 AI 독립 병렬 판결', tag: '공정성' },
+  { title: 'AI + 시민 복합 판결', tag: '균형' },
+  { title: '5항목 정량 판결 기준', tag: '정량화' },
+  { title: '3가지 게임 모드', tag: '접근성' },
+  { title: 'AI 토픽 파싱 + 위자드', tag: 'UX' },
+  { title: '3단계 콘텐츠 방어(비속어-AI검증-주제검증)', tag: '안전' },
+  { title: 'Socket.IO(양방향 통신)', tag: '실시간' },
+  { title: 'PWA(앱)', tag: '모바일' },
 ]
 
 const techRows = [
@@ -23,11 +23,11 @@ const techRows = [
   { layer: 'Features', color: 'ft', items: ['PWA 설치', 'OG 소셜 공유', 'Analytics'] },
 ]
 
-export default function S8TechStack({ active }) {
+export default function S8TechStack({ active, stepIndex = 0 }) {
   const [litCount, setLitCount] = useState(0)
 
   useEffect(() => {
-    if (active) {
+    if (stepIndex === 0 && active) {
       setLitCount(0)
       let count = 0
       const timer = setInterval(() => {
@@ -37,8 +37,12 @@ export default function S8TechStack({ active }) {
       }, 350)
       return () => clearInterval(timer)
     }
-    setLitCount(0)
-  }, [active])
+    if (!active) setLitCount(0)
+  }, [stepIndex, active])
+
+  // step0: 좌측만 밝게, step1: 우측만 밝게
+  const leftLit = stepIndex === 0
+  const rightLit = stepIndex === 1
 
   return (
     <Slide id="s8" active={active}>
@@ -50,24 +54,20 @@ export default function S8TechStack({ active }) {
 
         <div className="s8-body">
           {/* 좌측: 차별점 */}
-          <div className="s8-left">
+          <div className={`s8-left${leftLit ? ' lit' : ''}`}>
             <div className="s8-section-tag">차별성 & 경쟁 우위</div>
             <div className="s8-diff-list">
               {diffs.map((d, i) => (
-                <div className={`s8-diff-card${i < litCount ? ' lit' : ''}`} key={i}>
-                  <div className="s8-diff-top">
-                    <span className="s8-diff-num">{d.num}</span>
-                    <span className="s8-diff-tag">{d.tag}</span>
-                  </div>
+                <div className={`s8-diff-card${leftLit && i < litCount ? ' lit' : ''}`} key={i}>
+                  <div className="s8-diff-card-header">{d.tag}</div>
                   <div className="s8-diff-title">{d.title}</div>
-                  <div className="s8-diff-desc">{d.desc}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* 우측: 기술 스택 */}
-          <div className="s8-right">
+          <div className={`s8-right${rightLit ? ' lit' : ''}`}>
             <div className="s8-section-tag">기술 스택</div>
             <div className="s8-stack">
               {techRows.map((row, i) => (
@@ -89,3 +89,5 @@ export default function S8TechStack({ active }) {
     </Slide>
   )
 }
+
+S8TechStack.stepCount = 1

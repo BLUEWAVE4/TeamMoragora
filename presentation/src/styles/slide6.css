@@ -35,7 +35,7 @@
 /* ========== step0: 아키텍처 (이미지 재현) ========== */
 #s6 .s6-arch {
   flex:1; display:grid;
-  grid-template-columns: auto auto 1.5fr 0fr 1.5fr 2rem 0.8fr;
+  grid-template-columns: auto auto 1.5fr 2rem 1.5fr 2rem 0.8fr;
   grid-template-rows: 1fr;
   gap:0.6rem;
   align-items:start;
@@ -55,8 +55,8 @@
 
 /* 접속 화살표 */
 #s6 .s6-conn-h {
-  grid-column:2; grid-row:1; align-self:stretch;
-  display:flex; align-items:center; gap:0.2rem;
+  grid-column:2; grid-row:1; align-self:start;
+  display:flex; align-items:center; gap:0.2rem; margin-top:0.8rem;
   font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:500;
   color:rgba(201,168,76,0.3); white-space:nowrap; padding:0 0.15rem;
 }
@@ -119,6 +119,16 @@
   z-index:1;
 }
 
+/* Pages 아래 기본 화살표 제거 */
+#s6 .s6-inner-rows > .s6-irow-v.s6-no-arrow::after,
+#s6 .s6-inner-rows > .s6-irow-v.s6-no-arrow::before { content:none !important; }
+
+/* SVG 커넥터 공통 */
+#s6 .s6-pages-conn,
+#s6 .s6-svg-conn {
+  display:flex; justify-content:center; height:0.9rem;
+}
+
 /* Components(pair-conn 직전) 아래 기본 화살표 제거 */
 #s6 .s6-inner-rows > .s6-irow-v:has(+ .s6-pair-conn)::after,
 #s6 .s6-inner-rows > .s6-irow-v:has(+ .s6-pair-conn)::before { content:none; }
@@ -178,6 +188,15 @@
 #s6 .s6-tag.sky    { background:rgba(80,180,220,0.15); color:rgba(110,210,250,0.8); }
 
 /* HTTP / WS */
+/* Client Socket ↔ Server Socket + Client Services ↔ Supabase 엘보 커넥터 */
+#s6 .s6-conn-socket {
+  grid-column:4; grid-row:1; align-self:stretch;
+  display:flex; padding:0;
+}
+#s6 .s6-conn-socket svg {
+  width:100%; height:100%;
+}
+
 #s6 .s6-proto {
   grid-column:4; grid-row:1; align-self:stretch;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -252,6 +271,11 @@
   padding:0.04rem 0.2rem;
 }
 
+/* Server → Supabase ㄷ자 커넥터 */
+#s6 .s6-infra-conn {
+  display:flex; justify-content:center; height:1.2rem;
+}
+
 /* 서버 하단 인프라 (Supabase / GitHub Actions) */
 #s6 .s6-infra {
   display:flex; flex-direction:column; gap:0.3rem;
@@ -272,10 +296,10 @@
 
 /* 범례 카드 */
 #s6 .s6-legend-card {
-  border:1px solid rgba(201,168,76,0.1); border-radius:8px;
-  padding:0.5rem 0.8rem;
-  background:rgba(201,168,76,0.02);
-  display:flex; flex-direction:column; gap:0.35rem;
+  border:none; border-radius:0;
+  padding:0.2rem 0.4rem;
+  background:transparent;
+  display:flex; flex-direction:column; gap:0.2rem;
 }
 #s6 .s6-legend-item {
   display:flex; align-items:center; gap:0.5rem;
@@ -289,8 +313,11 @@
 #s6 .s6-legend-line.solid {
   border-top:1.5px solid rgba(201,168,76,0.4);
 }
-#s6 .s6-legend-line.dashed {
-  border-top:1.5px dashed rgba(201,168,76,0.4);
+#s6 .s6-legend-line.long-dash {
+  border-top:1.5px dashed rgba(100,200,240,0.5);
+}
+#s6 .s6-legend-line.dotted {
+  border-top:1.5px dotted rgba(201,168,76,0.4);
 }
 #s6 .s6-legend-line::after {
   content:''; position:absolute;
@@ -301,15 +328,19 @@
   border-left:5px solid rgba(201,168,76,0.4);
 }
 
-/* ========== 모드 탭 (상단) ========== */
-#s6 .s6-mode-tabs {
-  display:grid; grid-template-columns:repeat(3, 1fr);
-  gap:clamp(0.6rem,1.2vw,1rem);
-  margin-bottom:clamp(0.8rem,1.5vh,1.2rem);
+/* ========== 좌우 분할 레이아웃 ========== */
+#s6 .s6-mode-split {
+  flex:1; display:flex; gap:clamp(2rem,4vw,4rem); align-items:center;
+}
+#s6 .s6-mode-left {
+  display:flex; justify-content:center; align-items:center; flex-shrink:0;
+}
+#s6 .s6-mode-right {
+  flex:1; display:flex; flex-direction:column; gap:clamp(0.8rem,1.5vh,1.2rem);
 }
 #s6 .s6-mode-tab {
   border:1px solid rgba(201,168,76,0.1); border-radius:10px;
-  padding:clamp(0.6rem,1.2vh,1rem) clamp(0.8rem,1.2vw,1.2rem);
+  padding:clamp(1rem,2vh,1.5rem) clamp(1rem,1.5vw,1.5rem);
   background:rgba(201,168,76,0.02); text-align:center;
   opacity:0.4; transition:all 0.3s ease;
 }
@@ -320,12 +351,100 @@
 }
 #s6 .s6-mode-tab-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.1rem,1.8vw,1.4rem); color:var(--gold-bright);
-  margin-bottom:0.1rem;
+  font-size:clamp(1.5rem,2.5vw,2rem); color:var(--gold-bright);
+  margin-bottom:0.2rem;
 }
 #s6 .s6-mode-tab-sub {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.7rem,1vw,0.85rem); color:rgba(201,168,76,0.45);
+  font-size:clamp(0.9rem,1.4vw,1.1rem); color:rgba(201,168,76,0.45);
+}
+
+/* ========== 사용자 여정 카드 리스트 ========== */
+#s6 .s6-flow-list {
+  display:flex; flex-direction:column; gap:0.35rem;
+}
+#s6 .s6-flow-item {
+  display:flex; align-items:center; gap:0.6rem;
+  padding:clamp(0.4rem,0.8vh,0.6rem) clamp(0.6rem,1vw,0.9rem);
+  border:1px solid rgba(201,168,76,0.08); border-radius:8px;
+  background:rgba(201,168,76,0.02);
+}
+#s6 .s6-flow-num {
+  font-family:'Cinzel',sans-serif;
+  font-size:clamp(0.7rem,1vw,0.85rem); font-weight:600;
+  color:rgba(201,168,76,0.4); flex-shrink:0; width:1.6rem; text-align:center;
+}
+#s6 .s6-flow-body {
+  display:flex; align-items:baseline; gap:0.4rem; flex:1; min-width:0;
+}
+#s6 .s6-flow-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:600;
+  font-size:clamp(0.85rem,1.3vw,1.05rem); color:var(--text);
+  white-space:nowrap;
+}
+#s6 .s6-flow-sep {
+  color:rgba(201,168,76,0.25); font-size:0.8rem;
+}
+#s6 .s6-flow-desc {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.75rem,1.1vw,0.9rem); color:var(--marble-dim);
+}
+
+/* ========== 모바일 프레임 ========== */
+#s6 .s6-phone {
+  position:relative;
+  width:clamp(180px,18vw,240px);
+  aspect-ratio:280/560;
+  flex-shrink:0;
+}
+#s6 .s6-phone-svg {
+  width:100%; height:100%;
+  filter:drop-shadow(0 8px 40px rgba(201,168,76,0.12));
+}
+#s6 .s6-phone-screen {
+  position:absolute;
+  top:5%; left:4.3%; width:91.4%; height:90%;
+  display:flex; flex-direction:column;
+  border-radius:8px; overflow-y:auto;
+  padding:0.5rem;
+}
+#s6 .s6-phone-header {
+  font-family:'Noto Sans KR',sans-serif; font-weight:700;
+  font-size:clamp(0.7rem,1.1vw,0.9rem); color:var(--gold-bright);
+  text-align:center; padding:0.3rem 0 0.4rem;
+  border-bottom:1px solid rgba(201,168,76,0.15);
+  margin-bottom:0.3rem;
+}
+#s6 .s6-phone-flow {
+  display:flex; flex-direction:column; gap:0.15rem; flex:1;
+}
+#s6 .s6-phone-step {
+  display:flex; align-items:center; gap:0.4rem;
+  padding:0.25rem 0.3rem; border-radius:6px;
+  position:relative;
+}
+#s6 .s6-phone-step:not(:last-child)::after {
+  content:''; position:absolute;
+  left:1rem; top:calc(50% + 0.6rem);
+  width:1px; height:calc(100% - 0.4rem);
+  background:rgba(201,168,76,0.15);
+}
+#s6 .s6-phone-num {
+  font-family:'Cinzel',sans-serif;
+  font-size:clamp(0.5rem,0.8vw,0.65rem); font-weight:600;
+  color:rgba(201,168,76,0.4);
+  width:1.4rem; text-align:center; flex-shrink:0;
+}
+#s6 .s6-phone-text { flex:1; min-width:0; }
+#s6 .s6-phone-name {
+  font-family:'Noto Sans KR',sans-serif; font-weight:600;
+  font-size:clamp(0.55rem,0.9vw,0.72rem); color:var(--text);
+  line-height:1.3;
+}
+#s6 .s6-phone-desc {
+  font-family:'Noto Sans KR',sans-serif; font-weight:300;
+  font-size:clamp(0.45rem,0.7vw,0.58rem); color:var(--marble-dim);
+  line-height:1.3;
 }
 
 /* ========== 사용자 여정 (하단) ========== */
@@ -339,23 +458,22 @@
   display:flex; flex-direction:column; align-items:center;
   text-align:center; position:relative;
   border:1px solid rgba(201,168,76,0.1); border-radius:10px;
-  padding:clamp(1rem,2vh,1.5rem) clamp(0.5rem,1vw,0.8rem);
+  padding:clamp(1.2rem,2.5vh,2rem) clamp(0.6rem,1.2vw,1rem);
   background:rgba(201,168,76,0.02);
 }
 #s6 .s6-j-num {
-  font-family:'Cinzel',sans-serif; font-size:clamp(0.6rem,0.9vw,0.72rem);
-  font-weight:600; color:rgba(201,168,76,0.35); margin-bottom:0.4rem;
+  font-family:'Cinzel',sans-serif; font-size:clamp(0.8rem,1.2vw,1rem);
+  font-weight:600; color:rgba(201,168,76,0.35); margin-bottom:0.5rem;
 }
-#s6 .s6-j-icon { font-size:clamp(1.8rem,3vw,2.4rem); margin-bottom:0.5rem; }
 #s6 .s6-j-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(0.9rem,1.4vw,1.1rem); color:var(--text);
+  font-size:clamp(1rem,1.8vw,1.2rem); color:var(--text);
   margin-bottom:0.3rem;
 }
 #s6 .s6-j-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.7rem,1vw,0.85rem); color:var(--marble-dim);
-  line-height:1.6; white-space:pre-line;
+  font-size:clamp(0.85rem,1.4vw,1rem); color:var(--marble-dim);
+  line-height:1.65; white-space:pre-line;
 }
 #s6 .s6-j-arrow {
   position:absolute; right:clamp(-0.7rem,-1vw,-0.5rem); top:50%;

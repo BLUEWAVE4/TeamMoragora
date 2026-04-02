@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { useNavigator } from './hooks/useNavigator'
 import Background from './components/Background'
 import SlideCounter from './components/SlideCounter'
@@ -13,12 +13,15 @@ import S7Demo from './components/slides/S7Demo'
 import S8TechStack from './components/slides/S8TechStack'
 import S9Effects from './components/slides/S9Effects'
 import S10Team from './components/slides/S10Team'
+import S11Closing from './components/slides/S11Closing'
+
+const SLIDES = [
+  S1Title, S2Toc, S3Proposal, S4Analysis, S4bNeed, S5Strategy,
+  S6Structure, S7Demo, S8TechStack, S9Effects, S10Team, S11Closing,
+]
 
 export default function App() {
-  const slides = [
-    S1Title, S2Toc, S3Proposal, S4Analysis, S4bNeed, S5Strategy,
-    S6Structure, S7Demo, S8TechStack, S9Effects, S10Team,
-  ]
+  const slides = useMemo(() => SLIDES, [])
   const { current, total, stepIndex, registerSteps, goTo } = useNavigator(slides.length)
 
   // 각 슬라이드가 마지막으로 보여준 stepIndex를 기억
@@ -28,12 +31,13 @@ export default function App() {
 
   // stepCount를 즉시 등록 (ref 기반이므로 렌더 중 호출 안전)
   for (let i = 0; i < slides.length; i++) {
-    registerSteps(i, slides[i].stepCount || 0)
+    const sc = slides[i].stepCount || 0
+    registerSteps(i, sc)
   }
 
   const slideLabels = [
     'Title', 'TOC', '제안배경', '원인분석', '필요성', '해결전략',
-    '서비스구조', '기능시연', '차별점', '기대효과', '팀소개',
+    '서비스구조', '기능시연', '차별점', '기대효과', '팀소개', '감사합니다',
   ]
 
   return (

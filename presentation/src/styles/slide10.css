@@ -1,14 +1,13 @@
-/* 슬라이드 10: 플레이스홀더 */
+/* 슬라이드 10: 팀 소개 */
 #s10 .s-wrap {
   width: 100%; height: 100vh; display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-content: center;
+  grid-template-rows: auto 1fr auto;
   padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
 }
 #s10 .header {
   display: flex; align-items: center; gap: 1rem;
   padding-bottom: 1.2rem; border-bottom: 1px solid rgba(201,168,76,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s10 .page-num {
@@ -22,9 +21,144 @@
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
   -webkit-background-clip: text; background-clip: text; letter-spacing: 0.05em;
 }
-#s10 .placeholder {
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Sans KR', sans-serif; font-size: 1.5rem;
-  color: rgba(160,152,136,0.2);
-  opacity: 0; animation: fade-in 0.8s ease forwards 0.8s;
+
+/* 4열 그리드 — 큰 카드 */
+.s10-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-content: center;
+  height: 100%;
+}
+
+/* 카드 — 테두리 없이 사각형, 크게 */
+.s10-card {
+  background: rgba(201,168,76,0.03);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  animation: fade-up 0.6s ease forwards;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.s10-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(201,168,76,0.1);
+}
+
+/* 이미지 영역 — 내부 카드에 증명사진 */
+.s10-img-area {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.6rem, 1.2vh, 1rem) clamp(0.6rem, 1vw, 0.8rem);
+  flex-shrink: 0;
+}
+.s10-img-inner {
+  width: 60%;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(201,168,76,0.04);
+}
+.s10-img-inner img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* placeholder SVG */
+.s10-placeholder-svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+/* 개별 밝기 조절 */
+.s10-card:nth-child(1) .s10-img-inner img { filter: brightness(1.35) contrast(1.05); }
+.s10-card:nth-child(2) .s10-img-inner img { filter: brightness(0.85) contrast(1.02); }
+.s10-card:nth-child(3) .s10-img-inner img { filter: brightness(0.88) contrast(1.02); }
+.s10-card:nth-child(4) .s10-img-inner img { filter: brightness(1.0) contrast(1.03); }
+
+/* 하단 정보 */
+.s10-info {
+  padding: clamp(0.8rem, 1.5vh, 1.2rem) clamp(0.8rem, 1.2vw, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+/* 이름 — 가운데 정렬 */
+.s10-name {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
+  color: rgba(245,243,237,0.95);
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-align: center;
+  width: 100%;
+}
+
+/* 역할 — 회색 통일, 가운데 정렬 */
+.s10-role {
+  font-family: 'Cinzel', sans-serif;
+  font-size: clamp(0.6rem, 1vw, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(160,152,136,0.6) !important;
+  text-align: center;
+  width: 100%;
+}
+
+/* 담당 업무 — 해결전략 step-desc 크기 */
+.s10-tasks {
+  list-style: none;
+  padding: 0; margin: 0.4rem 0 0;
+  border-top: 1px solid rgba(201,168,76,0.1);
+  padding-top: 0.5rem;
+}
+.s10-tasks li {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.78rem, 1.3vw, 0.95rem);
+  color: rgba(201,168,76,0.55);
+  line-height: 1.65;
+  padding: 0.12rem 0;
+  padding-left: 0.9em;
+  position: relative;
+}
+.s10-tasks li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: rgba(201,168,76,0.35);
+  font-weight: 700;
+}
+
+/* 기술 태그 */
+.s10-techs {
+  display: flex; flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(201,168,76,0.1);
+}
+.s10-tech {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: clamp(0.5rem, 0.75vw, 0.6rem);
+  color: rgba(201,168,76,0.5);
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.1);
+  padding: 0.12rem 0.45rem;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .s10-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .s10-grid { grid-template-columns: 1fr; }
 }

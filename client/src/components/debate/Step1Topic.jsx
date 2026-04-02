@@ -7,7 +7,6 @@ import Card from "../common/Card";
 import { HelpCircle } from "lucide-react";
 import MoragoraModal from "../common/MoragoraModal";
 import useModalState from "../../hooks/useModalState";
-import { getGuideStep, advanceGuide } from "../common/OnboardingModal";
 
 const PLACEHOLDER_TOPICS = [
   "노키즈존은 차별인가 권리인가?",
@@ -111,18 +110,11 @@ export default function Step1Topic({
 
   const [error, setError] = useState({ topic: "", category: "" });
   const [isFocused, setIsFocused] = useState(false);
-  const [showGuide, setShowGuide] = useState(() => getGuideStep() === 'topic');
-  const [showNextGuide, setShowNextGuide] = useState(false);
   const typewriterText = useTypewriter(PLACEHOLDER_TOPICS, { active: !topic && !isFocused });
   const [editingSide, setEditingSide] = useState(null);
   const [tempText, setTempText] = useState("");
   const [showHelpModal, setShowHelpModal] = useState(false);
   const { modalState, showModal, closeModal } = useModalState();
-
-  // AI 생성 완료 시 다음 버튼 가이드 표시
-  useEffect(() => {
-    if (proSide && getGuideStep() === 'topic') setShowNextGuide(true);
-  }, [proSide]);
 
   const hasDraft = !!(topic && aiResults[topic] && proSide && conSide);
   const [showDraft, setShowDraft] = useState(hasDraft);
@@ -174,20 +166,6 @@ export default function Step1Topic({
     <div className="flex flex-col gap-6 mt-6">
 
       {/* ── 주제 입력 (항상 표시) ── */}
-      {showGuide && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative mb-4 pointer-events-none"
-        >
-          <div className="bg-[#1B2A4A] rounded-2xl px-5 py-3 shadow-2xl border border-[#D4AF37]/30">
-            <p className="text-[14px] font-black text-white text-center whitespace-nowrap">
-              논쟁 주제를 입력해보세요!
-            </p>
-          </div>
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#1B2A4A] rotate-45 border-r border-b border-[#D4AF37]/30" />
-        </motion.div>
-      )}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-lg">주제</h3>
@@ -200,13 +178,6 @@ export default function Step1Topic({
         </div>
 
         <div className="relative">
-          {showGuide && (
-            <>
-              <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none z-10" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
-              <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none z-10" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
-              <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
-            </>
-          )}
           <Input
             value={topic}
             onChange={(e) => {
@@ -214,7 +185,7 @@ export default function Step1Topic({
               setError(prev => ({ ...prev, topic: "" }));
             }}
             onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
-            onFocus={() => { setIsFocused(true); if (showGuide) setShowGuide(false); }}
+            onFocus={() => { setIsFocused(true); }}
             onBlur={() => setIsFocused(false)}
             placeholder=""
             disabled={showDraft}
@@ -303,14 +274,7 @@ export default function Step1Topic({
           <Button variant="accent" onClick={() => showDraft ? resetTopic() : prevStep()} className="w-full" disabled={aiLoading}>뒤로</Button>
         </div>
         <div className="relative flex-1">
-          {showNextGuide && (
-            <>
-              <div className="absolute -inset-0.5 rounded-xl border-2 border-[#D4AF37] pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite' }} />
-              <div className="absolute -inset-1.5 rounded-xl border border-[#D4AF37]/40 pointer-events-none" style={{ animation: 'guide-glow 2s ease-in-out infinite 0.3s' }} />
-              <style>{`@keyframes guide-glow{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.9;transform:scale(1.03);}}`}</style>
-            </>
-          )}
-          <Button onClick={() => { if (showNextGuide) { setShowNextGuide(false); advanceGuide(null); } handleNext(); }} className="w-full" disabled={aiLoading}>
+          <Button onClick={() => { handleNext(); }} className="w-full" disabled={aiLoading}>
             {aiLoading ? "AI 생성 중..." : "다음"}
           </Button>
         </div>
