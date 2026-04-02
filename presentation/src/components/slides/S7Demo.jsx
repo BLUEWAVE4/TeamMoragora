@@ -116,17 +116,16 @@ export default function S7Demo({ active, stepIndex = 0 }) {
                 </div>
               </div>
 
+              {/* 데모 버튼 */}
+              <div
+                className="s7-demo-btn"
+                onPointerDown={() => { navGuard.skip = true }}
+                onClick={() => window.open('https://team-moragora-client.vercel.app/', '_blank')}
+              >
+                라이브 데모 바로가기
+                <span className="s7-arrow">&#8599;</span>
+              </div>
             </div>
-          </div>
-
-          {/* 데모 버튼 — 폰 아래 */}
-          <div
-            className="s7-demo-btn"
-            onPointerDown={() => { navGuard.skip = true }}
-            onClick={() => window.open('https://team-moragora-client.vercel.app/', '_blank')}
-          >
-            라이브 데모 바로가기
-            <span className="s7-arrow">&#8599;</span>
           </div>
           </div>
 

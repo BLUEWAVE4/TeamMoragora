@@ -140,6 +140,7 @@
 
 /* 데모 버튼 */
 #s7 .s7-demo-btn {
+  position: relative; z-index: 10;
   display: inline-flex; align-items: center; gap: 0.3rem;
   cursor: pointer;
   padding: clamp(0.35rem, 0.8vh, 0.55rem) clamp(0.7rem, 1.8vw, 1.2rem);
