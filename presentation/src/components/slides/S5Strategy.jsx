@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import Slide from '../Slide'
-import Footer from '../Footer'
 import '../../styles/slide5.css'
 
 const flowSteps = [
@@ -15,7 +14,7 @@ const flowSteps = [
     ]
   },
   { num: '04', name: '시민 투표', desc: '실시간 시민 참여로 AI 판결과 균형을 이룬다' },
-  { num: '⚖', name: '최종 판결', desc: 'AI 75% + 시민 25% — 논쟁의 마침표', final: true },
+  { num: '05', name: '최종 판결', desc: 'AI 75% + 시민 25% — 논쟁의 마침표', final: true },
 ]
 
 export default function S5Strategy({ active, stepIndex = 0 }) {
@@ -36,23 +35,23 @@ export default function S5Strategy({ active, stepIndex = 0 }) {
     if (stepIndex === 0) setLitCount(0)
   }, [stepIndex, active])
 
-  // step0: 좌측만, step1: 우측 순차점등, step2: 전체
-  const leftLit = stepIndex === 0 || stepIndex >= 2
+  // step0: 좌측만, step1: 우측 순차점등
+  const leftLit = stepIndex === 0
+  const leftDim = stepIndex === 1
   const rightLit = stepIndex >= 1
-  const allLit = stepIndex >= 2
-  const visibleFlow = allLit ? flowSteps.length : litCount
+  const visibleFlow = litCount
 
   return (
     <Slide id="s5" active={active}>
       <div className="s-wrap">
         <div className="header">
-          <span className="page-num">03</span>
+          <span className="page-num">04</span>
           <span className="header-title">해결 전략</span>
         </div>
 
         <div className="body">
           {/* 좌측 */}
-          <div className={`strategy-left${leftLit ? ' lit' : ''}`}>
+          <div className={`strategy-left${leftLit ? ' lit' : ''}${leftDim ? ' dim' : ''}`}>
             <div className="strategy-tag">핵심 전략</div>
             <div className="strategy-headline">
               논쟁의 마침표는<br />
@@ -63,7 +62,7 @@ export default function S5Strategy({ active, stepIndex = 0 }) {
               단일 판단은 편향을 피할 수 없다.<br />
               인간도, AI도 마찬가지다.<br /><br />
               모라고라는 서로 다른 관점을 가진<br />
-              3개의 AI 심판과 시민 투표를 결합해<br />
+              <strong>3개의 AI 심판</strong>과 <strong>시민 투표</strong>를 결합해<br />
               어느 한 쪽도 결론을 독점하지 못하게 한다.
             </div>
           </div>
@@ -71,19 +70,16 @@ export default function S5Strategy({ active, stepIndex = 0 }) {
           {/* 우측 */}
           <div className={`strategy-right${rightLit ? ' lit' : ''}`}>
             <div className="flow-title">판결 진행과정</div>
-            <div className="flow">
+            <div className="flow-cards">
               {flowSteps.map((step, i) => (
                 <div
-                  className={`flow-step${step.final ? ' final' : ''}${i < visibleFlow ? ' lit' : ''}`}
+                  className={`flow-card${step.final ? ' final' : ''}${i < visibleFlow ? ' lit' : ''}`}
                   key={i}
                 >
-                  <div className="step-indicator">
-                    <div className="step-circle">{step.num}</div>
-                    <div className="step-line" />
-                  </div>
-                  <div className="step-content">
-                    <div className="step-name">{step.name}</div>
-                    <div className="step-desc">{step.desc}</div>
+                  <div className="flow-card-num">{step.num}</div>
+                  <div className="flow-card-body">
+                    <div className="flow-card-name">{step.name}</div>
+                    <div className="flow-card-desc">{step.desc}</div>
                     {step.chips && (
                       <div className="judge-chips">
                         {step.chips.map((c, j) => (
@@ -101,23 +97,9 @@ export default function S5Strategy({ active, stepIndex = 0 }) {
 
         </div>
 
-        {/* 하단 판결 비중 */}
-        <div className={`ratio-wrap${allLit ? ' lit' : ''}`}>
-          <div className="ratio-label">판결 비중</div>
-          <div className="ratio-bar-wrap">
-            <div className="ratio-ai"><span className="ratio-text">AI 75%</span></div>
-            <div className="ratio-citizen"><span className="ratio-text">시민 25%</span></div>
-          </div>
-          <div className="ratio-legend">
-            <div className="ratio-legend-item"><div className="legend-dot ai" />AI 3사 독립 판결 합산</div>
-            <div className="ratio-legend-item"><div className="legend-dot cit" />시민 실시간 투표</div>
-          </div>
-        </div>
-
-        <Footer delay={2} />
       </div>
     </Slide>
   )
 }
 
-S5Strategy.stepCount = 2
+S5Strategy.stepCount = 1

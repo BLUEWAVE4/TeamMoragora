@@ -1,5 +1,4 @@
 import Slide from '../Slide'
-import Footer from '../Footer'
 import '../../styles/slide2.css'
 
 const sections = [
@@ -9,25 +8,25 @@ const sections = [
     items: [
       { num: '01', title: '제안 배경' },
       { num: '02', title: '문제 정의' },
-      { num: '03', title: '시장 분석' },
-      { num: '04', title: '서비스의 필요성' },
+      { num: '03', title: '서비스의 필요성' },
     ],
   },
   {
     label: 'HOW',
     sub: '어떻게 해결하는가',
     items: [
-      { num: '05', title: '해결 전략' },
-      { num: '06', title: '서비스 구조' },
-      { num: '07', title: '핵심 기능 시연' },
+      { num: '04', title: '해결 전략' },
+      { num: '05', title: '시스템 아키텍처' },
+      { num: '06', title: '핵심 기능 시연' },
+      { num: '07', title: '핵심 기술' },
+      { num: '08', title: '트러블 슈팅' },
     ],
   },
   {
     label: 'WHAT',
     sub: '무엇을 이루었는가',
     items: [
-      { num: '08', title: '차별점' },
-      { num: '09', title: '기술 스택' },
+      { num: '09', title: '차별점' },
       { num: '10', title: '기대효과' },
       { num: '11', title: '활용방안' },
       { num: '12', title: '팀 소개' },
@@ -61,7 +60,6 @@ export default function S2Toc({ active }) {
             </div>
           ))}
         </div>
-        <Footer />
       </div>
     </Slide>
   )
