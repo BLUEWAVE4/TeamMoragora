@@ -170,13 +170,12 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : stepIndex === 3 ? [0, 0, 0.35, 0.35, 0] : 0,
-              y: !active ? 24 : 0,
+              opacity: active ? 1 : 0,
+              y: active ? 0 : 24,
             }}
             transition={{
-              duration: stepIndex === 3 ? 5 : 0.6,
-              times: stepIndex === 3 ? [0, 0.35, 0.5, 0.75, 1] : undefined,
-              delay: active && stepIndex === 0 ? 3.2 : 0,
+              duration: 0.6,
+              delay: active ? 3.2 : 0,
               ease,
             }}
           >
@@ -200,7 +199,7 @@ export default function S3Proposal({ active, stepIndex }) {
             </div>
             <motion.div
               className="card-text"
-              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.4, ease }}
             >
               <div className="stat-num green" data-count="70" data-suffix="%" data-delay="3400" />
@@ -208,9 +207,6 @@ export default function S3Proposal({ active, stepIndex }) {
             </motion.div>
           </motion.div>
         </div>
-
-        {/* step1~3: 결론 흐름 — 중앙 텍스트 + 해당 카드 잔상 */}
-        <div className="s3-conclusion">
           <AnimatePresence mode="wait">
             {stepIndex >= 1 && stepIndex <= 3 && (
               <motion.div
@@ -226,7 +222,6 @@ export default function S3Proposal({ active, stepIndex }) {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
         <Footer />
       </div>
