@@ -2,16 +2,16 @@
 
 /* ── 변수 ── */
 :root {
-  --bg: #0d0c0b;
-  --gold: #c9a84c;
-  --gold-bright: #f0c96a;
-  --gold-dim: rgba(201,168,76,0.12);
+  --bg: #f5f3ef;
+  --gold: #2a4a7a;
+  --gold-bright: #1a3560;
+  --gold-dim: rgba(26,53,96,0.08);
   --red: #8b2e2e;
   --red-bright: #c0392b;
-  --text: #e8e0d0;
-  --text-dim: #6e6457;
-  --text-mid: #a09070;
-  --marble-dim: #a09888;
+  --text: #1B2A4A;
+  --text-dim: #4a5670;
+  --text-mid: #3a4a65;
+  --marble-dim: #5a6578;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,25 +27,25 @@ html, body {
 .bg-gradient {
   position: fixed; inset: 0; z-index: 0;
   background:
-    radial-gradient(ellipse 70% 70% at 20% 50%, rgba(30,25,16,0.9), transparent 60%),
-    radial-gradient(ellipse 50% 80% at 50% 50%, #1c1710, var(--bg) 70%);
+    radial-gradient(ellipse 70% 70% at 20% 50%, rgba(240,235,225,0.9), transparent 60%),
+    radial-gradient(ellipse 50% 80% at 50% 50%, #ede8e0, var(--bg) 70%);
 }
 .scanline {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.007) 3px, rgba(255,255,255,0.007) 4px);
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.008) 3px, rgba(0,0,0,0.008) 4px);
 }
 .vignette {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background: radial-gradient(ellipse 95% 95% at 50% 50%, transparent 45%, rgba(0,0,0,0.8) 100%);
+  background: radial-gradient(ellipse 95% 95% at 50% 50%, transparent 45%, rgba(200,195,185,0.4) 100%);
 }
 .left-bar {
   position: fixed; left: 0; top: 0; bottom: 0; width: 4px; z-index: 50;
   background: linear-gradient(to bottom, transparent, var(--gold) 30%, var(--red) 60%, transparent);
-  opacity: 0.7;
+  opacity: 0.5;
 }
 .bottom-bar {
   position: fixed; bottom: 0; left: 0; right: 0; height: 3px; z-index: 50;
-  background: linear-gradient(to right, var(--gold), rgba(201,168,76,0.2), transparent 70%);
+  background: linear-gradient(to right, var(--gold), rgba(26,53,96,0.15), transparent 70%);
 }
 
 /* ── 슬라이드 시스템 ── */
@@ -66,8 +66,8 @@ html, body {
 /* ── 슬라이드 번호 ── */
 #slide-counter {
   position: fixed; bottom: clamp(1.5rem, 3vh, 2.5rem); right: clamp(3rem, 8vw, 6rem); z-index: 100;
-  font-family: 'Cinzel', sans-serif; font-size: 1rem;
-  letter-spacing: 0.15em; color: rgba(160,152,136,0.35);
+  font-family: 'Cinzel', sans-serif; font-size: clamp(1.45rem, 3.5vw, 2.1rem);
+  letter-spacing: 0.15em; color: var(--text);
 }
 
 /* ── 공용 푸터 ── */
@@ -75,30 +75,44 @@ html, body {
   position: absolute; bottom: clamp(1.5rem, 3vh, 2.5rem);
   left: clamp(3rem, 8vw, 6rem); right: clamp(3rem, 8vw, 6rem);
   display: flex; justify-content: space-between; align-items: center;
-  padding-top: 1.2rem; border-top: 1px solid rgba(201,168,76,0.1);
+  padding-top: 1.2rem; border-top: 1px solid rgba(26,53,96,0.15);
 }
 .footer-brand {
-  font-family: 'Cinzel', sans-serif; font-size: 0.65rem; letter-spacing: 0.3em;
-  color: rgba(201,168,76,0.3); text-transform: uppercase;
+  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); letter-spacing: 0.3em;
+  color: var(--text); text-transform: uppercase;
 }
+
+/* ── 전체 page-num 통일 ── */
+.page-num {
+  font-family:'Cinzel',sans-serif !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:0.1em !important;
+  padding:3px 8px !important;
+  border-radius:2px !important;
+}
+
+/* ── 전체 header-title 크기 1.5배 ── */
+.header-title { font-size:53px !important; }
 
 /* ── 개발용 네비 바 ── */
 .dev-nav {
   position:fixed; bottom:0; left:0; right:0; z-index:9999;
   display:flex; justify-content:center; gap:2px;
-  padding:4px 8px; background:rgba(0,0,0,0.85);
-  border-top:1px solid rgba(201,168,76,0.15);
+  padding:4px 8px; background:rgba(255,255,255,0.9);
+  border-top:1px solid rgba(26,53,96,0.15);
 }
 .dev-nav-btn {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:500;
-  color:rgba(230,225,215,0.5); background:transparent;
-  border:1px solid rgba(255,255,255,0.08); border-radius:3px;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:500;
+  color:rgba(60,55,50,0.6); background:transparent;
+  border:1px solid rgba(0,0,0,0.1); border-radius:3px;
   padding:3px 8px; cursor:pointer; transition:all 0.2s;
 }
-.dev-nav-btn:hover { color:rgba(201,168,76,0.9); border-color:rgba(201,168,76,0.3); }
-.dev-nav-btn.active { color:rgba(201,168,76,1); border-color:rgba(201,168,76,0.5); background:rgba(201,168,76,0.1); }
+.dev-nav-btn:hover { color:var(--text); border-color:var(--text); }
+.dev-nav-btn.active { color:rgba(26,53,96,1); border-color:var(--text); background:rgba(26,53,96,0.08); }
 
 /* ── 공용 키프레임 ── */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-in-half { from { opacity: 0; } to { opacity: 0.5; } }
 @keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fade-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }

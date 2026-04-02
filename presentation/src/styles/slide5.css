@@ -6,20 +6,19 @@
 }
 #s5 .header {
   display:flex; align-items:center; gap:1rem;
-  padding-bottom:1.2rem; border-bottom:1px solid rgba(201,168,76,0.18);
+  padding-bottom:1.2rem; border-bottom:1px solid rgba(26,53,96,0.18);
   margin-bottom:clamp(2rem, 5vh, 3.5rem);
   opacity:0; animation:fade-up 0.8s ease forwards 0.4s;
 }
 #s5 .page-num {
-  font-family:'Cinzel',sans-serif; font-size:0.7rem; font-weight:600;
-  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
-  padding:0.2rem 0.5rem; border:1px solid rgba(201,168,76,0.25); border-radius:2px;
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  color:var(--text); letter-spacing:0.1em;
+  padding:0.2rem 0.5rem; border:1px solid rgba(26,53,96,0.25); border-radius:2px;
 }
 #s5 .header-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.4rem,3.5vw,2.2rem); color:transparent;
-  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 50%,rgba(201,168,76,0.6));
-  -webkit-background-clip:text; background-clip:text; letter-spacing:0.05em;
+  font-size:clamp(1.4rem,3.5vw,2.2rem); color:var(--text);
+   letter-spacing:0.05em;
 }
 
 /* 본문 2열 — 1:1 */
@@ -35,13 +34,13 @@
 }
 #s5 .strategy-left.lit { opacity:1; }
 #s5 .strategy-tag {
-  font-family:'Noto Sans KR',sans-serif; font-size:1.56rem; font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.6rem, 3.8vw, 2.4rem); font-weight:600;
   letter-spacing:0.12em;
-  color:rgba(201,168,76,0.5);
+  color:var(--text);
   display:flex; align-items:center; gap:0.6rem;
 }
 #s5 .strategy-tag::before {
-  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+  content:''; width:28px; height:1px; background:rgba(26,53,96,0.4); flex-shrink:0;
 }
 #s5 .strategy-headline {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
@@ -50,14 +49,14 @@
 #s5 .strategy-headline em { font-style:normal; color:var(--gold-bright); }
 #s5 .strategy-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.95rem,1.6vw,1.15rem); color:var(--marble-dim); line-height:1.85;
+  font-size:clamp(1.4rem, 3.4vw, 2rem); color:var(--marble-dim); line-height:1.85;
 }
 
 /* 비율 바 */
 #s5 .ratio-wrap {
   display:flex; flex-direction:column; gap:0.4rem;
-  padding:0.7rem 1.2rem; border:1px solid rgba(201,168,76,0.18);
-  border-radius:4px; background:rgba(201,168,76,0.04);
+  padding:0.7rem 1.2rem; border:1px solid rgba(26,53,96,0.18);
+  border-radius:4px; background:rgba(26,53,96,0.04);
   margin-bottom:clamp(2.5rem, 5vh, 4rem);
   opacity:0.15; transition: opacity 0.5s ease;
 }
@@ -65,24 +64,24 @@
   opacity:1;
 }
 #s5 .ratio-label {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.9rem; font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.4rem, 3.4vw, 2rem); font-weight:600;
   letter-spacing:0.08em;
-  color:rgba(201,168,76,0.6); margin-bottom:0;
+  color:var(--text); margin-bottom:0;
 }
 #s5 .ratio-bar-wrap {
   display:flex; height:26px; border-radius:3px; overflow:hidden;
-  border:1px solid rgba(255,255,255,0.06);
+  border:1px solid rgba(0,0,0,0.06);
 }
 #s5 .ratio-ai {
   width:0%; height:100%;
-  background:linear-gradient(to right, rgba(139,46,46,0.7), rgba(201,168,76,0.6));
+  background:linear-gradient(to right, rgba(139,46,46,0.7), rgba(26,53,96,0.6));
   display:flex; align-items:center; justify-content:center;
 }
 #s5 .ratio-wrap.lit .ratio-ai {
   animation: s5-ratio-ai 1s cubic-bezier(0.16,1,0.3,1) forwards 0.2s;
 }
 #s5 .ratio-citizen {
-  width:0%; height:100%; background:rgba(255,255,255,0.06);
+  width:0%; height:100%; background:rgba(0,0,0,0.06);
   display:flex; align-items:center; justify-content:center;
 }
 #s5 .ratio-wrap.lit .ratio-citizen {
@@ -91,13 +90,13 @@
 @keyframes s5-ratio-ai  { to { width:75%; } }
 @keyframes s5-ratio-cit { to { width:25%; } }
 #s5 .ratio-text {
-  font-family:'Cinzel',sans-serif; font-size:0.8rem; font-weight:600;
-  letter-spacing:0.05em; color:rgba(255,255,255,0.8);
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  letter-spacing:0.05em; color:var(--text);
 }
 #s5 .ratio-legend { display:flex; gap:1.4rem; }
 #s5 .ratio-legend-item {
   display:flex; align-items:center; gap:0.4rem;
-  font-family:'Noto Sans KR',sans-serif; font-size:0.82rem; color:var(--marble-dim);
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--marble-dim);
 }
 #s5 .legend-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 #s5 .legend-dot.ai  { background:var(--gold); }
@@ -110,14 +109,14 @@
 }
 #s5 .strategy-right.lit { opacity:1; }
 #s5 .flow-title {
-  font-family:'Noto Sans KR',sans-serif; font-size:1.56rem; font-weight:600;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.6rem, 3.8vw, 2.4rem); font-weight:600;
   letter-spacing:0.12em;
-  color:rgba(201,168,76,0.5);
+  color:var(--text);
   display:flex; align-items:center; gap:0.6rem;
   margin-bottom:clamp(1rem,2.5vh,1.6rem);
 }
 #s5 .flow-title::before {
-  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+  content:''; width:28px; height:1px; background:rgba(26,53,96,0.4); flex-shrink:0;
 }
 #s5 .flow { display:flex; flex-direction:column; }
 
@@ -135,24 +134,24 @@
 #s5 .step-circle {
   width:36px; height:36px; border-radius:50%; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-family:'Cinzel',sans-serif; font-size:0.75rem; font-weight:600;
-  border:1px solid rgba(201,168,76,0.35); color:var(--gold);
-  background:rgba(201,168,76,0.06); position:relative; z-index:1;
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  border:1px solid rgba(26,53,96,0.35); color:var(--gold);
+  background:rgba(26,53,96,0.06); position:relative; z-index:1;
 }
 #s5 .step-line {
   width:1px; flex:1; min-height:14px;
-  background:linear-gradient(to bottom, rgba(201,168,76,0.25), rgba(201,168,76,0.08));
+  background:linear-gradient(to bottom, rgba(26,53,96,0.25), rgba(26,53,96,0.08));
   margin:2px 0;
 }
 #s5 .flow-step:last-child .step-line { display:none; }
 #s5 .step-content { padding-bottom:clamp(0.9rem,2vh,1.4rem); padding-top:4px; }
 #s5 .step-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:600;
-  font-size:clamp(1rem,1.8vw,1.2rem); color:var(--text); margin-bottom:0.3rem;
+  font-size:clamp(1.45rem, 3.5vw, 2.1rem); color:var(--text); margin-bottom:0.3rem;
 }
 #s5 .step-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.85rem,1.4vw,1rem); color:var(--text-dim); line-height:1.65;
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text-dim); line-height:1.65;
 }
 
 /* AI 칩 */
@@ -162,17 +161,17 @@
   padding:0.3rem 0.8rem; border-radius:4px;
   background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
 }
-#s5 .jchip.gpt { border-color:rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); }
+#s5 .jchip.gpt { border-color:var(--text); background:rgba(0,0,0,0.4); }
 #s5 .jchip.gem { border-color:rgba(107,158,232,0.35); background:rgba(107,158,232,0.06); }
 #s5 .jchip.cla { border-color:rgba(197,122,58,0.35); background:rgba(197,122,58,0.06); }
 #s5 .jlabel {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.8rem; font-weight:600;
-  letter-spacing:0.06em; color:rgba(230,225,215,0.7);
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  letter-spacing:0.06em; color:var(--text);
 }
 
 /* 최종 판결 강조 */
 #s5 .flow-step.final .step-circle {
-  border-color:var(--gold); background:rgba(201,168,76,0.15);
-  box-shadow:0 0 12px rgba(201,168,76,0.2);
+  border-color:var(--gold); background:rgba(26,53,96,0.15);
+  box-shadow:0 0 12px rgba(26,53,96,0.2);
 }
 #s5 .flow-step.final .step-name { color:var(--gold-bright); }

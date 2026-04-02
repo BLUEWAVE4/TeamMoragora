@@ -61,7 +61,7 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               {/* 사용자 아이콘 */}
               <div className="s6-user">
                 <div className="s6-user-icon">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
@@ -78,21 +78,21 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                     <div className="s6-irow-v s6-no-arrow"><span className="s6-tag blue">Pages</span><span className="s6-files">home | chat | debate | ranking | profile</span></div>
                     <div className="s6-pages-conn">
                       <svg width="24" height="100%" viewBox="0 0 24 16">
-                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
-                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
+                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
+                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
                       </svg>
                     </div>
                     <div className="s6-irow-v"><span className="s6-tag blue">Components</span><span className="s6-files">common | debate | layout | verdict</span></div>
                     {/* Components → Store(양방향) / Services(단방향) 커넥터 */}
                     <div className="s6-pair-conn">
                       <svg className="s6-pair-conn-left" width="24" height="100%" viewBox="0 0 24 16">
-                        <polyline points="8,3 12,0 16,3" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
-                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
-                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
+                        <polyline points="8,3 12,0 16,3" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
+                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
+                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
                       </svg>
                       <svg className="s6-pair-conn-right" width="24" height="100%" viewBox="0 0 24 16">
-                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
-                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
+                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
+                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
                       </svg>
                     </div>
                     <div className="s6-irow-pair">
@@ -102,8 +102,8 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                     {/* Components → Hooks·Utils 하향 커넥터 (점선 + 하단 헤드) */}
                     <div className="s6-hooks-conn">
                       <svg width="24" height="100%" viewBox="0 0 24 16" overflow="visible">
-                        <line x1="12" y1="-100" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" strokeDasharray="1.5 2.5" />
-                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
+                        <line x1="12" y1="-100" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" strokeDasharray="1.5 2.5" />
+                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
                       </svg>
                     </div>
                     <div className="s6-irow-v"><span className="s6-tag purple">Hooks · Utils</span><span className="s6-files">useCountdown | useModalState | avatar | dateFormatter</span></div>
@@ -121,13 +121,13 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               <div className="s6-conn-socket">
                 <svg width="100%" height="100%" viewBox="0 0 20 100" preserveAspectRatio="none">
                   {/* Services ↔ Middleware 양방향 (금색) */}
-                  <path d="M 0 28 H 5 V 10 H 20" fill="none" stroke="rgba(201,168,76,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="3,27 0,28 3,29" fill="none" stroke="rgba(201,168,76,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,9 20,10 17,11" fill="none" stroke="rgba(201,168,76,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 24 H 9 V 10 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="3,23 0,24 3,25" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="17,9 20,10 17,11" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   {/* Socket 양방향 (하늘색, 긴 점선) */}
-                  <path d="M 0 33 H 10 V 48 H 20" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" strokeDasharray="6 3" vectorEffect="non-scaling-stroke" />
-                  <polyline points="3,32 0,33 3,34" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,47 20,48 17,49" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 37 H 12 V 50 H 20" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" strokeDasharray="6 3" vectorEffect="non-scaling-stroke" />
+                  <polyline points="3,36 0,37 3,38" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="17,49 20,50 17,51" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   {/* Supabase 양방향 (초록색) */}
                   <path d="M 0 53 H 10 V 68 H 20" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   <polyline points="3,52 0,53 3,54" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
@@ -141,9 +141,9 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                   <div className="s6-group-title">Server · Express + Node</div>
                   <div className="s6-inner-rows">
                     <div className="s6-irow-v s6-no-arrow"><span className="s6-tag blue">Middleware</span><span className="s6-files">requireAuth | Filter | validate</span></div>
-                    <div className="s6-svg-conn"><svg width="24" height="100%" viewBox="0 0 24 16"><line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" /><polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" /></svg></div>
+                    <div className="s6-svg-conn"><svg width="24" height="100%" viewBox="0 0 24 16"><line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" /><polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" /></svg></div>
                     <div className="s6-irow-v s6-no-arrow"><span className="s6-tag blue">Routes</span><span className="s6-files">auth | debate | argument | vote | profile</span></div>
-                    <div className="s6-svg-conn"><svg width="24" height="100%" viewBox="0 0 24 16"><line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" /><polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" /></svg></div>
+                    <div className="s6-svg-conn"><svg width="24" height="100%" viewBox="0 0 24 16"><line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" /><polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" /></svg></div>
                     <div className="s6-irow-v s6-no-arrow"><span className="s6-tag blue">Controllers</span><span className="s6-files">auth | debate | judgment | vote | chat</span></div>
                     {/* Controllers → Services·AI(단방향) / Socket.io(양방향) 분기 */}
                     <div className="s6-pair-conn">
@@ -153,8 +153,8 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                         <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(100,200,240,0.5)" strokeWidth="1.2" />
                       </svg>
                       <svg className="s6-pair-conn-right" width="24" height="100%" viewBox="0 0 24 16">
-                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
-                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="1.2" />
+                        <line x1="12" y1="0" x2="12" y2="16" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
+                        <polyline points="8,13 12,16 16,13" fill="none" stroke="rgba(26,53,96,0.5)" strokeWidth="1.2" />
                       </svg>
                     </div>
                     <div className="s6-irow-pair">
@@ -187,8 +187,8 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               {/* → API 엘보 커넥터 */}
               <div className="s6-conn-api">
                 <svg width="100%" height="100%" viewBox="0 0 20 100" preserveAspectRatio="none">
-                  <path d="M 0 39 H 10 V 15 H 20" fill="none" stroke="rgba(201,168,76,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,14 20,15 17,16" fill="none" stroke="rgba(201,168,76,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 39 H 10 V 15 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="17,14 20,15 17,16" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                 </svg>
               </div>
 
@@ -218,10 +218,10 @@ export default function S6Structure({ active, stepIndex = 0 }) {
                 <div className="s6-phone">
                   <svg viewBox="0 0 280 560" fill="none" className="s6-phone-svg">
                     <rect x="2" y="2" width="276" height="556" rx="36" ry="36"
-                      stroke="rgba(201,168,76,0.4)" strokeWidth="3" fill="rgba(10,10,8,0.6)" />
-                    <rect x="95" y="12" width="90" height="6" rx="3" fill="rgba(201,168,76,0.25)" />
+                      stroke="rgba(26,53,96,0.4)" strokeWidth="3" fill="rgba(10,10,8,0.6)" />
+                    <rect x="95" y="12" width="90" height="6" rx="3" fill="rgba(26,53,96,0.25)" />
                     <rect x="12" y="28" width="256" height="504" rx="8" fill="rgba(26,26,24,0.95)" />
-                    <rect x="105" y="542" width="70" height="4" rx="2" fill="rgba(201,168,76,0.2)" />
+                    <rect x="105" y="542" width="70" height="4" rx="2" fill="rgba(26,53,96,0.2)" />
                   </svg>
                   <div className="s6-phone-screen">
                     {/* 이미지 삽입 영역 */}

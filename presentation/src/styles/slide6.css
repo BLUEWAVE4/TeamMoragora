@@ -5,31 +5,30 @@
 }
 #s6 .s6-header {
   display:flex; align-items:center; gap:1rem;
-  padding-bottom:1.2rem; border-bottom:1px solid rgba(201,168,76,0.18);
+  padding-bottom:1.2rem; border-bottom:1px solid rgba(26,53,96,0.18);
   margin-bottom:clamp(1.2rem, 2.5vh, 2rem);
 }
 #s6 .page-num {
-  font-family:'Cinzel',sans-serif; font-size:0.7rem; font-weight:600;
-  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
-  padding:0.2rem 0.5rem; border:1px solid rgba(201,168,76,0.25); border-radius:2px;
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  color:var(--text); letter-spacing:0.1em;
+  padding:0.2rem 0.5rem; border:1px solid rgba(26,53,96,0.25); border-radius:2px;
 }
 #s6 .header-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.4rem,3.5vw,2.2rem); color:transparent;
-  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 50%,rgba(201,168,76,0.6));
-  -webkit-background-clip:text; background-clip:text; letter-spacing:0.05em;
+  font-size:clamp(1.4rem,3.5vw,2.2rem); color:var(--text);
+   letter-spacing:0.05em;
 }
 
 /* 본문 */
 #s6 .s6-body { flex:1; display:flex; flex-direction:column; min-height:0; }
 #s6 .s6-section-tag {
-  font-family:'Noto Sans KR',sans-serif; font-size:1.4rem; font-weight:600;
-  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.55rem, 3.8vw, 2.4rem); font-weight:600;
+  color:var(--text); letter-spacing:0.1em;
   display:flex; align-items:center; gap:0.6rem;
   margin-bottom:clamp(0.8rem,2vh,1.4rem);
 }
 #s6 .s6-section-tag::before {
-  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+  content:''; width:28px; height:1px; background:rgba(26,53,96,0.4); flex-shrink:0;
 }
 
 /* ========== step0: 아키텍처 (이미지 재현) ========== */
@@ -49,29 +48,29 @@
 }
 #s6 .s6-user-icon { font-size:2.2rem; opacity:0.6; }
 #s6 .s6-user-label {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.8rem; font-weight:500;
-  color:rgba(230,225,215,0.5); text-align:center; white-space:nowrap;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:500;
+  color:var(--text); text-align:center; white-space:nowrap;
 }
 
 /* 접속 화살표 */
 #s6 .s6-conn-h {
   grid-column:2; grid-row:1; align-self:start;
   display:flex; align-items:center; gap:0.2rem; margin-top:0.8rem;
-  font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:500;
-  color:rgba(201,168,76,0.3); white-space:nowrap; padding:0 0.15rem;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:500;
+  color:var(--text); white-space:nowrap; padding:0 0.15rem;
 }
 #s6 .s6-conn-h::after {
   content:''; width:0; height:0;
   border-top:3px solid transparent;
   border-bottom:3px solid transparent;
-  border-left:5px solid rgba(201,168,76,0.3);
+  border-left:5px solid rgba(26,53,96,0.3);
 }
 
 /* 그룹 박스 (Client / Server) */
 #s6 .s6-group {
-  border:1px dashed rgba(201,168,76,0.15); border-radius:10px;
+  border:1px dashed rgba(26,53,96,0.15); border-radius:10px;
   padding:clamp(0.5rem,1vh,0.8rem) clamp(0.5rem,0.8vw,0.8rem);
-  background:rgba(201,168,76,0.015);
+  background:rgba(26,53,96,0.015);
 }
 /* Client 열: 클라이언트 + 범례 */
 #s6 .s6-client-col {
@@ -87,8 +86,8 @@
 
 #s6 .s6-group-title {
   font-family:'Noto Sans KR',sans-serif;
-  font-size:clamp(0.9rem,1.4vw,1.1rem); font-weight:600;
-  color:rgba(201,168,76,0.6); margin-bottom:0.5rem; letter-spacing:0.03em;
+  font-size:clamp(1.4rem, 3.4vw, 2rem); font-weight:600;
+  color:var(--text); margin-bottom:0.5rem; letter-spacing:0.03em;
   text-align:center;
 }
 
@@ -105,7 +104,7 @@
   content:''; position:absolute;
   left:50%; bottom:-0.55rem; transform:translateX(-50%);
   width:1px; height:0.45rem;
-  background:rgba(201,168,76,0.25);
+  background:rgba(26,53,96,0.25);
 }
 /* 화살표 머리 (▼) */
 #s6 .s6-inner-rows > .s6-irow-v:not(:last-child)::before,
@@ -115,7 +114,7 @@
   width:0; height:0;
   border-left:3px solid transparent;
   border-right:3px solid transparent;
-  border-top:4px solid rgba(201,168,76,0.3);
+  border-top:4px solid rgba(26,53,96,0.3);
   z-index:1;
 }
 
@@ -173,17 +172,17 @@
 #s6 .s6-irow-v.half { flex:1; }
 #s6 .s6-files {
   font-family:'Noto Sans KR',sans-serif;
-  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:300;
-  color:rgba(230,225,215,0.45); line-height:1.4;
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:300;
+  color:var(--text); line-height:1.4;
   letter-spacing:0.02em;
 }
 
 /* 태그 */
 #s6 .s6-tag {
-  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:600;
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
   padding:0.15rem 0.45rem; border-radius:3px; flex-shrink:0; white-space:nowrap;
 }
-#s6 .s6-tag.blue   { background:rgba(100,140,200,0.18); color:rgba(140,180,240,0.85); }
+#s6 .s6-tag.blue   { background:rgba(100,140,200,0.18); color:rgba(140,180,240,1); }
 #s6 .s6-tag.purple { background:rgba(160,120,200,0.15); color:rgba(190,160,230,0.8); }
 #s6 .s6-tag.sky    { background:rgba(80,180,220,0.15); color:rgba(110,210,250,0.8); }
 
@@ -203,8 +202,8 @@
   gap:0.3rem; padding:0 0.15rem;
 }
 #s6 .s6-proto-label {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.6rem; font-weight:600;
-  color:rgba(201,168,76,0.35); letter-spacing:0.08em;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  color:var(--text); letter-spacing:0.08em;
   position:relative;
 }
 /* HTTP → 화살표 (실선) */
@@ -213,7 +212,7 @@
   width:0; height:0;
   border-top:3px solid transparent;
   border-bottom:3px solid transparent;
-  border-left:5px solid rgba(201,168,76,0.35);
+  border-left:5px solid rgba(26,53,96,0.35);
 }
 /* WS → 화살표 (점선 느낌) */
 #s6 .s6-proto-label.ws { color:rgba(100,200,240,0.35); }
@@ -222,7 +221,7 @@
 }
 #s6 .s6-proto-line {
   width:0; flex:1; min-height:20px;
-  border-left:1px solid rgba(201,168,76,0.2);
+  border-left:1px solid rgba(26,53,96,0.2);
   position:relative;
 }
 /* 하단 점선 구간 (WS) */
@@ -245,28 +244,28 @@
 #s6 .s6-api-col {
   grid-column:7; grid-row:1;
   display:flex; flex-direction:column; gap:0.4rem;
-  border:1px dashed rgba(201,168,76,0.15); border-radius:10px;
+  border:1px dashed rgba(26,53,96,0.15); border-radius:10px;
   padding:clamp(0.5rem,1vh,0.8rem) clamp(0.5rem,0.8vw,0.8rem);
-  background:rgba(201,168,76,0.015);
+  background:rgba(26,53,96,0.015);
 }
 #s6 .s6-api-head {
-  font-family:'Noto Sans KR',sans-serif; font-size:0.9rem; font-weight:600;
-  color:rgba(201,168,76,0.5); text-align:center; margin-bottom:0.3rem;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.4rem, 3.4vw, 2rem); font-weight:600;
+  color:var(--text); text-align:center; margin-bottom:0.3rem;
 }
 #s6 .s6-api-stack { display:flex; flex-direction:column; gap:0.25rem; }
 #s6 .s6-api {
   font-family:'Noto Sans KR',sans-serif;
-  font-size:clamp(0.7rem,1.1vw,0.9rem); font-weight:500;
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:500;
   padding:0.25rem 0.5rem; border-radius:4px;
-  border:1px solid rgba(201,168,76,0.15);
+  border:1px solid rgba(26,53,96,0.15);
   display:flex; align-items:center; justify-content:space-between;
 }
-#s6 .s6-api.gpt    { color:rgba(230,225,215,0.7); background:rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.12); }
-#s6 .s6-api.gemini { color:rgba(107,158,232,0.8); background:rgba(107,158,232,0.06); border-color:rgba(107,158,232,0.2); }
-#s6 .s6-api.claude { color:rgba(197,122,58,0.8); background:rgba(197,122,58,0.06); border-color:rgba(197,122,58,0.2); }
-#s6 .s6-api.grok   { color:rgba(160,152,136,0.5); background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.06); }
+#s6 .s6-api.gpt    { color:var(--text); background:rgba(240,238,234,0.6); border-color:rgba(0,0,0,0.1); }
+#s6 .s6-api.gemini { color:rgba(50,100,200,0.9); background:rgba(107,158,232,0.08); border-color:rgba(107,158,232,0.25); }
+#s6 .s6-api.claude { color:rgba(170,90,30,0.9); background:rgba(197,122,58,0.08); border-color:rgba(197,122,58,0.25); }
+#s6 .s6-api.grok   { color:rgba(80,75,65,0.6); background:rgba(240,238,234,0.4); border-color:rgba(0,0,0,0.08); }
 #s6 .s6-fb {
-  font-size:0.45rem; font-weight:300; color:rgba(160,152,136,0.4);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:300; color:var(--text);
   border:1px solid rgba(160,152,136,0.12); border-radius:2px;
   padding:0.04rem 0.2rem;
 }
@@ -281,17 +280,17 @@
   display:flex; flex-direction:column; gap:0.3rem;
 }
 #s6 .s6-infra-box {
-  border:1px dashed rgba(201,168,76,0.15); border-radius:6px;
+  border:1px dashed rgba(26,53,96,0.15); border-radius:6px;
   padding:0.35rem 0.6rem; text-align:center;
-  background:rgba(201,168,76,0.015);
+  background:rgba(26,53,96,0.015);
 }
 #s6 .s6-infra-title {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(0.65rem,1vw,0.82rem);
-  font-weight:600; color:rgba(201,168,76,0.55); margin-bottom:0.1rem;
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem);
+  font-weight:600; color:var(--text); margin-bottom:0.1rem;
 }
 #s6 .s6-infra-desc {
-  font-family:'Noto Sans KR',sans-serif; font-size:clamp(0.5rem,0.8vw,0.65rem);
-  font-weight:300; color:rgba(230,225,215,0.4);
+  font-family:'Noto Sans KR',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem);
+  font-weight:300; color:var(--text);
 }
 
 /* 범례 카드 */
@@ -304,20 +303,20 @@
 #s6 .s6-legend-item {
   display:flex; align-items:center; gap:0.5rem;
   font-family:'Noto Sans KR',sans-serif;
-  font-size:clamp(0.6rem,0.95vw,0.78rem); font-weight:400;
-  color:rgba(230,225,215,0.45);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:400;
+  color:var(--text);
 }
 #s6 .s6-legend-line {
   width:28px; height:0; flex-shrink:0; position:relative;
 }
 #s6 .s6-legend-line.solid {
-  border-top:1.5px solid rgba(201,168,76,0.4);
+  border-top:1.5px solid rgba(26,53,96,0.4);
 }
 #s6 .s6-legend-line.long-dash {
   border-top:1.5px dashed rgba(100,200,240,0.5);
 }
 #s6 .s6-legend-line.dotted {
-  border-top:1.5px dotted rgba(201,168,76,0.4);
+  border-top:1.5px dotted rgba(26,53,96,0.4);
 }
 #s6 .s6-legend-line::after {
   content:''; position:absolute;
@@ -325,29 +324,42 @@
   width:0; height:0;
   border-top:3px solid transparent;
   border-bottom:3px solid transparent;
-  border-left:5px solid rgba(201,168,76,0.4);
+  border-left:5px solid rgba(26,53,96,0.4);
 }
 
-/* ========== 좌우 분할 레이아웃 ========== */
+/* ========== 좌우 분할 레이아웃 (1:1) ========== */
 #s6 .s6-mode-split {
-  flex:1; display:flex; gap:clamp(2rem,4vw,4rem); align-items:center;
+  flex:1; display:grid; grid-template-columns:1fr 1fr;
+  gap:clamp(2rem,4vw,4rem); align-items:center;
 }
 #s6 .s6-mode-left {
-  display:flex; justify-content:center; align-items:center; flex-shrink:0;
+  display:flex; justify-content:center; align-items:center;
 }
 #s6 .s6-mode-right {
-  flex:1; display:flex; flex-direction:column; gap:clamp(0.8rem,1.5vh,1.2rem);
+  display:flex; flex-direction:column; gap:clamp(0.8rem,1.5vh,1.2rem);
+  height:100%; overflow:hidden;
+}
+#s6 .s6-mode-tabs {
+  flex-shrink:0;
+}
+#s6 .s6-flow-list {
+  flex:1; overflow-y:auto;
+}
+/* 모드 탭 (가로 1줄) */
+#s6 .s6-mode-tabs {
+  display:grid; grid-template-columns:repeat(3, 1fr);
+  gap:clamp(0.6rem,1.2vw,1rem);
 }
 #s6 .s6-mode-tab {
-  border:1px solid rgba(201,168,76,0.1); border-radius:10px;
+  border:1px solid rgba(26,53,96,0.1); border-radius:10px;
   padding:clamp(1rem,2vh,1.5rem) clamp(1rem,1.5vw,1.5rem);
-  background:rgba(201,168,76,0.02); text-align:center;
+  background:rgba(26,53,96,0.02); text-align:center;
   opacity:0.4; transition:all 0.3s ease;
 }
 #s6 .s6-mode-tab.active {
   opacity:1;
-  border-color:rgba(201,168,76,0.35);
-  background:rgba(201,168,76,0.06);
+  border-color:var(--text);
+  background:rgba(26,53,96,0.06);
 }
 #s6 .s6-mode-tab-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
@@ -356,7 +368,7 @@
 }
 #s6 .s6-mode-tab-sub {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.9rem,1.4vw,1.1rem); color:rgba(201,168,76,0.45);
+  font-size:clamp(1.4rem, 3.4vw, 2rem); color:var(--text);
 }
 
 /* ========== 사용자 여정 카드 리스트 ========== */
@@ -366,28 +378,28 @@
 #s6 .s6-flow-item {
   display:flex; align-items:center; gap:0.6rem;
   padding:clamp(0.4rem,0.8vh,0.6rem) clamp(0.6rem,1vw,0.9rem);
-  border:1px solid rgba(201,168,76,0.08); border-radius:8px;
-  background:rgba(201,168,76,0.02);
+  border:1px solid rgba(26,53,96,0.08); border-radius:8px;
+  background:rgba(26,53,96,0.02);
 }
 #s6 .s6-flow-num {
   font-family:'Cinzel',sans-serif;
-  font-size:clamp(0.7rem,1vw,0.85rem); font-weight:600;
-  color:rgba(201,168,76,0.4); flex-shrink:0; width:1.6rem; text-align:center;
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  color:var(--text); flex-shrink:0; width:1.6rem; text-align:center;
 }
 #s6 .s6-flow-body {
   display:flex; align-items:baseline; gap:0.4rem; flex:1; min-width:0;
 }
 #s6 .s6-flow-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:600;
-  font-size:clamp(0.85rem,1.3vw,1.05rem); color:var(--text);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text);
   white-space:nowrap;
 }
 #s6 .s6-flow-sep {
-  color:rgba(201,168,76,0.25); font-size:0.8rem;
+  color:var(--text); font-size:clamp(1.35rem, 3.3vw, 1.95rem);
 }
 #s6 .s6-flow-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.75rem,1.1vw,0.9rem); color:var(--marble-dim);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--marble-dim);
 }
 
 /* ========== 모바일 프레임 ========== */
@@ -399,7 +411,7 @@
 }
 #s6 .s6-phone-svg {
   width:100%; height:100%;
-  filter:drop-shadow(0 8px 40px rgba(201,168,76,0.12));
+  filter:drop-shadow(0 8px 40px rgba(26,53,96,0.12));
 }
 #s6 .s6-phone-screen {
   position:absolute;
@@ -410,9 +422,9 @@
 }
 #s6 .s6-phone-header {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(0.7rem,1.1vw,0.9rem); color:var(--gold-bright);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--gold-bright);
   text-align:center; padding:0.3rem 0 0.4rem;
-  border-bottom:1px solid rgba(201,168,76,0.15);
+  border-bottom:1px solid rgba(26,53,96,0.15);
   margin-bottom:0.3rem;
 }
 #s6 .s6-phone-flow {
@@ -427,23 +439,23 @@
   content:''; position:absolute;
   left:1rem; top:calc(50% + 0.6rem);
   width:1px; height:calc(100% - 0.4rem);
-  background:rgba(201,168,76,0.15);
+  background:rgba(26,53,96,0.15);
 }
 #s6 .s6-phone-num {
   font-family:'Cinzel',sans-serif;
-  font-size:clamp(0.5rem,0.8vw,0.65rem); font-weight:600;
-  color:rgba(201,168,76,0.4);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); font-weight:600;
+  color:var(--text);
   width:1.4rem; text-align:center; flex-shrink:0;
 }
 #s6 .s6-phone-text { flex:1; min-width:0; }
 #s6 .s6-phone-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:600;
-  font-size:clamp(0.55rem,0.9vw,0.72rem); color:var(--text);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text);
   line-height:1.3;
 }
 #s6 .s6-phone-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.45rem,0.7vw,0.58rem); color:var(--marble-dim);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--marble-dim);
   line-height:1.3;
 }
 
@@ -457,28 +469,28 @@
 #s6 .s6-j-card {
   display:flex; flex-direction:column; align-items:center;
   text-align:center; position:relative;
-  border:1px solid rgba(201,168,76,0.1); border-radius:10px;
+  border:1px solid rgba(26,53,96,0.1); border-radius:10px;
   padding:clamp(1.2rem,2.5vh,2rem) clamp(0.6rem,1.2vw,1rem);
-  background:rgba(201,168,76,0.02);
+  background:rgba(26,53,96,0.02);
 }
 #s6 .s6-j-num {
-  font-family:'Cinzel',sans-serif; font-size:clamp(0.8rem,1.2vw,1rem);
-  font-weight:600; color:rgba(201,168,76,0.35); margin-bottom:0.5rem;
+  font-family:'Cinzel',sans-serif; font-size:clamp(1.35rem, 3.3vw, 1.95rem);
+  font-weight:600; color:var(--text); margin-bottom:0.5rem;
 }
 #s6 .s6-j-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1rem,1.8vw,1.2rem); color:var(--text);
+  font-size:clamp(1.45rem, 3.5vw, 2.1rem); color:var(--text);
   margin-bottom:0.3rem;
 }
 #s6 .s6-j-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.85rem,1.4vw,1rem); color:var(--marble-dim);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--marble-dim);
   line-height:1.65; white-space:pre-line;
 }
 #s6 .s6-j-arrow {
   position:absolute; right:clamp(-0.7rem,-1vw,-0.5rem); top:50%;
   transform:translateY(-50%);
-  font-size:clamp(1rem,1.6vw,1.3rem); color:rgba(201,168,76,0.25);
+  font-size:clamp(1.45rem, 3.5vw, 2.1rem); color:var(--text);
 }
 
 /* ========== step2: 토론 모드 + 모드별 여정 ========== */
@@ -492,26 +504,26 @@
 
 /* 상단 모드 카드 */
 #s6 .s6-mf-card {
-  border:1px solid rgba(201,168,76,0.15); border-radius:10px 10px 0 0;
+  border:1px solid rgba(26,53,96,0.15); border-radius:10px 10px 0 0;
   padding:clamp(0.8rem,1.5vh,1.2rem) clamp(1rem,1.5vw,1.5rem);
-  background:rgba(201,168,76,0.04); text-align:center;
+  background:rgba(26,53,96,0.04); text-align:center;
 }
 #s6 .s6-mf-name {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.3rem,2.2vw,1.7rem); color:var(--gold-bright);
+  font-size:clamp(1.55rem, 3.8vw, 2.4rem); color:var(--gold-bright);
   margin-bottom:0.15rem;
 }
 #s6 .s6-mf-sub {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:clamp(0.8rem,1.1vw,0.95rem); color:rgba(201,168,76,0.45);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text);
 }
 
 /* 하단 여정 플로우 */
 #s6 .s6-mf-flow {
-  border:1px solid rgba(201,168,76,0.1); border-top:none;
+  border:1px solid rgba(26,53,96,0.1); border-top:none;
   border-radius:0 0 10px 10px;
   padding:clamp(0.6rem,1.2vh,1rem) clamp(0.8rem,1.2vw,1.2rem);
-  background:rgba(201,168,76,0.015);
+  background:rgba(26,53,96,0.015);
   display:flex; flex-direction:column;
 }
 #s6 .s6-mf-step {
@@ -523,16 +535,16 @@
   content:''; position:absolute;
   left:5px; top:calc(50% + 8px);
   width:1px; height:calc(100% - 4px);
-  background:linear-gradient(to bottom, rgba(201,168,76,0.2), rgba(201,168,76,0.08));
+  background:linear-gradient(to bottom, rgba(26,53,96,0.2), rgba(26,53,96,0.08));
 }
 #s6 .s6-mf-dot {
   width:11px; height:11px; border-radius:50%; flex-shrink:0;
-  border:1.5px solid rgba(201,168,76,0.3);
-  background:rgba(201,168,76,0.06);
+  border:1.5px solid rgba(26,53,96,0.3);
+  background:rgba(26,53,96,0.06);
   position:relative; z-index:1;
 }
 #s6 .s6-mf-label {
   font-family:'Noto Sans KR',sans-serif; font-weight:400;
-  font-size:clamp(0.75rem,1.1vw,0.92rem); color:rgba(230,225,215,0.6);
+  font-size:clamp(1.35rem, 3.3vw, 1.95rem); color:var(--text);
   line-height:1.4;
 }

@@ -1,4 +1,4 @@
-/* 슬라이드 4: 원인 분석 */
+/* 슬라이드 4: 시장 분석 */
 #s4 .s-wrap {
   width: 100%; height: 100vh;
   display: grid;
@@ -11,28 +11,27 @@
 #s4 .header {
   display: flex; align-items: center; gap: 1rem;
   padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(201,168,76,0.18);
+  border-bottom: 1px solid rgba(26,53,96,0.18);
   margin-bottom: clamp(2rem, 5vh, 3.5rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s4 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
-  color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); font-weight: 600;
+  color: var(--text); letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem; border: 1px solid rgba(26,53,96,0.25); border-radius: 2px;
 }
 #s4 .header-title {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
-  -webkit-background-clip: text; background-clip: text;
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color:var(--text);
+  
 }
 
 /* 다음 페이지 힌트 */
 #s4 .next-hint {
   position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(0.8rem,1.4vw,1.1rem);
-  color: rgba(201,168,76,0.4); letter-spacing: 0.05em;
-  opacity: 0; animation: fade-in 1s ease forwards 3s;
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); letter-spacing: 0.05em;
+  opacity: 0; animation: fade-in-half 1s ease forwards 3s;
 }
 
 /* 중앙 영역 */
@@ -54,9 +53,9 @@
   display: flex; flex-direction: column;
   pointer-events: none;
   z-index: 0;
-  border: 1px solid rgba(201,168,76,0.15);
+  border: 1px solid rgba(26,53,96,0.15);
   border-radius: 12px;
-  box-shadow: 0 0 30px rgba(201,168,76,0.06);
+  box-shadow: 0 0 30px rgba(26,53,96,0.06);
   overflow: hidden;
 }
 #s4 .s4-bg-left { left: 2%; }
@@ -70,12 +69,12 @@
 /* 이미지 카드 라벨 */
 #s4 .s4-img-label {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(0.84rem, 1.32vw, 1.08rem);
-  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
+  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); letter-spacing: 0.08em;
   text-align: center;
   padding: 0.5rem 0;
-  background: rgba(50,45,38,0.9);
-  border-bottom: 1px solid rgba(201,168,76,0.1);
+  background: rgba(240,237,232,0.9);
+  border-bottom: 1px solid rgba(26,53,96,0.1);
   flex-shrink: 0;
 }
 
@@ -87,7 +86,7 @@
 #s4 .source-main {
   font-family: 'Noto Sans KR', sans-serif;
   font-size: clamp(3.6rem, 7.5vw, 6rem);
-  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
+  color: var(--text); letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -104,9 +103,9 @@
   display: flex; flex-direction: column; align-items: center;
   position: relative;
   padding: clamp(1.2rem, 2vh, 2rem) clamp(1.5rem, 2.5vw, 2rem);
-  border: 1px solid rgba(201,168,76,0.12);
+  border: 1px solid rgba(26,53,96,0.12);
   border-radius: 12px;
-  background: rgba(201,168,76,0.03);
+  background: rgba(26,53,96,0.03);
 }
 #s4 .card.s4-table-card {
   padding: clamp(1.2rem, 2vh, 2rem) clamp(1.5rem, 2.5vw, 2rem);
@@ -115,10 +114,10 @@
 /* 카드 태그 */
 #s4 .card-tag {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 600;
-  font-size: clamp(0.7rem, 1.1vw, 0.9rem);
-  color: rgba(201,168,76,0.5); letter-spacing: 0.12em;
+  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); letter-spacing: 0.12em;
   padding: 0.2rem 0.8rem;
-  border: 1px solid rgba(201,168,76,0.2); border-radius: 20px;
+  border: 1px solid rgba(26,53,96,0.2); border-radius: 20px;
   margin-bottom: 1.2rem;
 }
 
@@ -132,16 +131,16 @@
 /* 카드 제목 */
 #s4 .card-title {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
-  color: rgba(201,168,76,0.75); letter-spacing: 0.03em;
+  font-size: clamp(1.5rem, 3.6vw, 2.2rem);
+  color: var(--text); letter-spacing: 0.03em;
   margin-bottom: 1rem; text-align: center;
 }
 
 /* 카드 설명 */
 #s4 .card-desc {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
-  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
-  color: rgba(230,225,215,0.45); line-height: 1.8;
+  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); line-height: 1.8;
   text-align: center; white-space: pre-line;
   letter-spacing: 0.02em;
 }
@@ -152,21 +151,21 @@
   border-collapse: collapse;
   width: 100%;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(0.7rem, 1vw, 0.85rem);
+  font-size: clamp(1.35rem, 3.3vw, 1.95rem);
 }
 #s4 .s4-compare-table th {
-  color: rgba(201,168,76,0.7); font-weight: 600;
+  color: var(--text); font-weight: 600;
   padding: 0.2rem 0.8rem;
-  border-bottom: 1px solid rgba(201,168,76,0.15);
+  border-bottom: 1px solid rgba(26,53,96,0.15);
   letter-spacing: 0.04em;
 }
 #s4 .s4-compare-table td {
-  color: rgba(230,225,215,0.45); font-weight: 300;
+  color: var(--text); font-weight: 300;
   padding: 0.25rem 0.8rem;
-  border-bottom: 1px solid rgba(201,168,76,0.06);
+  border-bottom: 1px solid rgba(26,53,96,0.06);
   text-align: center;
 }
 #s4 .s4-compare-table .row-label {
-  color: rgba(201,168,76,0.5); font-weight: 500;
+  color: var(--text); font-weight: 500;
   text-align: left;
 }

@@ -1,42 +1,41 @@
 /* 슬라이드 8: 차별점 & 기술 스택 — 좌우 2열 + 조명 스텝 */
 #s8 .s8-wrap {
   width:100%; height:100vh; display:flex; flex-direction:column;
-  padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
+  padding: 48px 96px;
 }
 #s8 .s8-header {
-  display:flex; align-items:center; gap:1rem;
-  padding-bottom:1.2rem; border-bottom:1px solid rgba(201,168,76,0.18);
-  margin-bottom:clamp(1rem, 2vh, 1.6rem);
+  display:flex; align-items:center; gap:16px;
+  padding-bottom:19px; border-bottom:1px solid rgba(26,53,96,0.18);
+  margin-bottom:26px;
 }
 #s8 .page-num {
-  font-family:'Cinzel',sans-serif; font-size:0.7rem; font-weight:600;
-  color:rgba(201,168,76,0.5); letter-spacing:0.1em;
-  padding:0.2rem 0.5rem; border:1px solid rgba(201,168,76,0.25); border-radius:2px;
+  font-family:'Cinzel',sans-serif; font-size:11px; font-weight:600;
+  color:var(--text); letter-spacing:0.1em;
+  padding:3px 8px; border:1px solid rgba(26,53,96,0.25); border-radius:2px;
 }
 #s8 .header-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(1.4rem,3.5vw,2.2rem); color:transparent;
-  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 50%,rgba(201,168,76,0.6));
-  -webkit-background-clip:text; background-clip:text; letter-spacing:0.05em;
+  font-size:35px; color:var(--text);
+  letter-spacing:0.05em;
 }
 
 /* 본문 좌우 2열 */
 #s8 .s8-body {
   flex:1; display:grid;
   grid-template-columns: 1fr 1fr;
-  gap:clamp(2rem,4vw,3.5rem);
+  gap:56px;
   min-height:0; overflow:hidden;
 }
 
 /* 섹션 태그 */
 #s8 .s8-section-tag {
-  font-family:'Noto Sans KR',sans-serif; font-size:1.56rem; font-weight:600;
-  color:rgba(201,168,76,0.5); letter-spacing:0.12em;
-  display:flex; align-items:center; gap:0.6rem;
-  margin-bottom:clamp(0.5rem,1.2vh,0.9rem);
+  font-family:'Noto Sans KR',sans-serif; font-size:28px; font-weight:600;
+  color:var(--text); letter-spacing:0.12em;
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:14px;
 }
 #s8 .s8-section-tag::before {
-  content:''; width:28px; height:1px; background:rgba(201,168,76,0.4); flex-shrink:0;
+  content:''; width:28px; height:1px; background:rgba(26,53,96,0.4); flex-shrink:0;
 }
 
 /* ========== 조명 (lit/dim) ========== */
@@ -57,15 +56,15 @@
   display:grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(4, minmax(0,1fr));
-  gap:clamp(0.5rem,1vh,0.8rem);
-  min-height:0; max-height:calc(100vh - 14rem); overflow:hidden;
+  gap:8px;
+  min-height:0; max-height:calc(100vh - 224px); overflow:hidden;
 }
 #s8 .s8-diff-card {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   text-align:center;
-  border:1px solid rgba(201,168,76,0.1); border-radius:8px;
-  padding:clamp(0.8rem,1.5vh,1.2rem) clamp(0.5rem,0.8vw,0.7rem);
-  background:rgba(201,168,76,0.02);
+  border:1px solid rgba(26,53,96,0.1); border-radius:8px;
+  padding:16px 11px;
+  background:rgba(26,53,96,0.02);
   opacity:0.1; transform:translateY(6px);
   transition: opacity 0.45s ease, transform 0.45s ease;
   min-height:0; overflow:hidden;
@@ -75,15 +74,15 @@
 }
 #s8 .s8-diff-card-header {
   font-family:'Noto Sans KR',sans-serif;
-  font-size:clamp(1.1rem,2vw,1.4rem); font-weight:700;
-  color:rgba(201,168,76,0.95); letter-spacing:0.08em;
-  padding-bottom:0.4rem; margin-bottom:0.5rem;
-  border-bottom:1px solid rgba(201,168,76,0.12);
+  font-size:22px; font-weight:700;
+  color:var(--text); letter-spacing:0.08em;
+  padding-bottom:6px; margin-bottom:8px;
+  border-bottom:1px solid rgba(26,53,96,0.12);
   width:100%;
 }
 #s8 .s8-diff-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:600;
-  font-size:clamp(0.85rem,1.4vw,1rem); color:var(--text);
+  font-size:16px; color:var(--text);
   line-height:1.3;
 }
 
@@ -93,15 +92,15 @@
 }
 #s8 .s8-stack {
   flex:1; display:flex; flex-direction:column;
-  gap:clamp(0.3rem,0.6vh,0.5rem); justify-content:flex-start;
+  gap:8px; justify-content:flex-start;
   min-height:0; overflow:hidden;
 }
 #s8 .s8-stack-row {
-  display:grid; grid-template-columns: 80px 1fr;
-  gap:clamp(0.5rem,1vw,0.8rem); align-items:center;
-  border:1px solid rgba(201,168,76,0.08); border-radius:6px;
-  padding:clamp(0.35rem,0.7vh,0.55rem) clamp(0.5rem,1vw,0.8rem);
-  background:rgba(201,168,76,0.015);
+  display:grid; grid-template-columns: 100px 1fr;
+  gap:13px; align-items:center;
+  border:1px solid rgba(26,53,96,0.08); border-radius:6px;
+  padding:9px 13px;
+  background:rgba(26,53,96,0.015);
 }
 /* step1에서만 슬라이드인 애니메이션 */
 #s8 .s8-right.lit .s8-stack-row { animation: s8-row-in 0.5s ease both; }
@@ -120,30 +119,30 @@
 /* 레이어 라벨 */
 #s8 .s8-layer-label {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:clamp(0.9rem,1.4vw,1.1rem); letter-spacing:0.05em;
+  font-size:18px; letter-spacing:0.05em;
   white-space:nowrap;
 }
-#s8 .s8-stack-row.fe .s8-layer-label { color:rgba(100,180,240,0.85); }
-#s8 .s8-stack-row.be .s8-layer-label { color:rgba(120,220,160,0.85); }
-#s8 .s8-stack-row.db .s8-layer-label { color:rgba(180,140,220,0.85); }
-#s8 .s8-stack-row.ai .s8-layer-label { color:rgba(201,168,76,0.85); }
-#s8 .s8-stack-row.dp .s8-layer-label { color:rgba(240,160,120,0.85); }
-#s8 .s8-stack-row.ft .s8-layer-label { color:rgba(140,200,200,0.85); }
+#s8 .s8-stack-row.fe .s8-layer-label { color:rgba(100,180,240,1); }
+#s8 .s8-stack-row.be .s8-layer-label { color:rgba(120,220,160,1); }
+#s8 .s8-stack-row.db .s8-layer-label { color:rgba(180,140,220,1); }
+#s8 .s8-stack-row.ai .s8-layer-label { color:var(--text); }
+#s8 .s8-stack-row.dp .s8-layer-label { color:rgba(240,160,120,1); }
+#s8 .s8-stack-row.ft .s8-layer-label { color:rgba(140,200,200,1); }
 
 /* 기술 칩 */
 #s8 .s8-layer-items {
-  display:flex; flex-wrap:wrap; gap:clamp(0.25rem,0.5vw,0.4rem);
+  display:flex; flex-wrap:wrap; gap:6px;
 }
 #s8 .s8-tech-chip {
   font-family:'Noto Sans KR',sans-serif; font-weight:500;
-  font-size:clamp(0.8rem,1.2vw,0.95rem); color:rgba(230,225,215,0.75);
-  padding:clamp(0.3rem,0.5vh,0.45rem) clamp(0.5rem,0.8vw,0.7rem);
+  font-size:15px; color:var(--text);
+  padding:7px 11px;
   border:1px solid rgba(255,255,255,0.07); border-radius:4px;
   background:rgba(255,255,255,0.025); white-space:nowrap;
 }
 
 /* AI 칩 특별 색상 */
-#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(1) { border-color:rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); }
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(1) { border-color:var(--text); background:rgba(0,0,0,0.3); }
 #s8 .s8-stack-row.ai .s8-tech-chip:nth-child(2) { border-color:rgba(107,158,232,0.25); background:rgba(107,158,232,0.05); }
 #s8 .s8-stack-row.ai .s8-tech-chip:nth-child(3) { border-color:rgba(197,122,58,0.25); background:rgba(197,122,58,0.05); }
-#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(4) { border-color:rgba(160,152,136,0.12); background:rgba(255,255,255,0.015); color:rgba(160,152,136,0.5); }
+#s8 .s8-stack-row.ai .s8-tech-chip:nth-child(4) { border-color:var(--text); background:rgba(255,255,255,0.015); color:var(--text); }

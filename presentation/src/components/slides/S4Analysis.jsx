@@ -13,12 +13,12 @@ const ease = [0.16, 1, 0.3, 1]
 
 const cards = [
   {
-    title: '중재자의 부재',
-    desc: '일상의 크고 작은 논쟁에서 제3자(중재자)가 부재하여,\n논쟁이 감정적 대립으로 확대 & 결론 없이 반복되는 문제',
+    title: '기존 중재 방식의 한계',
+    desc: '심판 권한이 과도하거나, 감정·편향 투표에 의존\n→ 공정한 판결 구조 부재',
   },
   {
-    title: '공간의 부재',
-    desc: '대화 의향(70%)은 높지만,\nTV 프로그램은 일반인이 접근하기 어려운 구조',
+    title: '참여형 토론 플랫폼 부재',
+    desc: '대화 의향(70%)은 높지만,\nTV 프로그램은 일반인이 접근할 수 없는 구조',
   },
 ]
 
@@ -48,7 +48,7 @@ export default function S4Analysis({ active, stepIndex }) {
 
         <div className="header">
           <span className="page-num">02</span>
-          <span className="header-title">원인 분석</span>
+          <span className="header-title">시장 분석</span>
         </div>
 
         {/* 중앙 영역 */}
@@ -67,7 +67,7 @@ export default function S4Analysis({ active, stepIndex }) {
                 }}
                 transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
               >
-                <div className="s4-img-label">{stepIndex === 5 ? '중재자의 부재' : '더 로직 (KBS2, 2026.01~02)'}</div>
+                <div className="s4-img-label">{stepIndex === 5 ? '중재 방식 한계' : '더 로직 (KBS2, 2026.01~02)'}</div>
                 <img src={s4Left} alt="" />
               </motion.div>
               <motion.div
@@ -81,7 +81,7 @@ export default function S4Analysis({ active, stepIndex }) {
                 }}
                 transition={{ duration: 0.8, delay: stepIndex === 1 ? 0.3 : 0, ease }}
               >
-                <div className="s4-img-label">{stepIndex === 5 ? '공간의 부재' : '베팅 온 팩트 (Wavve, 2026.03~)'}</div>
+                <div className="s4-img-label">{stepIndex === 5 ? '플랫폼 부재' : '베팅 온 팩트 (Wavve, 2026.03~)'}</div>
                 <img src={s4Right} alt="" />
               </motion.div>
             </>
@@ -97,7 +97,7 @@ export default function S4Analysis({ active, stepIndex }) {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.6, ease }}
               >
-                <span className="source-main">그런데 왜?</span>
+                <span className="source-main">경쟁 서비스 분석</span>
               </motion.div>
             )}
           </AnimatePresence>

@@ -4,27 +4,31 @@
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   align-content: center;
-  padding: clamp(2rem, 5vh, 3rem) clamp(3rem, 8vw, 6rem);
+  padding: clamp(1rem, 2.5vh, 1.5rem) clamp(3rem, 8vw, 6rem);
+  overflow: visible;
 }
+#s3 .s3-step0 { overflow: visible; }
+#s3 .cards { overflow: visible; }
+#s3 .card { overflow: visible; }
+#s3 .card-graphic { overflow: visible; }
 
 /* 헤더 */
 #s3 .header {
   display: flex; align-items: center; gap: 1rem;
   padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(201,168,76,0.18);
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  border-bottom: 1px solid rgba(26,53,96,0.18);
+  margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
   opacity: 0; animation: fade-up 0.8s ease forwards 0.4s;
 }
 #s3 .page-num {
-  font-family: 'Cinzel', sans-serif; font-size: 0.7rem; font-weight: 600;
-  color: rgba(201,168,76,0.5); letter-spacing: 0.1em;
-  padding: 0.2rem 0.5rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+  font-family: 'Cinzel', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem); font-weight: 600;
+  color: var(--text); letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem; border: 1px solid rgba(26,53,96,0.25); border-radius: 2px;
 }
 #s3 .header-title {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color: transparent;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 50%, rgba(201,168,76,0.6));
-  -webkit-background-clip: text; background-clip: text;
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem); color:var(--text);
+  
 }
 
 /* step0 wrapper — 출처+카드 영역 */
@@ -37,31 +41,36 @@
 
 /* 출처 */
 #s3 .source-header {
-  text-align: center; margin-bottom: clamp(1rem, 2vh, 2rem);
+  text-align: center; margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
   opacity: 0; animation: fade-in 0.8s ease forwards 0.6s;
 }
+#s3 .source-footer {
+  text-align: center; margin-top: clamp(0.8rem, 1.5vh, 1.2rem);
+  opacity: 0; animation: fade-in 0.8s ease forwards 4s;
+}
 #s3 .source-main {
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1rem, 1.8vw, 1.4rem);
-  color: rgba(201,168,76,0.5); letter-spacing: 0.08em;
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+  color: var(--text); letter-spacing: 0.08em;
 }
 #s3 .source-sub {
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(0.5rem, 0.9vw, 0.7rem);
-  color: rgba(201,168,76,0.35); letter-spacing: 0.06em;
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); letter-spacing: 0.06em;
 }
 
 /* 다음 페이지 힌트 */
 #s3 .next-hint {
   position: absolute; top: clamp(2rem,5vh,3rem); right: clamp(3rem,8vw,6rem);
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(0.8rem,1.4vw,1.1rem);
-  color: rgba(201,168,76,0.4); letter-spacing: 0.05em;
-  opacity: 0; animation: fade-in 1s ease forwards 3s;
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  color: var(--text); letter-spacing: 0.05em;
+  opacity: 0; animation: fade-in-half 1s ease forwards 3s;
 }
 
 /* 카드 3열 그리드 */
 #s3 .cards {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: clamp(0.5rem, 1vw, 1rem); align-items: start;
-  margin-left: 200px; margin-right: 200px;
+  gap: clamp(2rem, 4vw, 4rem); align-items: start;
+  margin-left: 100px; margin-right: 100px;
+  padding-left: clamp(1rem, 3vw, 3rem);
 }
 #s3 .card {
   display: flex; flex-direction: column; align-items: center;
@@ -71,15 +80,15 @@
 #s3 .card-text { display: flex; flex-direction: column; align-items: center; text-align: center; }
 #s3 .card::after {
   content: ''; position: absolute; right: 0; top: 15%; bottom: 15%; width: 1px;
-  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.12), transparent);
+  background: linear-gradient(to bottom, transparent, rgba(26,53,96,0.12), transparent);
 }
 #s3 .card:last-child::after { display: none; }
 
 /* 일러스트 */
 #s3 .illust {
-  width: clamp(240px, 33vw, 360px); height: clamp(240px, 33vw, 360px);
+  width: clamp(312px, 43vw, 468px); height: clamp(312px, 43vw, 468px);
   display: flex; align-items: center; justify-content: center;
-  margin-top: 0; margin-bottom: clamp(0.5rem, 1vh, 1rem);
+  margin: 0 auto clamp(0.5rem, 1vh, 1rem);
 }
 
 /* 막대 차트 bar-row */
@@ -94,10 +103,11 @@
 #s3 .stat-num.gold  { color: var(--gold-bright); text-shadow: 0 0 15px rgba(240,201,106,0.15); }
 #s3 .stat-num.amber { color: #e8a838;            text-shadow: 0 0 15px rgba(232,168,56,0.15); }
 #s3 .stat-num.red   { color: #d94040;            text-shadow: 0 0 15px rgba(217,64,64,0.15); }
+#s3 .stat-num.green { color: #27ae60;            text-shadow: 0 0 15px rgba(39,174,96,0.15); }
 
 #s3 .stat-label {
-  font-family: 'Noto Sans KR', sans-serif; font-weight: 400;
-  font-size: clamp(1rem, 1.8vw, 1.3rem); color: var(--marble-dim);
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
+  font-size: clamp(1.45rem, 3.5vw, 2.1rem); color: var(--text);
   text-align: center; line-height: 1.6; letter-spacing: 0.03em;
 }
 
@@ -117,12 +127,12 @@
 #s3 .s3-flow-main {
   font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: clamp(2.4rem, 5vw, 4rem);
-  color: rgba(201,168,76,0.6); letter-spacing: 0.08em;
+  color: var(--text); letter-spacing: 0.08em;
   white-space: nowrap;
 }
 #s3 .s3-flow-sub {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(1rem, 1.8vw, 1.4rem);
-  color: rgba(201,168,76,0.3); letter-spacing: 0.04em;
+  font-size: clamp(1.45rem, 3.5vw, 2.1rem);
+  color: var(--text); letter-spacing: 0.04em;
   margin-top: 0.5rem;
 }
