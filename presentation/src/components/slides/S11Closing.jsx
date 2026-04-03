@@ -136,9 +136,8 @@ export default function S11Closing({ active }) {
 
         <div className="sp-wordmark-wrap">
           <span className={`sp-wordmark${phase >= 5 ? ' gathered' : ''}`}>
-            {typed.endsWith('.') ? (
-              <><span className={`sp-wm-text${phase >= 5 ? ' gathered' : ''}`}>{WORD}</span><span className={`sp-wm-dot${phase >= 5 ? ' gathered' : ''}`}>.</span></>
-            ) : typed}
+            <span className={`sp-wm-text${phase >= 5 ? ' gathered' : ''}`}>{typed.replace('.', '')}</span>
+            {typed.endsWith('.') && <span className={`sp-wm-dot${phase >= 5 ? ' gathered' : ''}`}>.</span>}
           </span>
           {showCursor && <span className="sp-wm-cursor" />}
         </div>
