@@ -30,7 +30,7 @@ const app = express();
 const httpServer = createServer(app);
 
 // ===== Socket.io =====
-const corsOrigins = [env.CLIENT_URL, 'http://localhost:5173'].filter(Boolean);
+const corsOrigins = [env.CLIENT_URL, 'http://localhost:5173', 'https://presentation-vert-kappa.vercel.app'].filter(Boolean);
 export const io = new Server(httpServer, {
   cors: { origin: corsOrigins, credentials: true },
 });
@@ -45,6 +45,7 @@ app.use(cors({
   origin: [
     env.CLIENT_URL,
     'http://localhost:5173',
+    'https://presentation-vert-kappa.vercel.app',
   ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
