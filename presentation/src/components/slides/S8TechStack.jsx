@@ -6,7 +6,7 @@ const diffGroups = [
   {
     label: '차별성',
     items: [
-      { title: '3사 AI 독립 병렬 판결', tag: '공정성' },
+      { title: '3사 AI 독립 판결', tag: '공정성' },
       { title: 'AI + 시민 복합 판결', tag: '균형' },
       { title: '5항목 정량 판결 기준', tag: '정량화' },
       { title: '3가지 게임 모드', tag: '접근성' },
