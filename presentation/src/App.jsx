@@ -1,5 +1,5 @@
-import { useRef, useMemo, useState, useEffect } from 'react'
-import { useNavigator, presSocket } from './hooks/useNavigator'
+import { useRef, useMemo } from 'react'
+import { useNavigator } from './hooks/useNavigator'
 import Background from './components/Background'
 import S1Title from './components/slides/S1Title'
 import S2Toc from './components/slides/S2Toc'
@@ -27,20 +27,6 @@ export default function App() {
   const slides = useMemo(() => SLIDES, [])
   const { current, total, stepIndex, registerSteps, goTo } = useNavigator(slides.length)
 
-  const [socketStatus, setSocketStatus] = useState('연결 중...')
-  const [lastCmd, setLastCmd] = useState('')
-  useEffect(() => {
-    const onConnect = () => setSocketStatus('연결됨')
-    const onDisconnect = () => setSocketStatus('끊김')
-    const showCmd = (cmd) => () => { setLastCmd(cmd); setTimeout(() => setLastCmd(''), 1500) }
-    presSocket.on('connect', onConnect)
-    presSocket.on('disconnect', onDisconnect)
-    presSocket.on('next', showCmd('next'))
-    presSocket.on('prev', showCmd('prev'))
-    presSocket.on('go-to', (idx) => { setLastCmd(`go-to ${idx}`); setTimeout(() => setLastCmd(''), 1500) })
-    if (presSocket.connected) setSocketStatus('연결됨')
-    return () => { presSocket.off('connect', onConnect); presSocket.off('disconnect', onDisconnect); presSocket.off('next'); presSocket.off('prev'); presSocket.off('go-to') }
-  }, [])
 
   // 각 슬라이드가 마지막으로 보여준 stepIndex를 기억
   // → 전환 fade-out 중 step0로 깜빡이는 현상 방지
@@ -62,16 +48,6 @@ export default function App() {
 
   return (
     <>
-      <div style={{
-        position: 'fixed', top: 12, right: 12, zIndex: 9999,
-        display: 'flex', gap: 8, alignItems: 'center',
-        background: 'rgba(0,0,0,0.6)', borderRadius: 8, padding: '4px 10px',
-        fontSize: 11, fontFamily: 'monospace', color: '#fff', pointerEvents: 'none',
-      }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: socketStatus === '연결됨' ? '#10a37f' : '#ef4444' }} />
-        <span style={{ opacity: 0.7 }}>{socketStatus}</span>
-        {lastCmd && <span style={{ color: '#D4AF37', fontWeight: 700 }}>{lastCmd}</span>}
-      </div>
       <Background />
       {slides.map((SlideComponent, idx) => (
         <SlideComponent
