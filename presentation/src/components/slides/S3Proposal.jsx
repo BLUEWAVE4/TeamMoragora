@@ -43,7 +43,7 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex >= 0 ? 1 : 0,
+              opacity: !active ? 0 : stepIndex === 0 ? 1 : 0.2,
               y: !active ? 24 : 0,
             }}
             transition={{
@@ -91,7 +91,7 @@ export default function S3Proposal({ active, stepIndex }) {
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex >= 1 ? 1 : 0,
+              opacity: !active ? 0 : stepIndex === 1 ? 1 : stepIndex > 1 ? 0.2 : 0,
               y: !active ? 24 : stepIndex >= 1 ? 0 : 24,
             }}
             transition={{
