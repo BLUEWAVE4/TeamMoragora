@@ -12,7 +12,7 @@ const demoGroups = [
       { num: '02', title: '주장 작성', desc: '입론 (R1) → 반론 (R2)' },
       { num: '03', title: 'AI 3사 판결', desc: 'GPT · Gemini · Claude' },
       { num: '04', title: '시민 투표', desc: 'A / B 투표 → 복합 판결' },
-      { num: '05', title: '판결문 확인', desc: '5항목 점수 · AI별 분석' },
+      { num: '05', title: '최종 판결문 확인', desc: '5항목 점수 · AI별 분석' },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Slide from '../Slide'
-import { initCountUps } from '../../utils/animations'
+import { countUp } from '../../utils/animations'
 import '../../styles/slide3.css'
 
 const TOTAL_STEPS = 3
@@ -16,12 +16,19 @@ const conclusions = [
 
 export default function S3Proposal({ active, stepIndex }) {
   const ref = useRef(null)
-  const countInitRef = useRef(false)
+  const countedSteps = useRef(new Set())
   useEffect(() => {
-    if (active && stepIndex <= 2) {
-      initCountUps(ref.current, 400)
-    }
-    if (!active) countInitRef.current = false
+    if (!active || !ref.current) { countedSteps.current.clear(); return }
+    if (stepIndex > 2 || countedSteps.current.has(stepIndex)) return
+    countedSteps.current.add(stepIndex)
+    const cards = ref.current.querySelectorAll('.card')
+    const card = cards[stepIndex]
+    if (!card) return
+    card.querySelectorAll('[data-count]').forEach(el => {
+      const target = parseInt(el.dataset.count)
+      const suffix = el.dataset.suffix || ''
+      setTimeout(() => countUp(el, target, suffix, 1800), 400)
+    })
   }, [active, stepIndex])
 
   return (
