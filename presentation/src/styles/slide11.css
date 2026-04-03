@@ -115,9 +115,9 @@
   color:#e8e0d0;
   text-shadow:0 2px 40px rgba(201,168,76,0.2);
 }
-#s11 .sp-wm-text { transition:color 3s ease 1s; }
-#s11 .sp-wm-text.gathered { color:#2D3350; }
-#s11 .sp-wm-dot { transition:color 3s ease 1s; }
+#s11 .sp-wm-text { transition:color 0.7s ease 0.5s; }
+#s11 .sp-wm-text.gathered { color:#0E1A30; }
+#s11 .sp-wm-dot { transition:color 0.7s ease 0.5s; }
 #s11 .sp-wm-dot.gathered { color:#FFBD43; }
 #s11 .sp-wm-cursor {
   display:inline-block; width:3px; height:54px;
@@ -157,19 +157,19 @@
 }
 #s11 .sp-thanks-title {
   font-family:'Noto Sans KR',sans-serif; font-weight:700;
-  font-size:72px; color:#e8e0d0;
+  font-size:96px; color:#e8e0d0;
   letter-spacing:0.08em;
 }
 #s11 .sp-thanks-sub {
   font-family:'Noto Sans KR',sans-serif; font-weight:300;
-  font-size:24px; color:#a09888;
+  font-size:32px; color:#a09888;
   letter-spacing:0.05em; line-height:1.8;
   text-align:center;
 }
 #s11 .sp-thanks-sub strong { font-weight:600; color:#e8e0d0; }
 #s11 .sp-thanks-qna {
   font-family:'Cinzel',serif;
-  font-size:29px; font-weight:700;
+  font-size:40px; font-weight:700;
   color:#c9a84c; letter-spacing:0.3em;
   margin-top:32px;
 }

@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
 import { env } from './src/config/env.js';
-import { initializeSocket } from './src/socket/index.js';
+import { initializeSocket, initializePresentationSocket } from './src/socket/index.js';
 import authRoutes from './src/routes/auth.routes.js';
 import debateRoutes from './src/routes/debate.routes.js';
 import argumentRoutes from './src/routes/argument.routes.js';
@@ -37,6 +37,7 @@ export const io = new Server(httpServer, {
 
 // ===== Socket.io 핸들러 초기화 =====
 const { roomParticipants, kickedUsers, cleanupDebateRoom, buildSlots } = initializeSocket(io);
+initializePresentationSocket(io);
 
 // ===== 보안 미들웨어 =====
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { io } from 'socket.io-client'
 
 // 외부에서 클릭 네비 차단용 플래그
 export const navGuard = { skip: false }
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://teammoragora.onrender.com'
+const presSocket = io(`${SOCKET_URL}/presentation`, { transports: ['websocket', 'polling'], autoConnect: true })
 
 export function useNavigator(totalSlides) {
   const [current, setCurrent] = useState(0)
@@ -79,9 +83,17 @@ export function useNavigator(totalSlides) {
       else if (e.clientX >= window.innerWidth - edge) next()
     }
 
+    // 소켓 원격 제어 리스닝
+    presSocket.on('next', next)
+    presSocket.on('prev', prev)
+    presSocket.on('go-to', goTo)
+
     document.addEventListener('keydown', handleKey)
     document.addEventListener('click', handleClick)
     return () => {
+      presSocket.off('next', next)
+      presSocket.off('prev', prev)
+      presSocket.off('go-to', goTo)
       document.removeEventListener('keydown', handleKey)
       document.removeEventListener('click', handleClick)
     }

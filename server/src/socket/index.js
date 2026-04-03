@@ -86,6 +86,16 @@ function handlePostKick(io, debateId, targetId, targetSide) {
   }
 }
 
+// ===== 프레젠테이션 원격 제어 =====
+export function initializePresentationSocket(io) {
+  const presNsp = io.of('/presentation')
+  presNsp.on('connection', (socket) => {
+    socket.on('go-to', (idx) => presNsp.emit('go-to', idx))
+    socket.on('next', () => presNsp.emit('next'))
+    socket.on('prev', () => presNsp.emit('prev'))
+  })
+}
+
 // ===== 메인 소켓 초기화 =====
 export function initializeSocket(io) {
   io.on('connection', (socket) => {
