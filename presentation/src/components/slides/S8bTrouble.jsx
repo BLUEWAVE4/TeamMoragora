@@ -67,7 +67,7 @@ const cases = [
       metrics: [
         { value: '0', suffix: 'ms', label: '캐시 히트 시' },
         { value: '90', suffix: '%↓', label: 'API 호출 수' },
-        { value: '50', suffix: '%↓', label: '인증 초기화' },
+        { value: '50', suffix: '%↓', label: '인증 초기화 시간' },
       ],
     },
   },
