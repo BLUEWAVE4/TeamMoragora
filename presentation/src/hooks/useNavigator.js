@@ -7,6 +7,8 @@ export const navGuard = { skip: false }
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://teammoragora.onrender.com'
 const presSocket = io(`${SOCKET_URL}/presentation`, { transports: ['websocket', 'polling'], autoConnect: true })
 
+export { presSocket }
+
 export function useNavigator(totalSlides) {
   const [current, setCurrent] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
