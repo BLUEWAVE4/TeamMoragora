@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Slide from '../Slide'
+import typingSfx from '../../assets/sounds/키보드 타이핑 소리.mp3'
 import '../../styles/slide11.css'
 
 const WORD = '모라고라'
@@ -44,13 +45,28 @@ export default function S11Closing({ active }) {
     if (phase === 0) return
     let timer
     if (phase === 1) {
-      // "모라고라?" 타이핑
+      // "모라고라?" 타이핑 + 효과음
+      const audio = new Audio(typingSfx)
+      audio.volume = 0.4
+      audio.play().catch(() => {})
       const target = WORD + '?'
       let i = 0
       timer = setInterval(() => {
         i++
         setTyped(target.slice(0, i))
-        if (i >= target.length) { clearInterval(timer); setPhase(2) }
+        if (i >= target.length) {
+          clearInterval(timer)
+          // 효과음 페이드아웃
+          const fadeOut = setInterval(() => {
+            if (audio.volume > 0.05) {
+              audio.volume = Math.max(0, audio.volume - 0.05)
+            } else {
+              audio.pause()
+              clearInterval(fadeOut)
+            }
+          }, 50)
+          setPhase(2)
+        }
       }, TYPE_SPEED)
     } else if (phase === 2) {
       // 1.5초 대기

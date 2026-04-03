@@ -93,7 +93,7 @@
 .s10-col:nth-child(1) .s10-img-area img { filter: brightness(1.35) contrast(1.05); }
 .s10-col:nth-child(2) .s10-img-area img { filter: brightness(0.85) contrast(1.02); }
 .s10-col:nth-child(3) .s10-img-area img { filter: brightness(0.88) contrast(1.02); }
-.s10-col:nth-child(4) .s10-img-area img { filter: brightness(1.0) contrast(1.03); }
+.s10-col:nth-child(4) .s10-img-area img { filter: brightness(0.85) contrast(1.03); }
 
 /* 하단 정보 */
 .s10-info {
