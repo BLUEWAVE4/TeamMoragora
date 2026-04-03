@@ -808,13 +808,12 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
     return () => clearInterval(socraticTimerRef.current);
   }, [gameStarted, mySide, debate?.topic, messages.length]);
 
-  // 루브릭 점수 — 메시지 전송 시 호출 (newMsg: 방금 전송한 텍스트)
+  // 루브릭 점수 — 메시지 전송 시 즉시 호출 (전송한 텍스트만으로 독립 호출)
+  const rubricQueueRef = useRef([]);
   const updateRubricScore = useCallback(async (newMsg) => {
     if (!gameStarted || !mySide || !debate?.topic) return;
-    const myMsgs = messages.filter(m => m.user_id === user?.id && m.content).map(m => m.content);
-    if (newMsg) myMsgs.push(newMsg);
-    if (myMsgs.length === 0) return;
-    const combined = myMsgs.join(' ');
+    rubricQueueRef.current.push(newMsg);
+    const combined = rubricQueueRef.current.join(' ');
     if (combined.trim().length < 10) return;
     try {
       const scores = await getRubricScore({
@@ -823,7 +822,7 @@ socket.on('kick-skip-countdown', ({ side, seconds }) => {
       });
       if (scores && typeof scores.total === 'number') setRubricScores(scores);
     } catch {}
-  }, [gameStarted, mySide, debate?.topic, messages, user?.id]);
+  }, [gameStarted, mySide, debate?.topic]);
 
   // 카운트업 애니메이션
   useEffect(() => {
@@ -1523,9 +1522,7 @@ const handleVote = (agree) => {
             {/* 루브릭 점수 바 */}
             {mySide && (
               <div className="flex items-center gap-2 mb-2 px-1 cursor-pointer active:scale-[0.98] transition-transform" onClick={async () => {
-                const myMsgs = messages.filter(m => m.user_id === user?.id && m.content);
-                if (myMsgs.length === 0) return;
-                const combined = myMsgs.map(m => m.content).join(' ');
+                const combined = rubricQueueRef.current.join(' ');
                 if (combined.trim().length < 10) return;
                 try {
                   const scores = await getRubricScore({ topic: debate?.topic, content: combined, side: mySide, proSide: debate?.pro_side, conSide: debate?.con_side });
