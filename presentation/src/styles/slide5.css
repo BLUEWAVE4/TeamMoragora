@@ -122,12 +122,11 @@
 #s5 .flow-cards {
   display:flex; flex-direction:column;
   gap:clamp(0.4rem, 0.8vh, 0.6rem);
-  flex:1;
 }
 #s5 .flow-card {
   display:flex; align-items:center;
   gap:clamp(0.6rem, 1vw, 1rem);
-  padding:clamp(0.6rem, 1vh, 0.9rem) clamp(0.8rem, 1.2vw, 1.2rem);
+  padding:clamp(0.3rem, 0.5vh, 0.5rem) clamp(0.8rem, 1.2vw, 1.2rem);
   border:1px solid rgba(26,53,96,0.1);
   border-radius:10px;
   background:rgba(26,53,96,0.03);
@@ -149,7 +148,7 @@
 }
 #s5 .flow-card-desc {
   font-family:'Noto Sans KR',sans-serif; font-weight:500;
-  font-size:clamp(1.3rem, 2.6vw, 1.8rem); color:var(--text-mid); line-height:1.5;
+  font-size:clamp(1.3rem, 2.6vw, 1.8rem); color:var(--text-mid); line-height:1.2;
 }
 
 /* AI 칩 */

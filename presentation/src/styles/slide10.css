@@ -77,7 +77,7 @@
   flex-shrink: 0;
 }
 .s10-img-area img {
-  width: 55%;
+  width: 38%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
   display: block;

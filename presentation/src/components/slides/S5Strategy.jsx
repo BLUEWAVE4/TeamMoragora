@@ -5,14 +5,7 @@ import '../../styles/slide5.css'
 const flowSteps = [
   { num: '01', name: '입론', desc: '양측이 각자의 주장을 논증과 근거로 제시한다' },
   { num: '02', name: '반론', desc: '상대의 주장에 반박하며 논거를 심화시킨다' },
-  {
-    num: '03', name: 'AI 3사 독립 판결', desc: '논리·균형·맥락 각각의 관점에서 동시에 판결',
-    chips: [
-      { cls: 'gpt', label: 'GPT' },
-      { cls: 'gem', label: 'Gemini' },
-      { cls: 'cla', label: 'Claude' },
-    ]
-  },
+  { num: '03', name: 'AI 3사 독립 판결 (GPT, Gemini, Claude)', desc: '논리·균형·맥락 각각의 관점에서 동시에 판결' },
   { num: '04', name: '시민 투표', desc: '실시간 시민 참여로 AI 판결과 균형을 이룬다' },
   { num: '05', name: '최종 판결', desc: 'AI 75% + 시민 25% — 논쟁의 마침표', final: true },
 ]

@@ -8,7 +8,7 @@
 
 #s4 .s4-content {
   display: grid;
-  grid-template-columns: clamp(220px, 24vw, 320px) 1fr;
+  grid-template-columns: clamp(260px, 28vw, 380px) 1fr;
   gap: clamp(1.5rem, 3vw, 2.5rem);
   min-height: 0;
 }
@@ -19,21 +19,22 @@
 #s4 .s4-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: clamp(0.6rem, 1.2vh, 1rem);
 }
 
 #s4 .s4-card {
   display: flex;
   flex-direction: column;
   gap: clamp(0.2rem, 0.4vh, 0.3rem);
-  padding: clamp(1rem, 2vh, 1.5rem) clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1.4rem, 2.8vh, 2rem) clamp(1.4rem, 2.8vw, 2rem);
   border: none;
   background: rgba(255,255,255,0.6);
+  border-radius: 12px;
   opacity: 0;
   transition: all 0.5s ease;
 }
-#s4 .s4-card:first-child { border-radius: 14px 14px 0 0; }
-#s4 .s4-card:last-child { border-radius: 0 0 14px 14px; }
+#s4 .s4-card:first-child { border-radius: 12px; }
+#s4 .s4-card:last-child { border-radius: 12px; }
 
 /* 등장 */
 #s4 .s4-card.lit { opacity: 1; }
@@ -54,7 +55,7 @@
 
 #s4 .s4-card-num {
   font-family: 'Cinzel', sans-serif;
-  font-size: clamp(1rem, 1.6vw, 1.3rem);
+  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
   font-weight: 700;
   color: var(--navy);
   opacity: 0.3;
@@ -63,7 +64,7 @@
 #s4 .s4-card-title {
   font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
-  font-size: clamp(1.8rem, 2.8vw, 2.3rem);
+  font-size: clamp(1.4rem, 2.2vw, 1.8rem);
   color: var(--navy-deep);
   line-height: 1.3;
 }
@@ -71,7 +72,7 @@
 /* 카드 설명 */
 #s4 .s4-card-sub {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
   font-weight: 400;
   color: var(--text-dim);
   line-height: 1.4;
@@ -81,7 +82,7 @@
 /* 카드 출처 */
 #s4 .s4-card-source {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  font-size: clamp(0.7rem, 1vw, 0.85rem);
   color: var(--text-light);
   margin-top: auto;
   padding-top: 0.3rem;

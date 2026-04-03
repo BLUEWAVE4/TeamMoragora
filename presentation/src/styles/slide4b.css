@@ -73,10 +73,10 @@
   justify-content: flex-start;
   background: transparent;
   padding: 0 clamp(1.5rem, 3vw, 3rem);
-  margin-top: clamp(-1rem, -2vh, -1.5rem);
+  margin-top: clamp(-3rem, -5vh, -4rem);
 }
 #s4b .s4b-mobile-device {
-  width: 90%; max-width: 320px;
+  width: 90%; max-width: 300px;
   border: 3px solid #2a2a2a;
   border-radius: 28px;
   overflow: hidden;
@@ -141,7 +141,7 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: 'Cinzel', sans-serif;
-  font-size: clamp(5rem, 10vw, 8rem);
+  font-size: clamp(3rem, 6vw, 4.5rem);
   font-weight: 300;
   color: var(--text);
   z-index: 1;
@@ -222,8 +222,8 @@
   position: relative;
   display: flex; align-items: center; justify-content: center;
   flex-direction: row;
-  min-height: clamp(180px, 25vh, 260px);
-  margin-bottom: clamp(2rem, 8vh, 4rem);
+  min-height: clamp(140px, 20vh, 200px);
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
 }
 
 /* 큰 AI 원형 (step0) */
@@ -293,12 +293,12 @@
   align-items: center;
 }
 #s4b .s4b-ai-circle {
-  width: clamp(87px, 9vw, 116px); height: clamp(87px, 9vw, 116px);
+  width: clamp(70px, 7vw, 100px); height: clamp(70px, 7vw, 100px);
   border-radius: 50%;
   border: 2.5px solid var(--c);
   background: rgba(0,0,0,0.02);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(1.35rem, 3.3vw, 1.95rem);
+  font-family: 'Noto Sans KR', sans-serif; font-size: clamp(0.75rem, 2.4vw, 1.5rem);
   font-weight: 600; color: #e8e0d0;
   letter-spacing: 0.05em;
   overflow: hidden;
@@ -319,6 +319,10 @@
 }
 #s4b .s4b-ai-desc strong {
   font-weight: 600; color: #e8e0d0;
+}
+#s4b .s4b-gold {
+  color: var(--gold, #d4a843) !important;
+  font-weight: 700;
 }
 
 /* 구분선 */
@@ -431,10 +435,10 @@
 /* ── AI 관점 설명 (원형 우측, step2) ── */
 #s4b .s4b-persp-inline {
   position: absolute;
-  left: 55%; top: calc(50% - 184px);
+  left: 55%; top: calc(50% - 170px);
   transform: translateY(-50%);
   display: flex; flex-direction: column;
-  gap: clamp(0.6rem, 8.8vh, 10rem);
+  gap: clamp(1.2rem, 8.6vh, 14rem);
   width: auto; white-space: nowrap;
 }
 #s4b .s4b-persp-list {

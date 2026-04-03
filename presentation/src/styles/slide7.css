@@ -188,7 +188,10 @@
   opacity: 1;
 }
 .s7-group.passed {
-  opacity: 0.15;
+  opacity: 0.4;
+}
+.s7-group.passed .s7-group-title {
+  color: var(--navy-deep) !important;
 }
 /* 그룹 타이틀 금색 */
 .s7-group-title { color: var(--gold) !important; }

@@ -140,17 +140,13 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               <div className="s6-conn-socket">
                 <svg width="100%" height="100%" viewBox="0 0 20 100" preserveAspectRatio="none">
                   {/* Services ↔ Middleware 양방향 (금색) */}
-                  <path d="M 0 24 H 9 V 10 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="3,23 0,24 3,25" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,9 20,10 17,11" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 50 H 9 V 16 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="3,49 0,50 3,51" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="17,15 20,16 17,17" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   {/* Socket 양방향 (하늘색, 긴 점선) */}
-                  <path d="M 0 37 H 12 V 50 H 20" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" strokeDasharray="6 3" vectorEffect="non-scaling-stroke" />
-                  <polyline points="3,36 0,37 3,38" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,49 20,50 17,51" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  {/* Supabase 양방향 (초록색) */}
-                  <path d="M 0 53 H 10 V 68 H 20" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="3,52 0,53 3,54" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  <polyline points="17,67 20,68 17,69" fill="none" stroke="rgba(100,200,140,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 55 H 12 V 78 H 20" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" strokeDasharray="6 3" vectorEffect="non-scaling-stroke" />
+                  <polyline points="3,54 0,55 3,56" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <polyline points="17,77 20,78 17,79" fill="none" stroke="rgba(100,200,240,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                 </svg>
               </div>
 
@@ -187,7 +183,7 @@ export default function S6Structure({ active, stepIndex = 0 }) {
               {/* → API 엘보 커넥터 */}
               <div className="s6-conn-api">
                 <svg width="100%" height="100%" viewBox="0 0 20 100" preserveAspectRatio="none">
-                  <path d="M 0 39 H 10 V 15 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                  <path d="M 0 79 H 10 V 15 H 20" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   <polyline points="17,14 20,15 17,16" fill="none" stroke="rgba(26,53,96,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                 </svg>
               </div>

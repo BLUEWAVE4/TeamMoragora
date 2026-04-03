@@ -162,9 +162,9 @@ export default function S4bNeed({ active, stepIndex }) {
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 2.8, ease }}
                         >
-                          서로 다른 관점의 <strong>3개 AI</strong>가<br />
+                          서로 다른 관점의 <strong className="s4b-gold">3개 AI</strong>가<br />
                           독립적으로 분석 · 판결하여
-                          편향 없는 <strong>공정한 중재</strong>를 제공
+                          편향 없는 <strong className="s4b-gold">공정한 중재</strong>를 제공
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -284,11 +284,11 @@ export default function S4bNeed({ active, stepIndex }) {
                         <motion.div
                           className="s4b-mobile-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: -135 }}
+                          animate={{ opacity: 1, y: -180 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 3.5, ease }}
                         >
-                          <div className="s4b-mobile-desc-main">누구나, 언제든</div>
+                          <div className="s4b-mobile-desc-main s4b-gold">누구나, 언제든</div>
                           <div className="s4b-mobile-desc-sub">일상의 논쟁을 해결하는 공간</div>
                         </motion.div>
                       )}
