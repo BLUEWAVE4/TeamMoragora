@@ -27,25 +27,21 @@ const SLIDES = [
 // ===== 1vs1 가이드 슬라이드 =====
 const GUIDE_SLIDES = [
   {
-    icon: '📝',
     title: '1. 주제 입력',
     desc: '논쟁 주제를 입력하면\nAI가 찬성/반대 입장을 자동 생성합니다.',
     accent: '#D4AF37',
   },
   {
-    icon: '🔗',
     title: '2. 상대방 초대',
     desc: '생성된 초대 링크를 상대에게 공유하세요.\n카카오톡이나 링크 복사로 간편하게!',
     accent: '#007AFF',
   },
   {
-    icon: '⚔️',
     title: '3. 주장 작성 (2라운드)',
     desc: '1라운드: 나의 주장 펼치기\n2라운드: 상대 주장에 반박하기',
     accent: '#E63946',
   },
   {
-    icon: '⚖️',
     title: '4. AI 판결 + 시민 투표',
     desc: 'AI 3명이 독립 판결하고\n시민 투표로 최종 승자가 결정됩니다.',
     accent: '#059669',
@@ -195,7 +191,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
               className={`relative w-full overflow-hidden ${isGuide ? 'pt-10 pb-4 flex items-center justify-center' : 'aspect-[4/3]'}`}
             >
               {isGuide ? (
-                <div className="text-[64px]">{slide.icon}</div>
+                <div className="text-[28px] font-black text-white/80" style={{ color: slide.accent }}>{slide.title}</div>
               ) : (
                 <>
                   <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
