@@ -4,7 +4,7 @@ import Slide from '../Slide'
 import { initCountUps } from '../../utils/animations'
 import '../../styles/slide3.css'
 
-const TOTAL_STEPS = 1
+const TOTAL_STEPS = 3
 const ease = [0.16, 1, 0.3, 1]
 
 const conclusions = [
@@ -18,9 +18,8 @@ export default function S3Proposal({ active, stepIndex }) {
   const ref = useRef(null)
   const countInitRef = useRef(false)
   useEffect(() => {
-    if (active && stepIndex === 0 && !countInitRef.current) {
-      countInitRef.current = true
-      initCountUps(ref.current, 800)
+    if (active && stepIndex <= 2) {
+      initCountUps(ref.current, 400)
     }
     if (!active) countInitRef.current = false
   }, [active, stepIndex])
@@ -37,14 +36,14 @@ export default function S3Proposal({ active, stepIndex }) {
         <div
           className="cards"
           style={{
-            display: stepIndex === 0 ? 'grid' : 'none',
+            display: stepIndex <= 2 ? 'grid' : 'none',
           }}
         >
-          {/* ① 5대 갈등 */}
+          {/* ① 5대 갈등 (step 0) */}
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : 0,
+              opacity: !active ? 0 : stepIndex >= 0 ? 1 : 0,
               y: !active ? 24 : 0,
             }}
             transition={{
@@ -80,7 +79,7 @@ export default function S3Proposal({ active, stepIndex }) {
             </div>
             <motion.div
               className="card-text"
-              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              animate={{ opacity: stepIndex >= 0 ? 1 : 0 }}
               transition={{ duration: 0.4, ease }}
             >
               <div className="stat-num gold" data-count="74" data-suffix="%" data-delay="1000" />
@@ -88,16 +87,16 @@ export default function S3Proposal({ active, stepIndex }) {
             </motion.div>
           </motion.div>
 
-          {/* ② 부정적 감정 */}
+          {/* ② 부정적 감정 (step 1) */}
           <motion.div
             className="card"
             animate={{
-              opacity: !active ? 0 : stepIndex === 0 ? 1 : 0,
-              y: !active ? 24 : 0,
+              opacity: !active ? 0 : stepIndex >= 1 ? 1 : 0,
+              y: !active ? 24 : stepIndex >= 1 ? 0 : 24,
             }}
             transition={{
               duration: 0.6,
-              delay: active && stepIndex === 0 ? 2.0 : 0,
+              delay: active && stepIndex === 1 ? 0.3 : 0,
               ease,
             }}
           >
@@ -156,25 +155,25 @@ export default function S3Proposal({ active, stepIndex }) {
             </div>
             <motion.div
               className="card-text"
-              animate={{ opacity: stepIndex === 0 ? 1 : 0 }}
+              animate={{ opacity: stepIndex >= 1 ? 1 : 0 }}
               transition={{ duration: 0.4, ease }}
             >
-              <div className="stat-num amber" data-count="81" data-suffix="%" data-delay="2200" />
+              <div className="stat-num amber" data-count="81" data-suffix="%" data-delay="500" />
               <div className="stat-label">"부정적 감정을 느낀다"</div>
               <div className="stat-label"><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>사회갈등을 접할 때</span></div>
             </motion.div>
           </motion.div>
 
-          {/* ③ 대화 의향 */}
+          {/* ③ 대화 의향 (step 2) */}
           <motion.div
             className="card"
             animate={{
-              opacity: active && stepIndex === 0 ? 1 : 0,
-              y: active && stepIndex === 0 ? 0 : 24,
+              opacity: !active ? 0 : stepIndex >= 2 ? 1 : 0,
+              y: !active ? 24 : stepIndex >= 2 ? 0 : 24,
             }}
             transition={{
               duration: 0.6,
-              delay: active && stepIndex === 0 ? 3.2 : 0,
+              delay: active && stepIndex === 2 ? 0.3 : 0,
               ease,
             }}
           >
@@ -201,7 +200,7 @@ export default function S3Proposal({ active, stepIndex }) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, ease }}
             >
-              <div className="stat-num green" data-count="70" data-suffix="%" data-delay="3400" />
+              <div className="stat-num green" data-count="70" data-suffix="%" data-delay="500" />
               <div className="stat-label">다른 의견과 대화할 의향<br /><span style={{ fontSize: '0.85em', color: 'var(--text-dim)' }}>소통의 여지 충분</span></div>
             </motion.div>
           </motion.div>
@@ -211,16 +210,16 @@ export default function S3Proposal({ active, stepIndex }) {
         <motion.div
           className="s3-video-wrap"
           animate={{
-            opacity: !active ? 0 : stepIndex === 1 ? 1 : 0,
+            opacity: !active ? 0 : stepIndex === 3 ? 1 : 0,
           }}
           transition={{ duration: 0.6, ease }}
           style={{
-            display: stepIndex === 1 ? 'flex' : 'none',
+            display: stepIndex === 3 ? 'flex' : 'none',
           }}
         >
           <div className="s3-video-container">
             <iframe
-              src={active && stepIndex === 1
+              src={active && stepIndex === 3
                 ? 'https://www.youtube.com/embed/bRqbEWhAC4g?rel=0'
                 : undefined}
               title="사회갈등 영상"
