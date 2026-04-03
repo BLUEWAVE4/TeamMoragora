@@ -16,7 +16,7 @@ const sections = [
     sub: '어떻게 해결하는가',
     items: [
       { num: '04', title: '해결 전략' },
-      { num: '05', title: '시스템 아키텍처' },
+      { num: '05', title: '서비스 구조' },
       { num: '06', title: '핵심 기능 시연' },
       { num: '07', title: '핵심 기술' },
       { num: '08', title: '트러블 슈팅' },
