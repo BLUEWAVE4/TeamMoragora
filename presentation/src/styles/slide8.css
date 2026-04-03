@@ -78,6 +78,14 @@
 #s8 .s8-diff-group:first-child .s8-section-tag {
   color:var(--navy);
 }
+/* 그룹 숨김 */
+#s8 .s8-diff-group.s8-hidden {
+  opacity:0; pointer-events:none; transition:opacity 0.4s ease;
+}
+/* 이전 그룹 흐리게 */
+#s8 .s8-diff-group.s8-dimmed {
+  opacity:0.15; transition:opacity 0.4s ease;
+}
 /* 경쟁 우위 카드: 틸 */
 #s8 .s8-diff-group:last-child .s8-diff-card {
   border-color:rgba(26,138,122,0.15);

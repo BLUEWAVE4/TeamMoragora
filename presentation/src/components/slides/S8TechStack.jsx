@@ -25,20 +25,38 @@ const diffGroups = [
 const allDiffs = diffGroups.flatMap(g => g.items)
 
 export default function S8TechStack({ active, stepIndex = 0 }) {
-  const [litCount, setLitCount] = useState(0)
+  const [litCount0, setLitCount0] = useState(0)
+  const [litCount1, setLitCount1] = useState(0)
 
+  // step 0: 차별성 순차 점등
   useEffect(() => {
     if (stepIndex === 0 && active) {
-      setLitCount(0)
+      setLitCount0(0)
+      setLitCount1(0)
       let count = 0
       const timer = setInterval(() => {
         count++
-        setLitCount(count)
-        if (count >= allDiffs.length) clearInterval(timer)
+        setLitCount0(count)
+        if (count >= diffGroups[0].items.length) clearInterval(timer)
       }, 350)
       return () => clearInterval(timer)
     }
-    if (!active) setLitCount(0)
+    if (stepIndex >= 1) setLitCount0(diffGroups[0].items.length)
+    if (!active) { setLitCount0(0); setLitCount1(0) }
+  }, [stepIndex, active])
+
+  // step 1: 경쟁 우위 순차 점등
+  useEffect(() => {
+    if (stepIndex === 1 && active) {
+      setLitCount1(0)
+      let count = 0
+      const timer = setInterval(() => {
+        count++
+        setLitCount1(count)
+        if (count >= diffGroups[1].items.length) clearInterval(timer)
+      }, 350)
+      return () => clearInterval(timer)
+    }
   }, [stepIndex, active])
 
   return (
@@ -52,13 +70,14 @@ export default function S8TechStack({ active, stepIndex = 0 }) {
         <div className="s8-diff-content">
           <div className="s8-diff-split">
             {diffGroups.map((group, gi) => {
-              const offset = gi * 4
+              const litCount = gi === 0 ? litCount0 : litCount1
+              const groupVisible = gi === 0 || stepIndex >= 1
               return (
-                <div className="s8-diff-group" key={gi}>
+                <div className={`s8-diff-group${groupVisible ? '' : ' s8-hidden'}${gi === 0 && stepIndex >= 1 ? ' s8-dimmed' : ''}`} key={gi}>
                   <div className="s8-section-tag">{group.label}</div>
                   <div className="s8-diff-list">
                     {group.items.map((d, i) => (
-                      <div className={`s8-diff-card${offset + i < litCount ? ' lit' : ''}`} key={i}>
+                      <div className={`s8-diff-card${i < litCount ? ' lit' : ''}`} key={i}>
                         <div className="s8-diff-card-header">{d.tag}</div>
                         <div className="s8-diff-title">{d.title}</div>
                       </div>
@@ -74,3 +93,5 @@ export default function S8TechStack({ active, stepIndex = 0 }) {
     </Slide>
   )
 }
+
+S8TechStack.stepCount = 1
