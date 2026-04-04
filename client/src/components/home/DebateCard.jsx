@@ -106,6 +106,11 @@ function DebateCard({ feed, initialVote, initialLiked }) {
   const [localCommentCount, setLocalCommentCount] = useState(feed?.comments_count ?? 0);
   const [viewCount, setViewCount] = useState(feed?.views_count ?? debateData?.view_count ?? 0);
 
+  // feed prop 변경 시 카운트 동기화
+  useEffect(() => { setLikeCount(feed?.likes_count ?? 0); }, [feed?.likes_count]);
+  useEffect(() => { setLocalCommentCount(feed?.comments_count ?? 0); }, [feed?.comments_count]);
+  useEffect(() => { if (initialLiked !== undefined) setLiked(initialLiked); }, [initialLiked]);
+
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     '기술': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
