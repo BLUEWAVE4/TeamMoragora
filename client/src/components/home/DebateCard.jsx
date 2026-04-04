@@ -190,6 +190,23 @@ function DebateCard({ feed, initialVote, initialLiked }) {
     setIsLiking(true);
     try {
       await toggleDebateLike(debateId);
+      // 캐시 내 likes_count + myLikes 동기화
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('home_cache'));
+        if (cached) {
+          const newLiked = !prevLiked;
+          const updateCount = (arr) => arr?.map(f => {
+            const fid = f?.debate_id || f?.debate?.id;
+            if (fid === debateId) return { ...f, likes_count: newLiked ? (f.likes_count || 0) + 1 : Math.max(0, (f.likes_count || 0) - 1) };
+            return f;
+          });
+          cached.feeds = updateCount(cached.feeds);
+          cached.daily = updateCount(cached.daily);
+          if (!cached.myLikes) cached.myLikes = {};
+          cached.myLikes[debateId] = newLiked;
+          sessionStorage.setItem('home_cache', JSON.stringify(cached));
+        }
+      } catch {}
     } catch (err) { setLiked(prevLiked); setLikeCount(prevCount); } finally { setIsLiking(false); }
   };
 
