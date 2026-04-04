@@ -150,9 +150,10 @@ router.post('/socratic-feedback', requireAuth, async (req, res) => {
     const userSideText = side === 'A' ? safe(proSide) : safe(conSide);
 
     const result = await callAI(
-      'gpt-4o-mini (소크라테스)',
+      'gpt-4o (소크라테스)',
       () => openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
+        temperature: 0.8,
         messages: [
           { role: 'developer', content: `너는 논쟁 코치 소크라테스다. 사용자가 "${userSideText}" 입장으로 주장을 작성 중이다.
 사용자가 작성한 내용을 읽고, 그 내용에서 부족한 부분을 짚어 보강 조언 1개를 해라.
