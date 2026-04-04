@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requestJudgment, getVerdict, getVerdictFeed, getVerdictOG, getDailyVerdicts, getHallOfFame, retryJudgment, rateVerdict } from '../controllers/judgment.controller.js';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js';
 import { validateUUID } from '../middleware/validate.middleware.js';
 
 // ===== Rate Limiting (개발 중 임시 비활성화) =====
@@ -13,9 +13,9 @@ import { validateUUID } from '../middleware/validate.middleware.js';
 const router = Router();
 
 // GET — 판결 조회
-router.get('/feed', getVerdictFeed);
+router.get('/feed', optionalAuth, getVerdictFeed);
 router.get('/hall', getHallOfFame);
-router.get('/daily', getDailyVerdicts);
+router.get('/daily', optionalAuth, getDailyVerdicts);
 router.get('/:debateId/og', validateUUID('debateId'), getVerdictOG);
 router.get('/:debateId', validateUUID('debateId'), getVerdict);
 

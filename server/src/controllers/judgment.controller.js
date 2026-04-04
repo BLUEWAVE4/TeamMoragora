@@ -376,7 +376,8 @@ export async function getDailyVerdicts(req, res, next) {
       };
     });
 
-    res.json(result);
+    const enriched = await enrichWithCounts(result, req.user?.id);
+    res.json(enriched);
   } catch (err) {
     next(err);
   }
@@ -488,7 +489,7 @@ export async function getVerdictFeed(req, res, next) {
       const data = filtered.slice(from, to + 1);
       const count = filtered.length;
 
-      const enriched = await enrichWithCounts(data);
+      const enriched = await enrichWithCounts(data, req.user?.id);
       return res.json({ data: enriched, page, limit, total: count, hasNext: to < count - 1 });
     }
 
@@ -500,31 +501,48 @@ export async function getVerdictFeed(req, res, next) {
     const hasNext = rows.length > limit;
     const pageData = hasNext ? rows.slice(0, limit) : rows;
 
-    const enriched = await enrichWithCounts(pageData);
+    const enriched = await enrichWithCounts(pageData, req.user?.id);
     res.json({ data: enriched, page, limit, hasNext });
   } catch (err) {
     next(err);
   }
 }
 
-// 댓글수 + 좋아요수 일괄 조회 헬퍼
-async function enrichWithCounts(data) {
+// 댓글수 + 좋아요수 + (로그인 시) 내 좋아요/투표 일괄 조회 헬퍼
+async function enrichWithCounts(data, userId) {
   const debateIds = data.map(v => v.debate_id).filter(Boolean);
   if (debateIds.length === 0) return data;
 
-  const [{ data: comments }, { data: likes }] = await Promise.all([
+  const queries = [
     supabaseAdmin.from('comments').select('debate_id').in('debate_id', debateIds),
     supabaseAdmin.from('debate_likes').select('debate_id').in('debate_id', debateIds),
-  ]);
+  ];
+  // 로그인 유저면 내 좋아요/투표도 병렬 조회
+  if (userId) {
+    queries.push(
+      supabaseAdmin.from('debate_likes').select('debate_id').eq('user_id', userId).in('debate_id', debateIds),
+      supabaseAdmin.from('votes').select('debate_id, voted_side').eq('user_id', userId).in('debate_id', debateIds),
+    );
+  }
+
+  const results = await Promise.all(queries);
+  const [{ data: comments }, { data: likes }] = results;
 
   const commentMap = {}, likeMap = {};
   (comments || []).forEach(c => { commentMap[c.debate_id] = (commentMap[c.debate_id] || 0) + 1; });
   (likes || []).forEach(l => { likeMap[l.debate_id] = (likeMap[l.debate_id] || 0) + 1; });
+
+  let myLikeSet = new Set(), myVoteMap = {};
+  if (userId) {
+    (results[2]?.data || []).forEach(l => myLikeSet.add(l.debate_id));
+    (results[3]?.data || []).forEach(v => { myVoteMap[v.debate_id] = v.voted_side; });
+  }
 
   return data.map(v => ({
     ...v,
     comments_count: commentMap[v.debate_id] || 0,
     likes_count: likeMap[v.debate_id] || 0,
     views_count: v.debate?.view_count || 0,
+    ...(userId ? { my_liked: myLikeSet.has(v.debate_id), my_vote: myVoteMap[v.debate_id] || null } : {}),
   }));
 }

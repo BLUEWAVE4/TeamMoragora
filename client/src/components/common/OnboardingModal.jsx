@@ -184,9 +184,9 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={`${phase}-${current}`}
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -60 }}
+              initial={{ opacity: 0, ...(isGuide ? { x: 60 } : { y: 40 }) }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, ...(isGuide ? { x: -60 } : { y: -40 }) }}
               transition={{ duration: 0.3 }}
               className={`relative w-full overflow-hidden ${isGuide ? 'pt-10 pb-4 flex items-center justify-center' : 'aspect-[4/3]'}`}
             >

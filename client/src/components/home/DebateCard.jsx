@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext.jsx';
 import api, { castVote, cancelVote, toggleDebateLike, incrementDebateView, getMyVote } from '../../services/api';
@@ -100,16 +100,18 @@ function DebateCard({ feed, initialVote, initialLiked }) {
   // 서버에서 내려준 좋아요 수 사용
   const [likeCount, setLikeCount] = useState(feed?.likes_count ?? 0);
   const [isLiking, setIsLiking] = useState(false);
+  const hasToggledLike = useRef(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { modalState, showModal, closeModal } = useModalState();
   const [localCommentCount, setLocalCommentCount] = useState(feed?.comments_count ?? 0);
   const [viewCount, setViewCount] = useState(feed?.views_count ?? debateData?.view_count ?? 0);
 
-  // feed prop 변경 시 카운트 동기화
+  // init() 서버 데이터 반영 (유저가 조작하지 않았을 때만)
   useEffect(() => { setLikeCount(feed?.likes_count ?? 0); }, [feed?.likes_count]);
-  useEffect(() => { setLocalCommentCount(feed?.comments_count ?? 0); }, [feed?.comments_count]);
-  useEffect(() => { if (initialLiked !== undefined) setLiked(initialLiked); }, [initialLiked]);
+  useEffect(() => {
+    if (!hasToggledLike.current && initialLiked !== undefined) setLiked(initialLiked);
+  }, [initialLiked]);
 
   const categoryIconMap = {
     '사회': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -188,6 +190,7 @@ function DebateCard({ feed, initialVote, initialLiked }) {
     const debateId = feed?.debate_id || debateData?.id;
     if (!user) { setShowLoginModal(true); return; }
     if (isLiking) return;
+    hasToggledLike.current = true;
     const prevLiked = liked;
     const prevCount = likeCount;
     setLiked(!prevLiked);

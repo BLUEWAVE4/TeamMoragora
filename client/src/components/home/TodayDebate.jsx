@@ -10,7 +10,7 @@ import useModalState from '../../hooks/useModalState';
 import CommentBottomSheet from '../common/CommentBottomSheet';
 
 // 개별 카드 컴포넌트
-const DebateBannerCard = React.memo(function DebateBannerCard({ item, initialVote }) {
+const DebateBannerCard = React.memo(function DebateBannerCard({ item, initialVote, initialLiked }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -100,25 +100,51 @@ const DebateBannerCard = React.memo(function DebateBannerCard({ item, initialVot
   };
 
   // 좋아요/댓글/조회수
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState(initialLiked || false);
+  const [likeCount, setLikeCount] = useState(item?.likes_count ?? 0);
   const [commentCount, setCommentCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
+  const hasToggledLike = useRef(false);
 
-  // 내가 좋아요 했는지 서버 API로 조회
+  // initialLiked prop 동기화 (유저 조작 전에만)
   useEffect(() => {
+    if (!hasToggledLike.current && initialLiked !== undefined) setLiked(initialLiked);
+  }, [initialLiked]);
+  useEffect(() => { setLikeCount(item?.likes_count ?? 0); }, [item?.likes_count]);
+
+  // 배치 데이터 없으면 개별 조회 폴백
+  useEffect(() => {
+    if (initialLiked !== undefined) return;
     if (!debateId || !user) return;
     api.get(`/debates/${debateId}/like/me`).then(res => setLiked(!!res?.liked)).catch(() => {});
-  }, [debateId, user]);
+  }, [debateId, user, initialLiked]);
 
   const handleLike = async () => {
     if (!user) return;
+    hasToggledLike.current = true;
     const prev = liked;
     const prevCount = likeCount;
     setLiked(!prev);
     setLikeCount(prev ? Math.max(0, prevCount - 1) : prevCount + 1);
     try {
       await toggleDebateLike(debateId);
+      // 캐시 동기화
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('home_cache'));
+        if (cached) {
+          const newLiked = !prev;
+          const updateCount = (arr) => arr?.map(f => {
+            const fid = f?.debate_id || f?.debate?.id;
+            if (fid === debateId) return { ...f, likes_count: newLiked ? (f.likes_count || 0) + 1 : Math.max(0, (f.likes_count || 0) - 1) };
+            return f;
+          });
+          cached.feeds = updateCount(cached.feeds);
+          cached.daily = updateCount(cached.daily);
+          if (!cached.myLikes) cached.myLikes = {};
+          cached.myLikes[debateId] = newLiked;
+          sessionStorage.setItem('home_cache', JSON.stringify(cached));
+        }
+      } catch {}
     } catch { setLiked(prev); setLikeCount(prevCount); }
   };
 
@@ -313,7 +339,7 @@ function SlideArrow({ direction, onClick, disabled }) {
 }
 
 // 배너 래퍼 컴포넌트
-export default function TodayDebate({ items = [], myVotesMap = {} }) {
+export default function TodayDebate({ items = [], myVotesMap = {}, myLikesMap = {} }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const startXRef = useRef(null);
   const containerRef = useRef(null);
@@ -371,7 +397,7 @@ export default function TodayDebate({ items = [], myVotesMap = {} }) {
           >
             {validItems.map((item, i) => (
               <div key={item?.debate_id || i} className="w-full flex-shrink-0">
-                <DebateBannerCard item={item} initialVote={myVotesMap[item?.debate_id]} />
+                <DebateBannerCard item={item} initialVote={myVotesMap[item?.debate_id]} initialLiked={myLikesMap[item?.debate_id]} />
               </div>
             ))}
           </div>

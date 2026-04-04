@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { throttle } from '../utils/perf';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { getVerdictFeed, getDailyVerdicts, getMyVotesBatch, getMyLikesBatch } from '../services/api';
+import { getVerdictFeed, getDailyVerdicts } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import TodayDebate from '../components/home/TodayDebate';
 import CategoryFilter from '../components/home/CategoryFilter';
@@ -17,14 +17,18 @@ export default function HomePage() {
   const searchQuery = searchParams.get('q')?.toLowerCase() || '';
   const [filter, setFilter] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
-  const [feeds, setFeeds] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // 캐시를 동기적으로 읽어 첫 렌더링부터 올바른 상태 제공
+  const cachedHome = useMemo(() => {
+    try { return JSON.parse(sessionStorage.getItem('home_cache')) || {}; } catch { return {}; }
+  }, []);
+  const [feeds, setFeeds] = useState(cachedHome.feeds || []);
+  const [loading, setLoading] = useState(!cachedHome.feeds);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasNext, setHasNext] = useState(true);
-  const [myVotesMap, setMyVotesMap] = useState({});
-  const [myLikesMap, setMyLikesMap] = useState({});
+  const [hasNext, setHasNext] = useState(cachedHome.hasNext ?? true);
+  const [myVotesMap, setMyVotesMap] = useState(cachedHome.myVotes || {});
+  const [myLikesMap, setMyLikesMap] = useState(cachedHome.myLikes || {});
   const [page, setPage] = useState(1);
-  const [dailyItems, setDailyItems] = useState([]);
+  const [dailyItems, setDailyItems] = useState(cachedHome.daily || []);
 
   const hasNextRef = useRef(true);
   const loadingMoreRef = useRef(false);
@@ -76,23 +80,11 @@ export default function HomePage() {
     }
   }, [filter]);
 
-  // stale-while-revalidate: 캐시 즉시 → 백그라운드 갱신
+  // stale-while-revalidate: 캐시는 useState 초기값으로 즉시 반영 → 백그라운드 갱신
   useEffect(() => {
     const CACHE_KEY = 'home_cache';
-    let hasCached = false;
-    try {
-      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
-      if (cached?.feeds && cached?.daily) {
-        setFeeds(cached.feeds);
-        setDailyItems(cached.daily);
-        setHasNext(cached.hasNext ?? false);
-        hasNextRef.current = cached.hasNext ?? false;
-        if (cached.myVotes) setMyVotesMap(cached.myVotes);
-        if (cached.myLikes) setMyLikesMap(cached.myLikes);
-        setLoading(false);
-        hasCached = true;
-      }
-    } catch {}
+    const hasCached = !!(cachedHome.feeds && cachedHome.daily);
+    if (hasCached) hasNextRef.current = cachedHome.hasNext ?? false;
 
     const init = async () => {
       if (!hasCached) setLoading(true);
@@ -110,16 +102,16 @@ export default function HomePage() {
       pageRef.current = 1;
       setLoading(false);
 
-      // 배치로 투표/좋아요 상태 조회 (로그인 시) + 캐시에 포함
-      let freshVotes = {}, freshLikes = {};
-      if (user) {
-        const allIds = [...freshFeeds, ...freshDaily].map(f => f?.debate_id || f?.debate?.id).filter(Boolean);
-        if (allIds.length > 0) {
-          const [votes, likes] = await Promise.allSettled([getMyVotesBatch(allIds), getMyLikesBatch(allIds)]);
-          if (votes.status === 'fulfilled') { freshVotes = votes.value || {}; setMyVotesMap(freshVotes); }
-          if (likes.status === 'fulfilled') { freshLikes = likes.value || {}; setMyLikesMap(freshLikes); }
-        }
-      }
+      // 서버 응답에 포함된 my_liked/my_vote 추출 (별도 batch 호출 불필요)
+      const freshVotes = {}, freshLikes = {};
+      [...freshFeeds, ...freshDaily].forEach(f => {
+        const id = f?.debate_id || f?.debate?.id;
+        if (!id) return;
+        if (f.my_liked !== undefined) freshLikes[id] = f.my_liked;
+        if (f.my_vote !== undefined) freshVotes[id] = f.my_vote;
+      });
+      setMyVotesMap(prev => ({ ...prev, ...freshVotes }));
+      setMyLikesMap(prev => ({ ...prev, ...freshLikes }));
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ feeds: freshFeeds, daily: freshDaily, hasNext: freshHasNext, myVotes: freshVotes, myLikes: freshLikes }));
     };
     init();
@@ -187,7 +179,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F3F1EC] pb-32 pt-4">
       {showGuide && <OnboardingBanner onDismiss={() => { setShowGuide(false); markOnboardingDone(); }} key="guide" />}
-      <TodayDebate items={dailyItems} myVotesMap={myVotesMap} />
+      <TodayDebate items={dailyItems} myVotesMap={myVotesMap} myLikesMap={myLikesMap} />
       <main className="flex flex-col mt-6 px-5">
         <CategoryFilter filter={filter} setFilter={setFilter} sortBy={sortBy} setSortBy={setSortBy} />
 
