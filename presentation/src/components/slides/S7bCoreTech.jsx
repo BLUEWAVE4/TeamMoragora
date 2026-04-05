@@ -9,7 +9,7 @@ const serverTechs = [
     title: 'AI 3사 병렬 판결',
     points: [
       'GPT · Gemini · Claude Promise.all 동시 호출',
-      '5항목 루브릭 채점 (논리·증거·설득·일관·표현)',
+      '5항목 루브릭 채점 (논리·근거·설득·일관·표현)',
       '실패 시 Grok 자동 폴백 + 재시도',
     ],
   },
