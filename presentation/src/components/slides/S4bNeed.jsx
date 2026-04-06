@@ -284,7 +284,7 @@ export default function S4bNeed({ active, stepIndex }) {
                         <motion.div
                           className="s4b-mobile-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: -20 }}
+                          animate={{ opacity: 1, y: -120 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 3.5, ease }}
                         >
