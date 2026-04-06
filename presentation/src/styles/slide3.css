@@ -85,9 +85,8 @@
 /* 카드 3열 그리드 */
 #s3 .cards {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: clamp(2rem, 4vw, 4rem); align-items: start;
-  margin-left: 100px; margin-right: 100px;
-  padding-left: clamp(1rem, 3vw, 3rem);
+  gap: clamp(1rem, 2vw, 2rem); align-items: start;
+  margin-left: 0; margin-right: 0;
 }
 #s3 .card {
   display: flex; flex-direction: column; align-items: center;
@@ -103,7 +102,7 @@
 
 /* 일러스트 */
 #s3 .illust {
-  width: clamp(312px, 43vw, 468px); height: clamp(312px, 43vw, 468px);
+  width: clamp(200px, 28vw, 350px); height: clamp(200px, 28vw, 350px);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto clamp(0.5rem, 1vh, 1rem);
 }
