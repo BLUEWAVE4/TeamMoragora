@@ -1,35 +1,37 @@
 @import "tailwindcss";
 
-/* ── 색상 팔레트 ── */
-:root {
-  /* 배경 */
-  --bg: #f5f3ef;
+/* ── 색상 팔레트 (Tailwind v4 레이어 이후에 선언하여 우선순위 확보) ── */
+@layer base {
+  :root {
+    /* 배경 */
+    --bg: #f5f3ef;
 
-  /* 메인: 네이비 */
-  --navy: #2a4a7a;
-  --navy-deep: #1a3560;
-  --navy-dim: rgba(26,53,96,0.08);
+    /* 메인: 네이비 */
+    --navy: #2a4a7a;
+    --navy-deep: #1a3560;
+    --navy-dim: rgba(26,53,96,0.08);
 
-  /* 서브 1: 골드 (강조·하이라이트) */
-  --gold: #d4a017;
-  --gold-light: #e8b84a;
-  --gold-dim: rgba(212,160,23,0.10);
+    /* 서브 1: 골드 (강조·하이라이트) */
+    --gold: #d4a017;
+    --gold-light: #e8b84a;
+    --gold-dim: rgba(212,160,23,0.10);
 
-  /* 서브 2: 코랄 (문제·경고) */
-  --coral: #c0392b;
-  --coral-deep: #8b2e2e;
-  --coral-dim: rgba(192,57,43,0.08);
+    /* 서브 2: 코랄 (문제·경고) */
+    --coral: #c0392b;
+    --coral-deep: #8b2e2e;
+    --coral-dim: rgba(192,57,43,0.08);
 
-  /* 서브 3: 틸 (해결·긍정) */
-  --teal: #1a8a7a;
-  --teal-light: #2aaa96;
-  --teal-dim: rgba(26,138,122,0.08);
+    /* 서브 3: 틸 (해결·긍정) */
+    --teal: #1a8a7a;
+    --teal-light: #2aaa96;
+    --teal-dim: rgba(26,138,122,0.08);
 
-  /* 텍스트 */
-  --text: #1B2A4A;
-  --text-mid: #3a4a65;
-  --text-dim: #5a6a80;
-  --text-light: #8a95a5;
+    /* 텍스트 */
+    --text: #1B2A4A;
+    --text-mid: #3a4a65;
+    --text-dim: #5a6a80;
+    --text-light: #8a95a5;
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
