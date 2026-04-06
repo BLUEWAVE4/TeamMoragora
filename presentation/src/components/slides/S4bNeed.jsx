@@ -59,7 +59,7 @@ export default function S4bNeed({ active, stepIndex }) {
                 className="s4b-bg-left"
                 style={{ top: '50%', y: '-50%', opacity: 1 }}
                 animate={{
-                  x: 'calc(50vw - 130%)',
+                  x: 'calc(50vw - 145%)',
                 }}
                 transition={{ duration: 0.7, ease }}
               >
@@ -69,8 +69,8 @@ export default function S4bNeed({ active, stepIndex }) {
                     <motion.div
                       className="s4b-ai-circles-wrap"
                       animate={{
-                        y: stepIndex >= 1 ? -60 : 0,
-                        x: stepIndex >= 2 ? -80 : 0,
+                        y: stepIndex >= 1 ? -30 : 0,
+                        x: stepIndex >= 2 ? -40 : 0,
                       }}
                       transition={{ duration: 1.2, ease }}
                     >
@@ -158,7 +158,7 @@ export default function S4bNeed({ active, stepIndex }) {
                         <motion.div
                           className="s4b-ai-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 20 }}
+                          animate={{ opacity: 1, y: 80 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 2.8, ease }}
                         >
@@ -191,7 +191,7 @@ export default function S4bNeed({ active, stepIndex }) {
                 className="s4b-bg-right"
                 style={{ top: '50%', y: '-50%', opacity: 1 }}
                 animate={{
-                  x: 'calc(-50vw + 130%)',
+                  x: 'calc(-50vw + 145%)',
                 }}
                 transition={{ duration: 0.7, ease }}
               >
@@ -284,7 +284,7 @@ export default function S4bNeed({ active, stepIndex }) {
                         <motion.div
                           className="s4b-mobile-desc"
                           initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: -180 }}
+                          animate={{ opacity: 1, y: -20 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 1, delay: 3.5, ease }}
                         >

@@ -42,15 +42,15 @@
 #s4b .s4b-bg-right {
   position: absolute;
   top: 50%;
-  width: 30%;
-  height: 90%;
+  width: 38%;
+  height: 92%;
   display: flex; flex-direction: column;
   pointer-events: none;
   z-index: 0;
   border: 1px solid rgba(26,53,96,0.15);
-  border-radius: 12px;
+  border-radius: 20px;
   box-shadow: 0 0 30px rgba(26,53,96,0.06);
-  overflow: hidden;
+  overflow: visible;
 }
 #s4b .s4b-bg-left { left: 2%; }
 #s4b .s4b-bg-right { right: 2%; }
@@ -73,10 +73,10 @@
   justify-content: flex-start;
   background: transparent;
   padding: 0 clamp(1.5rem, 3vw, 3rem);
-  margin-top: clamp(-3rem, -5vh, -4rem);
+  margin-top: clamp(-2rem, -5vh, -4rem);
 }
 #s4b .s4b-mobile-device {
-  width: 90%; max-width: 300px;
+  width: 90%; max-width: 250px;
   border: 3px solid #c8c0b0;
   border-radius: 28px;
   overflow: hidden;
@@ -204,6 +204,7 @@
   flex: 1;
   display: flex; flex-direction: column;
   background: #1a1714;
+  border-radius: 20px;
   padding: clamp(0.8rem, 1.5vh, 1.2rem) clamp(0.6rem, 1vw, 1rem);
   overflow: visible;
 }
@@ -214,8 +215,8 @@
   display: flex; flex-direction: column; align-items: center;
   justify-content: center;
   flex: 1;
-  margin-top: 70px;
-  padding-top: clamp(1rem, 2vh, 2rem);
+  margin-top: 20px;
+  padding-top: clamp(0.5rem, 1vh, 1rem);
 }
 /* AI 원형 래퍼 */
 #s4b .s4b-ai-circles-wrap {
@@ -435,7 +436,7 @@
 /* ── AI 관점 설명 (원형 우측, step2) ── */
 #s4b .s4b-persp-inline {
   position: absolute;
-  left: 55%; top: calc(50% - 170px);
+  left: 50%; top: calc(50% - 165px);
   transform: translateY(-50%);
   display: flex; flex-direction: column;
   gap: clamp(1.2rem, 8.6vh, 14rem);
