@@ -104,11 +104,6 @@ export default function S10Team({ active }) {
                   ))}
                 </ul>
 
-                <div className="s10-techs">
-                  {m.techs.map(t => (
-                    <span className="s10-tech" key={t}>{t}</span>
-                  ))}
-                </div>
               </div>
             </div>
             </div>
